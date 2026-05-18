@@ -413,8 +413,10 @@ export default function TapitasLeagueHomepage() {
 </h1>
 
      {/* subtítulo */}
-        <p className="mb-8 max-w-2xl text-base font-medium leading-relaxed text-slate-400 md:text-lg">
-          All the stats. All the moments. All the rivalry. Explore the history that built the league.
+        <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-400 md:text-lg">
+          All the stats. All the moments. All the rivalry.
+          <br />
+          <span className="text-slate-500">Explore the history that built the league.</span>
         </p>
 
         <div className="flex flex-wrap gap-3">
