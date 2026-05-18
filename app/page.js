@@ -412,11 +412,9 @@ export default function TapitasLeagueHomepage() {
   </span>
 </h1>
 
-        {/* subtítulo */}
-        <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-400 md:text-lg">
-          All the stats. All the moments. All the rivalry.
-          <br />
-          <span className="text-slate-500">Explore the history that built the league.</span>
+     {/* subtítulo */}
+        <p className="mb-8 max-w-2xl text-base font-medium leading-relaxed text-slate-400 md:text-lg">
+          All the stats. All the moments. All the rivalry. Explore the history that built the league.
         </p>
 
         <div className="flex flex-wrap gap-3">
@@ -431,24 +429,23 @@ export default function TapitasLeagueHomepage() {
         </div>
       </div>
 
-      {/* imagem — sem fundo, sem borda */}
-      {/* imagem — sem glow, só flutuação */}
-<div
-  className="relative flex-shrink-0 flex items-center justify-center"
-  style={{ animation: 'heroFloat 5s ease-in-out infinite' }}
->
-  <Image
-    src="/images/LogoFinalBlack.png"
-    alt="Tapitas League Logo"
-    width={680}
-    height={680}
-    style={{
-      width: 'clamp(200px, 32vw, 680px)',
-      height: 'clamp(200px, 32vw, 680px)',
-      objectFit: 'contain',
-    }}
-  />
-</div>
+      {/* imagem */}
+      <div
+        className="relative flex-shrink-0 flex items-center justify-center"
+        style={{ animation: 'heroFloat 5s ease-in-out infinite' }}
+      >
+        <Image
+          src="/images/LogoFinalBlack.png"
+          alt="Tapitas League Logo"
+          width={580}
+          height={580}
+          style={{
+            width: 'clamp(200px, 28vw, 580px)',
+            height: 'clamp(200px, 28vw, 580px)',
+            objectFit: 'contain',
+          }}
+        />
+      </div>
     </div>
   </div>
 
