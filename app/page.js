@@ -312,41 +312,10 @@ export default function TapitasLeagueHomepage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white">
-      {/* ===== HEADER ===== */}
-<header className="relative z-20 mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-  <div className="flex items-center gap-3">
-    <Image
-      src="/images/LogoFinalBlack.png"
-      alt="Tapitas League"
-      width={44}
-      height={44}
-      className="rounded-xl invert"
-    />
-    <span className="text-lg font-black tracking-[-0.04em] text-white">
-      Tapitas<span className="text-cyan-400">League</span>
-    </span>
-  </div>
-
-  <nav className="hidden items-center gap-1 md:flex">
-    {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map((item) => (
-      <button
-        key={item}
-        className="rounded-xl px-4 py-2 text-sm font-bold text-slate-400 transition-all hover:bg-white/[0.06] hover:text-white"
-      >
-        {item}
-      </button>
-    ))}
-  </nav>
-
-  <button className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20">
-    2024 Season
-    <ChevronRight className="h-4 w-4" />
-  </button>
-</header>
-
-{/* ===== HERO ===== */}
+      {/* ===== HERO ===== */}
 <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8">
   <div className="relative overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f_0%,#0b1422_50%,#0d1028_100%)] p-10 md:p-14">
+
     {/* fundo decorativo */}
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
       <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.06] blur-[80px]" />
@@ -354,26 +323,54 @@ export default function TapitasLeagueHomepage() {
     </div>
 
     <div className="relative flex flex-col items-center gap-12 xl:flex-row xl:items-center xl:justify-between">
+
       {/* texto */}
       <div className="flex-1">
+        {/* badge */}
         <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
           <Flame className="h-4 w-4 text-cyan-300" />
           <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
-            Fantasy Football League
+            EST. 2014 &nbsp;|&nbsp; A LEAGUE. A HISTORY.
           </span>
         </div>
 
-        <h1 className="mb-5 text-[52px] font-black leading-[0.92] tracking-[-0.05em] md:text-[72px] lg:text-[88px]">
-          Tapitas
+        {/* título rústico */}
+        <h1
+          className="mb-5 leading-[0.9] tracking-[-0.02em]"
+          style={{
+            fontFamily: '"Special Elite", "Courier New", monospace',
+            fontSize: 'clamp(44px, 7vw, 96px)',
+            background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            textShadow: 'none',
+            filter: 'drop-shadow(0 2px 12px rgba(34,211,238,0.18))',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          THE HOME OF<br />
+          <span
+            style={{
+              fontFamily: '"Special Elite", "Courier New", monospace',
+              background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            TAPITAS
+          </span>
           <br />
-          <span className="text-cyan-400">Empire</span>
-          <br />
-          <span className="text-slate-500">League</span>
+          HISTORY
         </h1>
 
-        <p className="mb-8 max-w-lg text-lg font-medium leading-relaxed text-slate-400">
-          Anos de glória, rivalidades épicas e o troféu que todo mundo quer.
-          Acompanhe o histórico completo da liga mais competitiva do Brasil.
+        {/* subtítulo */}
+        <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-400 md:text-lg"
+           style={{ fontFamily: '"Special Elite", "Courier New", monospace' }}>
+          All the stats. All the moments. All the rivalry.
+          <br />
+          <span className="text-slate-500">Explore the history that built the league.</span>
         </p>
 
         <div className="flex flex-wrap gap-3">
@@ -388,21 +385,69 @@ export default function TapitasLeagueHomepage() {
         </div>
       </div>
 
-      {/* imagem */}
+      {/* imagem com efeitos */}
       <div className="relative flex-shrink-0">
-        <div className="absolute inset-0 rounded-[32px] bg-cyan-400/10 blur-2xl" />
-        <div className="relative flex h-[260px] w-[260px] items-center justify-center rounded-[32px] border border-white/10 bg-white/[0.04] md:h-[320px] md:w-[320px]">
+        {/* glow externo */}
+        <div
+          className="absolute inset-[-24px] rounded-[50%] blur-3xl"
+          style={{ background: 'radial-gradient(ellipse, rgba(34,211,238,0.13) 0%, transparent 70%)' }}
+        />
+        {/* anel decorativo */}
+        <div
+          className="absolute inset-[-2px] rounded-[36px]"
+          style={{
+            background: 'linear-gradient(135deg, rgba(34,211,238,0.18) 0%, transparent 60%, rgba(34,211,238,0.08) 100%)',
+            padding: '1px',
+          }}
+        />
+
+        {/* container da imagem */}
+        <div
+          className="relative flex items-center justify-center rounded-[32px] border border-white/10 bg-white/[0.03]"
+          style={{
+            width: 'clamp(200px, 28vw, 400px)',
+            height: 'clamp(200px, 28vw, 400px)',
+            animation: 'heroFloat 5s ease-in-out infinite',
+          }}
+        >
+          {/* brilho interno */}
+          <div className="absolute inset-0 rounded-[32px] overflow-hidden">
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(ellipse at 50% 30%, rgba(34,211,238,0.08) 0%, transparent 65%)',
+              }}
+            />
+          </div>
+
           <Image
             src="/images/LogoFinalBlack.png"
             alt="Tapitas League Logo"
-            width={240}
-            height={240}
-            className="invert drop-shadow-[0_0_40px_rgba(34,211,238,0.3)]"
+            width={340}
+            height={340}
+            className="relative z-10"
+            style={{
+              width: 'clamp(140px, 20vw, 300px)',
+              height: 'clamp(140px, 20vw, 300px)',
+              objectFit: 'contain',
+              filter:
+                'drop-shadow(0 0 28px rgba(34,211,238,0.35)) drop-shadow(0 0 8px rgba(34,211,238,0.2)) contrast(1.05) saturate(1.1)',
+            }}
           />
         </div>
       </div>
     </div>
   </div>
+
+  {/* keyframe da animação de flutuação */}
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+
+    @keyframes heroFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+  `}</style>
 </section>
       <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
         <div className="mb-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
