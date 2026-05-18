@@ -436,29 +436,20 @@ export default function TapitasLeagueHomepage() {
         className="relative flex-shrink-0 flex items-center justify-center"
         style={{ animation: 'heroFloat 5s ease-in-out infinite' }}
       >
-        {/* glow atrás da imagem */}
-        <div
-  className="absolute rounded-full blur-3xl"
-  style={{
-    width: 'clamp(160px, 26vw, 460px)',
-    height: 'clamp(160px, 26vw, 460px)',
-    background: 'radial-gradient(ellipse, rgba(34,211,238,0.12) 0%, transparent 70%)',
-  }}
-/>
 
         <Image
-  src="/images/LogoFinalBlack.png"
-  alt="Tapitas League Logo"
-  width={520}
-  height={520}
-  style={{
-    width: 'clamp(180px, 26vw, 520px)',
-    height: 'clamp(180px, 26vw, 520px)',
-    objectFit: 'contain',
-    filter:
-      'drop-shadow(0 0 32px rgba(34,211,238,0.4)) drop-shadow(0 4px 16px rgba(0,0,0,0.5)) contrast(1.05)',
-  }}
-/>
+          src="/images/LogoFinalBlack.png"
+          alt="Tapitas League Logo"
+          width={720}
+          height={720}
+          style={{
+            width: 'clamp(180px, 26vw, 720px)',
+            height: 'clamp(180px, 26vw, 720px)',
+            objectFit: 'contain',
+            filter:
+              'drop-shadow(0 0 32px rgba(34,211,238,0.4)) drop-shadow(0 4px 16px rgba(0,0,0,0.5)) contrast(1.05)',
+          }}
+        />
       </div>
     </div>
   </div>
