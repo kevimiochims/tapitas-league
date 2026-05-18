@@ -1,7 +1,5 @@
 'use client'
 
-import Image from 'next/image'
-
 import { useEffect, useMemo, useState } from 'react'
 import {
   Shield,
@@ -118,19 +116,14 @@ export default function TapitasLeagueHomepage() {
 
     async function loadLeagueData() {
       try {
-        const SHEET_ID =
-          '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-
+        const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
         const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
-        const [teamsJson, gamesJson, h2hSortedJson] =
-          await Promise.all([
-            safeSheetFetch(`${BASE_URL}/TEAM_ALL_TIME`),
-            safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-            safeSheetFetch(
-              `${BASE_URL}/HEAD_TO_HEAD_SORTED`
-            ),
-          ])
+        const [teamsJson, gamesJson, h2hSortedJson] = await Promise.all([
+          safeSheetFetch(`${BASE_URL}/TEAM_ALL_TIME`),
+          safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
+          safeSheetFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
+        ])
 
         if (!mounted) {
           return
@@ -166,9 +159,7 @@ export default function TapitasLeagueHomepage() {
             game?.Season || game?.season || game?.Year || ''
           ).trim()
 
-          const team = String(
-            game?.Team || game?.team || ''
-          ).trim()
+          const team = String(game?.Team || game?.team || '').trim()
 
           const opponent = String(
             game?.Opponent || game?.opponent || ''
@@ -207,12 +198,8 @@ export default function TapitasLeagueHomepage() {
 
         const seasonRange =
           sortedSeasons.length > 0
-            ? `'${String(sortedSeasons[0]).slice(
-                2
-              )}-'${String(
-                sortedSeasons[
-                  sortedSeasons.length - 1
-                ]
+            ? `'${String(sortedSeasons[0]).slice(2)}-'${String(
+                sortedSeasons[sortedSeasons.length - 1]
               ).slice(2)}`
             : ''
 
@@ -221,31 +208,20 @@ export default function TapitasLeagueHomepage() {
           seasons: uniqueSeasons.size,
           seasonRange,
           games: uniqueGames.size,
-          highestScore:
-            Math.round(highestScore * 100) / 100,
+          highestScore: Math.round(highestScore * 100) / 100,
           highestScoreTeam,
         })
 
-        if (
-          Array.isArray(h2hSortedJson) &&
-          h2hSortedJson.length > 0
-        ) {
+        if (Array.isArray(h2hSortedJson) && h2hSortedJson.length > 0) {
           const rivalryRow =
             h2hSortedJson[
-              Math.floor(
-                Math.random() * h2hSortedJson.length
-              )
+              Math.floor(Math.random() * h2hSortedJson.length)
             ]
 
           const keys = Object.keys(rivalryRow || {})
 
-          const teamA = String(
-            rivalryRow[keys[0]] || ''
-          ).trim()
-
-          const teamB = String(
-            rivalryRow[keys[1]] || ''
-          ).trim()
+          const teamA = String(rivalryRow[keys[0]] || '').trim()
+          const teamB = String(rivalryRow[keys[1]] || '').trim()
 
           const lastMatch = String(
             rivalryRow['Last Match'] ||
@@ -285,20 +261,10 @@ export default function TapitasLeagueHomepage() {
                     0
                 )
               ),
-
             playoffRecord:
-              String(
-                parseNumber(
-                  rivalryRow['A PO_W'] || 0
-                )
-              ) +
+              String(parseNumber(rivalryRow['A PO_W'] || 0)) +
               '-' +
-              String(
-                parseNumber(
-                  rivalryRow['B PO_W'] || 0
-                )
-              ),
-
+              String(parseNumber(rivalryRow['B PO_W'] || 0)),
             avgMargin: String(
               rivalryRow['Avg Margin'] ||
                 rivalryRow['AVG_MARGIN'] ||
@@ -307,25 +273,16 @@ export default function TapitasLeagueHomepage() {
                 rivalryRow['Avg'] ||
                 '0.0'
             ),
-
             currentStreak:
               rivalryRow['Current Streak'] || '--',
-
             lastMeeting: {
               score: scoreMatch
                 ? `${scoreMatch[1]} vs ${scoreMatch[2]}`
                 : '-- vs --',
-
               meta:
                 weekMatch || yearMatch
-                  ? `W${
-                      weekMatch
-                        ? weekMatch[1]
-                        : '?'
-                    } • ${
-                      yearMatch
-                        ? yearMatch[1]
-                        : ''
+                  ? `W${weekMatch ? weekMatch[1] : '?'} • ${
+                      yearMatch ? yearMatch[1] : ''
                     }`
                   : '',
             },
@@ -354,115 +311,7 @@ export default function TapitasLeagueHomepage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white">
-
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-4">
-
-          <div className="flex items-center gap-4">
-
-            <Image
-              src="/images/LogoFinalBlack.png"
-              alt="Tapitas League Logo"
-              width={52}
-              height={52}
-              priority
-              className="rounded-xl"
-            />
-
-            <div>
-              <h1 className="text-xl font-black tracking-[0.18em] text-white">
-                TAPITAS LEAGUE
-              </h1>
-
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                Fantasy Basketball
-              </p>
-            </div>
-          </div>
-
-          <nav className="hidden items-center gap-8 md:flex">
-            {[
-              'Home',
-              'Standings',
-              'Rivalries',
-              'Records',
-              'History',
-            ].map((item) => (
-              <a
-                key={item}
-                href="#"
-                className="text-sm font-black uppercase tracking-[0.14em] text-slate-400 transition hover:text-cyan-300"
-              >
-                {item}
-              </a>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      {/* HERO */}
-      <section className="relative overflow-hidden border-b border-white/10">
-
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(6,182,212,0.18),transparent_40%)]" />
-
-        <div className="relative z-10 mx-auto flex max-w-[1680px] flex-col items-center gap-14 px-6 py-20 lg:flex-row lg:justify-between">
-
-          <div className="max-w-4xl">
-
-            <div className="mb-6 inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-5 py-2 text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
-              Established 2020
-            </div>
-
-            <h1 className="max-w-5xl text-5xl font-black leading-[0.9] tracking-[-0.06em] sm:text-6xl lg:text-8xl">
-
-              Home of the
-
-              <span className="mt-2 block text-cyan-300">
-                Greatest Rivalries
-              </span>
-
-              in Fantasy Basketball.
-            </h1>
-
-            <p className="mt-8 max-w-2xl text-lg leading-relaxed text-slate-400">
-              Records. Dynasties. Historic matchups.
-              Legendary performances. Welcome to the
-              official home of the Tapitas League
-              universe.
-            </p>
-
-            <div className="mt-10 flex flex-wrap gap-4">
-
-              <button className="rounded-2xl bg-cyan-400 px-7 py-4 text-sm font-black uppercase tracking-[0.15em] text-black transition hover:scale-105 hover:bg-cyan-300">
-                Explore Stats
-              </button>
-
-              <button className="rounded-2xl border border-white/10 bg-white/5 px-7 py-4 text-sm font-black uppercase tracking-[0.15em] text-white transition hover:bg-white/10">
-                View Rivalries
-              </button>
-            </div>
-          </div>
-
-          <div className="relative flex justify-center">
-
-            <div className="absolute h-[320px] w-[320px] rounded-full bg-cyan-400/20 blur-3xl" />
-
-            <Image
-              src="/images/LogoFinalBlack.png"
-              alt="Tapitas League Logo"
-              width={320}
-              height={320}
-              priority
-              className="relative z-10 drop-shadow-[0_0_60px_rgba(34,211,238,0.45)]"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* MAIN CONTENT */}
       <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
-
         <div className="mb-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
           {[
             [Shield, 'Franchises', leagueStats.franchises, 'Current'],
@@ -491,6 +340,223 @@ export default function TapitasLeagueHomepage() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="flex flex-col gap-8 xl:flex-row">
+          <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f_0%,#0b1220_45%,#170b14_100%)] xl:flex-[1.15]">
+            <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+              <div className="mb-8 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                    <Swords className="h-5 w-5 text-cyan-300" />
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+                      Rivalry Spotlight
+                    </div>
+
+                    <div className="text-sm text-slate-400">
+                      The league's fiercest matchup.
+                    </div>
+                  </div>
+                </div>
+
+                <button className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20">
+                  Open Matchup
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mb-8">
+                <h2 className="break-words text-[34px] font-black leading-[0.95] tracking-[-0.05em] sm:text-[42px] lg:text-[52px]">
+                  {rivalryData.teamA}
+                  <span className="mx-4 text-cyan-400">vs</span>
+                  {rivalryData.teamB}
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  [Target, 'Record', rivalryData.record],
+                  [Trophy, 'Playoffs', rivalryData.playoffRecord],
+                  [Activity, 'Avg Margin', `${rivalryData.avgMargin} ppg`],
+                  [Stars, `Last Meeting (${rivalryData.lastMeeting.meta})`, rivalryData.lastMeeting.score],
+                  [Radar, 'Current Streak', (() => {
+                    const rawStreak = String(
+                      rivalryData.currentStreak || '--'
+                    )
+
+                    const shortName = (teamName) => {
+                      const mappings = {
+                        'i am megatron': 'Megatron',
+                        'h-lera do mahl': 'H-Lera',
+                        'peytão da massa': 'Peytao',
+                        'peytao da massa': 'Peytao',
+                        'ocupa meu slot': 'Ocupa',
+                        'green bay pequers': 'Pequers',
+                        'settlers of rincão': 'Rincão',
+                        'settlers of rincao': 'Rincão',
+                        'old brady bunch': 'OldBrady',
+                        'moneyball fc': 'Moneyball',
+                        'patrolão': 'Patrolao',
+                        'patrolao': 'Patrolao',
+                        'how much is the fish': 'Howmuch',
+                      }
+
+                      const normalized = normalizeString(teamName)
+
+                      if (mappings[normalized]) {
+                        return mappings[normalized]
+                      }
+
+                      const words = String(teamName).split(' ')
+                      return words[0]
+                    }
+
+                    const formatted = rawStreak
+                      .replace(rivalryData.teamA, shortName(rivalryData.teamA))
+                      .replace(rivalryData.teamB, shortName(rivalryData.teamB))
+
+                    const parts = formatted.split(' ')
+                    const streakValue = parts.pop()
+                    const teamName = parts.join(' ')
+
+                    return `${teamName} ${streakValue}`
+                  })()],
+                  [Flame, 'Rivalry Heat', (() => {
+                    const parts = String(rivalryData.record)
+                      .split('-')
+                      .map((value) => Number(value) || 0)
+
+                    const winsA = parts[0] || 0
+                    const winsB = parts[1] || 0
+
+                    const totalGames = winsA + winsB
+                    const recordGap = Math.abs(winsA - winsB)
+                    const margin = Math.abs(
+                      parseFloat(rivalryData.avgMargin) || 0
+                    )
+
+                    let rivalryScore = 0
+
+                    // equilíbrio do record
+                    if (recordGap === 0) {
+                      rivalryScore += 7
+                    } else if (recordGap === 1) {
+                      rivalryScore += 5
+                    } else if (recordGap === 2) {
+                      rivalryScore += 3
+                    } else if (recordGap === 3) {
+                      rivalryScore += 1
+                    } else {
+                      rivalryScore -= 3
+                    }
+
+                    // quantidade de jogos
+                    if (totalGames >= 14) {
+                      rivalryScore += 5
+                    } else if (totalGames >= 10) {
+                      rivalryScore += 4
+                    } else if (totalGames >= 6) {
+                      rivalryScore += 2
+                    }
+
+                    // margem média apertada
+                    if (margin <= 3) {
+                      rivalryScore += 5
+                    } else if (margin <= 7) {
+                      rivalryScore += 3
+                    } else if (margin <= 12) {
+                      rivalryScore += 1
+                    }
+
+                    if (rivalryScore >= 13) {
+                      return 'Legendary'
+                    }
+
+                    if (rivalryScore >= 10) {
+                      return 'Elite'
+                    }
+
+                    if (rivalryScore >= 7) {
+                      return 'High'
+                    }
+
+                    if (rivalryScore >= 4) {
+                      return 'Medium'
+                    }
+
+                    return 'Low'
+                  })()],
+                ].map(([Icon, label, value]) => (
+                  <div
+                    key={label}
+                    className="rounded-[26px] border border-white/10 bg-white/[0.04] p-5"
+                  >
+                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                      <Icon className="h-4 w-4 text-cyan-300" />
+                    </div>
+
+                    <div className="mb-3 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 lg:text-[11px]">
+                      {label}
+                    </div>
+
+                    <div className="text-2xl font-black leading-none xl:text-[30px] flex flex-wrap items-center">
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
+            <div className="flex items-center justify-between border-b border-white/5 p-8">
+              <div>
+                <div className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+                  Franchise Leaders
+                </div>
+
+                <h3 className="text-4xl font-black tracking-tight">
+                  League Rankings
+                </h3>
+              </div>
+            </div>
+
+            <div className="space-y-4 p-6">
+              {standings.map((team, index) => (
+                <div
+                  key={`${team.team}-${index}`}
+                  className="grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[28px] border border-white/5 bg-white/[0.03] px-6 py-5"
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-300">
+                    {index + 1}
+                  </div>
+
+                  <div>
+                    <div className="mb-1 truncate text-2xl font-black">
+                      {team.team}
+                    </div>
+
+                    <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                      {team.wins} Wins • {team.losses} Losses
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="mb-2 text-4xl font-black leading-none text-cyan-300">
+                      {Math.round(team.pf)}
+                    </div>
+
+                    <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                      Points For
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     </main>
