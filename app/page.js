@@ -440,11 +440,11 @@ export default function TapitasLeagueHomepage() {
         <Image
           src="/images/LogoFinalBlack.png"
           alt="Tapitas League Logo"
-          width={720}
-          height={720}
+          width={1000}
+          height={1000}
           style={{
-            width: 'clamp(180px, 26vw, 720px)',
-            height: 'clamp(180px, 26vw, 720px)',
+            width: 'clamp(180px, 26vw, 1000px)',
+            height: 'clamp(180px, 26vw, 1000px)',
             objectFit: 'contain',
             filter:
               'drop-shadow(0 0 32px rgba(34,211,238,0.4)) drop-shadow(0 4px 16px rgba(0,0,0,0.5)) contrast(1.05)',
