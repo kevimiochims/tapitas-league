@@ -367,50 +367,50 @@ export default function TapitasLeagueHomepage() {
           </span>
         </div>
 
-        {/* título Bebas Neue */}
-        <h1
-          className="mb-5 leading-[0.88]"
-          style={{
-            fontFamily: '"Bebas Neue", sans-serif',
-            fontSize: 'clamp(64px, 9vw, 120px)',
-            letterSpacing: '0.02em',
-          }}
-        >
-          <span
-            style={{
-              display: 'block',
-              background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            THE HOME OF
-          </span>
-          <span
-            style={{
-              display: 'block',
-              background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
-            }}
-          >
-            TAPITAS
-          </span>
-          <span
-            style={{
-              display: 'block',
-              background: 'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            HISTORY
-          </span>
-        </h1>
+       {/* título Bebas Neue */}
+<h1
+  className="mb-5 leading-[0.88]"
+  style={{
+    fontFamily: '"Bebas Neue", sans-serif',
+    fontSize: 'clamp(64px, 9vw, 120px)',
+    letterSpacing: '0.02em',
+  }}
+>
+  <span
+    style={{
+      display: 'block',
+      background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+    }}
+  >
+    THE HOME OF
+  </span>
+  <span
+    style={{
+      display: 'block',
+      background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 40%, #0891b2 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+      filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
+    }}
+  >
+    TAPITAS{' '}
+    <span
+      style={{
+        background: 'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        filter: 'none',
+      }}
+    >
+      HISTORY
+    </span>
+  </span>
+</h1>
 
         {/* subtítulo */}
         <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-400 md:text-lg">
@@ -438,27 +438,27 @@ export default function TapitasLeagueHomepage() {
       >
         {/* glow atrás da imagem */}
         <div
-          className="absolute rounded-full blur-3xl"
-          style={{
-            width: 'clamp(160px, 22vw, 340px)',
-            height: 'clamp(160px, 22vw, 340px)',
-            background: 'radial-gradient(ellipse, rgba(34,211,238,0.12) 0%, transparent 70%)',
-          }}
-        />
+  className="absolute rounded-full blur-3xl"
+  style={{
+    width: 'clamp(160px, 26vw, 460px)',
+    height: 'clamp(160px, 26vw, 460px)',
+    background: 'radial-gradient(ellipse, rgba(34,211,238,0.12) 0%, transparent 70%)',
+  }}
+/>
 
         <Image
-          src="/images/LogoFinalBlack.png"
-          alt="Tapitas League Logo"
-          width={400}
-          height={400}
-          style={{
-            width: 'clamp(180px, 26vw, 420px)',
-            height: 'clamp(180px, 26vw, 420px)',
-            objectFit: 'contain',
-            filter:
-              'drop-shadow(0 0 32px rgba(34,211,238,0.4)) drop-shadow(0 4px 16px rgba(0,0,0,0.5)) contrast(1.05)',
-          }}
-        />
+  src="/images/LogoFinalBlack.png"
+  alt="Tapitas League Logo"
+  width={520}
+  height={520}
+  style={{
+    width: 'clamp(180px, 26vw, 520px)',
+    height: 'clamp(180px, 26vw, 520px)',
+    objectFit: 'contain',
+    filter:
+      'drop-shadow(0 0 32px rgba(34,211,238,0.4)) drop-shadow(0 4px 16px rgba(0,0,0,0.5)) contrast(1.05)',
+  }}
+/>
       </div>
     </div>
   </div>
