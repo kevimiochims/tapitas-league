@@ -132,7 +132,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
         <span
           className={`flex-shrink-0 font-black leading-none transition-all ${
-            isOpen ? 'text-[42px] text-white' : 'text-[22px] text-slate-400'
+            isOpen ? 'text-[42px] text-white' : 'text-[28px] text-slate-400'
           }`}
           style={{ fontFamily: '"Bebas Neue", sans-serif' }}
         >
@@ -142,12 +142,12 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         <div className="min-w-0 flex-1">
           <div
             className={`truncate font-black text-white transition-all ${
-              isOpen ? 'text-xl' : 'text-sm'
+              isOpen ? 'text-xl' : 'text-base'
             }`}
           >
             {champ.team}
           </div>
-          <div className="mt-0.5 text-xs text-slate-500">
+          <div className="mt-1 text-xs text-slate-500">
             {champ.wins}–{champ.losses} reg season
             {champ.playoffWins > 0 || champ.playoffLosses > 0
               ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
@@ -157,7 +157,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         </div>
 
         {index === 0 && !isOpen && (
-          <span className="flex-shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+          <span className="flex-shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-300">
             Reigning
           </span>
         )}
@@ -220,10 +220,10 @@ function ChampionsWall({ champions }) {
               <Trophy className="h-5 w-5 text-cyan-300" />
             </div>
             <div>
-              <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+              <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
                 Champions Wall
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-base text-slate-400">
                 Every title. Every campaign.
               </div>
             </div>
@@ -766,11 +766,11 @@ useEffect(() => {
 
 
                   <div>
-                    <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+                    <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
                       Rivalry Spotlight
                     </div>
 
-                    <div className="text-sm text-slate-400">
+                    <div className="text-base text-slate-400">
                       The league's fiercest matchup.
                     </div>
                   </div>
