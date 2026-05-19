@@ -29,10 +29,6 @@ const FALLBACK_TEAMS = [
     pf: 2088,
   },
 ]
-// Adicione este estado junto aos outros no componente principal
-const [h2hData, setH2hData] = useState([])
-const [selectedTeamA, setSelectedTeamA] = useState('')
-const [selectedTeamB, setSelectedTeamB] = useState('')
 
 
 function normalizeString(value) {
@@ -266,6 +262,9 @@ function ChampionsWall({ champions }) {
 
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
+  const [h2hData, setH2hData] = useState([])
+  const [selectedTeamA, setSelectedTeamA] = useState('')
+  const [selectedTeamB, setSelectedTeamB] = useState('')
 
   const [leagueStats, setLeagueStats] = useState({
     franchises: 0,
