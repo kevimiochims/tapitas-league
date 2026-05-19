@@ -270,7 +270,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 }
 
 function ChampionsWall({ champions }) {
-  const [openSet, setOpenSet] = useState(new Set())
+  const [openSet, setOpenSet] = useState(new Set([0, 1, 2]))
 
   const toggle = (index) => {
     setOpenSet((prev) => {
