@@ -207,10 +207,10 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
   )
 }
 function ChampionsWall({ champions }) {
-  const [openIndex, setOpenIndex] = useState(0)
+  const [openIndex, setOpenIndex] = useState(-1)
 
   return (
-    <section className="mt-8">
+    <section className="mt-8 mb-8">
       <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
         {/* Header */}
