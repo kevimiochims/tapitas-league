@@ -352,6 +352,29 @@ function getTeamAvatar(name) {
   return TEAM_AVATARS[normalizeString(name)] || null
 }
 
+function buildSeasonRanges(years) {
+  if (!years || years.length === 0) return ''
+
+  const sorted = [...years].sort((a, b) => a - b)
+  const ranges = []
+  let start = sorted[0]
+  let end = sorted[0]
+
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === end + 1) {
+      end = sorted[i]
+    } else {
+      ranges.push(start === end ? `'${String(start).slice(2)}` : `'${String(start).slice(2)}-'${String(end).slice(2)}`)
+      start = sorted[i]
+      end = sorted[i]
+    }
+  }
+
+  ranges.push(start === end ? `'${String(start).slice(2)}` : `'${String(start).slice(2)}-'${String(end).slice(2)}`)
+
+  return ranges.join(' • ')
+}
+
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
@@ -908,9 +931,7 @@ const selectedRivalry = useMemo(() => {
               className="overflow-x-auto whitespace-nowrap pb-1 text-sm font-bold text-cyan-300"
               style={{ scrollbarWidth: 'none' }}
             >
-              {leagueStats.allSeasons && leagueStats.allSeasons.length > 0
-                ? leagueStats.allSeasons.map((y) => `'${String(y).slice(2)}`).join(' • ')
-                : leagueStats.seasonRange}
+              {buildSeasonRanges(leagueStats.allSeasons)}
             </div>
           </div>
 
@@ -1000,38 +1021,12 @@ const selectedRivalry = useMemo(() => {
             {/* Stats do confronto */}
             {selectedRivalry && (
               <>
-                {/* Título com avatares */}
-                <div className="mb-6 flex flex-wrap items-center gap-3">
-                  {getTeamAvatar(selectedRivalry.teamA) && (
-                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-white/10">
-                      <Image
-                        src={getTeamAvatar(selectedRivalry.teamA)}
-                        alt={selectedRivalry.teamA}
-                        width={48}
-                        height={48}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
-
-                  <h2 className="text-[22px] font-black leading-tight tracking-[-0.04em] sm:text-[28px] lg:text-[34px]">
-                    {selectedRivalry.teamA}
-                    <span className="mx-3 text-cyan-400">vs</span>
-                    {selectedRivalry.teamB}
-                  </h2>
-
-                  {getTeamAvatar(selectedRivalry.teamB) && (
-                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-white/10">
-                      <Image
-                        src={getTeamAvatar(selectedRivalry.teamB)}
-                        alt={selectedRivalry.teamB}
-                        width={48}
-                        height={48}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
+                {/* Título normal */}
+                <h2 className="mb-6 break-words text-[28px] font-black leading-[0.95] tracking-[-0.05em] sm:text-[36px] lg:text-[44px]">
+                  {selectedRivalry.teamA}
+                  <span className="mx-3 text-cyan-400">vs</span>
+                  {selectedRivalry.teamB}
+                </h2>
 
                 <div className="grid grid-cols-2 gap-4">
                   {[
