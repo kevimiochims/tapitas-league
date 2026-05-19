@@ -118,7 +118,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
     <div
       className={`overflow-hidden rounded-[28px] border transition-all duration-200 ${
         isOpen
-          ? 'border-cyan-400/30 md:col-span-2 xl:col-span-3'
+          ? 'border-cyan-400/30'
           : 'border-white/5 hover:border-white/10'
       } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
@@ -158,7 +158,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         </div>
 
         {index === 0 && !isOpen && (
-          <span className="hidden flex-shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300 sm:inline-block">
+          <span className="flex-shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">
             Reigning
           </span>
         )}
@@ -173,7 +173,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
       {/* Corpo expandido */}
       {isOpen && (
         <div className="border-t border-white/5 px-6 pb-6 pt-5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
                 Reg Season
@@ -184,7 +184,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
             </div>
 
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500 sm:opacity-0">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500 opacity-0">
                 &nbsp;
               </div>
               {regCol2.map((g, i) => (
@@ -237,7 +237,7 @@ function ChampionsWall({ champions }) {
         </div>
 
         {/* Grid responsivo: 3 cols → 2 cols → 1 col */}
-        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
           {champions.map((champ, index) => (
             <ChampionCard
               key={champ.season}
