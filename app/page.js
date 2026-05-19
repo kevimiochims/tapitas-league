@@ -6,18 +6,7 @@ import {
   Swords, Stars, Activity, Radar, Target,
 } from 'lucide-react'
 import { useEffect, useMemo, useState, useRef } from 'react'
-import {
-  Shield,
-  Calendar,
-  Trophy,
-  Flame,
-  ChevronRight,
-  Swords,
-  Stars,
-  Activity,
-  Radar,
-  Target,
-} from 'lucide-react'
+
 
 const FALLBACK_TEAMS = [
   {
