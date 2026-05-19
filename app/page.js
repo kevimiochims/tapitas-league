@@ -210,11 +210,11 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
             {champ.team}
           </div>
           <div className="mt-1 text-xs text-slate-500">
-            {champ.wins}–{champ.losses} reg season
-            {champ.playoffWins > 0 || champ.playoffLosses > 0
-              ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
-              : ''}
-            {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
+            {champ.wins}–{champ.losses} overall
+              {champ.playoffWins > 0 || champ.playoffLosses > 0
+                ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
+                : ''}
+              {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
           </div>
         </div>
 
@@ -371,8 +371,8 @@ function buildSeasonRanges(years) {
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
-  const [selectedTeamA, setSelectedTeamA] = useState('')
-  const [selectedTeamB, setSelectedTeamB] = useState('')
+  const [selectedTeamA, setSelectedTeamA] = useState('Peytao da Massa')
+  const [selectedTeamB, setSelectedTeamB] = useState('Moneyball')
   const [standingsPage, setStandingsPage] = useState(0)
 
  const [leagueStats, setLeagueStats] = useState({
@@ -622,7 +622,13 @@ useEffect(() => {
         ? rawData
         : FALLBACK_TEAMS
 
-    return base.map(normalizeTeam) // removido o .slice(0, 5)
+    return base
+      .map(normalizeTeam)
+      .sort((a, b) => {
+        if (b.wins !== a.wins) return b.wins - a.wins
+        if (a.losses !== b.losses) return a.losses - b.losses
+        return b.pf - a.pf
+      })
   }, [rawData])
 
   // Lista única de times extraída do h2h
