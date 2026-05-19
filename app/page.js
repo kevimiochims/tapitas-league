@@ -1,6 +1,10 @@
 'use client'
 
 import Image from 'next/image'
+import {
+  Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
+  Swords, Stars, Activity, Radar, Target,
+} from 'lucide-react'
 import { useEffect, useMemo, useState, useRef } from 'react'
 import {
   Shield,
@@ -380,6 +384,7 @@ export default function TapitasLeagueHomepage() {
   const [h2hData, setH2hData] = useState([])
   const [selectedTeamA, setSelectedTeamA] = useState('')
   const [selectedTeamB, setSelectedTeamB] = useState('')
+  const [standingsPage, setStandingsPage] = useState(0)
 
  const [leagueStats, setLeagueStats] = useState({
   franchises: 0,
@@ -628,7 +633,7 @@ useEffect(() => {
         ? rawData
         : FALLBACK_TEAMS
 
-    return base.slice(0, 5).map(normalizeTeam)
+    return base.map(normalizeTeam) // removido o .slice(0, 5)
   }, [rawData])
 
   // Lista única de times extraída do h2h
@@ -1059,52 +1064,81 @@ const selectedRivalry = useMemo(() => {
           </div>
         </div>
 
-          <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
-            <div className="flex items-center justify-between border-b border-white/5 p-8">
-              <div>
-                <div className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
-                  Franchise Leaders
-                </div>
+        {/* Franchise Leaders */}
+<div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
+  
+  {/* Header */}
+  <div className="flex items-center justify-between border-b border-white/5 p-8">
+    <div>
+      <div className="mb-3 text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+        Franchise Leaders
+      </div>
+      <h3 className="text-4xl font-black tracking-tight">
+        League Rankings
+      </h3>
+    </div>
 
-                <h3 className="text-4xl font-black tracking-tight">
-                  League Rankings
-                </h3>
+    {/* Setas de paginação */}
+    {standings.length > 5 && (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
+          disabled={standingsPage === 0}
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="text-xs font-black text-slate-500">
+          {standingsPage + 1}/{Math.ceil(standings.length / 5)}
+        </span>
+        <button
+          onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
+          disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    )}
+  </div>
+
+  {/* Lista */}
+  <div className="space-y-4 p-6">
+    {standings
+      .slice(standingsPage * 5, standingsPage * 5 + 5)
+      .map((team, index) => {
+        const globalIndex = standingsPage * 5 + index
+        return (
+          <div
+            key={`${team.team}-${globalIndex}`}
+            className="grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[28px] border border-white/5 bg-white/[0.03] px-6 py-5"
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-300">
+              {globalIndex + 1}
+            </div>
+
+            <div>
+              <div className="mb-1 truncate text-2xl font-black">
+                {team.team}
+              </div>
+              <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                {team.losses} Losses • {Math.round(team.pf)} Pts
               </div>
             </div>
 
-            <div className="space-y-4 p-6">
-              {standings.map((team, index) => (
-                <div
-                  key={`${team.team}-${index}`}
-                  className="grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[28px] border border-white/5 bg-white/[0.03] px-6 py-5"
-                >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-300">
-                    {index + 1}
-                  </div>
-
-                  <div>
-                    <div className="mb-1 truncate text-2xl font-black">
-                      {team.team}
-                    </div>
-
-                    <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
-                      {team.wins} Wins • {team.losses} Losses
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="mb-2 text-4xl font-black leading-none text-cyan-300">
-                      {Math.round(team.pf)}
-                    </div>
-
-                    <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                      Points For
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="text-right">
+              <div className="mb-2 text-4xl font-black leading-none text-cyan-300">
+                {team.wins}
+              </div>
+              <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                Wins
+              </div>
             </div>
           </div>
+        )
+      })}
+  </div>
+</div>
         </div>
       </section>
     </main>
