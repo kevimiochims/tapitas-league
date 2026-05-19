@@ -87,6 +87,178 @@ async function safeSheetFetch(url) {
   }
 }
 
+function GameRow({ game }) {
+  return (
+    <div className="flex flex-col border-b border-white/5 py-[5px] last:border-0">
+      <div className="flex items-center gap-1">
+        <span
+          className={`text-[11px] font-black ${
+            game.result === 'W' ? 'text-emerald-400' : 'text-red-400'
+          }`}
+        >
+          {game.result}
+        </span>
+        <span className="truncate text-[11px] text-slate-300">
+          &nbsp;vs {game.opp}
+        </span>
+      </div>
+      <span className="text-[10px] text-slate-500">
+        {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
+      </span>
+    </div>
+  )
+}
+
+function ChampionCard({ champ, index, isOpen, onToggle }) {
+  const half = Math.ceil(champ.regGames.length / 2)
+  const regCol1 = champ.regGames.slice(0, half)
+  const regCol2 = champ.regGames.slice(half)
+
+  return (
+    <div
+      className={`overflow-hidden rounded-[28px] border transition-all duration-200 ${
+        isOpen
+          ? 'border-cyan-400/30'
+          : 'border-white/5 hover:border-white/10'
+      } bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]`}
+    >
+      {/* Header clicável */}
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center gap-4 px-6 py-5 text-left transition-all"
+      >
+        {/* Troféu — só aparece quando fechado */}
+        {!isOpen && (
+          <Trophy
+            className="h-5 w-5 flex-shrink-0 text-cyan-400"
+          />
+        )}
+
+        {/* Ano */}
+        <span
+          className={`flex-shrink-0 font-black leading-none transition-all ${
+            isOpen
+              ? 'font-["Bebas_Neue",sans-serif] text-[42px] text-white'
+              : 'text-[22px] text-slate-400'
+          }`}
+          style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+        >
+          {champ.season}
+        </span>
+
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <div
+            className={`truncate font-black text-white transition-all ${
+              isOpen ? 'text-xl' : 'text-sm'
+            }`}
+          >
+            {champ.team}
+          </div>
+          <div className="mt-0.5 text-xs text-slate-500">
+            {champ.wins}–{champ.losses} reg season
+            {champ.playoffWins > 0 || champ.playoffLosses > 0
+              ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
+              : ''}
+            {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
+          </div>
+        </div>
+
+        {index === 0 && !isOpen && (
+          <span className="flex-shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+            Reigning
+          </span>
+        )}
+
+        <ChevronRight
+          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
+            isOpen ? 'rotate-90' : ''
+          }`}
+        />
+      </button>
+
+      {/* Corpo expandido */}
+      {isOpen && (
+        <div className="border-t border-white/5 px-6 pb-6 pt-5">
+          <div className="grid grid-cols-3 gap-4">
+            {/* Coluna 1 — Reg Season primeira metade */}
+            <div>
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
+                Reg Season
+              </div>
+              {regCol1.map((g, i) => (
+                <GameRow key={i} game={g} />
+              ))}
+            </div>
+
+            {/* Coluna 2 — Reg Season segunda metade */}
+            <div>
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
+                &nbsp;
+              </div>
+              {regCol2.map((g, i) => (
+                <GameRow key={i} game={g} />
+              ))}
+            </div>
+
+            {/* Coluna 3 — Playoffs */}
+            <div>
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-400">
+                Playoffs
+              </div>
+              {champ.playoffGames.length > 0 ? (
+                champ.playoffGames.map((g, i) => (
+                  <GameRow key={i} game={g} />
+                ))
+              ) : (
+                <div className="text-[11px] text-slate-600">
+                  Sem dados
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ChampionsWall({ champions }) {
+  const [openIndex, setOpenIndex] = useState(0)
+
+  return (
+    <section className="mx-auto mt-8 max-w-[1680px]">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+          <Trophy className="h-5 w-5 text-cyan-300" />
+        </div>
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+            Champions Wall
+          </div>
+          <div className="text-sm text-slate-400">
+            Every title. Every campaign.
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {champions.map((champ, index) => (
+          <ChampionCard
+            key={champ.season}
+            champ={champ}
+            index={index}
+            isOpen={openIndex === index}
+            onToggle={() =>
+              setOpenIndex(openIndex === index ? -1 : index)
+            }
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
 
@@ -111,6 +283,102 @@ export default function TapitasLeagueHomepage() {
       meta: '',
     },
   })
+
+  // ===== CHAMPIONS WALL =====
+// Adicione este useEffect e estado junto aos outros no componente principal
+
+const [championsData, setChampionsData] = useState([])
+
+useEffect(() => {
+  let mounted = true
+
+  async function loadChampionsData() {
+    try {
+      const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
+      const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+
+      const [historyJson, gamesJson] = await Promise.all([
+        safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+        safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
+      ])
+
+      if (!mounted) return
+
+      // Filtra apenas os campeões de cada temporada
+      const champions = historyJson
+        .filter((row) => {
+          const isChamp = String(
+            row?.Champion || row?.champion || ''
+          ).trim().toUpperCase()
+          return isChamp === 'TRUE'
+        })
+        .map((row) => ({
+          season: String(row?.Season || row?.season || '').trim(),
+          team: String(row?.Team || row?.team || '').trim(),
+          wins: parseNumber(row?.Wins || row?.wins || row?.W || 0),
+          losses: parseNumber(row?.Losses || row?.losses || row?.L || 0),
+          pf: parseNumber(row?.PF || row?.Points || row?.points_for || 0),
+          playoffWins: parseNumber(row?.PlayoffWins || row?.playoff_wins || row?.POW || 0),
+          playoffLosses: parseNumber(row?.PlayoffLosses || row?.playoff_losses || row?.POL || 0),
+          playoffPF: parseNumber(row?.PlayoffPF || row?.playoff_pf || row?.POPF || 0),
+        }))
+        .sort((a, b) => Number(b.season) - Number(a.season))
+
+      // Para cada campeão, busca os jogos daquela temporada
+      const championsWithGames = champions.map((champ) => {
+        const seasonGames = gamesJson.filter((game) => {
+          const season = String(game?.Season || game?.season || '').trim()
+          const team = String(game?.Team || game?.team || '').trim()
+          const stage = String(game?.gameStage || game?.GameStage || '').trim()
+          return (
+            season === champ.season &&
+            normalizeString(team) === normalizeString(champ.team) &&
+            (stage === 'Reg Season' || stage === 'Playoffs')
+          )
+        })
+
+        // Ordena por semana cronologicamente
+        const sorted = seasonGames.sort((a, b) => {
+          const wA = parseNumber(String(a?.Week || a?.week || '0').replace(/\D/g, ''))
+          const wB = parseNumber(String(b?.Week || b?.week || '0').replace(/\D/g, ''))
+          return wA - wB
+        })
+
+        const regGames = sorted.filter((g) => {
+          const stage = String(g?.gameStage || g?.GameStage || '').trim()
+          return stage === 'Reg Season'
+        })
+
+        const playoffGames = sorted.filter((g) => {
+          const stage = String(g?.gameStage || g?.GameStage || '').trim()
+          return stage === 'Playoffs'
+        })
+
+        const mapGame = (game) => {
+          const score = parseNumber(game?.Score || game?.score || game?.PF || 0)
+          const oppScore = parseNumber(game?.OpponentScore || game?.opponent_score || game?.OppPF || game?.PA || 0)
+          const opp = String(game?.Opponent || game?.opponent || '').trim()
+          const week = String(game?.Week || game?.week || '').trim()
+          const result = score > oppScore ? 'W' : 'L'
+          return { result, opp, score, oppScore, week }
+        }
+
+        return {
+          ...champ,
+          regGames: regGames.map(mapGame),
+          playoffGames: playoffGames.map(mapGame),
+        }
+      })
+
+      if (mounted) setChampionsData(championsWithGames)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  loadChampionsData()
+  return () => { mounted = false }
+}, [])
 
   useEffect(() => {
     let mounted = true
@@ -500,6 +768,12 @@ export default function TapitasLeagueHomepage() {
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
                     <Swords className="h-5 w-5 text-cyan-300" />
                   </div>
+
+{/* ===== CHAMPIONS WALL ===== */}
+{championsData.length > 0 && (
+  <ChampionsWall champions={championsData} />
+)}
+
 
                   <div>
                     <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
