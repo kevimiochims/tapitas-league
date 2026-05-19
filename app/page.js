@@ -328,20 +328,45 @@ function ChampionsWall({ champions }) {
   )
 }
 
+const TEAM_AVATARS = {
+  'peytão da massa':       '/images/peytao.jpg',
+  'peytao da massa':       '/images/peytao.jpg',
+  'moneyball fc':          '/images/Moneyball.png',
+  'old brady bunch':       '/images/oldbrady.png',
+  'i am megatron':         '/images/megatron.png',
+  'ocupa meu slot':        '/images/ocupa.jpg',
+  'ocupa e resiste':       '/images/ocupa.jpg',
+  'green bay pequers':     '/images/pequers.png',
+  'pequers verde':         '/images/pequers.png',
+  'patrolão':              '/images/patrolao.png',
+  'patrolao':              '/images/patrolao.png',
+  'patrolao squad':        '/images/patrolao.png',
+  'how much is the fish':  '/images/howmuch.jpg',
+  'settlers of rincão':    '/images/rincao.png',
+  'settlers of rincao':    '/images/rincao.png',
+  'rincao settlers':       '/images/rincao.png',
+  'h-lera do mahl':        '/images/HLera.jpg',
+}
+
+function getTeamAvatar(name) {
+  return TEAM_AVATARS[normalizeString(name)] || null
+}
+
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
   const [selectedTeamA, setSelectedTeamA] = useState('')
   const [selectedTeamB, setSelectedTeamB] = useState('')
 
-  const [leagueStats, setLeagueStats] = useState({
-    franchises: 0,
-    seasons: 0,
-    seasonRange: '',
-    games: 0,
-    highestScore: 0,
-    highestScoreTeam: '',
-  })
+ const [leagueStats, setLeagueStats] = useState({
+  franchises: 0,
+  seasons: 0,
+  seasonRange: '',
+  allSeasons: [],  // <-- adicione
+  games: 0,
+  highestScore: 0,
+  highestScoreTeam: '',
+})
 
   const [rivalryData, setRivalryData] = useState({
     teamA: 'Peytão da Massa',
@@ -545,13 +570,19 @@ useEffect(() => {
             : ''
 
         setLeagueStats({
-          franchises: uniqueFranchises.size,
-          seasons: uniqueSeasons.size,
-          seasonRange,
-          games: uniqueGames.size,
-          highestScore: Math.round(highestScore * 100) / 100,
-          highestScoreTeam,
-        })
+        franchises: uniqueFranchises.size,
+        seasons: uniqueSeasons.size,
+        seasonRange:
+          sortedSeasons.length > 0
+            ? `'${String(sortedSeasons[0]).slice(2)}-'${String(
+                sortedSeasons[sortedSeasons.length - 1]
+              ).slice(2)}`
+            : '',
+        allSeasons: sortedSeasons,
+        games: uniqueGames.size,
+        highestScore: Math.round(highestScore * 100) / 100,
+        highestScoreTeam,
+      })
 
         if (Array.isArray(h2hSortedJson) && h2hSortedJson.length > 0) {
           setH2hData(h2hSortedJson)
@@ -856,33 +887,52 @@ const selectedRivalry = useMemo(() => {
 
       <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
         <div className="mb-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
-          {[
-            [Shield, 'Franchises', leagueStats.franchises, 'Current'],
-            [Calendar, 'Seasons', leagueStats.seasons, leagueStats.seasonRange],
-            [Radar, 'Games', leagueStats.games, 'All-Time'],
-            [Flame, 'Highest Score', leagueStats.highestScore, leagueStats.highestScoreTeam],
-          ].map(([Icon, label, value, sublabel]) => (
-            <div
-              key={label}
-              className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6"
-            >
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                <Icon className="h-5 w-5 text-cyan-300" />
-              </div>
-
-              <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                {label}
-              </div>
-
-              <div className="mb-3 text-4xl font-black lg:text-5xl">
-                {value}
-              </div>
-
-              <div className="truncate text-sm font-bold text-cyan-300">
-                {sublabel}
-              </div>
+          {/* Franchises */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Shield className="h-5 w-5 text-cyan-300" />
             </div>
-          ))}
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Franchises</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.franchises}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">Current</div>
+          </div>
+
+          {/* Seasons — com scroll */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Calendar className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Seasons</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.seasons}</div>
+            <div
+              className="overflow-x-auto whitespace-nowrap pb-1 text-sm font-bold text-cyan-300"
+              style={{ scrollbarWidth: 'none' }}
+            >
+              {leagueStats.allSeasons && leagueStats.allSeasons.length > 0
+                ? leagueStats.allSeasons.map((y) => `'${String(y).slice(2)}`).join(' • ')
+                : leagueStats.seasonRange}
+            </div>
+          </div>
+
+          {/* Games */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Radar className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Games</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.games}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">All-Time</div>
+          </div>
+
+          {/* Highest Score */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Flame className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Highest Score</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.highestScore}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">{leagueStats.highestScoreTeam}</div>
+          </div>
         </div>
 
         {/* ===== CHAMPIONS WALL ===== */}
@@ -914,28 +964,28 @@ const selectedRivalry = useMemo(() => {
 
             {/* Seletores */}
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <TeamSelect
-                value={selectedTeamA}
-                onChange={(val) => {
-                  setSelectedTeamA(val)
-                  setSelectedTeamB('')
-                }}
-                options={allTeams}
-                placeholder="Select a team..."
-              />
+          <TeamSelect
+            value={selectedTeamA}
+            onChange={(val) => {
+              setSelectedTeamA(val)
+              setSelectedTeamB('')
+            }}
+            options={allTeams}
+            placeholder="Select a team..."
+          />
 
-              <div className="flex-shrink-0 text-center text-lg font-black text-cyan-400">
-                vs
-              </div>
+          <div className="flex-shrink-0 text-center text-lg font-black text-cyan-400">
+            vs
+          </div>
 
-              <TeamSelect
-                value={selectedTeamB}
-                onChange={setSelectedTeamB}
-                options={teamsForB}
-                placeholder="Select opponent..."
-                disabled={!selectedTeamA}
-              />
-            </div>
+          <TeamSelect
+            value={selectedTeamB}
+            onChange={setSelectedTeamB}
+            options={teamsForB}
+            placeholder="Select opponent..."
+            disabled={!selectedTeamA}
+          />
+        </div>
 
             {/* Estado vazio */}
             {!selectedRivalry && (
@@ -950,20 +1000,47 @@ const selectedRivalry = useMemo(() => {
             {/* Stats do confronto */}
             {selectedRivalry && (
               <>
-                <h2 className="mb-6 break-words text-[28px] font-black leading-[0.95] tracking-[-0.05em] sm:text-[36px] lg:text-[44px]">
-                  {selectedRivalry.teamA}
-                  <span className="mx-3 text-cyan-400">vs</span>
-                  {selectedRivalry.teamB}
-                </h2>
+                {/* Título com avatares */}
+                <div className="mb-6 flex flex-wrap items-center gap-3">
+                  {getTeamAvatar(selectedRivalry.teamA) && (
+                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-white/10">
+                      <Image
+                        src={getTeamAvatar(selectedRivalry.teamA)}
+                        alt={selectedRivalry.teamA}
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <h2 className="text-[22px] font-black leading-tight tracking-[-0.04em] sm:text-[28px] lg:text-[34px]">
+                    {selectedRivalry.teamA}
+                    <span className="mx-3 text-cyan-400">vs</span>
+                    {selectedRivalry.teamB}
+                  </h2>
+
+                  {getTeamAvatar(selectedRivalry.teamB) && (
+                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-white/10">
+                      <Image
+                        src={getTeamAvatar(selectedRivalry.teamB)}
+                        alt={selectedRivalry.teamB}
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    [Target,   'Record',                         selectedRivalry.record],
-                    [Trophy,   'Playoffs',                       selectedRivalry.playoffRecord],
-                    [Activity, 'Avg Margin',                     `${selectedRivalry.avgMargin} ppg`],
+                    [Target,   'Record',                                          selectedRivalry.record],
+                    [Trophy,   'Playoffs',                                        selectedRivalry.playoffRecord],
+                    [Activity, 'Avg Margin',                                      `${selectedRivalry.avgMargin} ppg`],
                     [Stars,    `Last Meeting (${selectedRivalry.lastMeeting.meta})`, selectedRivalry.lastMeeting.score],
-                    [Radar,    'Current Streak',                 selectedRivalry.streak],
-                    [Flame,    'Rivalry Heat',                   selectedRivalry.heat],
+                    [Radar,    'Current Streak',                                  selectedRivalry.streak],
+                    [Flame,    'Rivalry Heat',                                    selectedRivalry.heat],
                   ].map(([Icon, label, value]) => (
                     <div
                       key={label}
