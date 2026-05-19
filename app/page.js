@@ -760,6 +760,11 @@ useEffect(() => {
           ))}
         </div>
 
+        {/* ===== CHAMPIONS WALL ===== */}
+        {championsData.length > 0 && (
+          <ChampionsWall champions={championsData} />
+        )}
+
         <div className="flex flex-col gap-8 xl:flex-row">
           <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f_0%,#0b1220_45%,#170b14_100%)] xl:flex-[1.15]">
             <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
@@ -768,11 +773,6 @@ useEffect(() => {
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
                     <Swords className="h-5 w-5 text-cyan-300" />
                   </div>
-
-{/* ===== CHAMPIONS WALL ===== */}
-{championsData.length > 0 && (
-  <ChampionsWall champions={championsData} />
-)}
 
 
                   <div>
