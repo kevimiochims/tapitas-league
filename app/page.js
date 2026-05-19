@@ -760,7 +760,7 @@ useEffect(() => {
           ))}
         </div>
 
-        {/* ===== CHAMPIONS WALL ===== */}
+                {/* ===== CHAMPIONS WALL ===== */}
         {championsData.length > 0 && (
           <ChampionsWall champions={championsData} />
         )}
