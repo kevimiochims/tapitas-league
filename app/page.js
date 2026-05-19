@@ -89,30 +89,31 @@ async function safeSheetFetch(url) {
 
 function GameRow({ game }) {
   return (
-    <div className="flex flex-col border-b border-white/5 py-[5px] last:border-0">
+    <div className="flex flex-col border-b border-white/5 py-[6px] last:border-0">
       <div className="flex items-center gap-1">
         <span
-          className={`text-[11px] font-black ${
+          className={`text-[13px] font-black ${
             game.result === 'W' ? 'text-emerald-400' : 'text-red-400'
           }`}
         >
           {game.result}
         </span>
-        <span className="truncate text-[11px] text-slate-300">
+        <span className="truncate text-[13px] text-slate-300">
           &nbsp;vs {game.opp}
         </span>
       </div>
-      <span className="text-[10px] text-slate-500">
+      <span className="text-[11px] text-slate-500">
         {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
       </span>
     </div>
   )
 }
 
-function ChampionCard({ champ, index, isOpen, onToggle }) {
+function ChampionCard({ champ, index, isOpen, onToggle, forceCollapsed }) {
   const half = Math.ceil(champ.regGames.length / 2)
   const regCol1 = champ.regGames.slice(0, half)
   const regCol2 = champ.regGames.slice(half)
+  const showBody = isOpen && !forceCollapsed
 
   return (
     <div
@@ -122,7 +123,6 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
           : 'border-white/5 hover:border-white/10'
       } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
-      {/* Header clicável */}
       <button
         onClick={onToggle}
         className="flex w-full items-center gap-4 px-6 py-5 text-left transition-all"
@@ -165,13 +165,12 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
         <ChevronRight
           className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
-            isOpen ? 'rotate-90' : ''
+            isOpen && !forceCollapsed ? 'rotate-90' : ''
           }`}
         />
       </button>
 
-      {/* Corpo expandido */}
-      {isOpen && (
+      {showBody && (
         <div className="border-t border-white/5 px-6 pb-6 pt-5">
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -182,16 +181,14 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
                 <GameRow key={i} game={g} />
               ))}
             </div>
-
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500 opacity-0">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] opacity-0">
                 &nbsp;
               </div>
               {regCol2.map((g, i) => (
                 <GameRow key={i} game={g} />
               ))}
             </div>
-
             <div>
               <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-400">
                 Playoffs
@@ -211,15 +208,18 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
   )
 }
 
+
 function ChampionsWall({ champions }) {
   const [openIndex, setOpenIndex] = useState(0)
 
+  const openChamp = openIndex >= 0 ? champions[openIndex] : null
+  const closedChamps = champions.filter((_, i) => i !== openIndex)
+
   return (
     <section className="mt-8">
-      {/* Box wrapper igual ao Rivalry Spotlight */}
       <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-        
-        {/* Header do box */}
+
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
@@ -236,25 +236,69 @@ function ChampionsWall({ champions }) {
           </div>
         </div>
 
-        {/* Grid responsivo: 3 cols → 2 cols → 1 col */}
-        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
-          {champions.map((champ, index) => (
-            <ChampionCard
-              key={champ.season}
-              champ={champ}
-              index={index}
-              isOpen={openIndex === index}
-              onToggle={() =>
-                setOpenIndex(openIndex === index ? -1 : index)
-              }
-            />
-          ))}
+        {/* Layout: expandido à esquerda + grid à direita — só em telas grandes */}
+        <div className="p-6">
+
+          {/* Mobile / md: lista simples */}
+          <div className="flex flex-col gap-4 xl:hidden">
+            {champions.map((champ, index) => (
+              <ChampionCard
+                key={champ.season}
+                champ={champ}
+                index={index}
+                isOpen={openIndex === index}
+                onToggle={() =>
+                  setOpenIndex(openIndex === index ? -1 : index)
+                }
+                forceCollapsed={false}
+              />
+            ))}
+          </div>
+
+          {/* Desktop xl+: expandido à esquerda, grid à direita */}
+          <div className="hidden xl:flex gap-4 items-start">
+
+            {/* Card expandido */}
+            {openChamp && (
+              <div className="w-[520px] flex-shrink-0">
+                <ChampionCard
+                  key={openChamp.season}
+                  champ={openChamp}
+                  index={openIndex}
+                  isOpen={true}
+                  onToggle={() => setOpenIndex(-1)}
+                  forceCollapsed={false}
+                />
+              </div>
+            )}
+
+            {/* Grid dos não expandidos à direita */}
+            <div className="flex-1 grid grid-cols-1 2xl:grid-cols-2 gap-4 items-start">
+              {closedChamps.map((champ, i) => {
+                const originalIndex = champions.findIndex(
+                  (c) => c.season === champ.season
+                )
+                return (
+                  <ChampionCard
+                    key={champ.season}
+                    champ={champ}
+                    index={originalIndex}
+                    isOpen={false}
+                    onToggle={() => setOpenIndex(originalIndex)}
+                    forceCollapsed={true}
+                  />
+                )
+              })}
+            </div>
+
+          </div>
         </div>
 
       </div>
     </section>
   )
 }
+
 
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
