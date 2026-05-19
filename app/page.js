@@ -206,14 +206,26 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
     </div>
   )
 }
+
 function ChampionsWall({ champions }) {
-  const [openIndex, setOpenIndex] = useState(-1)
+  const [openSet, setOpenSet] = useState(new Set())
+
+  const toggle = (index) => {
+    setOpenSet((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
 
   return (
     <section className="mt-8 mb-8">
       <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
@@ -236,10 +248,8 @@ function ChampionsWall({ champions }) {
               key={champ.season}
               champ={champ}
               index={index}
-              isOpen={openIndex === index}
-              onToggle={() =>
-                setOpenIndex(openIndex === index ? -1 : index)
-              }
+              isOpen={openSet.has(index)}
+              onToggle={() => toggle(index)}
             />
           ))}
         </div>
