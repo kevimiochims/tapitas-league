@@ -29,6 +29,11 @@ const FALLBACK_TEAMS = [
     pf: 2088,
   },
 ]
+// Adicione este estado junto aos outros no componente principal
+const [h2hData, setH2hData] = useState([])
+const [selectedTeamA, setSelectedTeamA] = useState('')
+const [selectedTeamB, setSelectedTeamB] = useState('')
+
 
 function normalizeString(value) {
   return String(value || '')
@@ -482,80 +487,7 @@ useEffect(() => {
         })
 
         if (Array.isArray(h2hSortedJson) && h2hSortedJson.length > 0) {
-          const rivalryRow =
-            h2hSortedJson[
-              Math.floor(Math.random() * h2hSortedJson.length)
-            ]
-
-          const keys = Object.keys(rivalryRow || {})
-
-          const teamA = String(rivalryRow[keys[0]] || '').trim()
-          const teamB = String(rivalryRow[keys[1]] || '').trim()
-
-          const lastMatch = String(
-            rivalryRow['Last Match'] ||
-              rivalryRow['last match'] ||
-              ''
-          )
-
-          const scoreMatch = lastMatch.match(
-            /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
-          )
-
-          const weekMatch = lastMatch.match(/W(\d+)/i)
-          const yearMatch = lastMatch.match(/(20\d{2})/)
-
-          setRivalryData({
-            teamA,
-            teamB,
-            record:
-              String(
-                parseNumber(
-                  rivalryRow['A W'] ||
-                    rivalryRow['A_W'] ||
-                    rivalryRow['A_WINS'] ||
-                    rivalryRow['A Wins'] ||
-                    rivalryRow['A'] ||
-                    0
-                )
-              ) +
-              '-' +
-              String(
-                parseNumber(
-                  rivalryRow['B W'] ||
-                    rivalryRow['B_W'] ||
-                    rivalryRow['B_WINS'] ||
-                    rivalryRow['B Wins'] ||
-                    rivalryRow['B'] ||
-                    0
-                )
-              ),
-            playoffRecord:
-              String(parseNumber(rivalryRow['A PO_W'] || 0)) +
-              '-' +
-              String(parseNumber(rivalryRow['B PO_W'] || 0)),
-            avgMargin: String(
-              rivalryRow['Avg Margin'] ||
-                rivalryRow['AVG_MARGIN'] ||
-                rivalryRow['Average Margin'] ||
-                rivalryRow['Margin'] ||
-                rivalryRow['Avg'] ||
-                '0.0'
-            ),
-            currentStreak:
-              rivalryRow['Current Streak'] || '--',
-            lastMeeting: {
-              score: scoreMatch
-                ? `${scoreMatch[1]} vs ${scoreMatch[2]}`
-                : '-- vs --',
-              meta:
-                weekMatch || yearMatch
-                  ? `W${weekMatch ? weekMatch[1] : '?'} • ${
-                      yearMatch ? yearMatch[1] : ''
-                    }`
-                  : '',
-            },
-          })
+          setH2hData(h2hSortedJson)
         }
       } catch (error) {
         console.error(error)
@@ -577,6 +509,130 @@ useEffect(() => {
 
     return base.slice(0, 5).map(normalizeTeam)
   }, [rawData])
+
+  // Lista única de times extraída do h2h
+const allTeams = useMemo(() => {
+  const teams = new Set()
+  h2hData.forEach((row) => {
+    const keys = Object.keys(row)
+    const a = String(row[keys[0]] || '').trim()
+    const b = String(row[keys[1]] || '').trim()
+    if (a) teams.add(a)
+    if (b) teams.add(b)
+  })
+  return Array.from(teams).sort()
+}, [h2hData])
+
+// Times disponíveis para o segundo dropdown (exclui o time A)
+const teamsForB = useMemo(() => {
+  if (!selectedTeamA) return allTeams.filter((t) => t !== selectedTeamA)
+  // Só mostra times que têm confronto com teamA na planilha
+  return h2hData
+    .filter((row) => {
+      const keys = Object.keys(row)
+      const a = String(row[keys[0]] || '').trim()
+      return normalizeString(a) === normalizeString(selectedTeamA)
+    })
+    .map((row) => {
+      const keys = Object.keys(row)
+      return String(row[keys[1]] || '').trim()
+    })
+    .filter(Boolean)
+    .sort()
+}, [h2hData, selectedTeamA])
+
+// Confronto selecionado
+const selectedRivalry = useMemo(() => {
+  if (!selectedTeamA || !selectedTeamB) return null
+
+  const row = h2hData.find((r) => {
+    const keys = Object.keys(r)
+    const a = String(r[keys[0]] || '').trim()
+    const b = String(r[keys[1]] || '').trim()
+    return (
+      normalizeString(a) === normalizeString(selectedTeamA) &&
+      normalizeString(b) === normalizeString(selectedTeamB)
+    )
+  })
+
+  if (!row) return null
+
+  const lastMatch = String(row['Last Match'] || row['last match'] || '')
+  const scoreMatch = lastMatch.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
+  const weekMatch = lastMatch.match(/W(\d+)/i)
+  const yearMatch = lastMatch.match(/(20\d{2})/)
+
+  const winsA = parseNumber(
+    row['A W'] || row['A_W'] || row['A_WINS'] || row['A Wins'] || row['A'] || 0
+  )
+  const winsB = parseNumber(
+    row['B W'] || row['B_W'] || row['B_WINS'] || row['B Wins'] || row['B'] || 0
+  )
+  const poWinsA = parseNumber(row['A PO_W'] || 0)
+  const poWinsB = parseNumber(row['B PO_W'] || 0)
+  const avgMargin = String(
+    row['Avg Margin'] || row['AVG_MARGIN'] || row['Average Margin'] || row['Margin'] || '0.0'
+  )
+  const streak = String(row['Current Streak'] || '--')
+
+  const totalGames = winsA + winsB
+  const recordGap = Math.abs(winsA - winsB)
+  const margin = Math.abs(parseFloat(avgMargin) || 0)
+  let rivalryScore = 0
+  if (recordGap === 0) rivalryScore += 7
+  else if (recordGap === 1) rivalryScore += 5
+  else if (recordGap === 2) rivalryScore += 3
+  else if (recordGap === 3) rivalryScore += 1
+  else rivalryScore -= 3
+  if (totalGames >= 14) rivalryScore += 5
+  else if (totalGames >= 10) rivalryScore += 4
+  else if (totalGames >= 6) rivalryScore += 2
+  if (margin <= 3) rivalryScore += 5
+  else if (margin <= 7) rivalryScore += 3
+  else if (margin <= 12) rivalryScore += 1
+  const heat =
+    rivalryScore >= 13 ? 'Legendary' :
+    rivalryScore >= 10 ? 'Elite' :
+    rivalryScore >= 7  ? 'High' :
+    rivalryScore >= 4  ? 'Medium' : 'Low'
+
+  const shortName = (name) => {
+    const mappings = {
+      'i am megatron': 'Megatron', 'h-lera do mahl': 'H-Lera',
+      'peytão da massa': 'Peytao', 'peytao da massa': 'Peytao',
+      'ocupa meu slot': 'Ocupa', 'green bay pequers': 'Pequers',
+      'settlers of rincão': 'Rincão', 'settlers of rincao': 'Rincão',
+      'old brady bunch': 'OldBrady', 'moneyball fc': 'Moneyball',
+      'patrolão': 'Patrolao', 'patrolao': 'Patrolao',
+      'how much is the fish': 'Howmuch',
+    }
+    const n = normalizeString(name)
+    return mappings[n] || String(name).split(' ')[0]
+  }
+
+  const formattedStreak = streak
+    .replace(selectedTeamA, shortName(selectedTeamA))
+    .replace(selectedTeamB, shortName(selectedTeamB))
+  const streakParts = formattedStreak.split(' ')
+  const streakVal = streakParts.pop()
+  const streakTeam = streakParts.join(' ')
+
+  return {
+    teamA: selectedTeamA,
+    teamB: selectedTeamB,
+    record: `${winsA}-${winsB}`,
+    playoffRecord: `${poWinsA}-${poWinsB}`,
+    avgMargin,
+    heat,
+    streak: `${streakTeam} ${streakVal}`,
+    lastMeeting: {
+      score: scoreMatch ? `${scoreMatch[1]} vs ${scoreMatch[2]}` : '-- vs --',
+      meta: weekMatch || yearMatch
+        ? `W${weekMatch ? weekMatch[1] : '?'} • ${yearMatch ? yearMatch[1] : ''}`
+        : '',
+    },
+  }
+}, [h2hData, selectedTeamA, selectedTeamB])
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white">
@@ -727,6 +783,8 @@ useEffect(() => {
       50%       { transform: translateY(-10px); }
     }
   `}</style>
+
+
 </section>
 
       <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
@@ -760,180 +818,115 @@ useEffect(() => {
           ))}
         </div>
 
-                {/* ===== CHAMPIONS WALL ===== */}
+        {/* ===== CHAMPIONS WALL ===== */}
         {championsData.length > 0 && (
           <ChampionsWall champions={championsData} />
         )}
 
         <div className="flex flex-col gap-8 xl:flex-row">
-          <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f_0%,#0b1220_45%,#170b14_100%)] xl:flex-[1.15]">
-            <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
-              <div className="mb-8 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                    <Swords className="h-5 w-5 text-cyan-300" />
+          {/* RIVALRY SPOTLIGHT */}
+        <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[1.15]">
+          <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+
+            {/* Header */}
+            <div className="mb-8 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                  <Swords className="h-5 w-5 text-cyan-300" />
+                </div>
+                <div>
+                  <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+                    Rivalry Spotlight
                   </div>
-
-
-                  <div>
-                    <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
-                      Rivalry Spotlight
-                    </div>
-
-                    <div className="text-base text-slate-400">
-                      The league's fiercest matchup.
-                    </div>
+                  <div className="text-base text-slate-400">
+                    The league's fiercest matchup.
                   </div>
                 </div>
-
-                <button className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20">
-                  Open Matchup
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="mb-8">
-                <h2 className="break-words text-[34px] font-black leading-[0.95] tracking-[-0.05em] sm:text-[42px] lg:text-[52px]">
-                  {rivalryData.teamA}
-                  <span className="mx-4 text-cyan-400">vs</span>
-                  {rivalryData.teamB}
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  [Target, 'Record', rivalryData.record],
-                  [Trophy, 'Playoffs', rivalryData.playoffRecord],
-                  [Activity, 'Avg Margin', `${rivalryData.avgMargin} ppg`],
-                  [Stars, `Last Meeting (${rivalryData.lastMeeting.meta})`, rivalryData.lastMeeting.score],
-                  [Radar, 'Current Streak', (() => {
-                    const rawStreak = String(
-                      rivalryData.currentStreak || '--'
-                    )
-
-                    const shortName = (teamName) => {
-                      const mappings = {
-                        'i am megatron': 'Megatron',
-                        'h-lera do mahl': 'H-Lera',
-                        'peytão da massa': 'Peytao',
-                        'peytao da massa': 'Peytao',
-                        'ocupa meu slot': 'Ocupa',
-                        'green bay pequers': 'Pequers',
-                        'settlers of rincão': 'Rincão',
-                        'settlers of rincao': 'Rincão',
-                        'old brady bunch': 'OldBrady',
-                        'moneyball fc': 'Moneyball',
-                        'patrolão': 'Patrolao',
-                        'patrolao': 'Patrolao',
-                        'how much is the fish': 'Howmuch',
-                      }
-
-                      const normalized = normalizeString(teamName)
-
-                      if (mappings[normalized]) {
-                        return mappings[normalized]
-                      }
-
-                      const words = String(teamName).split(' ')
-                      return words[0]
-                    }
-
-                    const formatted = rawStreak
-                      .replace(rivalryData.teamA, shortName(rivalryData.teamA))
-                      .replace(rivalryData.teamB, shortName(rivalryData.teamB))
-
-                    const parts = formatted.split(' ')
-                    const streakValue = parts.pop()
-                    const teamName = parts.join(' ')
-
-                    return `${teamName} ${streakValue}`
-                  })()],
-                  [Flame, 'Rivalry Heat', (() => {
-                    const parts = String(rivalryData.record)
-                      .split('-')
-                      .map((value) => Number(value) || 0)
-
-                    const winsA = parts[0] || 0
-                    const winsB = parts[1] || 0
-
-                    const totalGames = winsA + winsB
-                    const recordGap = Math.abs(winsA - winsB)
-                    const margin = Math.abs(
-                      parseFloat(rivalryData.avgMargin) || 0
-                    )
-
-                    let rivalryScore = 0
-
-                    // equilíbrio do record
-                    if (recordGap === 0) {
-                      rivalryScore += 7
-                    } else if (recordGap === 1) {
-                      rivalryScore += 5
-                    } else if (recordGap === 2) {
-                      rivalryScore += 3
-                    } else if (recordGap === 3) {
-                      rivalryScore += 1
-                    } else {
-                      rivalryScore -= 3
-                    }
-
-                    // quantidade de jogos
-                    if (totalGames >= 14) {
-                      rivalryScore += 5
-                    } else if (totalGames >= 10) {
-                      rivalryScore += 4
-                    } else if (totalGames >= 6) {
-                      rivalryScore += 2
-                    }
-
-                    // margem média apertada
-                    if (margin <= 3) {
-                      rivalryScore += 5
-                    } else if (margin <= 7) {
-                      rivalryScore += 3
-                    } else if (margin <= 12) {
-                      rivalryScore += 1
-                    }
-
-                    if (rivalryScore >= 13) {
-                      return 'Legendary'
-                    }
-
-                    if (rivalryScore >= 10) {
-                      return 'Elite'
-                    }
-
-                    if (rivalryScore >= 7) {
-                      return 'High'
-                    }
-
-                    if (rivalryScore >= 4) {
-                      return 'Medium'
-                    }
-
-                    return 'Low'
-                  })()],
-                ].map(([Icon, label, value]) => (
-                  <div
-                    key={label}
-                    className="rounded-[26px] border border-white/10 bg-white/[0.04] p-5"
-                  >
-                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                      <Icon className="h-4 w-4 text-cyan-300" />
-                    </div>
-
-                    <div className="mb-3 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 lg:text-[11px]">
-                      {label}
-                    </div>
-
-                    <div className="text-2xl font-black leading-none xl:text-[30px] flex flex-wrap items-center">
-                      {value}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
+
+            {/* Seletores */}
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <select
+                value={selectedTeamA}
+                onChange={(e) => {
+                  setSelectedTeamA(e.target.value)
+                  setSelectedTeamB('')
+                }}
+                className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-white outline-none transition-all hover:bg-white/[0.07] focus:border-cyan-400/40"
+              >
+                <option value="" className="bg-slate-900">Select a team...</option>
+                {allTeams.map((t) => (
+                  <option key={t} value={t} className="bg-slate-900">{t}</option>
+                ))}
+              </select>
+
+              <div className="flex-shrink-0 text-center text-lg font-black text-cyan-400">
+                vs
+              </div>
+
+              <select
+                value={selectedTeamB}
+                onChange={(e) => setSelectedTeamB(e.target.value)}
+                disabled={!selectedTeamA}
+                className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-white outline-none transition-all hover:bg-white/[0.07] focus:border-cyan-400/40 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <option value="" className="bg-slate-900">Select opponent...</option>
+                {teamsForB.map((t) => (
+                  <option key={t} value={t} className="bg-slate-900">{t}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Estado vazio */}
+            {!selectedRivalry && (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[26px] border border-white/5 bg-white/[0.02] py-12 text-center">
+                <Swords className="h-8 w-8 text-slate-600" />
+                <p className="text-sm font-bold text-slate-600">
+                  Select two teams to see their rivalry stats
+                </p>
+              </div>
+            )}
+
+            {/* Stats do confronto */}
+            {selectedRivalry && (
+              <>
+                <h2 className="mb-6 break-words text-[28px] font-black leading-[0.95] tracking-[-0.05em] sm:text-[36px] lg:text-[44px]">
+                  {selectedRivalry.teamA}
+                  <span className="mx-3 text-cyan-400">vs</span>
+                  {selectedRivalry.teamB}
+                </h2>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    [Target,   'Record',                         selectedRivalry.record],
+                    [Trophy,   'Playoffs',                       selectedRivalry.playoffRecord],
+                    [Activity, 'Avg Margin',                     `${selectedRivalry.avgMargin} ppg`],
+                    [Stars,    `Last Meeting (${selectedRivalry.lastMeeting.meta})`, selectedRivalry.lastMeeting.score],
+                    [Radar,    'Current Streak',                 selectedRivalry.streak],
+                    [Flame,    'Rivalry Heat',                   selectedRivalry.heat],
+                  ].map(([Icon, label, value]) => (
+                    <div
+                      key={label}
+                      className="rounded-[26px] border border-white/10 bg-white/[0.04] p-5"
+                    >
+                      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                        <Icon className="h-4 w-4 text-cyan-300" />
+                      </div>
+                      <div className="mb-3 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 lg:text-[11px]">
+                        {label}
+                      </div>
+                      <div className="flex flex-wrap items-center text-2xl font-black leading-none xl:text-[30px]">
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
           </div>
+        </div>
 
           <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
             <div className="flex items-center justify-between border-b border-white/5 p-8">
