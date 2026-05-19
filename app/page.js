@@ -260,7 +260,7 @@ function ChampionsWall({ champions }) {
 
             {/* Card expandido */}
             {openChamp && (
-              <div className="w-[520px] flex-shrink-0">
+              <div className="w-2/3 flex-shrink-0">
                 <ChampionCard
                   key={openChamp.season}
                   champ={openChamp}
