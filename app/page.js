@@ -118,35 +118,28 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
     <div
       className={`overflow-hidden rounded-[28px] border transition-all duration-200 ${
         isOpen
-          ? 'border-cyan-400/30'
+          ? 'border-cyan-400/30 md:col-span-2 xl:col-span-3'
           : 'border-white/5 hover:border-white/10'
-      } bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]`}
+      } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
       {/* Header clicável */}
       <button
         onClick={onToggle}
         className="flex w-full items-center gap-4 px-6 py-5 text-left transition-all"
       >
-        {/* Troféu — só aparece quando fechado */}
         {!isOpen && (
-          <Trophy
-            className="h-5 w-5 flex-shrink-0 text-cyan-400"
-          />
+          <Trophy className="h-5 w-5 flex-shrink-0 text-cyan-400" />
         )}
 
-        {/* Ano */}
         <span
           className={`flex-shrink-0 font-black leading-none transition-all ${
-            isOpen
-              ? 'font-["Bebas_Neue",sans-serif] text-[42px] text-white'
-              : 'text-[22px] text-slate-400'
+            isOpen ? 'text-[42px] text-white' : 'text-[22px] text-slate-400'
           }`}
           style={{ fontFamily: '"Bebas Neue", sans-serif' }}
         >
           {champ.season}
         </span>
 
-        {/* Info */}
         <div className="min-w-0 flex-1">
           <div
             className={`truncate font-black text-white transition-all ${
@@ -165,7 +158,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         </div>
 
         {index === 0 && !isOpen && (
-          <span className="flex-shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+          <span className="hidden flex-shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300 sm:inline-block">
             Reigning
           </span>
         )}
@@ -180,8 +173,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
       {/* Corpo expandido */}
       {isOpen && (
         <div className="border-t border-white/5 px-6 pb-6 pt-5">
-          <div className="grid grid-cols-3 gap-4">
-            {/* Coluna 1 — Reg Season primeira metade */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
                 Reg Season
@@ -191,9 +183,8 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
               ))}
             </div>
 
-            {/* Coluna 2 — Reg Season segunda metade */}
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500 sm:opacity-0">
                 &nbsp;
               </div>
               {regCol2.map((g, i) => (
@@ -201,7 +192,6 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
               ))}
             </div>
 
-            {/* Coluna 3 — Playoffs */}
             <div>
               <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-400">
                 Playoffs
@@ -211,9 +201,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
                   <GameRow key={i} game={g} />
                 ))
               ) : (
-                <div className="text-[11px] text-slate-600">
-                  Sem dados
-                </div>
+                <div className="text-[11px] text-slate-600">Sem dados</div>
               )}
             </div>
           </div>
@@ -227,33 +215,42 @@ function ChampionsWall({ champions }) {
   const [openIndex, setOpenIndex] = useState(0)
 
   return (
-    <section className="mx-auto mt-8 max-w-[1680px]">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-          <Trophy className="h-5 w-5 text-cyan-300" />
-        </div>
-        <div>
-          <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
-            Champions Wall
+    <section className="mt-8">
+      {/* Box wrapper igual ao Rivalry Spotlight */}
+      <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+        
+        {/* Header do box */}
+        <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Trophy className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+                Champions Wall
+              </div>
+              <div className="text-sm text-slate-400">
+                Every title. Every campaign.
+              </div>
+            </div>
           </div>
-          <div className="text-sm text-slate-400">
-            Every title. Every campaign.
-          </div>
         </div>
-      </div>
 
-      <div className="flex flex-col gap-3">
-        {champions.map((champ, index) => (
-          <ChampionCard
-            key={champ.season}
-            champ={champ}
-            index={index}
-            isOpen={openIndex === index}
-            onToggle={() =>
-              setOpenIndex(openIndex === index ? -1 : index)
-            }
-          />
-        ))}
+        {/* Grid responsivo: 3 cols → 2 cols → 1 col */}
+        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+          {champions.map((champ, index) => (
+            <ChampionCard
+              key={champ.season}
+              champ={champ}
+              index={index}
+              isOpen={openIndex === index}
+              onToggle={() =>
+                setOpenIndex(openIndex === index ? -1 : index)
+              }
+            />
+          ))}
+        </div>
+
       </div>
     </section>
   )
