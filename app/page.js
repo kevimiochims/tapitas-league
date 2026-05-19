@@ -117,18 +117,24 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
 
 function normalizeTeam(team, index) {
   return {
-    team:
-      (team && (team.Team || team.team || team.Name)) ||
-      `Franchise ${index + 1}`,
-    wins: parseNumber(team && (team.Wins || team.wins || team.W)),
-    losses: parseNumber(team && (team.Losses || team.losses || team.L)),
-    pf: parseNumber(
-      team &&
-        (team.Points ||
-          team.PF ||
-          team.PointsFor ||
-          team.points_for)
-    ),
+    team: (team && (team.Team || team.team || team.Name)) || `Franchise ${index + 1}`,
+    wins:        parseNumber(team?.W      || team?.Wins   || team?.wins  || 0),
+    losses:      parseNumber(team?.L      || team?.Losses || team?.losses || 0),
+    pf:          parseNumber(team?.PF     || team?.Points || team?.points_for || 0),
+    rsW:         parseNumber(team?.RS_W   || 0),
+    rsL:         parseNumber(team?.RS_L   || 0),
+    rsPF:        parseNumber(team?.RS_PF  || 0),
+    poW:         parseNumber(team?.PO_W   || 0),
+    poL:         parseNumber(team?.PO_L   || 0),
+    poPF:        parseNumber(team?.PO_PF  || 0),
+    winPct:      parseNumber(team?.['W%'] || 0),
+    wStreakRS:   parseNumber(team?.['W Streak RS']    || 0),
+    wStreakTotal:parseNumber(team?.['W Streak Total'] || 0),
+    lStreakRS:   parseNumber(team?.['L Streak RS']    || 0),
+    lStreakTotal:parseNumber(team?.['L Streak Total'] || 0),
+    playoffApps: parseNumber(team?.['Playoff Apps']   || 0),
+    finals:      parseNumber(team?.Finals  || 0),
+    titles:      parseNumber(team?.Titles  || 0),
   }
 }
 
@@ -368,11 +374,78 @@ function buildSeasonRanges(years) {
   return ranges.join(' • ')
 }
 
+const SORT_OPTIONS = [
+  {
+    label: 'Wins',
+    subs: [
+      { label: 'Total',       key: 'W',      order: 'desc' },
+      { label: 'Reg Season',  key: 'RS_W',   order: 'desc' },
+      { label: 'Playoffs',    key: 'PO_W',   order: 'desc' },
+    ],
+  },
+  {
+    label: 'Losses',
+    subs: [
+      { label: 'Total',       key: 'L',      order: 'desc' },
+      { label: 'Reg Season',  key: 'RS_L',   order: 'desc' },
+      { label: 'Playoffs',    key: 'PO_L',   order: 'desc' },
+    ],
+  },
+  {
+    label: 'Win %',
+    subs: [
+      { label: 'All-Time',    key: 'W%',     order: 'desc' },
+    ],
+  },
+  {
+    label: 'Points',
+    subs: [
+      { label: 'All-Time',    key: 'PF',     order: 'desc' },
+      { label: 'Reg Season',  key: 'RS_PF',  order: 'desc' },
+      { label: 'Playoffs',    key: 'PO_PF',  order: 'desc' },
+    ],
+  },
+  {
+    label: 'Win Streak',
+    subs: [
+      { label: 'Reg Season',  key: 'W Streak RS',    order: 'desc' },
+      { label: 'Total',       key: 'W Streak Total', order: 'desc' },
+    ],
+  },
+  {
+    label: 'Loss Streak',
+    subs: [
+      { label: 'Reg Season',  key: 'L Streak RS',    order: 'desc' },
+      { label: 'Total',       key: 'L Streak Total', order: 'desc' },
+    ],
+  },
+  {
+    label: 'Playoffs',
+    subs: [
+      { label: 'Appearances', key: 'Playoff Apps', order: 'desc' },
+    ],
+  },
+  {
+    label: 'Finals',
+    subs: [
+      { label: 'Appearances', key: 'Finals', order: 'desc' },
+    ],
+  },
+  {
+    label: 'Championships',
+    subs: [
+      { label: 'Titles',      key: 'Titles', order: 'desc' },
+    ],
+  },
+]
+
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
   const [selectedTeamA, setSelectedTeamA] = useState('Peytao da Massa')
   const [selectedTeamB, setSelectedTeamB] = useState('Moneyball')
+  const [sortCategory, setSortCategory] = useState('Wins')
+  const [sortSub, setSortSub]           = useState('Total')
   const [standingsPage, setStandingsPage] = useState(0)
 
  const [leagueStats, setLeagueStats] = useState({
@@ -402,6 +475,18 @@ export default function TapitasLeagueHomepage() {
 // Adicione este useEffect e estado junto aos outros no componente principal
 
 const [championsData, setChampionsData] = useState([])
+
+useEffect(() => {
+  const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+  if (cat && !cat.subs.find((s) => s.label === sortSub)) {
+    setSortSub(cat.subs[0].label)
+  }
+  setStandingsPage(0)
+}, [sortCategory])
+
+useEffect(() => {
+  setStandingsPage(0)
+}, [sortSub])
 
 useEffect(() => {
   let mounted = true
@@ -617,19 +702,49 @@ useEffect(() => {
   }, [])
 
   const standings = useMemo(() => {
-    const base =
-      Array.isArray(rawData) && rawData.length > 0
-        ? rawData
-        : FALLBACK_TEAMS
+  const base =
+    Array.isArray(rawData) && rawData.length > 0
+      ? rawData : FALLBACK_TEAMS
 
-    return base
-      .map(normalizeTeam)
-      .sort((a, b) => {
-        if (b.wins !== a.wins) return b.wins - a.wins
-        if (a.losses !== b.losses) return a.losses - b.losses
-        return b.pf - a.pf
-      })
-  }, [rawData])
+  const mapped = base.map(normalizeTeam)
+
+  const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+  const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
+
+  const keyMap = {
+    'W':              (t) => t.wins,
+    'RS_W':           (t) => t.rsW,
+    'PO_W':           (t) => t.poW,
+    'L':              (t) => t.losses,
+    'RS_L':           (t) => t.rsL,
+    'PO_L':           (t) => t.poL,
+    'W%':             (t) => t.winPct,
+    'PF':             (t) => t.pf,
+    'RS_PF':          (t) => t.rsPF,
+    'PO_PF':          (t) => t.poPF,
+    'W Streak RS':    (t) => t.wStreakRS,
+    'W Streak Total': (t) => t.wStreakTotal,
+    'L Streak RS':    (t) => t.lStreakRS,
+    'L Streak Total': (t) => t.lStreakTotal,
+    'Playoff Apps':   (t) => t.playoffApps,
+    'Finals':         (t) => t.finals,
+    'Titles':         (t) => t.titles,
+  }
+
+  const getter = sub ? keyMap[sub.key] : (t) => t.wins
+  const order  = sub?.order ?? 'desc'
+
+  return mapped.sort((a, b) => {
+    const diff = order === 'desc'
+      ? getter(b) - getter(a)
+      : getter(a) - getter(b)
+    if (diff !== 0) return diff
+    // desempate sempre por wins desc → losses asc → pf desc
+    if (b.wins !== a.wins) return b.wins - a.wins
+    if (a.losses !== b.losses) return a.losses - b.losses
+    return b.pf - a.pf
+  })
+}, [rawData, sortCategory, sortSub])
 
   // Lista única de times extraída do h2h
 const allTeams = useMemo(() => {
@@ -1073,6 +1188,29 @@ const selectedRivalry = useMemo(() => {
       </h3>
     </div>
 
+    {/* Seletores de ordenação */}
+<div className="flex flex-wrap items-center gap-3 border-b border-white/5 px-8 py-4">
+  <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+    Sort by
+  </span>
+  <TeamSelect
+    value={sortCategory}
+    onChange={(val) => setSortCategory(val)}
+    options={SORT_OPTIONS.map((o) => o.label)}
+    placeholder="Category..."
+  />
+  {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
+    <TeamSelect
+      value={sortSub}
+      onChange={(val) => setSortSub(val)}
+      options={
+        SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
+      }
+      placeholder="Type..."
+    />
+  )}
+</div>
+
     {/* Setas de paginação */}
     {standings.length > 5 && (
       <div className="flex items-center gap-2">
@@ -1100,38 +1238,64 @@ const selectedRivalry = useMemo(() => {
   {/* Lista */}
   <div className="space-y-4 p-6">
     {standings
-      .slice(standingsPage * 5, standingsPage * 5 + 5)
-      .map((team, index) => {
-        const globalIndex = standingsPage * 5 + index
-        return (
-          <div
-            key={`${team.team}-${globalIndex}`}
-            className="grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[28px] border border-white/5 bg-white/[0.03] px-6 py-5"
-          >
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-300">
-              {globalIndex + 1}
-            </div>
+  .slice(standingsPage * 5, standingsPage * 5 + 5)
+  .map((team, index) => {
+    const globalIndex = standingsPage * 5 + index
+    const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+    const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
 
-            <div>
-              <div className="mb-1 truncate text-2xl font-black">
-                {team.team}
-              </div>
-              <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
-                {team.losses} Losses • {Math.round(team.pf)} Pts
-              </div>
-            </div>
+    const keyMap = {
+      'W':              (t) => t.wins,
+      'RS_W':           (t) => t.rsW,
+      'PO_W':           (t) => t.poW,
+      'L':              (t) => t.losses,
+      'RS_L':           (t) => t.rsL,
+      'PO_L':           (t) => t.poL,
+      'W%':             (t) => `${t.winPct}%`,
+      'PF':             (t) => Math.round(t.pf),
+      'RS_PF':          (t) => Math.round(t.rsPF),
+      'PO_PF':          (t) => Math.round(t.poPF),
+      'W Streak RS':    (t) => t.wStreakRS,
+      'W Streak Total': (t) => t.wStreakTotal,
+      'L Streak RS':    (t) => t.lStreakRS,
+      'L Streak Total': (t) => t.lStreakTotal,
+      'Playoff Apps':   (t) => t.playoffApps,
+      'Finals':         (t) => t.finals,
+      'Titles':         (t) => t.titles,
+    }
 
-            <div className="text-right">
-              <div className="mb-2 text-4xl font-black leading-none text-cyan-300">
-                {team.wins}
-              </div>
-              <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                Wins
-              </div>
-            </div>
+    const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
+    const displayLabel = sub ? `${sortCategory} — ${sortSub}` : 'Wins'
+
+    return (
+      <div
+        key={`${team.team}-${globalIndex}`}
+        className="grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[28px] border border-white/5 bg-white/[0.03] px-6 py-5"
+      >
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-300">
+          {globalIndex + 1}
+        </div>
+
+        <div>
+          <div className="mb-1 truncate text-2xl font-black">
+            {team.team}
           </div>
-        )
-      })}
+          <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+            {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
+          </div>
+        </div>
+
+        <div className="text-right">
+          <div className="mb-2 text-4xl font-black leading-none text-cyan-300">
+            {displayValue}
+          </div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+            {displayLabel}
+          </div>
+        </div>
+      </div>
+    )
+  })}
   </div>
 </div>
         </div>
