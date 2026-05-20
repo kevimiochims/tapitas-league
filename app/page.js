@@ -447,16 +447,36 @@ const SORT_OPTIONS = [
   },
 ]
 
-function buildStreakMap(gamesJson) {
-  // Agrupa jogos por time, ordenado cronologicamente
+function buildStreakMap(gamesJson, teamsJson) {
   const byTeam = {}
 
+  // Temporada mais recente do banco
+  let maxSeason = 0
+  gamesJson.forEach((game) => {
+    const season = parseNumber(game?.Season || game?.season || 0)
+    if (season > maxSeason) maxSeason = season
+  })
+
+  // Monta lookup do melhor streak por time vindo do TEAM_ALL_TIME
+  const bestStreakByTeam = {}
+  teamsJson.forEach((row) => {
+    const team = String(row?.Team || row?.team || '').trim()
+    if (!team) return
+    bestStreakByTeam[team] = {
+      wStreakRS:    parseNumber(String(row?.['W Streak RS']    || '0').replace(/[WL]/i, '')),
+      wStreakTotal: parseNumber(String(row?.['W Streak Total'] || '0').replace(/[WL]/i, '')),
+      lStreakRS:    parseNumber(String(row?.['L Streak RS']    || '0').replace(/[WL]/i, '')),
+      lStreakTotal: parseNumber(String(row?.['L Streak Total'] || '0').replace(/[WL]/i, '')),
+    }
+  })
+
+  // Agrupa jogos por time ordenado cronologicamente
   gamesJson.forEach((game) => {
     const team = String(game?.Team || game?.team || '').trim()
     if (!team) return
 
-    const week   = parseNumber(game?.Week   || game?.week   || 0)
-    const season = parseNumber(game?.Season || game?.season || 0)
+    const week        = parseNumber(game?.Week   || game?.week   || 0)
+    const season      = parseNumber(game?.Season || game?.season || 0)
     const streakRS    = parseNumber(game?.Streak       || 0)
     const streakTotal = parseNumber(game?.Streak_Total || 0)
 
@@ -464,7 +484,6 @@ function buildStreakMap(gamesJson) {
     byTeam[team].push({ week, season, streakRS, streakTotal })
   })
 
-  // Para cada time, ordena cronologicamente e encontra início/fim dos streaks
   const result = {}
 
   Object.entries(byTeam).forEach(([team, games]) => {
@@ -472,49 +491,58 @@ function buildStreakMap(gamesJson) {
       a.season !== b.season ? a.season - b.season : a.week - b.week
     )
 
-    const lastGame = sorted[sorted.length - 1]
-    const lastSeason = lastGame?.season
-    const lastWeek   = lastGame?.week
+    const best = bestStreakByTeam[team]
+    if (!best) return
 
-    // Encontra streak RS
-    const findStreak = (key) => {
-      const lastVal = sorted[sorted.length - 1]?.[key]
-      if (!lastVal || lastVal === 0) return null
+    const findBestStreak = (key, bestVal, isWin) => {
+      if (!bestVal || bestVal === 0) return null
 
-      // O fim do streak é o último jogo
-      const endGame = sorted[sorted.length - 1]
+      // O valor que buscamos: positivo pra win, negativo pra loss
+      const targetVal = isWin ? bestVal : -bestVal
 
-      // Percorre de trás pra frente até encontrar onde o streak começou
-      // O streak começa onde o valor é 1 (winning) ou -1 (losing)
-      const targetStart = lastVal > 0 ? 1 : -1
-      let startGame = endGame
-
-      for (let i = sorted.length - 1; i >= 0; i--) {
-        if (sorted[i][key] === targetStart) {
-          startGame = sorted[i]
+      // Encontra o índice onde o streak atingiu o valor máximo pela PRIMEIRA vez
+      let peakIndex = -1
+      for (let i = 0; i < sorted.length; i++) {
+        if (sorted[i][key] === targetVal) {
+          peakIndex = i
           break
         }
-        // Se o sinal mudou, para
-        if (lastVal > 0 && sorted[i][key] <= 0) break
-        if (lastVal < 0 && sorted[i][key] >= 0) break
       }
 
-      const isActive =
-        endGame.season === lastSeason && endGame.week === lastWeek
+      if (peakIndex === -1) return null
+
+      const endGame = sorted[peakIndex]
+
+      // Percorre para trás a partir do peak até achar o 1 ou -1
+      const startTarget = isWin ? 1 : -1
+      let startIndex = peakIndex
+      for (let i = peakIndex; i >= 0; i--) {
+        if (sorted[i][key] === startTarget) {
+          startIndex = i
+          break
+        }
+      }
+
+      const startGame = sorted[startIndex]
+
+      // Streak é ativo se o último jogo do time está na temporada mais recente
+      const lastGame = sorted[sorted.length - 1]
+      const isActive = lastGame.season === maxSeason && Math.abs(sorted[sorted.length - 1][key]) >= bestVal
 
       return {
         startWeek:   startGame.week,
         startSeason: startGame.season,
         endWeek:     endGame.week,
         endSeason:   endGame.season,
-        value:       lastVal,
         active:      isActive,
       }
     }
 
     result[team] = {
-      streakRS:    findStreak('streakRS'),
-      streakTotal: findStreak('streakTotal'),
+      streakRS:    findBestStreak('streakRS',    best.wStreakRS,    true),
+      streakTotal: findBestStreak('streakTotal', best.wStreakTotal, true),
+      lStreakRS:   findBestStreak('streakRS',    best.lStreakRS,    false),
+      lStreakTotal:findBestStreak('streakTotal', best.lStreakTotal, false),
     }
   })
 
@@ -771,8 +799,8 @@ useEffect(() => {
       })
 
       if (mounted) {
-          setStreakMap(buildStreakMap(gamesJson))
-        }
+        setStreakMap(buildStreakMap(gamesJson, teamsJson))
+      }
 
         if (Array.isArray(h2hSortedJson) && h2hSortedJson.length > 0) {
           setH2hData(h2hSortedJson)
@@ -1406,17 +1434,24 @@ const selectedRivalry = useMemo(() => {
                       {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' ||
                         sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') && (() => {
                         const isTotal = sub.key === 'W Streak Total' || sub.key === 'L Streak Total'
-                        const streakInfo = streakMap[team.team]?.[isTotal ? 'streakTotal' : 'streakRS']
+                        const isWin   = sub.key === 'W Streak RS'    || sub.key === 'W Streak Total'
+
+                        const keyMap = {
+                          'W Streak RS':    'streakRS',
+                          'W Streak Total': 'streakTotal',
+                          'L Streak RS':    'lStreakRS',
+                          'L Streak Total': 'lStreakTotal',
+                        }
+
+                        const streakInfo = streakMap[team.team]?.[keyMap[sub.key]]
 
                         if (!streakInfo) return null
 
-                        const fmt = (week, season) => `W${week}, ${season}`
-
                         return (
                           <div className="mt-1 text-xs font-bold text-slate-500">
-                            {fmt(streakInfo.startWeek, streakInfo.startSeason)}
+                            W{streakInfo.startWeek}, {streakInfo.startSeason}
                             <span className="mx-1 text-slate-600">→</span>
-                            {fmt(streakInfo.endWeek, streakInfo.endSeason)}
+                            W{streakInfo.endWeek}, {streakInfo.endSeason}
                             {streakInfo.active && (
                               <span className="ml-1 text-cyan-400">(active)</span>
                             )}
