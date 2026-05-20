@@ -398,11 +398,11 @@ const SORT_OPTIONS = [
     ],
   },
   {
-    label: 'Win %',
+  label: 'Win %',
     subs: [
-      { label: 'Total',      key: 'W%',     order: 'desc' },
-      { label: 'Reg Season', key: 'RS_W%',  order: 'desc' },
-      { label: 'Playoffs',   key: 'PO_W%',  order: 'desc' },
+      { label: 'Total',      key: 'W%',    order: 'desc' },
+      { label: 'Reg Season', key: 'RS_W%', order: 'desc' },
+      { label: 'Playoffs',   key: 'PO_W%', order: 'desc' },
     ],
   },
   {
@@ -453,7 +453,7 @@ export default function TapitasLeagueHomepage() {
   const [selectedTeamA, setSelectedTeamA] = useState('Peytao da Massa')
   const [selectedTeamB, setSelectedTeamB] = useState('Moneyball')
   const [sortCategory, setSortCategory] = useState('Wins')
-  const [sortSub, setSortSub]           = useState('Total')
+  const [sortSub, setSortSub] = useState('Total')
   const [standingsPage, setStandingsPage] = useState(0)
 
  const [leagueStats, setLeagueStats] = useState({
