@@ -1046,7 +1046,7 @@ const selectedRivalry = useMemo(() => {
         <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
           <Flame className="h-4 w-4 text-cyan-300" />
           <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
-            EST. 2014 &nbsp;|&nbsp; A LEAGUE. A HISTORY.
+            EST. 2014 &nbsp;|&nbsp; A LEAGUE. A HISTORY. A LEGACY.
           </span>
         </div>
 
