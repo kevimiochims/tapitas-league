@@ -1430,25 +1430,19 @@ const selectedRivalry = useMemo(() => {
                         {team.team}
                       </div>
 
-                      {/* Streak info — aparece só quando ordenando por streak */}
                       {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' ||
-                        sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') && (() => {
-                        const isTotal = sub.key === 'W Streak Total' || sub.key === 'L Streak Total'
-                        const isWin   = sub.key === 'W Streak RS'    || sub.key === 'W Streak Total'
-
-                        const keyMap = {
+                        sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') ? (() => {
+                        const keyLookup = {
                           'W Streak RS':    'streakRS',
                           'W Streak Total': 'streakTotal',
                           'L Streak RS':    'lStreakRS',
                           'L Streak Total': 'lStreakTotal',
                         }
-
-                        const streakInfo = streakMap[team.team]?.[keyMap[sub.key]]
-
+                        const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
                         if (!streakInfo) return null
 
                         return (
-                          <div className="mt-1 text-xs font-bold text-slate-500">
+                          <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
                             W{streakInfo.startWeek}, {streakInfo.startSeason}
                             <span className="mx-1 text-slate-600">→</span>
                             W{streakInfo.endWeek}, {streakInfo.endSeason}
@@ -1457,11 +1451,11 @@ const selectedRivalry = useMemo(() => {
                             )}
                           </div>
                         )
-                      })()}
-
-                      <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
-                        {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
-                      </div>
+                      })() : (
+                        <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                          {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-right">
