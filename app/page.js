@@ -1270,7 +1270,7 @@ const selectedRivalry = useMemo(() => {
                     [Target,   'Record',                                             selectedRivalry.record],
                     [Trophy,   'Playoffs',                                           selectedRivalry.playoffRecord],
                     [Activity, 'Avg Margin',                                         `${selectedRivalry.avgMargin} ppg`],
-                    [Stars,    `Last Meeting${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
+                    [Stars,    `Last Game${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
                     [Radar,    'Current Streak',                                     selectedRivalry.streak],
                     [Flame,    'Rivalry Heat',                                       selectedRivalry.heat],
                   ].map(([Icon, label, value]) => (
