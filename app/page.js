@@ -128,8 +128,12 @@ function normalizeTeam(team, index) {
     poL:         parseNumber(team?.PO_L   || 0),
     poPF:        parseNumber(team?.PO_PF  || 0),
     winPct:   parseNumber(team?.['W%']    || 0),
-    rsWinPct: parseNumber(team?.['RS_W%'] || 0),
-    poWinPct: parseNumber(team?.['PO_W%'] || 0),
+    rsWinPct: parseNumber(
+  team?.['RS_W%'] ?? team?.RS_W_pct ?? team?.['RS_W%'.toString()] ?? 0
+),
+poWinPct: parseNumber(
+  team?.['PO_W%'] ?? team?.PO_W_pct ?? team?.['PO_W%'.toString()] ?? 0
+),
     wStreakRS:   parseNumber(team?.['W Streak RS']    || 0),
     wStreakTotal:parseNumber(team?.['W Streak Total'] || 0),
     lStreakRS:   parseNumber(team?.['L Streak RS']    || 0),
@@ -722,9 +726,9 @@ useEffect(() => {
     'L':              (t) => t.losses,
     'RS_L':           (t) => t.rsL,
     'PO_L':           (t) => t.poL,
-    'W%':    (t) => t.winPct,
-    'RS_W%': (t) => t.rsWinPct,
-    'PO_W%': (t) => t.poWinPct,
+    'W%':             (t) => t.winPct,
+    'RS_W%':          (t) => t.rsWinPct,
+    'PO_W%':          (t) => t.poWinPct,
     'PF':             (t) => t.pf,
     'RS_PF':          (t) => t.rsPF,
     'PO_PF':          (t) => t.poPF,
