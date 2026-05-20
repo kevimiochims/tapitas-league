@@ -190,12 +190,19 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
   return (
     <div
-      className={`overflow-hidden rounded-[28px] border transition-all duration-200 ${
+      className={`relative overflow-hidden rounded-[28px] border transition-all duration-200 ${
         isOpen
           ? 'border-cyan-400/30'
           : 'border-white/5 hover:border-white/10'
       } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
+      {/* Badge Reigning — sobreposto no canto superior direito */}
+      {index === 0 && (
+        <div className="absolute right-3 top-3 z-10 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-300">
+          Reigning
+        </div>
+      )}
+
       <button
         onClick={onToggle}
         className="flex w-full items-center gap-4 px-6 py-5 text-left transition-all"
@@ -223,18 +230,12 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
           </div>
           <div className="mt-1 text-xs text-slate-500">
             {champ.wins}–{champ.losses} overall
-              {champ.playoffWins > 0 || champ.playoffLosses > 0
-                ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
-                : ''}
-              {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
+            {champ.playoffWins > 0 || champ.playoffLosses > 0
+              ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
+              : ''}
+            {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
           </div>
         </div>
-
-        {index === 0 && !isOpen && (
-          <span className="flex-shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-300">
-            Reigning
-          </span>
-        )}
 
         <ChevronRight
           className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
