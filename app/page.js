@@ -282,7 +282,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 }
 
 function ChampionsWall({ champions }) {
-  const [openSet, setOpenSet] = useState(new Set([0, 1, 2]))
+  const [openSet, setOpenSet] = useState(new Set())
 
   const toggle = (index) => {
     setOpenSet((prev) => {
@@ -1175,7 +1175,9 @@ const selectedRivalry = useMemo(() => {
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
               <Radar className="h-5 w-5 text-cyan-300" />
             </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Games</div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+              Games Disputed
+            </div>
             <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.games}</div>
             <div className="truncate text-sm font-bold text-cyan-300">All-Time</div>
           </div>
@@ -1265,24 +1267,29 @@ const selectedRivalry = useMemo(() => {
 
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    [Target,   'Record',                                          selectedRivalry.record],
-                    [Trophy,   'Playoffs',                                        selectedRivalry.playoffRecord],
-                    [Activity, 'Avg Margin',                                      `${selectedRivalry.avgMargin} ppg`],
-                    [Stars,    `Last Meeting (${selectedRivalry.lastMeeting.meta})`, selectedRivalry.lastMeeting.score],
-                    [Radar,    'Current Streak',                                  selectedRivalry.streak],
-                    [Flame,    'Rivalry Heat',                                    selectedRivalry.heat],
+                    [Target,   'Record',                                             selectedRivalry.record],
+                    [Trophy,   'Playoffs',                                           selectedRivalry.playoffRecord],
+                    [Activity, 'Avg Margin',                                         `${selectedRivalry.avgMargin} ppg`],
+                    [Stars,    `Last Meeting${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
+                    [Radar,    'Current Streak',                                     selectedRivalry.streak],
+                    [Flame,    'Rivalry Heat',                                       selectedRivalry.heat],
                   ].map(([Icon, label, value]) => (
                     <div
                       key={label}
-                      className="rounded-[26px] border border-white/10 bg-white/[0.04] p-5"
+                      className="rounded-[26px] border border-white/10 bg-white/[0.04] p-4"
                     >
-                      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                        <Icon className="h-4 w-4 text-cyan-300" />
+                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                        <Icon className="h-3.5 w-3.5 text-cyan-300" />
                       </div>
-                      <div className="mb-3 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 lg:text-[11px]">
+                      <div className="mb-2 text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-slate-500 sm:text-[10px] lg:text-[11px]"
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                      >
                         {label}
                       </div>
-                      <div className="flex flex-wrap items-center text-2xl font-black leading-none xl:text-[30px]">
+                      <div
+                        className="font-black leading-none text-white"
+                        style={{ fontSize: 'clamp(14px, 3.5vw, 30px)', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                      >
                         {value}
                       </div>
                     </div>
@@ -1419,14 +1426,19 @@ const selectedRivalry = useMemo(() => {
                 return (
                   <div
                     key={`${team.team}-${globalIndex}`}
-                    className="grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[28px] border border-white/5 bg-white/[0.03] px-6 py-5"
+                    className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-white/5 bg-white/[0.03] px-4 py-4 sm:px-6 sm:py-5"
                   >
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-300">
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 font-black text-cyan-300 sm:h-14 sm:w-14"
+                      style={{ fontSize: 'clamp(14px, 3vw, 22px)' }}
+                    >
                       {globalIndex + 1}
                     </div>
 
-                    <div>
-                      <div className="mb-1 truncate text-2xl font-black">
+                    <div className="min-w-0">
+                      <div
+                        className="mb-1 truncate font-black text-white"
+                        style={{ fontSize: 'clamp(14px, 3.5vw, 24px)' }}
+                      >
                         {team.team}
                       </div>
 
@@ -1440,29 +1452,29 @@ const selectedRivalry = useMemo(() => {
                         }
                         const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
                         if (!streakInfo) return null
-
                         return (
-                          <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
                             W{streakInfo.startWeek}, {streakInfo.startSeason}
                             <span className="mx-1 text-slate-600">→</span>
                             W{streakInfo.endWeek}, {streakInfo.endSeason}
-                            {streakInfo.active && (
-                              <span className="ml-1 text-cyan-400">(active)</span>
-                            )}
+                            {streakInfo.active && <span className="ml-1 text-cyan-400">(active)</span>}
                           </div>
                         )
                       })() : (
-                        <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
                           {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
                         </div>
                       )}
                     </div>
 
-                    <div className="text-right">
-                      <div className="mb-2 text-4xl font-black leading-none text-cyan-300">
+                    <div className="flex-shrink-0 text-right">
+                      <div
+                        className="mb-1 font-black leading-none text-cyan-300"
+                        style={{ fontSize: 'clamp(22px, 5vw, 40px)' }}
+                      >
                         {displayValue}
                       </div>
-                      <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:text-xs">
                         {shortLabel}
                       </div>
                     </div>
