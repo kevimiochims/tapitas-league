@@ -1269,12 +1269,28 @@ const selectedRivalry = useMemo(() => {
                   'Titles':         (t) => t.titles,
                 }
 
-                const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
+                const shortLabelMap = {
+                  'W':              'Wins',
+                  'RS_W':           'Wins',
+                  'PO_W':           'Wins',
+                  'L':              'Losses',
+                  'RS_L':           'Losses',
+                  'PO_L':           'Losses',
+                  'W%':             'All-Time',
+                  'PF':             'Points',
+                  'RS_PF':          'Points',
+                  'PO_PF':          'Points',
+                  'W Streak RS':    'Win Streak',
+                  'W Streak Total': 'Win Streak',
+                  'L Streak RS':    'Loss Streak',
+                  'L Streak Total': 'Loss Streak',
+                  'Playoff Apps':   'Playoffs',
+                  'Finals':         'Finals',
+                  'Titles':         'Titles',
+                }
 
-                // label curto — só o que é relevante
-                const shortLabel = sub?.label === 'All-Time' || sub?.label === 'Total'
-                  ? sortCategory
-                  : sub?.label ?? sortCategory
+                const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
+                const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
 
                 return (
                   <div
