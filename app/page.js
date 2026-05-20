@@ -1175,129 +1175,138 @@ const selectedRivalry = useMemo(() => {
         </div>
 
         {/* Franchise Leaders */}
-<div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
-  
-  {/* Header */}
-  <div className="flex items-center justify-between border-b border-white/5 p-8">
-    <div>
-      <div className="mb-3 text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
-        Franchise Leaders
-      </div>
-      <h3 className="text-4xl font-black tracking-tight">
-        League Rankings
-      </h3>
-    </div>
+        <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
+          
+          {/* Header — igual ao Rivalry */}
+          <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                <Trophy className="h-5 w-5 text-cyan-300" />
+              </div>
+              <div>
+                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+                  Franchise Leaders
+                </div>
+                <div className="text-base text-slate-400">
+                  League Rankings
+                </div>
+              </div>
+            </div>
 
-    {/* Seletores de ordenação */}
-<div className="flex flex-wrap items-center gap-3 border-b border-white/5 px-8 py-4">
-  <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
-    Sort by
-  </span>
-  <TeamSelect
-    value={sortCategory}
-    onChange={(val) => setSortCategory(val)}
-    options={SORT_OPTIONS.map((o) => o.label)}
-    placeholder="Category..."
-  />
-  {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
-    <TeamSelect
-      value={sortSub}
-      onChange={(val) => setSortSub(val)}
-      options={
-        SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
-      }
-      placeholder="Type..."
-    />
-  )}
-</div>
+            {/* Setas de paginação */}
+            {standings.length > 5 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
+                  disabled={standingsPage === 0}
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-xs font-black text-slate-500">
+                  {standingsPage + 1}/{Math.ceil(standings.length / 5)}
+                </span>
+                <button
+                  onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
+                  disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
 
-    {/* Setas de paginação */}
-    {standings.length > 5 && (
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
-          disabled={standingsPage === 0}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <span className="text-xs font-black text-slate-500">
-          {standingsPage + 1}/{Math.ceil(standings.length / 5)}
-        </span>
-        <button
-          onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
-          disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-    )}
-  </div>
+          {/* Sort by — abaixo do header, dois dropdowns lado a lado */}
+          <div className="flex items-center gap-3 border-b border-white/5 px-6 py-4">
+            <span className="flex-shrink-0 text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+              Sort by
+            </span>
+            <TeamSelect
+              value={sortCategory}
+              onChange={(val) => setSortCategory(val)}
+              options={SORT_OPTIONS.map((o) => o.label)}
+              placeholder="Category..."
+            />
+            {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
+              <TeamSelect
+                value={sortSub}
+                onChange={(val) => setSortSub(val)}
+                options={
+                  SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
+                }
+                placeholder="Type..."
+              />
+            )}
+          </div>
 
-  {/* Lista */}
-  <div className="space-y-4 p-6">
-    {standings
-  .slice(standingsPage * 5, standingsPage * 5 + 5)
-  .map((team, index) => {
-    const globalIndex = standingsPage * 5 + index
-    const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
-    const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
+          {/* Lista */}
+          <div className="space-y-4 p-6">
+            {standings
+              .slice(standingsPage * 5, standingsPage * 5 + 5)
+              .map((team, index) => {
+                const globalIndex = standingsPage * 5 + index
+                const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+                const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
 
-    const keyMap = {
-      'W':              (t) => t.wins,
-      'RS_W':           (t) => t.rsW,
-      'PO_W':           (t) => t.poW,
-      'L':              (t) => t.losses,
-      'RS_L':           (t) => t.rsL,
-      'PO_L':           (t) => t.poL,
-      'W%':             (t) => `${t.winPct}%`,
-      'PF':             (t) => Math.round(t.pf),
-      'RS_PF':          (t) => Math.round(t.rsPF),
-      'PO_PF':          (t) => Math.round(t.poPF),
-      'W Streak RS':    (t) => t.wStreakRS,
-      'W Streak Total': (t) => t.wStreakTotal,
-      'L Streak RS':    (t) => t.lStreakRS,
-      'L Streak Total': (t) => t.lStreakTotal,
-      'Playoff Apps':   (t) => t.playoffApps,
-      'Finals':         (t) => t.finals,
-      'Titles':         (t) => t.titles,
-    }
+                const keyMap = {
+                  'W':              (t) => t.wins,
+                  'RS_W':           (t) => t.rsW,
+                  'PO_W':           (t) => t.poW,
+                  'L':              (t) => t.losses,
+                  'RS_L':           (t) => t.rsL,
+                  'PO_L':           (t) => t.poL,
+                  'W%':             (t) => `${t.winPct}%`,
+                  'PF':             (t) => Math.round(t.pf),
+                  'RS_PF':          (t) => Math.round(t.rsPF),
+                  'PO_PF':          (t) => Math.round(t.poPF),
+                  'W Streak RS':    (t) => t.wStreakRS,
+                  'W Streak Total': (t) => t.wStreakTotal,
+                  'L Streak RS':    (t) => t.lStreakRS,
+                  'L Streak Total': (t) => t.lStreakTotal,
+                  'Playoff Apps':   (t) => t.playoffApps,
+                  'Finals':         (t) => t.finals,
+                  'Titles':         (t) => t.titles,
+                }
 
-    const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
-    const displayLabel = sub ? `${sortCategory} — ${sortSub}` : 'Wins'
+                const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
 
-    return (
-      <div
-        key={`${team.team}-${globalIndex}`}
-        className="grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[28px] border border-white/5 bg-white/[0.03] px-6 py-5"
-      >
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-300">
-          {globalIndex + 1}
+                // label curto — só o que é relevante
+                const shortLabel = sub?.label === 'All-Time' || sub?.label === 'Total'
+                  ? sortCategory
+                  : sub?.label ?? sortCategory
+
+                return (
+                  <div
+                    key={`${team.team}-${globalIndex}`}
+                    className="grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[28px] border border-white/5 bg-white/[0.03] px-6 py-5"
+                  >
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-300">
+                      {globalIndex + 1}
+                    </div>
+
+                    <div>
+                      <div className="mb-1 truncate text-2xl font-black">
+                        {team.team}
+                      </div>
+                      <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                        {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="mb-2 text-4xl font-black leading-none text-cyan-300">
+                        {displayValue}
+                      </div>
+                      <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                        {shortLabel}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
         </div>
-
-        <div>
-          <div className="mb-1 truncate text-2xl font-black">
-            {team.team}
-          </div>
-          <div className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
-            {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
-          </div>
-        </div>
-
-        <div className="text-right">
-          <div className="mb-2 text-4xl font-black leading-none text-cyan-300">
-            {displayValue}
-          </div>
-          <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-            {displayLabel}
-          </div>
-        </div>
-      </div>
-    )
-  })}
-  </div>
-</div>
         </div>
       </section>
     </main>
