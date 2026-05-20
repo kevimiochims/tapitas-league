@@ -203,12 +203,12 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         </div>
       )}
 
-      <button
-  onClick={onToggle}
-  className={`flex w-full items-center gap-4 px-6 text-left transition-all ${
-    index === 0 ? 'pb-5 pt-9' : 'py-5'
-  }`}
->
+        <button
+          onClick={onToggle}
+          className={`flex w-full items-center gap-4 px-6 text-left transition-all ${
+            index === 0 ? 'pb-5 pt-9' : 'py-5'
+          }`}
+        >
         {!isOpen && (
           <Trophy className="h-5 w-5 flex-shrink-0 text-cyan-400" />
         )}
@@ -1262,9 +1262,12 @@ const selectedRivalry = useMemo(() => {
             {selectedRivalry && (
               <>
                 {/* Título normal */}
-                <h2 className="mb-6 break-words text-[28px] font-black leading-[0.95] tracking-[-0.05em] sm:text-[36px] lg:text-[44px]">
+                <h2
+                  className="mb-6 font-black leading-tight tracking-[-0.04em]"
+                  style={{ fontSize: 'clamp(18px, 4vw, 44px)' }}
+                >
                   {selectedRivalry.teamA}
-                  <span className="mx-3 text-cyan-400">vs</span>
+                  <span className="mx-2 text-cyan-400">vs</span>
                   {selectedRivalry.teamB}
                 </h2>
 
