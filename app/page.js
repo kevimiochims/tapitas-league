@@ -718,6 +718,8 @@ useEffect(() => {
       ? rawData : FALLBACK_TEAMS
 
   const mapped = base.map(normalizeTeam)
+  console.log('rsWinPct exemplo:', mapped[0]?.rsWinPct, 'poWinPct:', mapped[0]?.poWinPct)
+ 
 
   const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
   const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
