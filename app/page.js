@@ -204,9 +204,11 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
       )}
 
       <button
-        onClick={onToggle}
-        className="flex w-full items-center gap-4 px-6 py-5 text-left transition-all"
-      >
+  onClick={onToggle}
+  className={`flex w-full items-center gap-4 px-6 text-left transition-all ${
+    index === 0 ? 'pb-5 pt-9' : 'py-5'
+  }`}
+>
         {!isOpen && (
           <Trophy className="h-5 w-5 flex-shrink-0 text-cyan-400" />
         )}
