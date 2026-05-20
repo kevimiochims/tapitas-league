@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
-  Swords, Stars, Activity, Radar, Target,
+  Swords, Stars, Activity, Radar, Target, Medal
 } from 'lucide-react'
 import { useEffect, useMemo, useState, useRef } from 'react'
 
@@ -1314,7 +1314,7 @@ const selectedRivalry = useMemo(() => {
           <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                <Trophy className="h-5 w-5 text-cyan-300" />
+                <Medal className="h-5 w-5 text-cyan-300" />
               </div>
               <div>
                 <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
