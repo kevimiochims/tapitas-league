@@ -600,6 +600,9 @@ useEffect(() => {
           safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
           safeSheetFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
         ])
+        console.log('Colunas disponíveis:', Object.keys(teamsJson[0] || {}))
+        console.log('Primeira linha:', teamsJson[0])
+        
 
         if (!mounted) {
           return
