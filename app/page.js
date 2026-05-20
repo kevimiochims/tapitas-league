@@ -428,17 +428,17 @@ const SORT_OPTIONS = [
     ],
   },
   {
-    label: 'Playoffs',
-    subs: [
-      { label: 'Appearances', key: 'Playoff Apps', order: 'desc' },
-    ],
-  },
-  {
-    label: 'Finals',
-    subs: [
-      { label: 'Appearances', key: 'Finals', order: 'desc' },
-    ],
-  },
+  label: 'Playoffs Appearances',
+  subs: [
+    { label: 'Appearances', key: 'Playoff Apps', order: 'desc' },
+  ],
+},
+{
+  label: 'Finals Appearances',
+  subs: [
+    { label: 'Appearances', key: 'Finals', order: 'desc' },
+  ],
+},
   {
     label: 'Championships',
     subs: [
