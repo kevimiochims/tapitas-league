@@ -1261,7 +1261,7 @@ const selectedRivalry = useMemo(() => {
                 const globalIndex = standingsPage * 5 + index
                 const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
                 const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
-
+                console.log('cat:', sortCategory, 'sub:', sortSub, 'found:', cat?.subs.find((s) => s.label === sortSub))
                 const keyMap = {
                   'W':              (t) => t.wins,
                   'RS_W':           (t) => t.rsW,
