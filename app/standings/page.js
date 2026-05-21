@@ -80,56 +80,41 @@ function Select({ value, onChange, options, placeholder, disabled }) {
 }
 
 // ---- Gráfico SVG ----
-function WinChart({ data, seasons, teamName }) {
+function WinChart({ data }) {
   if (!data || data.length === 0) return null
 
-  const W = 560
-  const H = 180
-  const padL = 36
-  const padR = 16
-  const padT = 24
-  const padB = 28
-
-  const maxW = Math.max(...data.map(d => d.w), 1)
-  const minW = Math.min(...data.map(d => d.w))
-
+  const W = 560, H = 180, padL = 36, padR = 16, padT = 24, padB = 28
+  const maxV = Math.max(...data.map(d => d.value), 1)
   const xScale = (i) => padL + (i / (data.length - 1)) * (W - padL - padR)
-  const yScale = (v) => padT + (1 - (v - 0) / (maxW + 1)) * (H - padT - padB)
-
-  const points = data.map((d, i) => `${xScale(i)},${yScale(d.w)}`).join(' ')
+  const yScale = (v) => padT + (1 - v / (maxV + 1)) * (H - padT - padB)
+  const points = data.map((d, i) => `${xScale(i)},${yScale(d.value)}`).join(' ')
   const areaPoints = `${xScale(0)},${H - padB} ${points} ${xScale(data.length - 1)},${H - padB}`
-
-  const gridVals = [0, Math.round(maxW * 0.33), Math.round(maxW * 0.66), maxW]
+  const gridVals = [0, Math.round(maxV * 0.33), Math.round(maxV * 0.66), maxV]
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
-      {/* grid */}
       {gridVals.map(v => (
         <g key={v}>
           <line x1={padL} y1={yScale(v)} x2={W - padR} y2={yScale(v)} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
           <text x={padL - 6} y={yScale(v) + 4} textAnchor="end" fontSize="9" fill="#475569">{v}</text>
         </g>
       ))}
-
-      {/* area */}
       <polygon points={areaPoints} fill="#22d3ee" opacity="0.07" />
-
-      {/* line */}
       <polyline points={points} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />
-
-      {/* dots + labels + champions */}
       {data.map((d, i) => (
-            <g key={i}>
-                <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize="9" fill="#475569">
-                {`'${String(d.season).slice(2)}`}
-                </text>
-                {d.champion && (
-                <text x={xScale(i)} y={yScale(d.w) - 22} textAnchor="middle" fontSize="10">🏆</text>
-                )}
-                <text x={xScale(i)} y={yScale(d.w) - (d.champion ? 10 : 10)} textAnchor="middle" fontSize="8" fill="#22d3ee">{d.w}</text>
-                <circle cx={xScale(i)} cy={yScale(d.w)} r="3.5" fill="#22d3ee" />
-            </g>
-            ))}
+        <g key={i}>
+          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize="9" fill="#475569">
+            {`'${String(d.season).slice(2)}`}
+          </text>
+          {d.champion && (
+            <text x={xScale(i)} y={yScale(d.value) - 22} textAnchor="middle" fontSize="10">🏆</text>
+          )}
+          <text x={xScale(i)} y={yScale(d.value) - 10} textAnchor="middle" fontSize="8" fill="#22d3ee">
+            {Math.round(d.value)}
+          </text>
+          <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#22d3ee" />
+        </g>
+      ))}
     </svg>
   )
 }
@@ -144,6 +129,9 @@ export default function StandingsPage() {
   const [season,        setSeason]        = useState('All-Time')
   const [chartTeam,     setChartTeam]     = useState('')
   const [page,          setPage]          = useState(0)
+
+  const [sortCol, setSortCol]     = useState('W')
+  const [sortDir, setSortDir]     = useState('desc')
 
   const TABS = ['Overall', 'Reg Season', 'Playoffs']
   const PER_PAGE = 10
@@ -222,43 +210,59 @@ export default function StandingsPage() {
     }
 
     return rows
-      .filter(r => r.team)
-      .sort((a, b) => {
-        if (b.w !== a.w) return b.w - a.w
-        if (a.l !== b.l) return a.l - b.l
-        return b.pf - a.pf
-      })
-  }, [allTimeData, historyData, tab, season])
+  .filter(r => r.team)
+  .sort((a, b) => {
+    const getVal = (row) => {
+      if (sortCol === 'W')       return row.w
+      if (sortCol === 'L')       return row.l
+      if (sortCol === 'W%')      return row.winPct
+      if (sortCol === 'PF')      return row.pf
+      if (sortCol === 'Titles')  return row.titles
+      if (sortCol === 'Finals')  return row.finals
+      if (sortCol === 'PO Apps') return row.poApps
+      return row.w
+    }
+    const diff = sortDir === 'desc' ? getVal(b) - getVal(a) : getVal(a) - getVal(b)
+    if (diff !== 0) return diff
+    if (b.w !== a.w) return b.w - a.w
+    return b.pf - a.pf
+  })
+}, [allTimeData, historyData, tab, season, sortCol, sortDir])
 
   // Dados do gráfico
   const chartData = useMemo(() => {
-    if (!chartTeam) return []
-    return historyData
-      .filter(r => normalizeString(r?.Team || r?.team || '') === normalizeString(chartTeam))
-      .map(r => ({
-        season:   String(r?.Season || r?.season || '').trim(),
-        w:        parseNumber(r?.RS_W || 0),
-        l:        parseNumber(r?.RS_L || 0),
-        pf:       parseNumber(r?.RS_PF || 0),
-        champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
-      }))
-      .sort((a, b) => Number(a.season) - Number(b.season))
-  }, [historyData, chartTeam])
+  if (!chartTeam) return []
+  return historyData
+    .filter(r => normalizeString(r?.Team || r?.team || '') === normalizeString(chartTeam))
+    .map(r => ({
+      season:   String(r?.Season || r?.season || '').trim(),
+      value:    parseNumber(r?.[chartStat] || 0),
+      champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
+    }))
+    .sort((a, b) => Number(a.season) - Number(b.season))
+}, [historyData, chartTeam, chartStat])
 
   const chartStats = useMemo(() => {
-    if (!chartData.length) return null
-    const ws = chartData.map(d => d.w)
-    const titles = chartData.filter(d => d.champion).length
-    const best = chartData.reduce((a, b) => b.w > a.w ? b : a, chartData[0])
-    const worst = chartData.reduce((a, b) => b.w < a.w ? b : a, chartData[0])
-    const avg = ws.reduce((a, b) => a + b, 0) / ws.length
-    return { best, worst, avg: Math.round(avg * 10) / 10, titles }
-  }, [chartData])
+  if (!chartData.length) return null
+  const vals   = chartData.map(d => d.value)
+  const titles = chartData.filter(d => d.champion).length
+  const best   = chartData.reduce((a, b) => b.value > a.value ? b : a, chartData[0])
+  const worst  = chartData.reduce((a, b) => b.value < a.value ? b : a, chartData[0])
+  const avg    = vals.reduce((a, b) => a + b, 0) / vals.length
+  return { best, worst, avg: Math.round(avg * 10) / 10, titles }
+}, [chartData])
+
+
+  const CHART_STATS = [
+  { label: 'Wins',    key: 'RS_W',  allTime: false },
+  { label: 'Losses',  key: 'RS_L',  allTime: false },
+  { label: 'Points',  key: 'RS_PF', allTime: false },
+]
 
   const paged = tableData.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
   const totalPages = Math.ceil(tableData.length / PER_PAGE)
 
-  useEffect(() => { setPage(0) }, [tab, season])
+  useEffect(() => { setPage(0) }, [tab, season, sortCol, sortDir])
 
   const tabCols = {
     'Overall':    ['W', 'L', 'W%', 'PF', 'Titles', 'Finals', 'PO Apps'],
@@ -267,14 +271,23 @@ export default function StandingsPage() {
   }
 
   const getCol = (row, col) => {
-    if (col === 'W')      return row.w
-    if (col === 'L')      return row.l
-    if (col === 'W%')     return `${row.winPct.toFixed(1)}%`
-    if (col === 'PF')     return Math.round(row.pf).toLocaleString()
-    if (col === 'Titles') return row.titles
-    if (col === 'Finals') return row.finals
-    if (col === 'PO Apps')return row.poApps
+    if (col === 'W')       return row.w
+    if (col === 'L')       return row.l
+    if (col === 'W%')      return `${row.winPct.toFixed(1)}%`
+    if (col === 'PF')      return Math.round(row.pf).toLocaleString()
+    if (col === 'Titles')  return row.titles
+    if (col === 'Finals')  return row.finals
+    if (col === 'PO Apps') return row.poApps
     return '—'
+  }
+
+  const handleSort = (col) => {
+    if (sortCol === col) {
+      setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+    } else {
+      setSortCol(col)
+      setSortDir('desc')
+    }
   }
 
   return (
@@ -395,44 +408,63 @@ export default function StandingsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/5">
-                    <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">#</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Franchise</th>
+                <tr className="border-b border-white/5">
+                    <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">#</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Franchise</th>
                     {tabCols[tab].map(col => (
-                      <th key={col} className="px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{col}</th>
+                    <th
+                        key={col}
+                        onClick={() => handleSort(col)}
+                        className="cursor-pointer px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] transition-colors hover:text-cyan-300"
+                        style={{ color: sortCol === col ? '#22d3ee' : '#94a3b8' }}
+                    >
+                        <span className="inline-flex items-center justify-end gap-1">
+                        {col}
+                        {sortCol === col && (
+                            <span className="text-cyan-400">{sortDir === 'desc' ? '↓' : '↑'}</span>
+                        )}
+                        </span>
+                    </th>
                     ))}
-                  </tr>
+                </tr>
                 </thead>
                 <tbody>
-                  {paged.map((row, i) => {
+                {paged.map((row, i) => {
                     const rank = page * PER_PAGE + i + 1
                     return (
-                      <tr key={row.team} className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]">
+                    <tr key={row.team} className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]">
                         <td className="px-6 py-4">
-                          <span className={`text-sm font-black ${rank <= 3 ? 'text-cyan-300' : 'text-slate-600'}`}>
+                        <span className={`text-sm font-black ${rank <= 3 ? 'text-cyan-300' : 'text-slate-500'}`}>
                             {rank}
-                          </span>
+                        </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <span className="font-black text-white" style={{ fontSize: 'clamp(13px, 2vw, 16px)' }}>
-                              {row.team}
+                            {row.team}
                             </span>
                             {row.champion && (
-                              <span className="text-[10px] font-black uppercase tracking-widest rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-cyan-300">
+                            <span className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-cyan-300">
                                 Champion
-                              </span>
+                            </span>
                             )}
-                          </div>
+                        </div>
                         </td>
                         {tabCols[tab].map(col => (
-                          <td key={col} className={`px-4 py-4 text-right text-sm font-bold ${col === 'W' ? 'text-cyan-300 font-black text-base' : 'text-slate-400'}`}>
+                        <td
+                            key={col}
+                            className="px-4 py-4 text-right text-sm font-bold"
+                            style={{
+                            color: sortCol === col ? '#22d3ee' : col === 'W' ? '#e2e8f0' : '#94a3b8',
+                            fontWeight: sortCol === col ? '900' : col === 'W' ? '900' : '600',
+                            }}
+                        >
                             {getCol(row, col)}
-                          </td>
+                        </td>
                         ))}
-                      </tr>
+                    </tr>
                     )
-                  })}
+                })}
                 </tbody>
               </table>
             </div>
@@ -471,23 +503,33 @@ export default function StandingsPage() {
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 px-8 py-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
                 <Activity className="h-5 w-5 text-cyan-300" />
-              </div>
-              <div>
-                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Win Evolution</div>
-                <div className="text-base text-slate-400">Regular season wins per year</div>
-              </div>
+                </div>
+                <div>
+                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+                    Franchise Evolution
+                </div>
+                <div className="text-base text-slate-400">Year by year performance</div>
+                </div>
             </div>
-            <div className="w-56">
-              <Select
-                value={chartTeam}
-                onChange={setChartTeam}
-                options={allTeams}
-                placeholder="Select franchise..."
-              />
+            <div className="flex flex-wrap gap-3">
+                <div className="w-48">
+                <Select
+                    value={CHART_STATS.find(s => s.key === chartStat)?.label ?? 'Wins'}
+                    onChange={(val) => {
+                    const found = CHART_STATS.find(s => s.label === val)
+                    if (found) setChartStat(found.key)
+                    }}
+                    options={CHART_STATS.map(s => s.label)}
+                    placeholder="Stat..."
+                />
+                </div>
+                <div className="w-56">
+                <Select value={chartTeam} onChange={setChartTeam} options={allTeams} placeholder="Select franchise..." />
+                </div>
             </div>
-          </div>
+            </div>
 
           {/* Gráfico */}
           <div className="overflow-x-auto px-6 pb-2 pt-6">
@@ -499,20 +541,20 @@ export default function StandingsPage() {
           {/* Mini stats */}
           {chartStats && (
             <div className="grid grid-cols-2 gap-4 p-6 md:grid-cols-4">
-              {[
-                ['Best Season', `${chartStats.best.w}W`, `'${String(chartStats.best.season).slice(2)}`],
-                ['Worst Season', `${chartStats.worst.w}W`, `'${String(chartStats.worst.season).slice(2)}`],
-                ['Avg Wins', chartStats.avg, 'per season'],
-                ['Championships', chartStats.titles, 'titles'],
-              ].map(([label, value, sub]) => (
+                {[
+                ['Best Season',   Math.round(chartStats.best.value),  `'${String(chartStats.best.season).slice(2)}`],
+                ['Worst Season',  Math.round(chartStats.worst.value), `'${String(chartStats.worst.season).slice(2)}`],
+                ['Season Avg',    chartStats.avg,                      'per season'],
+                ['Championships', chartStats.titles,                   'titles'],
+                ].map(([label, value, sub]) => (
                 <div key={label} className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
-                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
-                  <div className="text-3xl font-black text-cyan-300">{value}</div>
-                  <div className="mt-1 text-xs font-bold text-slate-500">{sub}</div>
+                    <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
+                    <div className="text-3xl font-black text-cyan-300">{value}</div>
+                    <div className="mt-1 text-xs font-bold text-slate-500">{sub}</div>
                 </div>
-              ))}
+                ))}
             </div>
-          )}
+            )}
         </div>
 
       </section>
