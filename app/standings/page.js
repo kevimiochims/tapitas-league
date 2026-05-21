@@ -294,18 +294,20 @@ export default function StandingsPage() {
     </span>
   </a>
   <nav className="hidden items-center gap-1 md:flex">
-    {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map(item => (
-      <a>
+  {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map(item => {
+    const href = item === 'Home' ? '/' : `/${item.toLowerCase()}`
+    const isActive = item === 'Standings'
+    return (
+      <a
         key={item}
-        href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
-        className={[
-          'rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white',
-          item === 'Standings' ? 'bg-white/[0.06] text-white' : 'text-slate-400'
-        ].join(' ')}
+        href={href}
+        className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${isActive ? 'bg-white/[0.06] text-white' : 'text-slate-400'}`}
+      >
         {item}
       </a>
-    ))}
-  </nav>
+    )
+  })}
+</nav>
 </header>
 
       <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
