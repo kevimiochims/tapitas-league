@@ -282,28 +282,31 @@ export default function StandingsPage() {
   }
 
   return (
+    <>
     <main className="min-h-screen bg-[#020617] text-white">
 
       {/* Header */}
       <header className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-        <a href="/" className="flex items-center gap-3">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={36} height={36} style={{ filter: 'invert(1)' }} className="opacity-80" />
-          <span className="text-base font-black tracking-[-0.04em]">
-            Tapitas<span className="text-cyan-400">League</span>
-          </span>
-        </a>
-        <nav className="hidden items-center gap-1 md:flex">
-          {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map(item => (
-            
-              key={item}
-              href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
-              className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${item === 'Standings' ? 'bg-white/[0.06] text-white' : 'text-slate-400'}`}
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-      </header>
+  <a href="/" className="flex items-center gap-3">
+    <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={36} height={36} style={{ filter: 'invert(1)' }} className="opacity-80" />
+    <span className="text-base font-black tracking-[-0.04em]">
+      Tapitas<span className="text-cyan-400">League</span>
+    </span>
+  </a>
+  <nav className="hidden items-center gap-1 md:flex">
+    {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map(item => (
+      <a>
+        key={item}
+        href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
+        className={[
+          'rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white',
+          item === 'Standings' ? 'bg-white/[0.06] text-white' : 'text-slate-400'
+        ].join(' ')}
+        {item}
+      </a>
+    ))}
+  </nav>
+</header>
 
       <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
 
@@ -523,10 +526,12 @@ export default function StandingsPage() {
           </span>
         </div>
       </footer>
-
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
       `}</style>
+    
     </main>
+      
+      </>
   )
 }
