@@ -237,7 +237,7 @@ export default function StandingsPage() {
     .filter(r => normalizeString(r?.Team || r?.team || '') === normalizeString(chartTeam))
     .map(r => ({
       season:   String(r?.Season || r?.season || '').trim(),
-      value:    parseNumber(r?.[chartStat] || 0),
+      value:    parseNumber(String(r?.[chartStat] || '0').replace('%', '')),
       champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
     }))
     .sort((a, b) => Number(a.season) - Number(b.season))
@@ -255,9 +255,10 @@ export default function StandingsPage() {
 
 
   const CHART_STATS = [
-  { label: 'Wins',    key: 'RS_W',  allTime: false },
-  { label: 'Losses',  key: 'RS_L',  allTime: false },
-  { label: 'Points',  key: 'RS_PF', allTime: false },
+  { label: 'Wins',    key: 'RS_W',   allTime: false },
+  { label: 'Losses',  key: 'RS_L',   allTime: false },
+  { label: 'Points',  key: 'RS_PF',  allTime: false },
+  { label: 'Win %',   key: 'RS_W%',  allTime: false },
 ]
 
   const paged = tableData.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
