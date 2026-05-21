@@ -1491,6 +1491,60 @@ const selectedRivalry = useMemo(() => {
         </div>
         </div>
       </section>
+      {/* FOOTER */}
+      <footer className="relative z-10 mx-auto max-w-[1680px] px-6 pb-12 pt-4">
+        <div className="flex flex-col items-center gap-8 rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] px-8 py-16 text-center">
+
+          {/* Frase */}
+          <h2
+            className="max-w-3xl leading-[0.9] tracking-[-0.03em]"
+            style={{
+              fontFamily: '"Bebas Neue", sans-serif',
+              fontSize: 'clamp(42px, 7vw, 96px)',
+              background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            The game ends.{' '}
+            <span
+              style={{
+                background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              The history remains.
+            </span>
+          </h2>
+
+          {/* Linha divisória */}
+          <div className="h-px w-24 bg-white/10" />
+
+          {/* Logo + nome */}
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/LogoFinalBlack.png"
+              alt="Tapitas League"
+              width={32}
+              height={32}
+              className="opacity-40"
+              style={{ filter: 'invert(1)' }}
+            />
+            <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-500">
+              Tapitas League
+            </span>
+          </div>
+
+          {/* Copyright */}
+          <p className="text-xs font-bold text-slate-600">
+            © {new Date().getFullYear()} Tapitas League · Est. 2014 · All rights reserved.
+          </p>
+
+        </div>
+      </footer>
     </main>
   )
 }
