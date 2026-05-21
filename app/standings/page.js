@@ -127,8 +127,9 @@ export default function StandingsPage() {
 
   const [tab,           setTab]           = useState('Overall')
   const [season,        setSeason]        = useState('All-Time')
-  const [chartTeam,     setChartTeam]     = useState('')
-  const [page,          setPage]          = useState(0)
+  const [chartTeam, setChartTeam] = useState('')
+  const [chartStat, setChartStat] = useState('RS_W')
+  const [page,      setPage]      = useState(0)
 
   const [sortCol, setSortCol]     = useState('W')
   const [sortDir, setSortDir]     = useState('desc')
