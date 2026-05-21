@@ -89,7 +89,7 @@ function WinChart({ data }) {
   const yScale = (v) => padT + (1 - v / (maxV + 1)) * (H - padT - padB)
   const points = data.map((d, i) => `${xScale(i)},${yScale(d.value)}`).join(' ')
   const areaPoints = `${xScale(0)},${H - padB} ${points} ${xScale(data.length - 1)},${H - padB}`
-  const gridVals = [0, Math.round(maxV * 0.33), Math.round(maxV * 0.66), maxV]
+  const gridVals = [0, Math.round(maxV * 0.33), Math.round(maxV * 0.66), Math.round(maxV)]
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
@@ -109,9 +109,9 @@ function WinChart({ data }) {
           {d.champion && (
             <text x={xScale(i)} y={yScale(d.value) - 22} textAnchor="middle" fontSize="10">🏆</text>
           )}
-          <text x={xScale(i)} y={yScale(d.value) - 10} textAnchor="middle" fontSize="8" fill="#22d3ee">
-            {Math.round(d.value)}
-          </text>
+          <text x={padL - 6} y={yScale(v) + 4} textAnchor="end" fontSize="9" fill="#475569">
+            {Math.round(v)}
+            </text>
           <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#22d3ee" />
         </g>
       ))}
