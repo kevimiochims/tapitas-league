@@ -119,21 +119,17 @@ function WinChart({ data, seasons, teamName }) {
 
       {/* dots + labels + champions */}
       {data.map((d, i) => (
-        <g key={i}>
-          {/* x label */}
-          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize="9" fill="#475569">
-            '{String(d.season).slice(2)}
-          </text>
-          {/* champion trophy */}
-          {d.champion && (
-            <text x={xScale(i)} y={yScale(d.w) - 10} textAnchor="middle" fontSize="10">🏆</text>
-          )}
-          {/* value */}
-          <text x={xScale(i)} y={yScale(d.w) - (d.champion ? 22 : 10)} textAnchor="middle" fontSize="8" fill="#22d3ee">{d.w}</text>
-          {/* dot */}
-          <circle cx={xScale(i)} cy={yScale(d.w)} r="3.5" fill="#22d3ee" />
-        </g>
-      ))}
+            <g key={i}>
+                <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize="9" fill="#475569">
+                {`'${String(d.season).slice(2)}`}
+                </text>
+                {d.champion && (
+                <text x={xScale(i)} y={yScale(d.w) - 22} textAnchor="middle" fontSize="10">🏆</text>
+                )}
+                <text x={xScale(i)} y={yScale(d.w) - (d.champion ? 10 : 10)} textAnchor="middle" fontSize="8" fill="#22d3ee">{d.w}</text>
+                <circle cx={xScale(i)} cy={yScale(d.w)} r="3.5" fill="#22d3ee" />
+            </g>
+            ))}
     </svg>
   )
 }
@@ -494,9 +490,11 @@ export default function StandingsPage() {
           </div>
 
           {/* Gráfico */}
-          <div className="px-6 pt-6 pb-2">
-            <WinChart data={chartData} teamName={chartTeam} />
-          </div>
+          <div className="overflow-x-auto px-6 pb-2 pt-6">
+            <div style={{ minWidth: '560px' }}>
+                <WinChart data={chartData} />
+            </div>
+            </div>
 
           {/* Mini stats */}
           {chartStats && (
