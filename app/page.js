@@ -1018,7 +1018,7 @@ const selectedRivalry = useMemo(() => {
             alt="Estádio ao fundo"
             layout="fill"
             objectFit="cover"
-            className="opacity-100" 
+            className="opacity-75" 
             priority
           />
           
