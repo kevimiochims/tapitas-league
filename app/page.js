@@ -1023,7 +1023,7 @@ const selectedRivalry = useMemo(() => {
           />
           
           {/* DEGRADÊ SUAVE PARA A DIREITA: Protege a leitura na esquerda sem criar uma parede branca sólida */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/99 via-white/95 via-white/85 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 via-white/75 to-transparent" />
           
           {/* Luzes internas sutis integradas ao ambiente */}
           <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.08] blur-[80px]" />
