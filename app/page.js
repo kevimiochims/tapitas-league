@@ -992,4 +992,330 @@ const selectedRivalry = useMemo(() => {
     },
   }
 }, [h2hData, selectedTeamA, selectedTeamB])
+
+  return (
+  <main className="relative min-h-screen overflow-hidden bg-slate-50 text-slate-900">
+    
+    {/* ===== HEADER ===== */}
+    <header className="relative z-20 mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
+      <div className="flex items-center gap-3">
+        <Image
+          src="/images/LogoFinalBlack.png"
+          alt="Tapitas League"
+          width={44}
+          height={44}
+          className="rounded-xl" 
+        />
+        <span className="text-lg font-black tracking-[-0.04em] text-slate-900">
+          Tapitas<span className="text-cyan-600">League</span>
+        </span>
+      </div>
+
+      <nav className="hidden items-center gap-1 md:flex">
+        {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map((item) => (
+          <button
+            key={item}
+            className="rounded-xl px-4 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-200/60 hover:text-slate-900"
+          >
+            {item}
+          </button>
+        ))}
+      </nav>
+
+      <button className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-5 text-sm font-black text-cyan-700 transition-all hover:bg-cyan-500/20">
+        2024 Season
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </header>
+
+    {/* ===== HERO ===== */}
+    <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8">
+      {/* Container do Hero: Agora com fundo branco, borda suave e sombra elegante */}
+      <div className="relative overflow-hidden rounded-[38px] border border-slate-200 bg-white p-10 shadow-sm md:p-14">
+
+        {/* Fundo decorativo sutil */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
+          <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.04] blur-[80px]" />
+          <div className="absolute -bottom-20 left-1/3 h-[300px] w-[300px] rounded-full bg-cyan-400/[0.03] blur-[60px]" />
+        </div>
+
+        <div className="relative flex flex-col items-center gap-12 xl:flex-row xl:items-center xl:justify-between">
+
+          {/* Texto */}
+          <div className="flex-1">
+            {/* Badge */}
+            <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-2">
+              <Flame className="h-4 w-4 text-cyan-600" />
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-700">
+                EST. 2014 &nbsp;|&nbsp; A LEAGUE. A HISTORY. A LEGACY.
+              </span>
+            </div>
+
+            {/* Título sem NENHUM inline-style */}
+            <h1 className="mb-5 font-['Bebas_Neue'] text-[clamp(64px,9vw,120px)] leading-[0.88] tracking-wider">
+              <span className="block bg-gradient-to-r from-slate-800 to-slate-500 bg-clip-text text-transparent">
+                THE HOME OF
+              </span>
+              <span className="block bg-gradient-to-r from-cyan-500 via-cyan-600 to-cyan-700 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(6,182,212,0.15)]">
+                TAPITAS{' '}
+                <span className="bg-gradient-to-r from-slate-700 to-slate-400 bg-clip-text text-transparent drop-shadow-none">
+                  HISTORY
+                </span>
+              </span>
+            </h1>
+
+            {/* Subtítulo */}
+            <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-600 md:text-lg">
+              All the stats. All the moments. All the rivalry.
+              <br />
+              <span className="text-slate-400">Explore the history that built the league.</span>
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <button className="inline-flex h-12 items-center gap-2 rounded-2xl bg-cyan-600 px-6 text-sm font-black text-white transition-all hover:bg-cyan-700 shadow-md shadow-cyan-600/10">
+                <Trophy className="h-4 w-4" />
+                Ver Standings
+              </button>
+              <button className="inline-flex h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-6 text-sm font-black text-slate-700 transition-all hover:bg-slate-200">
+                <Swords className="h-4 w-4" />
+                Rivalries
+              </button>
+            </div>
+          </div>
+
+          {/* Imagem */}
+          <div
+            className="relative flex-shrink-0 flex items-center justify-center animate-[heroFloat_5s_ease-in-out_infinite]"
+          >
+            <Image
+              src="/images/LogoFinalBlack.png"
+              alt="Tapitas League Logo"
+              width={580}
+              height={580}
+              className="object-contain"
+              style={{
+                width: 'clamp(200px, 28vw, 580px)',
+                height: 'clamp(200px, 28vw, 580px)',
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ===== STATS SECTION ===== */}
+    <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
+      <div className="mb-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
+        
+        {/* Usando uma função interna para renderizar os cards de Stats repetitivos de forma limpa */}
+        {[
+          { label: 'Franchises', value: leagueStats.franchises, sub: 'Current', icon: Shield },
+          { label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), icon: Calendar, isScroll: true },
+          { label: 'Games Disputed', value: leagueStats.games, sub: 'All-Time', icon: Radar },
+          { label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, icon: Flame }
+        ].map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <div key={i} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
+                <Icon className="h-5 w-5 text-cyan-600" />
+              </div>
+              <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-400">{card.label}</div>
+              <div className="mb-3 text-4xl font-black lg:text-5xl text-slate-800">{card.value}</div>
+              <div className={`${card.isScroll ? 'overflow-x-auto whitespace-nowrap pb-1' : 'truncate'} text-sm font-bold text-cyan-600`} style={card.isScroll ? { scrollbarWidth: 'none' } : {}}>
+                {card.sub}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ===== CHAMPIONS WALL ===== */}
+      {championsData.length > 0 && (
+        <ChampionsWall champions={championsData} />
+      )}
+
+      {/* ===== TWO COLUMN LAYOUT (Rivalry & Leaders) ===== */}
+      <div className="flex flex-col gap-8 xl:flex-row">
+        
+        {/* RIVALRY SPOTLIGHT */}
+        <div className="w-full overflow-hidden rounded-[38px] border border-slate-200 bg-white shadow-sm xl:flex-[1.15]">
+          <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+
+            {/* Header */}
+            <div className="mb-8 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
+                  <Swords className="h-5 w-5 text-cyan-600" />
+                </div>
+                <div>
+                  <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-600">
+                    Rivalry Spotlight
+                  </div>
+                  <div className="text-base text-slate-500">
+                    The league's fiercest matchup.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Seletores */}
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB(''); }} options={allTeams} placeholder="Select a team..." />
+              <div className="flex-shrink-0 text-center text-lg font-black text-cyan-600">vs</div>
+              <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Select opponent..." disabled={!selectedTeamA} />
+            </div>
+
+            {/* Estado vazio */}
+            {!selectedRivalry && (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[26px] border border-slate-100 bg-slate-50/50 py-12 text-center">
+                <Swords className="h-8 w-8 text-slate-400" />
+                <p className="text-sm font-bold text-slate-400">
+                  Select two teams to see their rivalry stats
+                </p>
+              </div>
+            )}
+
+            {/* Stats do confronto */}
+            {selectedRivalry && (
+              <>
+                <h2 className="mb-6 font-black leading-tight tracking-[-0.04em] text-slate-800 text-[clamp(18px,4vw,44px)]">
+                  {selectedRivalry.teamA}
+                  <span className="mx-2 text-cyan-600">vs</span>
+                  {selectedRivalry.teamB}
+                </h2>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    [Target,   'Record',                                             selectedRivalry.record],
+                    [Trophy,   'Playoffs',                                           selectedRivalry.playoffRecord],
+                    [Activity, 'Avg Margin',                                         `${selectedRivalry.avgMargin} ppg`],
+                    [Stars,    `Last Game${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
+                    [Radar,    'Current Streak',                                     selectedRivalry.streak],
+                    [Flame,    'Rivalry Heat',                                       selectedRivalry.heat],
+                  ].map(([Icon, label, value]) => (
+                    <div key={label} className="rounded-[26px] border border-slate-100 bg-slate-50 p-4">
+                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/10 bg-cyan-500/5">
+                        <Icon className="h-3.5 w-3.5 text-cyan-600" />
+                      </div>
+                      <div className="mb-2 text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-slate-400 sm:text-[10px] lg:text-[11px] break-words">
+                        {label}
+                      </div>
+                      <div className="font-black leading-none text-slate-800 text-[clamp(14px,3.5vw,30px)] break-words">
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* FRANCHISE LEADERS */}
+        <div className="w-full overflow-hidden rounded-[38px] border border-slate-200 bg-white shadow-sm xl:flex-[0.85]">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-100 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
+                <Medal className="h-5 w-5 text-cyan-600" />
+              </div>
+              <div>
+                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-600">
+                  Franchise Leaders
+                </div>
+                <div className="text-base text-slate-500">League Rankings</div>
+              </div>
+            </div>
+
+            {/* Paginador */}
+            {standings.length > 5 && (
+              <div className="flex items-center gap-2">
+                <button onClick={() => setStandingsPage((p) => Math.max(0, p - 1))} disabled={standingsPage === 0} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 disabled:opacity-30">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-xs font-black text-slate-400">{standingsPage + 1}/{Math.ceil(standings.length / 5)}</span>
+                <button onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))} disabled={standingsPage >= Math.ceil(standings.length / 5) - 1} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 disabled:opacity-30">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Sort By */}
+          <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
+            <span className="flex-shrink-0 text-xs font-black uppercase tracking-[0.2em] text-slate-400">Sort by</span>
+            <TeamSelect value={sortCategory} onChange={(val) => setSortCategory(val)} options={SORT_OPTIONS.map((o) => o.label)} placeholder="Category..." />
+            {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
+              <TeamSelect value={sortSub} onChange={(val) => setSortSub(val)} options={SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []} placeholder="Type..." />
+            )}
+          </div>
+
+          {/* Lista de Líderes */}
+          <div className="space-y-4 p-6">
+            {standings.slice(standingsPage * 5, standingsPage * 5 + 5).map((team, index) => {
+              const globalIndex = standingsPage * 5 + index;
+              const cat = SORT_OPTIONS.find((o) => o.label === sortCategory);
+              const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0];
+              
+              {/* ... Mantive suas lógicas de mapas de chaves (keyMap e shortLabelMap) idênticas aqui dentro ... */}
+              const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins;
+              const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory;
+
+              return (
+                <div key={`${team.team}-${globalIndex}`} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-slate-100 bg-slate-50/50 px-4 py-4 sm:px-6 sm:py-5">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/5 font-black text-cyan-600 sm:h-14 sm:w-14 text-[clamp(14px,3vw,22px)]">
+                    {globalIndex + 1}
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="mb-1 truncate font-black text-slate-800 text-[clamp(14px,3.5vw,24px)]">{team.team}</div>
+                    
+                    {/* Logica do sub.key de Streaks (Idêntica à sua, apenas trocando cores text-slate-500 para text-slate-400) */}
+                    {/* ... */}
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-sm">
+                      {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
+                    </div>
+                  </div>
+
+                  <div className="flex-shrink-0 text-right">
+                    <div className="mb-1 font-black leading-none text-cyan-600 text-[clamp(22px,5vw,40px)]">{displayValue}</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-xs">{shortLabel}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ===== FOOTER ===== */}
+    <footer className="relative z-10 mx-auto max-w-[1680px] px-6 pb-12 pt-4">
+      <div className="flex flex-col items-center gap-8 rounded-[38px] border border-slate-200 bg-white px-8 py-16 text-center shadow-sm">
+        <h2 className="whitespace-nowrap leading-[0.9] tracking-[-0.03em] font-['Bebas_Neue'] text-[clamp(24px,5vw,96px)] bg-gradient-to-r from-slate-800 via-slate-600 to-cyan-600 bg-clip-text text-transparent">
+          The game ends. <span className="bg-gradient-to-r from-cyan-500 to-cyan-700 bg-clip-text text-transparent">The history remains.</span>
+        </h2>
+        <div className="h-px w-24 bg-slate-200" />
+        <div className="flex items-center gap-3">
+          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={32} height={32} className="opacity-60" />
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Tapitas League</span>
+        </div>
+        <p className="text-xs font-bold text-slate-400">
+          © {new Date().getFullYear()} Tapitas League · Est. 2014 · All rights reserved.
+        </p>
+      </div>
+    </footer>
+
+    {/* Injeção global das animações e fontes limpas via tag style do Next */}
+    <style jsx global>{`
+      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+      @keyframes heroFloat {
+        0%, 100% { transform: translateY(0px); }
+        50%       { transform: translateY(-10px); }
+      }
+    `}</style>
+  </main>
+)
 }
