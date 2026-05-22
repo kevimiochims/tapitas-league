@@ -87,7 +87,16 @@ function Select({ value, onChange, options, placeholder, disabled }) {
 function WinChart({ data }) {
   if (!data || data.length === 0) return null
 
-  const W = 560, H = 180, padL = 36, padR = 16, padT = 24, padB = 28
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const W = 520, H = 180, padL = 40, padR = 16, padT = 24, padB = 28
   const maxV = Math.max(...data.map(d => d.value), 1)
   const xScale = (i) => padL + (i / (data.length - 1)) * (W - padL - padR)
   const yScale = (v) => padT + (1 - v / (maxV + 1)) * (H - padT - padB)
@@ -95,32 +104,33 @@ function WinChart({ data }) {
   const areaPoints = `${xScale(0)},${H - padB} ${points} ${xScale(data.length - 1)},${H - padB}`
   const gridVals = [0, Math.round(maxV * 0.33), Math.round(maxV * 0.66), Math.round(maxV)]
 
+  const fsAxis  = isMobile ? 14 : 9
+  const fsValue = isMobile ? 13 : 8
+  const fsTrophy = isMobile ? 14 : 10
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block', fontSize: '12px' }}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
       {gridVals.map(v => (
         <g key={v}>
           <line x1={padL} y1={yScale(v)} x2={W - padR} y2={yScale(v)} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-          {/* eixo y — maior em mobile */}
-            <text x={padL - 6} y={yScale(v) + 4} textAnchor="end" fontSize="11" fill="#475569">
-              {Math.round(v)}
-            </text>
+          <text x={padL - 6} y={yScale(v) + 4} textAnchor="end" fontSize={fsAxis} fill="#475569">
+            {Math.round(v)}
+          </text>
         </g>
       ))}
       <polygon points={areaPoints} fill="#22d3ee" opacity="0.07" />
       <polyline points={points} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />
       {data.map((d, i) => (
         <g key={i}>
-          {/* label do ano no eixo x */}
-          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize="11" fill="#475569">
+          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#475569">
             {`'${String(d.season).slice(2)}`}
           </text>
           {d.champion && (
-            <text x={xScale(i)} y={yScale(d.value) - 22} textAnchor="middle" fontSize="10">🏆</text>
+            <text x={xScale(i)} y={yScale(d.value) - 22} textAnchor="middle" fontSize={fsTrophy}>🏆</text>
           )}
-          {/* valor acima do ponto */}
-            <text x={xScale(i)} y={yScale(d.value) - 10} textAnchor="middle" fontSize="10" fill="#22d3ee">
-              {Math.round(d.value)}
-            </text>
+          <text x={xScale(i)} y={yScale(d.value) - 10} textAnchor="middle" fontSize={fsValue} fill="#22d3ee">
+            {Math.round(d.value)}
+          </text>
           <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#22d3ee" />
         </g>
       ))}
