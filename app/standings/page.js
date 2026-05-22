@@ -454,9 +454,7 @@ export default function StandingsPage() {
                               {row.team}
                             </span>
                             {row.champion && (
-                              <span className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-cyan-300">
-                                Champion
-                              </span>
+                              <span title="Champion">🏆</span>
                             )}
                           </div>
                         </td>
