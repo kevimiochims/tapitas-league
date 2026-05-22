@@ -1244,48 +1244,139 @@ const selectedRivalry = useMemo(() => {
           </div>
 
           {/* Sort By */}
+          {/* Sort by — abaixo do header, dois dropdowns lado a lado */}
           <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
-            <span className="flex-shrink-0 text-xs font-black uppercase tracking-[0.2em] text-slate-400">Sort by</span>
-            <TeamSelect value={sortCategory} onChange={(val) => setSortCategory(val)} options={SORT_OPTIONS.map((o) => o.label)} placeholder="Category..." />
+            <span className="flex-shrink-0 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+              Sort by
+            </span>
+            <TeamSelect
+              value={sortCategory}
+              onChange={(val) => setSortCategory(val)}
+              options={SORT_OPTIONS.map((o) => o.label)}
+              placeholder="Category..."
+            />
             {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
-              <TeamSelect value={sortSub} onChange={(val) => setSortSub(val)} options={SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []} placeholder="Type..." />
+              <TeamSelect
+                value={sortSub}
+                onChange={(val) => setSortSub(val)}
+                options={
+                  SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
+                }
+                placeholder="Type..."
+              />
             )}
           </div>
 
-          {/* Lista de Líderes */}
+          {/* Lista */}
           <div className="space-y-4 p-6">
-            {standings.slice(standingsPage * 5, standingsPage * 5 + 5).map((team, index) => {
-              const globalIndex = standingsPage * 5 + index;
-              const cat = SORT_OPTIONS.find((o) => o.label === sortCategory);
-              const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0];
-              
-              {/* ... Mantive suas lógicas de mapas de chaves (keyMap e shortLabelMap) idênticas aqui dentro ... */}
-              const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins;
-              const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory;
+            {standings
+              .slice(standingsPage * 5, standingsPage * 5 + 5)
+              .map((team, index) => {
+                const globalIndex = standingsPage * 5 + index
+                const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+                const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
+                
+                // Garantindo a existência dos mapas declarados localmente dentro do escopo do map loop
+                const keyMap = {
+                  'W':              (t) => t.wins,
+                  'RS_W':           (t) => t.rsW,
+                  'PO_W':           (t) => t.poW,
+                  'L':              (t) => t.losses,
+                  'RS_L':           (t) => t.rsL,
+                  'PO_L':           (t) => t.poL,
+                  'W%':             (t) => `${t.winPct}%`,
+                  'RS_W%':          (t) => `${t.rsWinPct}%`,
+                  'PO_W%':          (t) => `${t.poWinPct}%`,
+                  'PF':             (t) => Math.round(t.pf),
+                  'RS_PF':          (t) => Math.round(t.rsPF),
+                  'PO_PF':          (t) => Math.round(t.poPF),
+                  'W Streak RS':    (t) => t.wStreakRS,
+                  'W Streak Total': (t) => t.wStreakTotal,
+                  'L Streak RS':    (t) => t.lStreakRS,
+                  'L Streak Total': (t) => t.lStreakTotal,
+                  'Playoff Apps':   (t) => t.playoffApps,
+                  'Finals':         (t) => t.finals,
+                  'Titles':         (t) => t.titles,
+                }
 
-              return (
-                <div key={`${team.team}-${globalIndex}`} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-slate-100 bg-slate-50/50 px-4 py-4 sm:px-6 sm:py-5">
-                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/5 font-black text-cyan-600 sm:h-14 sm:w-14 text-[clamp(14px,3vw,22px)]">
-                    {globalIndex + 1}
-                  </div>
+                const shortLabelMap = {
+                  'W':              'Wins',
+                  'RS_W':           'Wins',
+                  'PO_W':           'Wins',
+                  'L':              'Losses',
+                  'RS_L':           'Losses',
+                  'PO_L':           'Losses',
+                  'W%':             'Win %',
+                  'RS_W%':          'Win %',
+                  'PO_W%':          'Win %',
+                  'PF':             'Points',
+                  'RS_PF':          'Points',
+                  'PO_PF':          'Points',
+                  'W Streak RS':    'Win Streak',
+                  'W Streak Total': 'Win Streak',
+                  'L Streak RS':    'Loss Streak',
+                  'L Streak Total': 'Loss Streak',
+                  'Playoff Apps':   'Playoffs',
+                  'Finals':         'Finals',
+                  'Titles':         'Titles',
+                }
 
-                  <div className="min-w-0">
-                    <div className="mb-1 truncate font-black text-slate-800 text-[clamp(14px,3.5vw,24px)]">{team.team}</div>
-                    
-                    {/* Logica do sub.key de Streaks (Idêntica à sua, apenas trocando cores text-slate-500 para text-slate-400) */}
-                    {/* ... */}
-                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-sm">
-                      {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
+                // O console.log agora consegue ler 'sub' e 'cat' sem estourar o erro de escopo
+                console.log('cat:', sortCategory, 'sub:', sortSub, 'found:', cat?.subs.find((s) => s.label === sortSub))
+                
+                const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
+                const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
+
+                return (
+                  <div
+                    key={`${team.team}-${globalIndex}`}
+                    className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-slate-100 bg-slate-50/50 px-4 py-4 sm:px-6 sm:py-5"
+                  >
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/5 font-black text-cyan-600 sm:h-14 sm:w-14 text-[clamp(14px,3vw,22px)]">
+                      {globalIndex + 1}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="mb-1 truncate font-black text-slate-800 text-[clamp(14px,3.5vw,24px)]">
+                        {team.team}
+                      </div>
+
+                      {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' ||
+                        sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') ? (() => {
+                        const keyLookup = {
+                          'W Streak RS':    'streakRS',
+                          'W Streak Total': 'streakTotal',
+                          'L Streak RS':    'lStreakRS',
+                          'L Streak Total': 'lStreakTotal',
+                        }
+                        const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
+                        if (!streakInfo) return null
+                        return (
+                          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-sm">
+                            W{streakInfo.startWeek}, {streakInfo.startSeason}
+                            <span className="mx-1 text-slate-300">→</span>
+                            W{streakInfo.endWeek}, {streakInfo.endSeason}
+                            {streakInfo.active && <span className="ml-1 text-cyan-600">(active)</span>}
+                          </div>
+                        )
+                      })() : (
+                        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-sm">
+                          {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-shrink-0 text-right">
+                      <div className="mb-1 font-black leading-none text-cyan-600 text-[clamp(22px,5vw,40px)]">
+                        {displayValue}
+                      </div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
+                        {shortLabel}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex-shrink-0 text-right">
-                    <div className="mb-1 font-black leading-none text-cyan-600 text-[clamp(22px,5vw,40px)]">{displayValue}</div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-xs">{shortLabel}</div>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
           </div>
         </div>
       </div>
