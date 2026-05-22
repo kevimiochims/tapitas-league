@@ -47,70 +47,30 @@ function parseNumber(value) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
-function TeamSelect({ value, onChange, options, placeholder, disabled }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  const selected = options.find((o) => o === value)
-
+function TeamSelect({ value, onChange, options, placeholder }) {
   return (
-    <div ref={ref} className="relative flex-1">
-      <button
-        onClick={() => !disabled && setOpen((p) => !p)}
-        disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition-all ${
-          disabled
-            ? 'cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-600'
-            : open
-            ? 'border-cyan-400/40 bg-white/[0.07] text-white'
-            : 'border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07]'
-        }`}
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-4 pr-10 text-sm font-bold text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/10"
       >
-        <span className={value ? 'text-white' : 'text-slate-500'}>
-          {selected || placeholder}
-        </span>
-        <ChevronRight
-          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
-            open ? 'rotate-90' : ''
-          }`}
-        />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1525] shadow-2xl">
-          <div className="max-h-56 overflow-y-auto">
-            {options.map((opt) => (
-              <button
-                key={opt}
-                onClick={() => {
-                  onChange(opt)
-                  setOpen(false)
-                }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all hover:bg-white/[0.06] ${
-                  opt === value ? 'text-cyan-300' : 'text-slate-300'
-                }`}
-              >
-                {opt === value && (
-                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400" />
-                )}
-                <span className={opt === value ? 'ml-0' : 'ml-[14px]'}>
-                  {opt}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+        {placeholder && (
+          <option value="" disabled className="text-slate-400">
+            {placeholder}
+          </option>
+        )}
+        {options.map((opt) => (
+          <option key={opt} value={opt} className="text-slate-700 font-medium">
+            {opt}
+          </option>
+        ))}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
     </div>
   )
 }
