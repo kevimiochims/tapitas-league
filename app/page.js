@@ -122,28 +122,6 @@ async function safeSheetFetch(url) {
 }
 
 function GameRow({ game }) {
-  return (
-    <div className="flex flex-col border-b border-white/5 py-[6px] last:border-0">
-      <div className="flex items-center gap-1">
-        <span
-          className={`text-[13px] font-black ${
-            game.result === 'W' ? 'text-emerald-400' : 'text-red-400'
-          }`}
-        >
-          {game.result}
-        </span>
-        <span className="truncate text-[13px] text-slate-300">
-          &nbsp;vs {game.opp}
-        </span>
-      </div>
-      <span className="text-[11px] text-slate-500">
-        {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
-      </span>
-    </div>
-  )
-}
-
-function GameRow({ game }) {
   // Mantemos exatamente a lógica de detecção de vitória/derrota do seu código
   const isWin = game.result === 'W' || game.isWin;
   
