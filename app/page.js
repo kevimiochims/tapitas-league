@@ -122,24 +122,30 @@ async function safeSheetFetch(url) {
 }
 
 function GameRow({ game }) {
+  const isWin = game.result === 'W';
+
   return (
     <div className="flex flex-col border-b border-slate-100 py-1.5 last:border-0">
-      <div className="flex items-center gap-1">
-        {/* Resultado: Fonte média e cores nítidas, sem pesar */}
+      <div className="flex items-center gap-2">
+        {/* Badge de Resultado: Ganhou fundo colorido e padding para destacar */}
         <span
-          className={`text-[12px] font-bold ${
-            game.result === 'W' ? 'text-emerald-600' : 'text-rose-600'
+          className={`inline-flex h-5 w-5 items-center justify-center rounded text-[11px] font-black tracking-wide ${
+            isWin 
+              ? 'bg-emerald-100 text-emerald-800' 
+              : 'bg-rose-100 text-rose-800'
           }`}
         >
           {game.result}
         </span>
-        {/* Confronto: Texto principal do card, tom escuro mas com peso normal */}
-        <span className="truncate text-[12px] font-semibold text-slate-700">
-          &nbsp;vs {game.opp}
+        
+        {/* Confronto */}
+        <span className="truncate text-[12px] font-bold text-slate-700">
+          vs {game.opp}
         </span>
       </div>
-      {/* Placar: Fonte menor, cinza suave e peso leve para não brigar com o topo */}
-      <span className="text-[10.5px] font-medium text-slate-400 mt-0.5">
+      
+      {/* Placar Secundário */}
+      <span className="text-[10.5px] font-medium text-slate-400 mt-1 pl-7">
         {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
       </span>
     </div>
