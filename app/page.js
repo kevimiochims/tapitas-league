@@ -152,45 +152,45 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
     <div
       className={`relative overflow-hidden rounded-[28px] border transition-all duration-200 ${
         isOpen
-          ? 'border-cyan-400/30'
-          : 'border-white/5 hover:border-white/10'
-      } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
+          ? 'border-cyan-500/40 bg-cyan-500/[0.01] shadow-sm'
+          : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
+      }`}
     >
-      {/* Badge Reigning — sobreposto no canto superior direito */}
+      {/* Badge Reigning — Canto superior direito */}
       {index === 0 && (
-        <div className="absolute right-3 top-3 z-10 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-300">
+        <div className="absolute right-3 top-3 z-10 rounded-xl border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-amber-700">
           Reigning
         </div>
       )}
 
-        <button
-          onClick={onToggle}
-          className={`flex w-full items-center gap-4 px-6 text-left transition-all ${
-            index === 0 ? 'pb-5 pt-9' : 'py-5'
-          }`}
-        >
+      <button
+        onClick={onToggle}
+        className={`flex w-full items-center gap-4 px-6 text-left transition-all ${
+          index === 0 ? 'pb-5 pt-9' : 'py-5'
+        }`}
+      >
         {!isOpen && (
-          <Trophy className="h-5 w-5 flex-shrink-0 text-cyan-400" />
+          <Trophy className="h-5 w-5 flex-shrink-0 text-amber-500" />
         )}
 
+        {/* Removido o estilo inline do Bebas Neue, agora roda via Tailwind nativo */}
         <span
-          className={`flex-shrink-0 font-black leading-none transition-all ${
-            isOpen ? 'text-[42px] text-white' : 'text-[28px] text-slate-400'
+          className={`flex-shrink-0 font-['Bebas_Neue'] font-black leading-none transition-all tracking-wider ${
+            isOpen ? 'text-[42px] text-slate-800' : 'text-[28px] text-slate-400'
           }`}
-          style={{ fontFamily: '"Bebas Neue", sans-serif' }}
         >
           {champ.season}
         </span>
 
         <div className="min-w-0 flex-1">
           <div
-            className={`truncate font-black text-white transition-all ${
+            className={`truncate font-black text-slate-800 transition-all ${
               isOpen ? 'text-xl' : 'text-base'
             }`}
           >
             {champ.team}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
+          <div className="mt-1 text-xs font-bold text-slate-400">
             {champ.wins}–{champ.losses} overall
             {champ.playoffWins > 0 || champ.playoffLosses > 0
               ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
@@ -200,17 +200,17 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         </div>
 
         <ChevronRight
-          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
+          className={`h-4 w-4 flex-shrink-0 text-slate-400 transition-transform duration-200 ${
             isOpen ? 'rotate-90' : ''
           }`}
         />
       </button>
 
       {isOpen && (
-        <div className="border-t border-white/5 px-6 pb-6 pt-5">
+        <div className="border-t border-slate-100 px-6 pb-6 pt-5 bg-white">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">
                 Reg Season
               </div>
               {regCol1.map((g, i) => (
@@ -218,7 +218,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
               ))}
             </div>
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] opacity-0">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] opacity-0 select-none">
                 &nbsp;
               </div>
               {regCol2.map((g, i) => (
@@ -226,7 +226,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
               ))}
             </div>
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-400">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-600">
                 Playoffs
               </div>
               {champ.playoffGames.length > 0 ? (
@@ -234,7 +234,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
                   <GameRow key={i} game={g} />
                 ))
               ) : (
-                <div className="text-[11px] text-slate-600">Sem dados</div>
+                <div className="text-[11px] font-bold text-slate-300">Sem dados</div>
               )}
             </div>
           </div>
@@ -261,24 +261,27 @@ function ChampionsWall({ champions }) {
 
   return (
     <section className="mt-8 mb-8">
-      <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+      {/* Container: Agora com fundo branco, borda sutil e sombra suave */}
+      <div className="overflow-hidden rounded-[38px] border border-slate-200 bg-white shadow-sm">
 
-        <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-8 py-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Trophy className="h-5 w-5 text-cyan-300" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
+              <Trophy className="h-5 w-5 text-cyan-600" />
             </div>
             <div>
-              <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+              <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-600">
                 Champions Wall
               </div>
-              <div className="text-base text-slate-400">
+              <div className="text-base text-slate-500">
                 Every title. Every campaign.
               </div>
             </div>
           </div>
         </div>
 
+        {/* Grid de Cards */}
         <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
           {champions.map((champ, index) => (
             <ChampionCard
