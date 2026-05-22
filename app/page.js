@@ -1134,78 +1134,105 @@ const selectedRivalry = useMemo(() => {
       <div className="flex flex-col gap-8 xl:flex-row">
         
         {/* RIVALRY SPOTLIGHT */}
-        <div className="w-full overflow-hidden rounded-[38px] border border-slate-200 bg-white shadow-sm xl:flex-[1.15]">
-          <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+        {/* RIVALRY SPOTLIGHT - ESTILO SCOREBOARD DE ARENA */}
+<div className="rounded-[38px] border border-slate-200/80 bg-white p-6 shadow-md sm:p-8">
+  
+  {/* Header com os Seletores Flutuantes em Vidro */}
+  <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <div className="text-xs font-black uppercase tracking-[0.25em] text-cyan-600">
+        Head-to-Head Analysis
+      </div>
+      <h2 className="text-xl font-['Bebas_Neue'] tracking-wide text-slate-900 text-3xl sm:text-4xl mt-1">
+        Rivalry Spotlight
+      </h2>
+    </div>
+    
+    {/* Contêiner de Seletores: Efeito de placa de acrílico flutuante */}
+    <div className="flex items-center gap-2 rounded-2xl border border-white/60 bg-slate-100/80 p-2 backdrop-blur-md shadow-inner">
+      <TeamSelect
+        value={teamA}
+        onChange={(val) => setTeamA(val)}
+        options={allTeams}
+        placeholder="Team A"
+      />
+      <span className="font-['Bebas_Neue'] text-lg font-black tracking-wider text-slate-400 px-2">VS</span>
+      <TeamSelect
+        value={teamB}
+        onChange={(val) => setTeamB(val)}
+        options={allTeams}
+        placeholder="Team B"
+      />
+    </div>
+  </div>
 
-            {/* Header */}
-            <div className="mb-8 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
-                  <Swords className="h-5 w-5 text-cyan-600" />
-                </div>
-                <div>
-                  <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-600">
-                    Rivalry Spotlight
-                  </div>
-                  <div className="text-base text-slate-500">
-                    The league's fiercest matchup.
-                  </div>
-                </div>
-              </div>
-            </div>
+  {/* PAINEL CENTRAL DO CONFRONTO */}
+  <div className="relative overflow-hidden rounded-[28px] border border-slate-200/60 bg-gradient-to-b from-slate-50 to-slate-100/50 p-6 md:p-8">
+    
+    {/* Divisor Central Sutil */}
+    <div className="absolute inset-y-0 left-1/2 w-[1px] bg-slate-200/80 hidden md:block" />
 
-            {/* Seletores */}
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB(''); }} options={allTeams} placeholder="Select a team..." />
-              <div className="flex-shrink-0 text-center text-lg font-black text-cyan-600">vs</div>
-              <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Select opponent..." disabled={!selectedTeamA} />
-            </div>
-
-            {/* Estado vazio */}
-            {!selectedRivalry && (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[26px] border border-slate-100 bg-slate-50/50 py-12 text-center">
-                <Swords className="h-8 w-8 text-slate-400" />
-                <p className="text-sm font-bold text-slate-400">
-                  Select two teams to see their rivalry stats
-                </p>
-              </div>
-            )}
-
-            {/* Stats do confronto */}
-            {selectedRivalry && (
-              <>
-                <h2 className="mb-6 font-black leading-tight tracking-[-0.04em] text-slate-800 text-[clamp(18px,4vw,44px)]">
-                  {selectedRivalry.teamA}
-                  <span className="mx-2 text-cyan-600">vs</span>
-                  {selectedRivalry.teamB}
-                </h2>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    [Target,   'Record',                                             selectedRivalry.record],
-                    [Trophy,   'Playoffs',                                           selectedRivalry.playoffRecord],
-                    [Activity, 'Avg Margin',                                         `${selectedRivalry.avgMargin} ppg`],
-                    [Stars,    `Last Game${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
-                    [Radar,    'Current Streak',                                     selectedRivalry.streak],
-                    [Flame,    'Rivalry Heat',                                       selectedRivalry.heat],
-                  ].map(([Icon, label, value]) => (
-                    <div key={label} className="rounded-[26px] border border-slate-100 bg-slate-50 p-4">
-                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/10 bg-cyan-500/5">
-                        <Icon className="h-3.5 w-3.5 text-cyan-600" />
-                      </div>
-                      <div className="mb-2 text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-slate-400 sm:text-[10px] lg:text-[11px] break-words">
-                        {label}
-                      </div>
-                      <div className="font-black leading-none text-slate-800 text-[clamp(14px,3.5vw,30px)] break-words">
-                        {value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+    <div className="relative z-10 grid grid-cols-1 gap-8 md:grid-cols-3 items-center">
+      
+      {/* TIME A (Esquerda) */}
+      <div className="text-center md:text-right">
+        <div className="font-['Bebas_Neue'] text-3xl font-black text-slate-900 tracking-wide truncate">
+          {teamA || "Selecione o Time A"}
         </div>
+        <div className="mt-1 text-xs font-black uppercase tracking-widest text-cyan-600">
+          {/* Exemplo de dado dinâmico do seu histórico */}
+          {statsA?.wins} Vitórias
+        </div>
+      </div>
+
+      {/* PLACAR / VERSUS CENTRAL (Centro) */}
+      <div className="flex flex-col items-center justify-center">
+        {/* Badge de "VS" com visual de placa de liga americana */}
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 font-['Bebas_Neue'] text-xl font-black text-white shadow-md shadow-slate-900/10 ring-4 ring-white">
+          VS
+        </div>
+        <div className="mt-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">
+          Histórico Geral
+        </div>
+      </div>
+
+      {/* TIME B (Direita) */}
+      <div className="text-center md:text-left">
+        <div className="font-['Bebas_Neue'] text-3xl font-black text-slate-900 tracking-wide truncate">
+          {teamB || "Selecione o Time B"}
+        </div>
+        <div className="mt-1 text-xs font-black uppercase tracking-widest text-cyan-600">
+          {statsB?.wins} Vitórias
+        </div>
+      </div>
+
+    </div>
+
+    {/* BARRA DE COMPARAÇÃO DE PERFORMANCE (Abaixo dos nomes) */}
+    {teamA && teamB && (
+      <div className="mt-8 border-t border-slate-200/60 pt-6">
+        <div className="flex justify-between text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
+          <span>Aproveitamento</span>
+          <span className="font-['Bebas_Neue'] text-sm text-slate-600">Win %</span>
+          <span>Aproveitamento</span>
+        </div>
+        
+        {/* Barra de progresso dupla (Estilo videogame de esporte) */}
+        <div className="flex h-3 overflow-hidden rounded-full bg-slate-200 p-0.5 shadow-inner">
+          <div 
+            className="rounded-l-full bg-cyan-600 transition-all duration-500" 
+            style={{ width: `${winRateA}%` }}
+          />
+          <div 
+            className="rounded-r-full bg-slate-400 transition-all duration-500 ml-auto" 
+            style={{ width: `${winRateB}%` }}
+          />
+        </div>
+      </div>
+    )}
+
+  </div>
+</div>
 
         {/* FRANCHISE LEADERS */}
         <div className="w-full overflow-hidden rounded-[38px] border border-slate-200 bg-white shadow-sm xl:flex-[0.85]">
