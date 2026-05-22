@@ -1009,45 +1009,79 @@ const selectedRivalry = useMemo(() => {
     {/* ===== HERO ===== */}
     <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8">
       {/* Container do Hero: Agora com fundo branco, borda suave e sombra elegante */}
-      {/* TOPO DO SITE / HERO STATS */}
-<div className="rounded-[38px] border border-white/60 bg-white/70 backdrop-blur-md p-6 shadow-lg shadow-slate-100/50 sm:p-8">
-  <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-    <div className="flex items-center gap-4">
-      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm sm:h-20 sm:w-20">
-        <Image
-          src="/logo.png"
-          alt="Logo"
-          layout="fill"
-          objectFit="cover"
-          priority
-        />
-      </div>
-      <div>
-        <div className="text-xs font-black uppercase tracking-[0.2em] text-cyan-600 sm:text-xs">
-          Live League Center
-        </div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-4xl">
-          Fantasy League <span className="text-cyan-600">Hub</span>
-        </h1>
-      </div>
-    </div>
+      <div className="relative overflow-hidden rounded-[38px] border border-white/60 bg-white/70 backdrop-blur-md p-10 shadow-lg shadow-slate-100/50 md:p-14">
 
-    {/* Mini Stats Cards */}
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      {[
-        { label: "Seasons", val: `${championsData.length}+` },
-        { label: "Active Teams", val: "12" },
-        { label: "Matchups", val: "850+" }
-      ].map((st, i) => (
-        <div key={i} className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/50 p-4 shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
-          <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">{st.label}</div>
-          <div className="mt-1 font-['Bebas_Neue'] text-3xl font-black tracking-wide text-slate-800 leading-none">{st.val}</div>
+        {/* Fundo decorativo sutil com blur mantido */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
+          <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.04] blur-[80px]" />
+          <div className="absolute -bottom-20 left-1/3 h-[300px] w-[300px] rounded-full bg-cyan-400/[0.03] blur-[60px]" />
+          {/* Reflexo metálico diagonal sutil do vidro */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30" />
         </div>
-      ))}
-    </div>
-  </div>
-</div>
+
+        <div className="relative flex flex-col items-center gap-12 xl:flex-row xl:items-center xl:justify-between">
+
+          {/* Texto */}
+          <div className="flex-1">
+            {/* Badge */}
+            <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-2">
+              <Flame className="h-4 w-4 text-cyan-600" />
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-700">
+                EST. 2014 &nbsp;|&nbsp; A LEAGUE. A HISTORY. A LEGACY.
+              </span>
+            </div>
+
+            {/* Título original mantido intacto */}
+            <h1 className="mb-5 font-['Bebas_Neue'] text-[clamp(64px,9vw,120px)] leading-[0.88] tracking-wider">
+              <span className="block bg-gradient-to-r from-slate-800 to-slate-500 bg-clip-text text-transparent">
+                THE HOME OF
+              </span>
+              <span className="block bg-gradient-to-r from-cyan-500 via-cyan-600 to-cyan-700 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(6,182,212,0.15)]">
+                TAPITAS{' '}
+                <span className="bg-gradient-to-r from-slate-700 to-slate-400 bg-clip-text text-transparent drop-shadow-none">
+                  HISTORY
+                </span>
+              </span>
+            </h1>
+
+            {/* Subtítulo original */}
+            <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-600 md:text-lg">
+              All the stats. All the moments. All the rivalry.
+              <br />
+              <span className="text-slate-400">Explore the history that built the league.</span>
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <button className="inline-flex h-12 items-center gap-2 rounded-2xl bg-cyan-600 px-6 text-sm font-black text-white transition-all hover:bg-cyan-700 shadow-md shadow-cyan-600/10">
+                <Trophy className="h-4 w-4" />
+                Ver Standings
+              </button>
+              {/* Botão secundário ajustado para ornar com o vidro transparente */}
+              <button className="inline-flex h-12 items-center gap-2 rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm px-6 text-sm font-black text-slate-700 transition-all hover:bg-white/90">
+                <Swords className="h-4 w-4" />
+                Rivalries
+              </button>
+            </div>
+          </div>
+
+          {/* Imagem original com sua animação intacta */}
+          <div
+            className="relative flex-shrink-0 flex items-center justify-center animate-[heroFloat_5s_ease-in-out_infinite]"
+          >
+            <Image
+              src="/images/LogoFinalBlack.png"
+              alt="Tapitas League Logo"
+              width={580}
+              height={580}
+              className="object-contain"
+              style={{
+                width: 'clamp(200px, 28vw, 580px)',
+                height: 'clamp(200px, 28vw, 580px)',
+              }}
+            />
+          </div>
+        </div>
+      </div>
     </section>
 
     {/* ===== STATS SECTION ===== */}
