@@ -1011,18 +1011,21 @@ const selectedRivalry = useMemo(() => {
       {/* Container do Hero: Fundo totalmente limpo para dar destaque à imagem */}
       <div className="relative overflow-hidden rounded-[38px] border border-slate-200/80 bg-slate-50 p-10 shadow-md md:p-14">
         
-        {/* Camada da Imagem de Fundo — Totalmente visível e nítida de ponta a ponta */}
+        {/* Camada da Imagem de Fundo — Visível, nítida e contínua */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
           <Image
             src="/images/Hero_bg.webp"
             alt="Estádio ao fundo"
             layout="fill"
             objectFit="cover"
-            className="opacity-75" 
+            className="opacity-85" 
             priority
           />
           
-          {/* Luzes internas sutis integradas por cima da foto */}
+          {/* DEGRADÊ SUAVE PARA A DIREITA: Protege a leitura na esquerda sem criar uma parede branca sólida */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/40 to-transparent" />
+          
+          {/* Luzes internas sutis integradas ao ambiente */}
           <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.08] blur-[80px]" />
           <div className="absolute -bottom-20 left-1/3 h-[300px] w-[300px] rounded-full bg-cyan-400/[0.06] blur-[60px]" />
         </div>
