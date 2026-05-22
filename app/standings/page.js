@@ -536,7 +536,7 @@ export default function StandingsPage() {
           </div>
 
           <div className="overflow-x-auto px-6 pb-2 pt-6">
-            <div style={{ minWidth: '620px' }}>
+            <div style={{ minWidth: '720px' }}>
               <WinChart data={chartData} />
             </div>
           </div>
