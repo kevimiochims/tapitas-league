@@ -153,8 +153,8 @@ export default function StandingsPage() {
   const [season,      setSeason]      = useState('All-Time')
   const [chartTeam,   setChartTeam]   = useState('')
   const [page,        setPage]        = useState(0)
-  const [sortCol, setSortCol] = useState('W')
-  const [sortDir, setSortDir] = useState('desc')
+  const [sortCol, setSortCol] = useState('Pos')
+  const [sortDir, setSortDir] = useState('asc')
   const [chartStat,  setChartStat]  = useState('Wins')
   const [chartScope, setChartScope] = useState('Reg Season')
 
@@ -241,6 +241,7 @@ export default function StandingsPage() {
   .filter(r => r.team)
   .sort((a, b) => {
     const getVal = (row) => {
+      if (sortCol === 'Pos')     return row.standing || 999
       if (sortCol === 'W')       return row.w
       if (sortCol === 'L')       return row.l
       if (sortCol === 'W%')      return row.winPct
@@ -287,10 +288,10 @@ export default function StandingsPage() {
   useEffect(() => { setPage(0) }, [tab, season, sortCol, sortDir])
 
   const tabCols = {
-    'Overall':    ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles'],
-    'Reg Season': ['W', 'L', 'W%', 'PF'],
-    'Playoffs':   ['W', 'L', 'PF'],
-  }
+  'Overall':    ['Pos', 'W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles'],
+  'Reg Season': ['Pos', 'W', 'L', 'W%', 'PF'],
+  'Playoffs':   ['Pos', 'W', 'L', 'PF'],
+}
   
   const handleSort = (col) => {
   if (sortCol === col) {
@@ -302,15 +303,16 @@ export default function StandingsPage() {
 }
 
   const getCol = (row, col) => {
-    if (col === 'W')       return row.w
-    if (col === 'L')       return row.l
-    if (col === 'W%')      return `${row.winPct.toFixed(1)}%`
-    if (col === 'PF')      return Math.round(row.pf).toLocaleString()
-    if (col === 'Titles')  return row.titles
-    if (col === 'Finals')  return row.finals
-    if (col === 'PO Apps') return row.poApps
-    return '—'
-  }
+  if (col === 'Pos')     return row.standing ? (['1st','2nd','3rd'][row.standing - 1] ?? `${row.standing}th`) : '—'
+  if (col === 'W')       return row.w
+  if (col === 'L')       return row.l
+  if (col === 'W%')      return `${row.winPct.toFixed(1)}%`
+  if (col === 'PF')      return Math.round(row.pf).toLocaleString()
+  if (col === 'Titles')  return row.titles
+  if (col === 'Finals')  return row.finals
+  if (col === 'PO Apps') return row.poApps
+  return '—'
+}
 
   return (
     <main className="min-h-screen bg-[#020617] text-white">
@@ -547,7 +549,7 @@ export default function StandingsPage() {
           </div>
 
           <div className="overflow-x-auto px-6 pb-2 pt-6">
-            <div style={{ minWidth: '320px' }}>
+            <div style={{ minWidth: '420px' }}>
               <WinChart data={chartData} />
             </div>
           </div>
