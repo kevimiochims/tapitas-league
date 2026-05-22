@@ -159,12 +159,17 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[24px] border transition-all duration-200 ${
+      className={`relative overflow-hidden rounded-[24px] border transition-all duration-300 ${
         isOpen
-          ? 'border-cyan-500 bg-white shadow-sm'
-          : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
+          ? 'border-cyan-500 bg-white shadow-md'
+          : 'border-white/80 bg-white/60 hover:bg-white/90 backdrop-blur-sm hover:border-slate-300 shadow-sm'
       }`}
     >
+      {/* Gradiente de Reflexo de Luz Metálica (Estilo sites americanos) */}
+      {!isOpen && (
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-white/40 pointer-events-none" />
+      )}
+
       {/* Badge Reigning */}
       {index === 0 && (
         <div className="absolute right-3 top-3 z-10 rounded-lg bg-amber-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
@@ -174,7 +179,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
       <button
         onClick={onToggle}
-        className={`flex w-full items-center gap-4 px-5 text-left transition-all ${
+        className={`flex w-full items-center gap-4 px-5 text-left transition-all relative z-10 ${
           index === 0 ? 'pb-4 pt-8' : 'py-4'
         }`}
       >
@@ -215,8 +220,8 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
       </button>
 
       {isOpen && (
-        /* Fundo mudado para BRANCO e divisores mais suaves para clarear o painel */
-        <div className="border-t border-slate-100 bg-white px-5 pb-5 pt-4">
+        /* O painel interno expandido permanece limpo e ultra legível */
+        <div className="border-t border-slate-100 bg-white px-5 pb-5 pt-4 relative z-10">
           <div className="grid grid-cols-3 gap-4">
             <div>
               <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
@@ -271,17 +276,17 @@ function ChampionsWall({ champions }) {
 
   return (
     <section className="mt-8 mb-8">
-      {/* Definição nítida de borda e fundo */}
-      <div className="overflow-hidden rounded-[38px] border-2 border-slate-200 bg-white shadow-md">
+      {/* CONTAINER COM EFEITO DE VIDRO REFLEXIVO */}
+      <div className="overflow-hidden rounded-[38px] border border-white/60 bg-white/70 backdrop-blur-md shadow-lg shadow-slate-100/50">
 
-        {/* Header com contraste robusto */}
-        <div className="flex items-center justify-between border-b-2 border-slate-100 px-8 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-200/60 px-8 py-6">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-600/10">
-              <Trophy className="h-5 w-5 text-cyan-700" />
+              <Trophy className="h-5 w-5 text-cyan-600" />
             </div>
             <div>
-              <div className="text-xs font-black uppercase tracking-[0.25em] text-cyan-700">
+              <div className="text-xs font-black uppercase tracking-[0.25em] text-cyan-600">
                 Champions Wall
               </div>
               <div className="text-sm font-bold text-slate-600 mt-0.5">
@@ -291,8 +296,8 @@ function ChampionsWall({ champions }) {
           </div>
         </div>
 
-        {/* Grid de Cards */}
-        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start bg-slate-50/50">
+        {/* Grid de Cards — Ajustado para o fundo de vidro */}
+        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start bg-slate-50/30">
           {champions.map((champ, index) => (
             <ChampionCard
               key={champ.season}
