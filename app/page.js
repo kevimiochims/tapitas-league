@@ -1023,7 +1023,7 @@ const selectedRivalry = useMemo(() => {
           />
           
           {/* DEGRADÊ SUAVE PARA A DIREITA: Protege a leitura na esquerda sem criar uma parede branca sólida */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 via-white/75 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/98 via-white/85 via-white/75 to-transparent" />
           
           {/* Luzes internas sutis integradas ao ambiente */}
           <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.08] blur-[80px]" />
@@ -1042,14 +1042,17 @@ const selectedRivalry = useMemo(() => {
               </span>
             </div>
 
-            {/* Título original mantido intacto */}
-            <h1 className="mb-5 font-['Bebas_Neue'] text-[clamp(64px,9vw,120px)] leading-[0.88] tracking-wider">
-              <span className="block bg-gradient-to-r from-slate-800 to-slate-500 bg-clip-text text-transparent">
+            {/* Título com contraste máximo e nitidez esportiva */}
+            <h1 className="mb-5 font-['Bebas_Neue'] text-[clamp(64px,9vw,120px)] Convertible leading-[0.85] tracking-wide select-none">
+              {/* Slate 950 sólido para eliminar o embaçado do gradiente cinza */}
+              <span className="block text-slate-950 filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.4)]">
                 THE HOME OF
               </span>
-              <span className="block bg-gradient-to-r from-cyan-500 via-cyan-600 to-cyan-700 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(6,182,212,0.15)]">
+              
+              {/* Cyan robusto com drop-shadow preto cirúrgico de alta definição */}
+              <span className="block bg-gradient-to-r from-cyan-500 via-cyan-600 to-cyan-700 bg-clip-text text-transparent filter drop-shadow-[0_4px_12px_rgba(6,182,212,0.25)]">
                 TAPITAS{' '}
-                <span className="bg-gradient-to-r from-slate-700 to-slate-400 bg-clip-text text-transparent drop-shadow-none">
+                <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent drop-shadow-none">
                   HISTORY
                 </span>
               </span>
