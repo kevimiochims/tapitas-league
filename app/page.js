@@ -1007,7 +1007,7 @@ const selectedRivalry = useMemo(() => {
     </header>
 
     {/* ===== HERO ===== */}
-    <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8 rounded-full bg-cyan-500/[0.04] blur-[80px]">
+    <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8 rounded-full bg-cyan-500">
       {/* Container do Hero: Agora com fundo branco, borda suave e sombra elegante */}
       <div className="relative overflow-hidden rounded-[38px] border border-white/60 bg-white/70 backdrop-blur-md p-10 shadow-lg shadow-slate-100/50 md:p-14">
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
