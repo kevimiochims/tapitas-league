@@ -123,23 +123,23 @@ async function safeSheetFetch(url) {
 
 function GameRow({ game }) {
   return (
-    <div className="flex flex-col border-b border-slate-200/80 py-[6px] last:border-0">
+    <div className="flex flex-col border-b border-slate-100 py-1.5 last:border-0">
       <div className="flex items-center gap-1">
-        {/* Resultado: Agora com tons mais escuros e pesados para ler no fundo claro */}
+        {/* Resultado: Fonte média e cores nítidas, sem pesar */}
         <span
-          className={`text-[13px] font-black ${
-            game.result === 'W' ? 'text-emerald-700' : 'text-rose-700'
+          className={`text-[12px] font-bold ${
+            game.result === 'W' ? 'text-emerald-600' : 'text-rose-600'
           }`}
         >
           {game.result}
         </span>
-        {/* Nome do oponente: Mudado de slate-300 para slate-800 (cinza bem escuro) */}
-        <span className="truncate text-[13px] font-extrabold text-slate-800">
+        {/* Confronto: Texto principal do card, tom escuro mas com peso normal */}
+        <span className="truncate text-[12px] font-semibold text-slate-700">
           &nbsp;vs {game.opp}
         </span>
       </div>
-      {/* Placar decimal: Mudado de slate-500 para slate-600 com peso negrito */}
-      <span className="text-[11px] font-bold text-slate-600">
+      {/* Placar: Fonte menor, cinza suave e peso leve para não brigar com o topo */}
+      <span className="text-[10.5px] font-medium text-slate-400 mt-0.5">
         {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
       </span>
     </div>
@@ -147,105 +147,105 @@ function GameRow({ game }) {
 }
 
 function ChampionCard({ champ, index, isOpen, onToggle }) {
-const half = Math.ceil(champ.regGames.length / 2)
-const regCol1 = champ.regGames.slice(0, half)
-const regCol2 = champ.regGames.slice(half)
+  const half = Math.ceil(champ.regGames.length / 2)
+  const regCol1 = champ.regGames.slice(0, half)
+  const regCol2 = champ.regGames.slice(half)
 
-return (
-<div
-className={`relative overflow-hidden rounded-[24px] border-2 transition-all duration-200 ${
-isOpen
-? 'border-cyan-600 bg-white shadow-md'
-: 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
-}`}
->
-{/* Badge Reigning — Contraste forte em fundo âmbar */}
-{index === 0 && (
-<div className="absolute right-3 top-3 z-10 rounded-lg bg-amber-600 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
-Reigning
-</div>
-)}
+  return (
+    <div
+      className={`relative overflow-hidden rounded-[24px] border transition-all duration-200 ${
+        isOpen
+          ? 'border-cyan-500 bg-white shadow-sm'
+          : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
+      }`}
+    >
+      {/* Badge Reigning */}
+      {index === 0 && (
+        <div className="absolute right-3 top-3 z-10 rounded-lg bg-amber-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
+          Reigning
+        </div>
+      )}
 
-<button
-onClick={onToggle}
-className={`flex w-full items-center gap-4 px-5 text-left transition-all ${
-index === 0 ? 'pb-4 pt-8' : 'py-4'
-}`}
->
-{!isOpen && (
-<Trophy className="h-5 w-5 flex-shrink-0 text-amber-600" />
-)}
+      <button
+        onClick={onToggle}
+        className={`flex w-full items-center gap-4 px-5 text-left transition-all ${
+          index === 0 ? 'pb-4 pt-8' : 'py-4'
+        }`}
+      >
+        {!isOpen && (
+          <Trophy className="h-5 w-5 flex-shrink-0 text-amber-500" />
+        )}
 
-<span
-className={`flex-shrink-0 font-['Bebas_Neue'] font-black leading-none transition-all tracking-wide ${
-isOpen ? 'text-[40px] text-cyan-700' : 'text-[32px] text-slate-700'
-}`}
->
-{champ.season}
-</span>
+        <span
+          className={`flex-shrink-0 font-['Bebas_Neue'] font-black leading-none transition-all tracking-wide ${
+            isOpen ? 'text-[40px] text-cyan-600' : 'text-[32px] text-slate-400'
+          }`}
+        >
+          {champ.season}
+        </span>
 
-<div className="min-w-0 flex-1">
-<div
-className={`truncate font-black text-slate-900 transition-all ${
-isOpen ? 'text-lg text-cyan-900' : 'text-base'
-}`}
->
-{champ.team}
-</div>
-{/* Dados numéricos com peso de fonte e cor ajustados para leitura pesada */}
-<div className="mt-0.5 text-xs font-extrabold text-slate-600">
-{champ.wins}–{champ.losses} overall
-{champ.playoffWins > 0 || champ.playoffLosses > 0
-? ` • ${champ.playoffWins}–${champ.playoffLosses} PO`
-: ''}
-{champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
-</div>
-</div>
+        <div className="min-w-0 flex-1">
+          <div
+            className={`truncate font-black text-slate-800 transition-all ${
+              isOpen ? 'text-lg text-cyan-700' : 'text-base'
+            }`}
+          >
+            {champ.team}
+          </div>
+          <div className="mt-0.5 text-xs font-bold text-slate-500">
+            {champ.wins}–{champ.losses} overall
+            {champ.playoffWins > 0 || champ.playoffLosses > 0
+              ? ` • ${champ.playoffWins}–${champ.playoffLosses} PO`
+              : ''}
+            {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
+          </div>
+        </div>
 
-<ChevronRight
-className={`h-5 w-5 flex-shrink-0 text-slate-600 transition-transform duration-200 ${
-isOpen ? 'rotate-90 text-cyan-600' : ''
-}`}
-/>
-</button>
+        <ChevronRight
+          className={`h-5 w-5 flex-shrink-0 text-slate-400 transition-transform duration-200 ${
+            isOpen ? 'rotate-90 text-cyan-600' : ''
+          }`}
+        />
+      </button>
 
-{isOpen && (
-<div className="border-t-2 border-slate-100 bg-slate-50 px-5 pb-5 pt-4">
-<div className="grid grid-cols-3 gap-2">
-<div>
-<div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-700">
-Reg Season
-</div>
-{regCol1.map((g, i) => (
-<GameRow key={i} game={g} />
-))}
-</div>
-<div>
-<div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] opacity-0 select-none">
-&nbsp;
-</div>
-{regCol2.map((g, i) => (
-<GameRow key={i} game={g} />
-))}
-</div>
-<div>
-<div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-800">
-Playoffs
-</div>
-{champ.playoffGames.length > 0 ? (
-champ.playoffGames.map((g, i) => (
-<GameRow key={i} game={g} />
-))
-) : (
-<div className="text-[11px] font-bold text-slate-500">Sem dados</div>
-)}
-</div>
-</div>
-</div>
-)}
-</div>
-)
-} 
+      {isOpen && (
+        /* Fundo mudado para BRANCO e divisores mais suaves para clarear o painel */
+        <div className="border-t border-slate-100 bg-white px-5 pb-5 pt-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
+                Reg Season
+              </div>
+              {regCol1.map((g, i) => (
+                <GameRow key={i} game={g} />
+              ))}
+            </div>
+            <div>
+              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] opacity-0 select-none">
+                &nbsp;
+              </div>
+              {regCol2.map((g, i) => (
+                <GameRow key={i} game={g} />
+              ))}
+            </div>
+            <div>
+              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-600">
+                Playoffs
+              </div>
+              {champ.playoffGames.length > 0 ? (
+                champ.playoffGames.map((g, i) => (
+                  <GameRow key={i} game={g} />
+                ))
+              ) : (
+                <div className="text-[11px] font-medium text-slate-400">Sem dados</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 
 function ChampionsWall({ champions }) {
