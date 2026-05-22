@@ -992,6 +992,4 @@ const selectedRivalry = useMemo(() => {
     },
   }
 }, [h2hData, selectedTeamA, selectedTeamB])
-
-  app/page.js
 }
