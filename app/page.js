@@ -1051,49 +1051,18 @@ const selectedRivalry = useMemo(() => {
         </div>
 
        {/* título Bebas Neue */}
-<h1
-  className="mb-5 leading-[0.88]"
-  style={{
-    fontFamily: '"Bebas Neue", sans-serif',
-    fontSize: 'clamp(64px, 9vw, 120px)',
-    letterSpacing: '0.02em',
-  }}
->
-  <span
-    style={{
-      display: 'block',
-      background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text',
-    }}
-  >
-    THE HOME OF
-  </span>
-  <span
-    style={{
-      display: 'block',
-      background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 40%, #0891b2 100%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text',
-      filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
-    }}
-  >
-    TAPITAS{' '}
-    <span
-      style={{
-        background: 'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        filter: 'none',
-      }}
-    >
-      HISTORY
-    </span>
-  </span>
-</h1>
+        {/* Título usando utilitários do Tailwind (sem inline styles) */}
+        <h1 className="mb-5 font-['Bebas_Neue'] text-[clamp(64px,9vw,120px)] leading-[0.88] tracking-wider">
+          <span className="block bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent">
+            THE HOME OF
+          </span>
+          <span className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-600 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.3)]">
+            TAPITAS{' '}
+            <span className="bg-gradient-to-r from-slate-200 to-slate-500 bg-clip-text text-transparent drop-shadow-none">
+              HISTORY
+            </span>
+          </span>
+        </h1>
 
      {/* subtítulo */}
         <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-400 md:text-lg">
