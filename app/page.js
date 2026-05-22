@@ -1008,23 +1008,23 @@ const selectedRivalry = useMemo(() => {
 
     {/* ===== HERO ===== */}
     <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8">
-      {/* Container do Hero: Agora com fundo branco, borda suave e sombra elegante */}
-      <div className="relative overflow-hidden rounded-[38px] border border-white/60 bg-white/70 backdrop-blur-md p-10 shadow-lg shadow-slate-100/50 md:p-14">
+      {/* Container do Hero: Fundo totalmente limpo para dar destaque à imagem */}
+      <div className="relative overflow-hidden rounded-[38px] border border-slate-200/80 bg-slate-50 p-10 shadow-md md:p-14">
+        
+        {/* Camada da Imagem de Fundo — Totalmente visível e nítida de ponta a ponta */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
           <Image
-            src="/images/Hero_bg.webp" // Caminho da imagem escolhida
+            src="/images/Hero_bg.webp"
             alt="Estádio ao fundo"
             layout="fill"
             objectFit="cover"
-            className="opacity-100 mix-blend-overlay" // Mistura com o fundo jateado
+            className="opacity-100" 
             priority
           />
-        </div>
-        {/* Fundo decorativo sutil com blur mantido */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
           
-          {/* DEGRADÊ MÁGICO: Garante fundo branco/claro na esquerda para o texto e revela a foto na direita */}
-          <div className="absolute inset-20 bg-gradient-to-r from-white via-white/80 to-transparent" />
+          {/* Luzes internas sutis integradas por cima da foto */}
+          <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.08] blur-[80px]" />
+          <div className="absolute -bottom-20 left-1/3 h-[300px] w-[300px] rounded-full bg-cyan-400/[0.06] blur-[60px]" />
         </div>
 
         <div className="relative flex flex-col items-center gap-12 xl:flex-row xl:items-center xl:justify-between">
