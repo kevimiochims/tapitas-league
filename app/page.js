@@ -1016,7 +1016,7 @@ const selectedRivalry = useMemo(() => {
             alt="Estádio ao fundo"
             layout="fill"
             objectFit="cover"
-            className="opacity-15 mix-blend-overlay" // Mistura com o fundo jateado
+            className="opacity-45 mix-blend-overlay" // Mistura com o fundo jateado
             priority
           />
           {/* Seus degradês de luz originais continuam aqui para somar no efeito */}
@@ -1027,8 +1027,8 @@ const selectedRivalry = useMemo(() => {
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
           <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.04] blur-[80px]" />
           <div className="absolute -bottom-20 left-1/3 h-[300px] w-[300px] rounded-full bg-cyan-400/[0.03] blur-[60px]" />
-          {/* Reflexo metálico diagonal sutil do vidro */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30" />
+          {/* DEGRADÊ MÁGICO: Garante fundo branco/claro na esquerda para o texto e revela a foto na direita */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
         </div>
 
         <div className="relative flex flex-col items-center gap-12 xl:flex-row xl:items-center xl:justify-between">
