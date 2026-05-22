@@ -1016,7 +1016,7 @@ const selectedRivalry = useMemo(() => {
             alt="Estádio ao fundo"
             layout="fill"
             objectFit="cover"
-            className="opacity-45 mix-blend-overlay" // Mistura com o fundo jateado
+            className="opacity-75 mix-blend-overlay" // Mistura com o fundo jateado
             priority
           />
           {/* Seus degradês de luz originais continuam aqui para somar no efeito */}
