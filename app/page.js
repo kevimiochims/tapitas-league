@@ -1023,7 +1023,7 @@ const selectedRivalry = useMemo(() => {
           />
           
           {/* DEGRADÊ SUAVE PARA A DIREITA: Protege a leitura na esquerda sem criar uma parede branca sólida */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/100 via-white/90 via-white/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/100 via-white/90 via-white/70 to-transparent" />
           
           {/* Luzes internas sutis integradas ao ambiente */}
           <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.08] blur-[80px]" />
@@ -1324,52 +1324,37 @@ const selectedRivalry = useMemo(() => {
 
                 return (
                   <div
-                    key={`${team.team}-${globalIndex}`}
-                    className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-slate-100 bg-slate-50/50 px-4 py-4 sm:px-6 sm:py-5"
-                  >
-                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/5 font-black text-cyan-600 sm:h-14 sm:w-14 text-[clamp(14px,3vw,22px)]">
-                      {globalIndex + 1}
+                  key={`${team.team}-${globalIndex}`}
+                  className="group relative overflow-hidden rounded-[24px] border border-white bg-gradient-to-br from-slate-50 via-white to-slate-100/80 p-4 transition-all duration-300 hover:scale-[1.01] hover:border-slate-300 hover:shadow-md shadow-sm grid grid-cols-[auto_1fr_auto] items-center gap-4"
+                >
+                  {/* Linha reflexiva diagonal (Simula o brilho do metal ao passar o mouse) */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
+
+                  {/* Número da Posição (Estilo Badge de Metal) */}
+                  <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-900 font-['Bebas_Neue'] font-black text-white text-2xl tracking-wide shadow-inner">
+                    {globalIndex + 1}
+                  </div>
+
+                  {/* Nome da Franquia */}
+                  <div className="relative z-10 min-w-0">
+                    <div className="font-black text-slate-900 text-lg truncate leading-tight group-hover:text-cyan-600 transition-colors">
+                      {team.team}
                     </div>
-
-                    <div className="min-w-0">
-                      <div className="mb-1 truncate font-black text-slate-800 text-[clamp(14px,3.5vw,24px)]">
-                        {team.team}
-                      </div>
-
-                      {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' ||
-                        sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') ? (() => {
-                        const keyLookup = {
-                          'W Streak RS':    'streakRS',
-                          'W Streak Total': 'streakTotal',
-                          'L Streak RS':    'lStreakRS',
-                          'L Streak Total': 'lStreakTotal',
-                        }
-                        const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
-                        if (!streakInfo) return null
-                        return (
-                          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-sm">
-                            W{streakInfo.startWeek}, {streakInfo.startSeason}
-                            <span className="mx-1 text-slate-300">→</span>
-                            W{streakInfo.endWeek}, {streakInfo.endSeason}
-                            {streakInfo.active && <span className="ml-1 text-cyan-600">(active)</span>}
-                          </div>
-                        )
-                      })() : (
-                        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-sm">
-                          {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-shrink-0 text-right">
-                      <div className="mb-1 font-black leading-none text-cyan-600 text-[clamp(22px,5vw,40px)]">
-                        {displayValue}
-                      </div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
-                        {shortLabel}
-                      </div>
+                    <div className="mt-1 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
                     </div>
                   </div>
+
+                  {/* Valor da Estatística Destacado */}
+                  <div className="relative z-10 text-right">
+                    <div className="font-['Bebas_Neue'] font-black text-3xl text-slate-900 leading-none tracking-wide group-hover:text-cyan-600 transition-colors">
+                      {displayValue}
+                    </div>
+                    <div className="text-[10px] font-black uppercase tracking-wider text-cyan-600 mt-0.5">
+                      {shortLabel}
+                    </div>
+                  </div>
+                </div>
                 )
               })}
           </div>
