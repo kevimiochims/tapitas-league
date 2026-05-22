@@ -1007,7 +1007,7 @@ const selectedRivalry = useMemo(() => {
     </header>
 
     {/* ===== HERO ===== */}
-    <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8">
+    <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8 rounded-full bg-cyan-500/[0.04] blur-[80px]">
       {/* Container do Hero: Agora com fundo branco, borda suave e sombra elegante */}
       <div className="relative overflow-hidden rounded-[38px] border border-white/60 bg-white/70 backdrop-blur-md p-10 shadow-lg shadow-slate-100/50 md:p-14">
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
@@ -1019,9 +1019,6 @@ const selectedRivalry = useMemo(() => {
             className="opacity-100 mix-blend-overlay" // Mistura com o fundo jateado
             priority
           />
-          {/* Seus degradês de luz originais continuam aqui para somar no efeito */}
-          <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.04] blur-[80px]" />
-          <div className="absolute -bottom-20 left-1/3 h-[300px] w-[300px] rounded-full bg-cyan-400/[0.03] blur-[60px]" />
         </div>
         {/* Fundo decorativo sutil com blur mantido */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
