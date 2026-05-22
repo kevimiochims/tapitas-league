@@ -1024,7 +1024,7 @@ const selectedRivalry = useMemo(() => {
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
           
           {/* DEGRADÊ MÁGICO: Garante fundo branco/claro na esquerda para o texto e revela a foto na direita */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
+          <div className="absolute inset-20 bg-gradient-to-r from-white via-white/80 to-transparent" />
         </div>
 
         <div className="relative flex flex-col items-center gap-12 xl:flex-row xl:items-center xl:justify-between">
