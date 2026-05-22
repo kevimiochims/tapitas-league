@@ -122,25 +122,36 @@ async function safeSheetFetch(url) {
 }
 
 function GameRow({ game }) {
+  // Define se o jogo foi vitória ou derrota para destacar com a cor correta
+  const isWin = game.result === 'W' || game.isWin;
+  
   return (
-    <div className="flex flex-col border-b border-white/5 py-[6px] last:border-0">
-      <div className="flex items-center gap-1">
-        <span
-          className={`text-[13px] font-black ${
-            game.result === 'W' ? 'text-emerald-400' : 'text-red-400'
-          }`}
-        >
-          {game.result}
-        </span>
-        <span className="truncate text-[13px] text-slate-300">
-          &nbsp;vs {game.opp}
-        </span>
-      </div>
-      <span className="text-[11px] text-slate-500">
-        {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
+    <div className="flex items-center justify-between py-1 border-b border-slate-200/60 last:border-none text-[11px] font-bold">
+      {/* Semana/Identificador do jogo */}
+      <span className="text-slate-700 font-extrabold uppercase tracking-wide">
+        {game.week || game.label || "Game"}
       </span>
+      
+      {/* Placar e Resultado */}
+      <div className="flex items-center gap-1.5 pl-2">
+        <span className="text-slate-900 font-black">
+          {game.score || `${game.pf}–${game.pa}`}
+        </span>
+        
+        {game.result && (
+          <span 
+            className={`inline-block px-1 rounded text-[9px] font-black leading-none ${
+              isWin 
+                ? 'bg-emerald-100 text-emerald-800' 
+                : 'bg-rose-100 text-rose-800'
+            }`}
+          >
+            {game.result}
+          </span>
+        )}
+      </div>
     </div>
-  )
+  );
 }
 
 function ChampionCard({ champ, index, isOpen, onToggle }) {
