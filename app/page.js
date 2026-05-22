@@ -122,25 +122,56 @@ async function safeSheetFetch(url) {
 }
 
 function GameRow({ game }) {
-  // Define se o jogo foi vitória ou derrota para destacar com a cor correta
+  return (
+    <div className="flex flex-col border-b border-white/5 py-[6px] last:border-0">
+      <div className="flex items-center gap-1">
+        <span
+          className={`text-[13px] font-black ${
+            game.result === 'W' ? 'text-emerald-400' : 'text-red-400'
+          }`}
+        >
+          {game.result}
+        </span>
+        <span className="truncate text-[13px] text-slate-300">
+          &nbsp;vs {game.opp}
+        </span>
+      </div>
+      <span className="text-[11px] text-slate-500">
+        {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
+      </span>
+    </div>
+  )
+}
+
+function GameRow({ game }) {
+  // Mantemos exatamente a lógica de detecção de vitória/derrota do seu código
   const isWin = game.result === 'W' || game.isWin;
   
   return (
-    <div className="flex items-center justify-between py-1 border-b border-slate-200/60 last:border-none text-[11px] font-bold">
-      {/* Semana/Identificador do jogo */}
-      <span className="text-slate-700 font-extrabold uppercase tracking-wide">
-        {game.week || game.label || "Game"}
-      </span>
+    <div className="flex items-center justify-between py-1 border-b border-slate-200/60 last:border-none text-[11px]">
+      <div className="flex items-center gap-1 min-w-0">
+        {/* Semana ou identificador do jogo com contraste forte */}
+        <span className="font-extrabold text-slate-700 uppercase tracking-wide flex-shrink-0">
+          {game.week || game.label || `W${game.matchupPeriodId}`}
+        </span>
+        
+        {/* Se houver nome do oponente no seu objeto, ele aparece aqui de forma legível */}
+        {game.opponent && (
+          <span className="text-slate-600 truncate font-medium max-w-[50px] sm:max-w-[70px]">
+            {game.isAway ? '@' : 'vs'}{game.opponent}
+          </span>
+        )}
+      </div>
       
-      {/* Placar e Resultado */}
-      <div className="flex items-center gap-1.5 pl-2">
-        <span className="text-slate-900 font-black">
-          {game.score || `${game.pf}–${game.pa}`}
+      {/* Placar e badge de resultado final */}
+      <div className="flex items-center gap-1.5 flex-shrink-0 pl-1">
+        <span className="font-black text-slate-950">
+          {game.score || (game.pf !== undefined && game.pa !== undefined ? `${Math.round(game.pf)}–${Math.round(game.pa)}` : '')}
         </span>
         
         {game.result && (
           <span 
-            className={`inline-block px-1 rounded text-[9px] font-black leading-none ${
+            className={`inline-block px-1 rounded-[4px] text-[9px] font-black leading-none ${
               isWin 
                 ? 'bg-emerald-100 text-emerald-800' 
                 : 'bg-rose-100 text-rose-800'
@@ -152,107 +183,6 @@ function GameRow({ game }) {
       </div>
     </div>
   );
-}
-
-function ChampionCard({ champ, index, isOpen, onToggle }) {
-  const half = Math.ceil(champ.regGames.length / 2)
-  const regCol1 = champ.regGames.slice(0, half)
-  const regCol2 = champ.regGames.slice(half)
-
-  return (
-    <div
-      className={`relative overflow-hidden rounded-[24px] border-2 transition-all duration-200 ${
-        isOpen
-          ? 'border-cyan-600 bg-white shadow-md'
-          : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
-      }`}
-    >
-      {/* Badge Reigning — Contraste forte em fundo âmbar */}
-      {index === 0 && (
-        <div className="absolute right-3 top-3 z-10 rounded-lg bg-amber-600 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
-          Reigning
-        </div>
-      )}
-
-      <button
-        onClick={onToggle}
-        className={`flex w-full items-center gap-4 px-5 text-left transition-all ${
-          index === 0 ? 'pb-4 pt-8' : 'py-4'
-        }`}
-      >
-        {!isOpen && (
-          <Trophy className="h-5 w-5 flex-shrink-0 text-amber-600" />
-        )}
-
-        <span
-          className={`flex-shrink-0 font-['Bebas_Neue'] font-black leading-none transition-all tracking-wide ${
-            isOpen ? 'text-[40px] text-cyan-700' : 'text-[32px] text-slate-700'
-          }`}
-        >
-          {champ.season}
-        </span>
-
-        <div className="min-w-0 flex-1">
-          <div
-            className={`truncate font-black text-slate-900 transition-all ${
-              isOpen ? 'text-lg text-cyan-900' : 'text-base'
-            }`}
-          >
-            {champ.team}
-          </div>
-          {/* Dados numéricos com peso de fonte e cor ajustados para leitura pesada */}
-          <div className="mt-0.5 text-xs font-extrabold text-slate-600">
-            {champ.wins}–{champ.losses} overall
-            {champ.playoffWins > 0 || champ.playoffLosses > 0
-              ? ` • ${champ.playoffWins}–${champ.playoffLosses} PO`
-              : ''}
-            {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
-          </div>
-        </div>
-
-        <ChevronRight
-          className={`h-5 w-5 flex-shrink-0 text-slate-600 transition-transform duration-200 ${
-            isOpen ? 'rotate-90 text-cyan-600' : ''
-          }`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="border-t-2 border-slate-100 bg-slate-50 px-5 pb-5 pt-4">
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-700">
-                Reg Season
-              </div>
-              {regCol1.map((g, i) => (
-                <GameRow key={i} game={g} />
-              ))}
-            </div>
-            <div>
-              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] opacity-0 select-none">
-                &nbsp;
-              </div>
-              {regCol2.map((g, i) => (
-                <GameRow key={i} game={g} />
-              ))}
-            </div>
-            <div>
-              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-800">
-                Playoffs
-              </div>
-              {champ.playoffGames.length > 0 ? (
-                champ.playoffGames.map((g, i) => (
-                  <GameRow key={i} game={g} />
-                ))
-              ) : (
-                <div className="text-[11px] font-bold text-slate-500">Sem dados</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 function ChampionsWall({ champions }) {
