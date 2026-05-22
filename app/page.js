@@ -53,22 +53,22 @@ function TeamSelect({ value, onChange, options, placeholder }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-4 pr-10 text-sm font-bold text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/10"
+        className="h-10 cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white pl-4 pr-10 text-sm font-extrabold text-slate-800 shadow-sm transition-all hover:border-slate-400 hover:bg-slate-50 focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-600/20"
       >
         {placeholder && (
-          <option value="" disabled className="text-slate-400">
+          <option value="" disabled className="text-slate-500 font-bold">
             {placeholder}
           </option>
         )}
         {options.map((opt) => (
-          <option key={opt} value={opt} className="text-slate-700 font-medium">
+          <option key={opt} value={opt} className="text-slate-900 font-bold">
             {opt}
           </option>
         ))}
       </select>
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
         </svg>
       </div>
     </div>
@@ -150,33 +150,32 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[28px] border transition-all duration-200 ${
+      className={`relative overflow-hidden rounded-[24px] border-2 transition-all duration-200 ${
         isOpen
-          ? 'border-cyan-500/40 bg-cyan-500/[0.01] shadow-sm'
-          : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
+          ? 'border-cyan-600 bg-white shadow-md'
+          : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
       }`}
     >
-      {/* Badge Reigning — Canto superior direito */}
+      {/* Badge Reigning — Contraste forte em fundo âmbar */}
       {index === 0 && (
-        <div className="absolute right-3 top-3 z-10 rounded-xl border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-amber-700">
+        <div className="absolute right-3 top-3 z-10 rounded-lg bg-amber-600 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
           Reigning
         </div>
       )}
 
       <button
         onClick={onToggle}
-        className={`flex w-full items-center gap-4 px-6 text-left transition-all ${
-          index === 0 ? 'pb-5 pt-9' : 'py-5'
+        className={`flex w-full items-center gap-4 px-5 text-left transition-all ${
+          index === 0 ? 'pb-4 pt-8' : 'py-4'
         }`}
       >
         {!isOpen && (
-          <Trophy className="h-5 w-5 flex-shrink-0 text-amber-500" />
+          <Trophy className="h-5 w-5 flex-shrink-0 text-amber-600" />
         )}
 
-        {/* Removido o estilo inline do Bebas Neue, agora roda via Tailwind nativo */}
         <span
-          className={`flex-shrink-0 font-['Bebas_Neue'] font-black leading-none transition-all tracking-wider ${
-            isOpen ? 'text-[42px] text-slate-800' : 'text-[28px] text-slate-400'
+          className={`flex-shrink-0 font-['Bebas_Neue'] font-black leading-none transition-all tracking-wide ${
+            isOpen ? 'text-[40px] text-cyan-700' : 'text-[32px] text-slate-700'
           }`}
         >
           {champ.season}
@@ -184,33 +183,34 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
         <div className="min-w-0 flex-1">
           <div
-            className={`truncate font-black text-slate-800 transition-all ${
-              isOpen ? 'text-xl' : 'text-base'
+            className={`truncate font-black text-slate-900 transition-all ${
+              isOpen ? 'text-lg text-cyan-900' : 'text-base'
             }`}
           >
             {champ.team}
           </div>
-          <div className="mt-1 text-xs font-bold text-slate-400">
+          {/* Dados numéricos com peso de fonte e cor ajustados para leitura pesada */}
+          <div className="mt-0.5 text-xs font-extrabold text-slate-600">
             {champ.wins}–{champ.losses} overall
             {champ.playoffWins > 0 || champ.playoffLosses > 0
-              ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
+              ? ` • ${champ.playoffWins}–${champ.playoffLosses} PO`
               : ''}
             {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
           </div>
         </div>
 
         <ChevronRight
-          className={`h-4 w-4 flex-shrink-0 text-slate-400 transition-transform duration-200 ${
-            isOpen ? 'rotate-90' : ''
+          className={`h-5 w-5 flex-shrink-0 text-slate-600 transition-transform duration-200 ${
+            isOpen ? 'rotate-90 text-cyan-600' : ''
           }`}
         />
       </button>
 
       {isOpen && (
-        <div className="border-t border-slate-100 px-6 pb-6 pt-5 bg-white">
-          <div className="grid grid-cols-3 gap-4">
+        <div className="border-t-2 border-slate-100 bg-slate-50 px-5 pb-5 pt-4">
+          <div className="grid grid-cols-3 gap-2">
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">
+              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-700">
                 Reg Season
               </div>
               {regCol1.map((g, i) => (
@@ -218,7 +218,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
               ))}
             </div>
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] opacity-0 select-none">
+              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] opacity-0 select-none">
                 &nbsp;
               </div>
               {regCol2.map((g, i) => (
@@ -226,7 +226,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
               ))}
             </div>
             <div>
-              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-600">
+              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-800">
                 Playoffs
               </div>
               {champ.playoffGames.length > 0 ? (
@@ -234,7 +234,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
                   <GameRow key={i} game={g} />
                 ))
               ) : (
-                <div className="text-[11px] font-bold text-slate-300">Sem dados</div>
+                <div className="text-[11px] font-bold text-slate-500">Sem dados</div>
               )}
             </div>
           </div>
@@ -261,20 +261,20 @@ function ChampionsWall({ champions }) {
 
   return (
     <section className="mt-8 mb-8">
-      {/* Container: Agora com fundo branco, borda sutil e sombra suave */}
-      <div className="overflow-hidden rounded-[38px] border border-slate-200 bg-white shadow-sm">
+      {/* Definição nítida de borda e fundo */}
+      <div className="overflow-hidden rounded-[38px] border-2 border-slate-200 bg-white shadow-md">
 
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-8 py-6">
+        {/* Header com contraste robusto */}
+        <div className="flex items-center justify-between border-b-2 border-slate-100 px-8 py-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
-              <Trophy className="h-5 w-5 text-cyan-600" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-600/10">
+              <Trophy className="h-5 w-5 text-cyan-700" />
             </div>
             <div>
-              <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-600">
+              <div className="text-xs font-black uppercase tracking-[0.25em] text-cyan-700">
                 Champions Wall
               </div>
-              <div className="text-base text-slate-500">
+              <div className="text-sm font-bold text-slate-600 mt-0.5">
                 Every title. Every campaign.
               </div>
             </div>
@@ -282,7 +282,7 @@ function ChampionsWall({ champions }) {
         </div>
 
         {/* Grid de Cards */}
-        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
+        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start bg-slate-50/50">
           {champions.map((champ, index) => (
             <ChampionCard
               key={champ.season}
