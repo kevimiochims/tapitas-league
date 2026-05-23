@@ -85,6 +85,23 @@ export default function MatchupsPage() {
 
   const seasonsRef = useRef(null)
   const weeksRef   = useRef(null)
+  const activeSeasonRef = useRef(null)
+
+  // Deixe este efeito SEPARADO do seu useEffect de load
+useEffect(() => {
+  if (activeSeasonRef.current) {
+    const timer = setTimeout(() => {
+      activeSeasonRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }
+}, [season]);
+
 
   useEffect(() => {
   async function load() {
@@ -139,6 +156,7 @@ export default function MatchupsPage() {
   }
   load()
 }, [])
+
 
   const seasons = useMemo(() => {
   return [...new Set(games.map(g => String(g?.Season || '').trim()).filter(Boolean))]
@@ -304,40 +322,52 @@ export default function MatchupsPage() {
 
       <section className="px-3 py-6 md:px-6 mx-auto">
 
-        {/* Hero */}
-        <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)] p-10">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -right-32 -top-32 h-[300px] w-[300px] rounded-full bg-cyan-500/[0.05] blur-[80px]" />
-          </div>
-          <div className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
-            <Swords className="h-4 w-4 text-cyan-300" />
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
-              Game by Game
-            </span>
-          </div>
-          <h1
-            className="leading-[0.9] tracking-[-0.02em]"
-            style={{
-              fontFamily: '"Bebas Neue", sans-serif',
-              fontSize: 'clamp(48px, 7vw, 96px)',
-              background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            Match
-            <span style={{
-              background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>ups</span>
-          </h1>
-          <p className="mt-4 max-w-lg text-base text-slate-400">
-            Every game. Every score. Every moment.
-          </p>
+       {/* Hero */}
+      <div className="relative mb-8 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)] p-6 sm:p-8 md:p-10">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -right-32 -top-32 h-[300px] w-[300px] rounded-full bg-cyan-500/[0.05] blur-[80px]" />
         </div>
+        
+        {/* Bloco "Game by Game" Responsivo */}
+        <div className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 sm:px-4 sm:py-2">
+          <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-cyan-300 shrink-0" />
+          <span 
+            className="font-black uppercase tracking-[0.25em] text-cyan-300 whitespace-nowrap"
+            style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+          >
+            Game by Game
+          </span>
+        </div>
+
+        {/* Título Principal (Mantido o seu clamp perfeito) */}
+        <h1
+          className="leading-[0.9] tracking-[-0.02em]"
+          style={{
+            fontFamily: '"Bebas Neue", sans-serif',
+            fontSize: 'clamp(48px, 7vw, 96px)',
+            background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
+        >
+          Match
+          <span style={{
+            background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>ups</span>
+        </h1>
+
+        {/* Subtítulo Descritivo Responsivo */}
+        <p 
+          className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-slate-400"
+          style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+        >
+          Every game. Every score. Every moment.
+        </p>
+      </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20 text-slate-500 font-bold">Loading...</div>
