@@ -302,7 +302,7 @@ export default function MatchupsPage() {
         </nav>
       </header>
 
-      <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+      <section className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
 
         {/* Hero */}
         <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)] p-10">
@@ -726,7 +726,7 @@ export default function MatchupsPage() {
       </section>
 
       {/* Footer */}
-      <footer className="mx-auto max-w-[1680px] px-6 pb-12">
+      <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
         <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
           <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-30" />
           <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
