@@ -25,6 +25,31 @@ async function safeFetch(url) {
   } catch { return [] }
 }
 
+const ROSTER_CONFIG = {
+  2014: { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, k: 1, def: 1 },
+  2015: { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, k: 1, def: 1 },
+  2016: { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, k: 1, def: 1 },
+  2021: { qb: 2, rb: 3, wr: 3, te: 1, flex: 2, k: 1, def: 1 },
+  2022: { qb: 2, rb: 3, wr: 3, te: 1, flex: 2, k: 1, def: 1 },
+  2023: { qb: 2, rb: 2, wr: 2, te: 1, flex: 3, k: 1, def: 1 },
+  2024: { qb: 2, rb: 2, wr: 2, te: 1, flex: 3, k: 1, def: 1 },
+  2025: { qb: 2, rb: 2, wr: 2, te: 1, flex: 3, k: 1, def: 1 },
+}
+
+function getRosterPositions(seasonYear) {
+  const config = ROSTER_CONFIG[Number(seasonYear)] || ROSTER_CONFIG[2025]
+  const positions = []
+  const add = (pos, count) => { for (let i = 0; i < count; i++) positions.push(pos) }
+  add('QB', config.qb)
+  add('RB', config.rb)
+  add('WR', config.wr)
+  add('TE', config.te)
+  add('FLEX', config.flex)
+  add('K', config.k)
+  add('DEF', config.def)
+  return positions
+}
+
 // Extrai jogadores de uma linha do GAME_FACTS_ALL
 function extractPlayers(game, prefix) {
   const players = []
@@ -470,81 +495,100 @@ export default function MatchupsPage() {
                 </div>
 
                 {/* Starters */}
-                <div className="px-8 py-6 border-b border-white/5">
-                  <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-4">Starters</div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="px-8 py-6 border-b border-white/5">
+                    <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-4">Starters</div>
+
                     {/* Header colunas */}
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5">
-                      {String(selected?.Team || '').trim()}
-                    </div>
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5">
-                      {String(selected?.Opponent || '').trim()}
+                    <div className="grid grid-cols-[1fr_60px_1fr] gap-2 mb-3">
+                      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5">
+                        {String(selected?.Team || '').trim()}
+                      </div>
+                      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 text-center">
+                        Pos
+                      </div>
+                      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 text-right">
+                        {String(selected?.Opponent || '').trim()}
+                      </div>
                     </div>
 
-                    {/* Jogadores lado a lado */}
-                    {Array.from({ length: Math.max(starters.length, oppStarters.length) }).map((_, i) => (
-                      <React.Fragment key={i}>
-                        <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${starters[i] ? 'bg-white/[0.03] border border-white/5' : ''}`}>
-                          {starters[i] ? (
-                            <>
-                              <span className="text-sm font-bold text-white truncate max-w-[140px]">{starters[i].name}</span>
-                              <span className={`text-sm font-black ml-2 flex-shrink-0 ${starters[i].pts > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
-                                {starters[i].pts.toFixed(1)}
-                              </span>
-                            </>
-                          ) : null}
-                        </div>
-                        <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${oppStarters[i] ? 'bg-white/[0.03] border border-white/5' : ''}`}>
-                          {oppStarters[i] ? (
-                            <>
-                              <span className="text-sm font-bold text-white truncate max-w-[140px]">{oppStarters[i].name}</span>
-                              <span className={`text-sm font-black ml-2 flex-shrink-0 ${oppStarters[i].pts > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
-                                {oppStarters[i].pts.toFixed(1)}
-                              </span>
-                            </>
-                          ) : null}
-                        </div>
-                      </React.Fragment>
-                    ))}
+                    {/* Jogadores */}
+                    {(() => {
+                      const positions = getRosterPositions(season)
+                      const rows = Math.max(starters.length, oppStarters.length, positions.length)
+                      return Array.from({ length: rows }).map((_, i) => {
+                        const home = starters[i]
+                        const away = oppStarters[i]
+                        const pos  = positions[i] || ''
+                        return (
+                          <React.Fragment key={i}>
+                            <div className="grid grid-cols-[1fr_60px_1fr] gap-2 mb-2 items-center">
+                              {/* Time A — Nome → Pts */}
+                              <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${home ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
+                                <span className="text-sm font-bold text-white truncate max-w-[140px]">{home?.name ?? ''}</span>
+                                <span className={`text-sm font-black ml-2 flex-shrink-0 ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
+                                  {home ? home.pts.toFixed(1) : ''}
+                                </span>
+                              </div>
+
+                              {/* Posição central */}
+                              <div className="flex items-center justify-center">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/[0.04] border border-white/10 rounded-lg px-2 py-1">
+                                  {pos}
+                                </span>
+                              </div>
+
+                              {/* Time B — Pts → Nome (espelhado) */}
+                              <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${away ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
+                                <span className={`text-sm font-black mr-2 flex-shrink-0 ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
+                                  {away ? away.pts.toFixed(1) : ''}
+                                </span>
+                                <span className="text-sm font-bold text-white truncate max-w-[140px] text-right">{away?.name ?? ''}</span>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        )
+                      })
+                    })()}
                   </div>
-                </div>
 
                 {/* Bench */}
                 {(bench.length > 0 || oppBench.length > 0) && (
                   <div className="px-8 py-6 border-b border-white/5">
                     <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Bench</div>
-                    <div className="grid grid-cols-2 gap-3">
+
+                    <div className="grid grid-cols-[1fr_60px_1fr] gap-2 mb-3">
                       <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-600 pb-2 border-b border-white/5">
                         {String(selected?.Team || '').trim()}
                       </div>
-                      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-600 pb-2 border-b border-white/5">
+                      <div className="pb-2 border-b border-white/5" />
+                      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-600 pb-2 border-b border-white/5 text-right">
                         {String(selected?.Opponent || '').trim()}
                       </div>
-                      {Array.from({ length: Math.max(bench.length, oppBench.length) }).map((_, i) => (
+                    </div>
+
+                    {Array.from({ length: Math.max(bench.length, oppBench.length) }).map((_, i) => {
+                      const home = bench[i]
+                      const away = oppBench[i]
+                      return (
                         <React.Fragment key={i}>
-                          <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${bench[i] ? 'bg-white/[0.02] border border-white/[0.03]' : ''}`}>
-                            {bench[i] ? (
-                              <>
-                                <span className="text-sm font-bold text-slate-400 truncate max-w-[140px]">{bench[i].name}</span>
-                                <span className={`text-sm font-black ml-2 flex-shrink-0 ${bench[i].pts > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
-                                  {bench[i].pts.toFixed(1)}
-                                </span>
-                              </>
-                            ) : null}
-                          </div>
-                          <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${oppBench[i] ? 'bg-white/[0.02] border border-white/[0.03]' : ''}`}>
-                            {oppBench[i] ? (
-                              <>
-                                <span className="text-sm font-bold text-slate-400 truncate max-w-[140px]">{oppBench[i].name}</span>
-                                <span className={`text-sm font-black ml-2 flex-shrink-0 ${oppBench[i].pts > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
-                                  {oppBench[i].pts.toFixed(1)}
-                                </span>
-                              </>
-                            ) : null}
+                          <div className="grid grid-cols-[1fr_60px_1fr] gap-2 mb-2 items-center">
+                            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${home ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
+                              <span className="text-sm font-bold text-slate-400 truncate max-w-[140px]">{home?.name ?? ''}</span>
+                              <span className={`text-sm font-black ml-2 flex-shrink-0 ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
+                                {home ? home.pts.toFixed(1) : ''}
+                              </span>
+                            </div>
+                            <div />
+                            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
+                              <span className={`text-sm font-black mr-2 flex-shrink-0 ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
+                                {away ? away.pts.toFixed(1) : ''}
+                              </span>
+                              <span className="text-sm font-bold text-slate-400 truncate max-w-[140px] text-right">{away?.name ?? ''}</span>
+                            </div>
                           </div>
                         </React.Fragment>
-                      ))}
-                    </div>
+                      )
+                    })}
                   </div>
                 )}
 
