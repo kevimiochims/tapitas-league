@@ -49,32 +49,63 @@ export default function MatchupsPage() {
   const weeksRef   = useRef(null)
 
   useEffect(() => {
-    async function load() {
-      const data = await safeFetch(`${BASE_URL}/GAME_FACTS_ALL`)
-      setGames(data)
-      // Temporada mais recente como padrão
-      const seasons = [...new Set(data.map(g => String(g?.Season || '').trim()).filter(Boolean))]
-        .sort((a, b) => Number(b) - Number(a))
-      if (seasons.length > 0) {
-        const latestSeason = seasons[0]
-        setSeason(latestSeason)
-        // Semana mais recente dessa temporada
-        const weeks = [...new Set(
-          data
-            .filter(g => String(g?.Season || '').trim() === latestSeason)
-            .map(g => Number(g?.Week || 0))
-        )].sort((a, b) => a - b)
-        if (weeks.length > 0) setWeek(String(weeks[weeks.length - 1]))
+  async function load() {
+    const data = await safeFetch(`${BASE_URL}/GAME_FACTS_ALL`)
+    setGames(data)
+
+    const allSeasons = [...new Set(data.map(g => String(g?.Season || '').trim()).filter(Boolean))]
+      .sort((a, b) => Number(a) - Number(b))
+
+    if (allSeasons.length > 0) {
+      const latestSeason = allSeasons[allSeasons.length - 1]
+      setSeason(latestSeason)
+
+      const ws = [...new Set(
+        data
+          .filter(g => String(g?.Season || '').trim() === latestSeason)
+          .map(g => String(g?.Week || '').trim())
+          .filter(w => w !== '' && w !== '0')
+      )].sort((a, b) => {
+        const numA = parseFloat(a)
+        const numB = parseFloat(b)
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB
+        if (!isNaN(numA)) return -1
+        if (!isNaN(numB)) return 1
+        return a.localeCompare(b)
+      })
+
+      if (ws.length > 0) {
+        const latestWeek = ws[ws.length - 1]
+        setWeek(latestWeek)
+
+        // Seleciona o primeiro matchup automaticamente
+        const seen = new Set()
+        for (const g of data) {
+          if (
+            String(g?.Season || '').trim() === latestSeason &&
+            String(g?.Week || '').trim() === latestWeek
+          ) {
+            const team = String(g?.Team || '').trim()
+            const opp  = String(g?.Opponent || '').trim()
+            const key  = [team, opp].sort().join('|')
+            if (!seen.has(key)) {
+              setSelected(g)
+              break
+            }
+          }
+        }
       }
-      setLoading(false)
     }
-    load()
-  }, [])
+
+    setLoading(false)
+  }
+  load()
+}, [])
 
   const seasons = useMemo(() => {
-    return [...new Set(games.map(g => String(g?.Season || '').trim()).filter(Boolean))]
-      .sort((a, b) => Number(b) - Number(a))
-  }, [games])
+  return [...new Set(games.map(g => String(g?.Season || '').trim()).filter(Boolean))]
+    .sort((a, b) => Number(a) - Number(b))
+}, [games])
 
   const weeks = useMemo(() => {
   if (!season) return []
@@ -148,12 +179,44 @@ export default function MatchupsPage() {
       return a.localeCompare(b)
     })
     if (ws.length > 0) setWeek(String(ws[ws.length - 1]))
+    // Seleciona o primeiro matchup da nova temporada automaticamente
+    const seen = new Set()
+    for (const g of games) {
+      if (
+        String(g?.Season || '').trim() === s &&
+        String(g?.Week || '').trim() === String(ws[ws.length - 1])
+      ) {
+        const team = String(g?.Team || '').trim()
+        const opp  = String(g?.Opponent || '').trim()
+        const key  = [team, opp].sort().join('|')
+        if (!seen.has(key)) {
+          setSelected(g)
+          break
+        }
+      }
+    }
   }
 
   const handleWeekClick = (w) => {
-    setWeek(String(w))
-    setSelected(null)
+  setWeek(String(w))
+  setSelected(null)
+  // Seleciona o primeiro matchup da semana automaticamente
+  const seen = new Set()
+  for (const g of games) {
+    if (
+      String(g?.Season || '').trim() === season &&
+      String(g?.Week || '').trim() === String(w)
+    ) {
+      const team = String(g?.Team || '').trim()
+      const opp  = String(g?.Opponent || '').trim()
+      const key  = [team, opp].sort().join('|')
+      if (!seen.has(key)) {
+        setSelected(g)
+        break
+      }
+    }
   }
+}
 
   const teamPF  = selected ? parseNumber(selected?.PF) : 0
   const teamPA  = selected ? parseNumber(selected?.PA) : 0
@@ -247,7 +310,7 @@ export default function MatchupsPage() {
               <div className="border-b border-white/5 px-6 py-4">
                 <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">Season</div>
               </div>
-              <div ref={seasonsRef} className="scroll-hide flex gap-2 overflow-x-auto px-6 py-4">
+              <div ref={seasonsRef} className="scroll-hide flex justify-center gap-2 overflow-x-auto px-6 py-4">
                 {seasons.map(s => (
                   <button
                     key={s}
@@ -270,7 +333,7 @@ export default function MatchupsPage() {
                 <div className="border-b border-white/5 px-6 py-4">
                   <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">Week</div>
                 </div>
-                <div ref={weeksRef} className="scroll-hide flex gap-2 overflow-x-auto px-6 py-4">
+                <div ref={weeksRef} className="scroll-hide flex justify-center gap-2 overflow-x-auto px-6 py-4">
                   {weeks.map(w => (
                     <button
                       key={w}
@@ -296,7 +359,7 @@ export default function MatchupsPage() {
                     {season} — Week {week}
                   </div>
                 </div>
-                <div className="scroll-hide flex gap-4 overflow-x-auto p-6">
+                <div className="scroll-hide flex justify-center gap-4 overflow-x-auto p-6">
                   {matchups.map((g, i) => {
                     const pf  = parseNumber(g?.PF)
                     const pa  = parseNumber(g?.PA)
@@ -317,11 +380,15 @@ export default function MatchupsPage() {
                         }`}
                       >
                         {/* Stage badge */}
-                        {stage && stage !== 'Reg Season' && (
-                          <div className="mb-2 inline-block rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-cyan-300">
-                            {stage}
-                          </div>
-                        )}
+                        {(() => {
+                          const gameType = String(g?.GameType || '').trim()
+                          if (!gameType || gameType === 'Reg Season') return null
+                          return (
+                            <div className="mb-2 inline-block rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-cyan-300">
+                              {gameType}
+                            </div>
+                          )
+                        })()}
 
                         {/* Time A */}
                         <div className="flex items-center justify-between mb-1">
@@ -365,7 +432,7 @@ export default function MatchupsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-2">
-                        {season} · Week {week} · {String(selected?.GameStage || selected?.GameType || 'Reg Season').trim()}
+                        {season} · Week {week}{selected?.GameType && selected.GameType !== 'Reg Season' ? ` · ${selected.GameType}` : ''}
                       </div>
                       <div
                         className="font-black leading-none"
