@@ -86,22 +86,53 @@ export default function MatchupsPage() {
   const seasonsRef = useRef(null)
   const weeksRef   = useRef(null)
   const activeSeasonRef = useRef(null)
+  const activeWeekRef = useRef(null)
+  const activeGameRef = useRef(null)
 
-  // Deixe este efeito SEPARADO do seu useEffect de load
+
+  // Efeito para rolar até a Semana Ativa
 useEffect(() => {
-  if (activeSeasonRef.current) {
+  if (week && activeWeekRef.current) {
     const timer = setTimeout(() => {
-      activeSeasonRef.current?.scrollIntoView({
+      activeWeekRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
         inline: 'center'
       });
-    }, 50);
-
+    }, 100);
     return () => clearTimeout(timer);
   }
-}, [season]);
+}, [week]); // Roda sempre que a semana mudar
 
+// Efeito para rolar até o Jogo Ativo (Matchup)
+useEffect(() => {
+  // Ajuste o termo "selected" se a sua variável de estado do jogo ativo tiver outro nome
+  if (selected && activeGameRef.current) {
+    const timer = setTimeout(() => {
+      activeGameRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }, 120); // 120ms para dar uma leve fração de tempo a mais pro layout assíncrono se ajustar
+    return () => clearTimeout(timer);
+  }
+}, [selected]); // Roda sempre que o jogo selecionado mudar
+
+
+  // Deixe este efeito SEPARADO do seu useEffect de load
+  useEffect(() => {
+    if (season && activeSeasonRef.current) {
+      const timer = setTimeout(() => {
+        activeSeasonRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [season]);
 
   useEffect(() => {
   async function load() {
@@ -156,6 +187,7 @@ useEffect(() => {
   }
   load()
 }, [])
+
 
 
   const seasons = useMemo(() => {
@@ -374,60 +406,92 @@ useEffect(() => {
         ) : (
           <>
             {/* Seletor de temporada */}
-            <div className="mb-6 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+            <div className="mb-6 overflow-hidden rounded-2xl md:rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
               <div className="border-b border-white/5 px-6 py-4">
-                <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">Season</div>
+                <div 
+                  className="font-black uppercase tracking-[0.3em] text-cyan-300"
+                  style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+                >
+                  Season
+                </div>
               </div>
-              <div ref={seasonsRef} className="scroll-hide flex justify-center gap-2 overflow-x-auto px-6 py-4">
-                {seasons.map(s => (
-                  <button
-                    key={s}
-                    onClick={() => handleSeasonClick(s)}
-                    className={`flex-shrink-0 rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${
-                      season === s
-                        ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
-                        : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+              
+              {/* Container com o scroll horizontal ajustado */}
+              <div 
+                ref={seasonsRef} 
+                className="scroll-hide flex justify-start md:justify-center gap-2 overflow-x-auto px-6 py-4"
+              >
+                {seasons.map(s => {
+                  const isActive = season === s;
+                  return (
+                    <button
+                      key={s}
+                      // ESSA LINHA É CRUCIAL: Ela liga o botão ativo à referência do JS
+                      ref={isActive ? activeSeasonRef : null}
+                      onClick={() => handleSeasonClick(s)}
+                      className={`flex-shrink-0 rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${
+                        isActive
+                          ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
+                          : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Seletor de semana */}
             {season && (
-              <div className="mb-6 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+              <div className="mb-6 overflow-hidden rounded-2xl md:rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
                 <div className="border-b border-white/5 px-6 py-4">
-                  <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">Week</div>
+                  <div 
+                    className="font-black uppercase tracking-[0.3em] text-cyan-300"
+                    style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+                  >
+                    Week
+                  </div>
                 </div>
-                <div ref={weeksRef} className="scroll-hide flex justify-center gap-2 overflow-x-auto px-6 py-4">
-                  {weeks.map(w => (
-                    <button
-                      key={w}
-                      onClick={() => handleWeekClick(w)}
-                      className={`flex-shrink-0 h-11 w-11 rounded-2xl text-sm font-black transition-all ${
-                        week === String(w)
-                          ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
-                          : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
-                      }`}
-                    >
-                      {w}
-                    </button>
-                  ))}
+                
+                {/* Mudado de justify-center para justify-start md:justify-center */}
+                <div ref={weeksRef} className="scroll-hide flex justify-start md:justify-center gap-2 overflow-x-auto px-6 py-4">
+                  {weeks.map(w => {
+                    const isActive = week === String(w);
+                    return (
+                      <button
+                        key={w}
+                        // LIGAÇÃO DA REF: Identifica qual semana está ativa
+                        ref={isActive ? activeWeekRef : null}
+                        onClick={() => handleWeekClick(w)}
+                        className={`flex-shrink-0 h-11 w-11 rounded-2xl text-sm font-black transition-all ${
+                          isActive
+                            ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
+                            : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                        }`}
+                      >
+                        {w}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Cards de matchups */}
             {week && matchups.length > 0 && (
-              <div className="mb-8 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+              <div className="mb-8 overflow-hidden rounded-2xl md:rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
                 <div className="border-b border-white/5 px-6 py-4">
-                  <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+                  <div 
+                    className="font-black uppercase tracking-[0.3em] text-cyan-300"
+                    style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+                  >
                     {season} — Week {week}
                   </div>
                 </div>
-                <div className="scroll-hide flex justify-center gap-4 overflow-x-auto p-6">
+                
+                {/* Mudado de justify-center para justify-start md:justify-center */}
+                <div className="scroll-hide flex justify-start md:justify-center gap-4 overflow-x-auto p-6">
                   {matchups.map((g, i) => {
                     const pf  = parseNumber(g?.PF)
                     const pa  = parseNumber(g?.PA)
@@ -440,6 +504,8 @@ useEffect(() => {
                     return (
                       <button
                         key={i}
+                        // LIGAÇÃO DA REF: Identifica qual card de confronto está ativo
+                        ref={isSelected ? activeGameRef : null}
                         onClick={() => setSelected(isSelected ? null : g)}
                         className={`flex-shrink-0 w-56 rounded-[24px] border p-4 text-left transition-all ${
                           isSelected
