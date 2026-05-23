@@ -828,7 +828,6 @@ useEffect(() => {
       ? rawData : FALLBACK_TEAMS
 
   const mapped = base.map(normalizeTeam)
-  console.log('rsWinPct exemplo:', mapped[0]?.rsWinPct, 'poWinPct:', mapped[0]?.poWinPct)
  
 
   const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
@@ -1035,49 +1034,49 @@ useEffect(() => {
     const highestScorer = sortedByPF[0]
     const lowestScorer  = sortedByPF[sortedByPF.length - 1]
 
-    const playoffTeams = seasonTeams.filter(r =>
-      String(r?.Made_Playoffs || '').toUpperCase() === 'TRUE'
-    )
+    const unicorn = seasonTeams.sort((a, b) =>
+  parseNumber(a?.Standing || 99) - parseNumber(b?.Standing || 99)
+)[seasonTeams.length - 1]
 
     // Maior pontuação em um único jogo
     const seasonGames = gamesJson.filter(r => {
-      const s = String(r?.Season || '').trim()
-      const stage = String(r?.gameStage || '').trim()
-      return s === SEASON && stage === 'Reg Season'
-    })
-    console.log('seasonGames length:', seasonGames.length)
-    console.log('seasonGames[0]:', seasonGames[0])
+  const s     = String(r?.Season || '').trim()
+  const stage = String(r?.GameStage || '').trim()
+  return s === SEASON && stage === 'Reg Season'
+})
 
     const highestGame = seasonGames.reduce((best, g) => {
-      const score = parseNumber(g?.Score || g?.score || g?.PF || 0)
-      return score > (best?.score ?? 0) ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() } : best
+      const score = parseNumber(g?.PF || 0)
+      return score > (best?.score ?? 0)
+        ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() }
+        : best
     }, null)
 
     const lowestGame = seasonGames.reduce((worst, g) => {
-      const score = parseNumber(g?.Score || g?.score || g?.PF || 0)
+      const score = parseNumber(g?.PF || 0)
       if (score === 0) return worst
-      return score < (worst?.score ?? 9999) ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() } : worst
+      return score < (worst?.score ?? 9999)
+        ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() }
+        : worst
     }, null)
 
-    // Jogo mais disputado
     const closestGame = seasonGames.reduce((closest, g) => {
-      const score = parseNumber(g?.Score || g?.score || g?.PF || 0)
-      const opp   = parseNumber(g?.OpponentScore || g?.OppPF || g?.PA || 0)
+      const score  = parseNumber(g?.PF || 0)
+      const opp    = parseNumber(g?.PA || 0)
       if (score === 0 || opp === 0) return closest
       const margin = Math.abs(score - opp)
       return margin < (closest?.margin ?? 9999)
-        ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week }
+        ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week, opponent: String(g?.Opponent || '').trim() }
         : closest
     }, null)
 
-    // Maior virada (maior margem de vitória)
     const biggestWin = seasonGames.reduce((best, g) => {
-      const score = parseNumber(g?.Score || g?.score || g?.PF || 0)
-      const opp   = parseNumber(g?.OpponentScore || g?.OppPF || g?.PA || 0)
+      const score  = parseNumber(g?.PF || 0)
+      const opp    = parseNumber(g?.PA || 0)
       if (score <= opp) return best
       const margin = score - opp
       return margin > (best?.margin ?? 0)
-        ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week }
+        ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week, opponent: String(g?.Opponent || '').trim() }
         : best
     }, null)
 
@@ -1089,7 +1088,7 @@ useEffect(() => {
       worstRecord,
       highestScorer,
       lowestScorer,
-      playoffTeams: playoffTeams.length,
+      unicorn,
       highestGame,
       lowestGame,
       closestGame,
@@ -1525,7 +1524,6 @@ useEffect(() => {
                   const globalIndex = standingsPage * 5 + index
                   const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
                   const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
-                  console.log('cat:', sortCategory, 'sub:', sortSub, 'found:', cat?.subs.find((s) => s.label === sortSub))
                   
                   const keyMap = {
                     'W':              (t) => t.wins,
@@ -1792,12 +1790,16 @@ useEffect(() => {
                     )}
                   </div>
 
-                  {/* Playoff teams */}
-                  <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                    <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Playoff Teams</div>
-                    <div className="text-3xl font-black text-cyan-300">{seasonSummary.playoffTeams}</div>
-                    <div className="text-xs text-slate-500">of {seasonSummary.totalTeams} franchises</div>
-                  </div>
+                  {/* Unicornio */}
+                  {seasonSummary.unicorn && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
+                      <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
+                      <div className="text-sm text-slate-400">
+                        {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
+                      </div>
+                    </div>
+                  )}
 
                   {/* Jogos notáveis */}
                   <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-2">Notable Games</div>
@@ -1816,7 +1818,7 @@ useEffect(() => {
                       <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
                       <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
                       <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
-                      <div className="text-xs text-slate-500">Margin: {seasonSummary.closestGame.margin.toFixed(2)} · W{seasonSummary.closestGame.week}</div>
+                      <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · W{seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
                     </div>
                   )}
 
@@ -1825,7 +1827,7 @@ useEffect(() => {
                       <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
                       <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
                       <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
-                      <div className="text-xs text-slate-500">Margin: {seasonSummary.biggestWin.margin.toFixed(2)} · W{seasonSummary.biggestWin.week}</div>
+                      <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · W{seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
                     </div>
                   )}
 

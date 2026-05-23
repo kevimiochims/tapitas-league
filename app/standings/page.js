@@ -85,8 +85,6 @@ function Select({ value, onChange, options, placeholder, disabled }) {
 }
 
 function WinChart({ data }) {
-  if (!data || data.length === 0) return null
-
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -96,6 +94,8 @@ function WinChart({ data }) {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  if (!data || data.length === 0) return null
+
   const W = 520, H = 180, padL = 40, padR = 16, padT = 24, padB = 28
   const maxV = Math.max(...data.map(d => d.value), 1)
   const xScale = (i) => padL + (i / (data.length - 1)) * (W - padL - padR)
@@ -103,11 +103,9 @@ function WinChart({ data }) {
   const points = data.map((d, i) => `${xScale(i)},${yScale(d.value)}`).join(' ')
   const areaPoints = `${xScale(0)},${H - padB} ${points} ${xScale(data.length - 1)},${H - padB}`
   const gridVals = [0, Math.round(maxV * 0.33), Math.round(maxV * 0.66), Math.round(maxV)]
-
-  const fsAxis  = isMobile ? 14 : 9
-  const fsValue = isMobile ? 13 : 8
+  const fsAxis   = isMobile ? 14 : 9
+  const fsValue  = isMobile ? 13 : 8
   const fsTrophy = isMobile ? 14 : 10
-
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
       {gridVals.map(v => (
@@ -153,8 +151,8 @@ export default function StandingsPage() {
   const [season,      setSeason]      = useState('All-Time')
   const [chartTeam,   setChartTeam]   = useState('')
   const [page,        setPage]        = useState(0)
-  const [sortCol, setSortCol] = useState('Pos')
-  const [sortDir, setSortDir] = useState('asc')
+  const [sortCol, setSortCol] = useState('W')
+  const [sortDir, setSortDir] = useState('desc')
   const [chartStat,  setChartStat]  = useState('Wins')
   const [chartScope, setChartScope] = useState('Reg Season')
 
@@ -179,6 +177,13 @@ export default function StandingsPage() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+  if (season === 'All-Time' && sortCol === 'Pos') {
+    setSortCol('W')
+    setSortDir('desc')
+  }
+}, [season])
 
   const seasons = useMemo(() => {
     const s = new Set()
@@ -252,9 +257,10 @@ export default function StandingsPage() {
       return row.w
     }
     const diff = sortDir === 'desc' ? getVal(b) - getVal(a) : getVal(a) - getVal(b)
-    if (diff !== 0) return diff
-    if (b.w !== a.w) return b.w - a.w
-    return b.pf - a.pf
+      if (diff !== 0) return diff
+      if (b.w !== a.w) return b.w - a.w
+      if (a.l !== b.l) return a.l - b.l
+      return b.pf - a.pf
   })
   }, [allTimeData, historyData, tab, season, sortCol, sortDir])
 
@@ -273,14 +279,22 @@ export default function StandingsPage() {
 }, [historyData, chartTeam, chartStat, chartScope])
 
   const chartStats = useMemo(() => {
-  if (!chartData.length) return null
-  const vals   = chartData.map(d => d.value)
-  const titles = chartData.filter(d => d.champion).length
-  const best   = chartData.reduce((a, b) => b.value > a.value ? b : a, chartData[0])
-  const worst  = chartData.reduce((a, b) => b.value < a.value ? b : a, chartData[0])
-  const avg    = vals.reduce((a, b) => a + b, 0) / vals.length
-  return { best, worst, avg: Math.round(avg * 10) / 10, titles }
-}, [chartData])
+    if (!chartData.length) return null
+    const vals    = chartData.map(d => d.value)
+    const titles  = chartData.filter(d => d.champion).length
+    const avg     = vals.reduce((a, b) => a + b, 0) / vals.length
+    const isLoss  = chartStat === 'Losses'
+
+    const best  = isLoss
+      ? chartData.reduce((a, b) => b.value < a.value ? b : a, chartData[0])
+      : chartData.reduce((a, b) => b.value > a.value ? b : a, chartData[0])
+
+    const worst = isLoss
+      ? chartData.reduce((a, b) => b.value > a.value ? b : a, chartData[0])
+      : chartData.reduce((a, b) => b.value < a.value ? b : a, chartData[0])
+
+    return { best, worst, avg: Math.round(avg * 10) / 10, titles }
+  }, [chartData, chartStat])
 
   const paged      = tableData.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
   const totalPages = Math.ceil(tableData.length / PER_PAGE)
@@ -288,9 +302,9 @@ export default function StandingsPage() {
   useEffect(() => { setPage(0) }, [tab, season, sortCol, sortDir])
 
   const tabCols = {
-  'Overall':    ['Pos', 'W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles'],
-  'Reg Season': ['Pos', 'W', 'L', 'W%', 'PF'],
-  'Playoffs':   ['Pos', 'W', 'L', 'PF'],
+  'Overall':    ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles'],
+  'Reg Season': ['W', 'L', 'W%', 'PF'],
+  'Playoffs':   ['W', 'L', 'PF'],
 }
   
   const handleSort = (col) => {
@@ -382,7 +396,7 @@ export default function StandingsPage() {
             </span>
           </h1>
           <p className="mt-4 max-w-lg text-base text-slate-400">
-            Every franchise. Every season. Every stat.
+            Every team. Every season. Every stat.
           </p>
         </div>
 
@@ -395,7 +409,7 @@ export default function StandingsPage() {
                 <Medal className="h-5 w-5 text-cyan-300" />
               </div>
               <div>
-                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Franchise Rankings</div>
+                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Team Rankings</div>
                 <div className="text-base text-slate-400">
                   {season === 'All-Time' ? 'All-Time standings' : `Season ${season}`}
                 </div>
@@ -429,8 +443,23 @@ export default function StandingsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/5">
-                    <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">#</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Franchise</th>
+                    <th
+                      onClick={() => season !== 'All-Time' && handleSort('Pos')}
+                      className={`px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${
+                        season !== 'All-Time' ? 'cursor-pointer hover:text-cyan-300' : 'cursor-default'
+                      }`}
+                      style={{ color: sortCol === 'Pos' && season !== 'All-Time' ? '#22d3ee' : '#94a3b8' }}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        Pos
+                        {sortCol === 'Pos' && season !== 'All-Time' && (
+                          <span className="text-cyan-400">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </span>
+                    </th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                      Franchise
+                    </th>
                     {tabCols[tab].map(col => (
                       <th
                         key={col}
@@ -454,7 +483,9 @@ export default function StandingsPage() {
                     return (
                       <tr key={row.team} className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]">
                         <td className="px-6 py-4">
-                          <span className={`text-sm font-black ${rank <= 3 ? 'text-cyan-300' : 'text-slate-600'}`}>
+                          <span className={`text-sm font-black ${
+                            (season !== 'All-Time' ? row.standing : rank) <= 3 ? 'text-cyan-300' : 'text-slate-600'
+                          }`}>
                             {season !== 'All-Time' && row.standing
                               ? ['1st','2nd','3rd'][row.standing - 1] ?? `${row.standing}th`
                               : rank}
@@ -521,7 +552,7 @@ export default function StandingsPage() {
                 <Activity className="h-5 w-5 text-cyan-300" />
               </div>
               <div>
-                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Franchise Evolution</div>
+                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Team Evolution</div>
                 <div className="text-base text-slate-400">Year by year performance</div>
               </div>
             </div>
@@ -543,7 +574,7 @@ export default function StandingsPage() {
                 />
               </div>
               <div className="w-56">
-                <Select value={chartTeam} onChange={setChartTeam} options={allTeams} placeholder="Select franchise..." />
+                <Select value={chartTeam} onChange={setChartTeam} options={allTeams} placeholder="Select Team..." />
               </div>
             </div>
           </div>
