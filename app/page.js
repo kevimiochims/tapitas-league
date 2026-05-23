@@ -555,8 +555,8 @@ function buildStreakMap(gamesJson, teamsJson) {
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
-  const [selectedTeamA, setSelectedTeamA] = useState('Peytao da Massa')
-  const [selectedTeamB, setSelectedTeamB] = useState('Moneyball')
+  const [selectedTeamA, setSelectedTeamA] = useState('I am Megatron')
+  const [selectedTeamB, setSelectedTeamB] = useState('Ocupa e Resiste')
   const [sortCategory, setSortCategory] = useState('Wins')
   const [sortSub, setSortSub] = useState('Total')
   const [standingsPage, setStandingsPage] = useState(0)
@@ -574,19 +574,6 @@ export default function TapitasLeagueHomepage() {
   highestScore: 0,
   highestScoreTeam: '',
 })
-
-  const [rivalryData, setRivalryData] = useState({
-    teamA: 'Peytão da Massa',
-    teamB: 'Moneyball FC',
-    record: '0-0',
-    playoffRecord: '0-0',
-    avgMargin: '0.0',
-    currentStreak: '--',
-    lastMeeting: {
-      score: '-- vs --',
-      meta: '',
-    },
-  })
 
   // ===== CHAMPIONS WALL =====
 // Adicione este useEffect e estado junto aos outros no componente principal
@@ -1152,7 +1139,7 @@ useEffect(() => {
   onClick={() => setDrawerOpen(true)}
   className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
 >
-  2025 Season
+  Season Summary
   <ChevronRight className="h-4 w-4" />
 </button>
 </header>
@@ -1777,7 +1764,7 @@ useEffect(() => {
                         <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
                         <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
                         <div className="mt-1 text-sm text-slate-400">
-                          {parseNumber(seasonSummary.champion.W)}–{parseNumber(seasonSummary.champion.L)} overall
+                          {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
                           {' • '}
                           {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
                         </div>
@@ -1787,10 +1774,12 @@ useEffect(() => {
                     {/* Finalista */}
                     {seasonSummary.finalist && (
                       <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                        <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 Runner-Up</div>
+                        <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 2nd Place</div>
                         <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
                         <div className="mt-1 text-sm text-slate-400">
-                          {parseNumber(seasonSummary.finalist.W)}–{parseNumber(seasonSummary.finalist.L)} overall
+                          {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
+                          {' • '}
+                          {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
                         </div>
                       </div>
                     )}
@@ -1799,30 +1788,34 @@ useEffect(() => {
                     <div className="grid grid-cols-2 gap-3">
                       {seasonSummary.bestRecord && (
                         <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Best Record</div>
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🚀 Best Record</div>
                           <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
-                          <div className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</div>
+                          <span className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</span>
+                          <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                         </div>
                       )}
                       {seasonSummary.worstRecord && (
                         <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Worst Record</div>
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💩 Worst Record</div>
                           <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
-                          <div className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</div>
+                          <span className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</span>
+                          <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                         </div>
                       )}
                       {seasonSummary.highestScorer && (
                         <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Top Scorer</div>
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💯 Top Scorer</div>
                           <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
-                          <div className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</div>
+                          <span className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
+                          <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                         </div>
                       )}
                       {seasonSummary.lowestScorer && (
                         <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Lowest Scorer</div>
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😵‍💫 Lowest Scorer</div>
                           <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
-                          <div className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</div>
+                          <span className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</span>
+                          <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                         </div>
                       )}
                     </div>
