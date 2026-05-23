@@ -47,30 +47,70 @@ function parseNumber(value) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
-function TeamSelect({ value, onChange, options, placeholder }) {
+function TeamSelect({ value, onChange, options, placeholder, disabled }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const selected = options.find((o) => o === value)
+
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-10 cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white pl-4 pr-10 text-sm font-extrabold text-slate-800 shadow-sm transition-all hover:border-slate-400 hover:bg-slate-50 focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-600/20"
+    <div ref={ref} className="relative flex-1">
+      <button
+        onClick={() => !disabled && setOpen((p) => !p)}
+        disabled={disabled}
+        className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition-all duration-300 ${
+          disabled
+            ? 'cursor-not-allowed border-white/5 bg-white/[0.01] text-slate-600'
+            : open
+            ? 'border-cyan-400 bg-cyan-950/30 text-white shadow-[0_0_15px_rgba(34,211,238,0.15)]'
+            : 'border-white/10 bg-white/[0.04] text-white hover:border-white/20 hover:bg-white/[0.07]'
+        }`}
       >
-        {placeholder && (
-          <option value="" disabled className="text-slate-500 font-bold">
-            {placeholder}
-          </option>
-        )}
-        {options.map((opt) => (
-          <option key={opt} value={opt} className="text-slate-900 font-bold">
-            {opt}
-          </option>
-        ))}
-      </select>
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
+        <span className={value ? 'text-white' : 'text-slate-500'}>
+          {selected || placeholder}
+        </span>
+        <ChevronRight
+          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-300 ${
+            open ? 'rotate-90 text-cyan-400' : ''
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1525]/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="max-h-56 overflow-y-auto">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => {
+                  onChange(opt)
+                  setOpen(false)
+                }}
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all duration-200 hover:bg-white/[0.06] ${
+                  opt === value ? 'text-cyan-300 bg-cyan-500/[0.03]' : 'text-slate-300'
+                }`}
+              >
+                {opt === value && (
+                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,1)]" />
+                )}
+                <span className={opt === value ? 'ml-0' : 'ml-[14px]'}>
+                  {opt}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -122,30 +162,21 @@ async function safeSheetFetch(url) {
 }
 
 function GameRow({ game }) {
-  const isWin = game.result === 'W';
-
   return (
-    <div className="flex flex-col border-b border-slate-100 py-1.5 last:border-0">
-      <div className="flex items-center gap-2">
-        {/* Badge de Resultado: Ganhou fundo colorido e padding para destacar */}
+    <div className="flex flex-col border-b border-white/5 py-[6px] last:border-0">
+      <div className="flex items-center gap-1">
         <span
-          className={`inline-flex h-5 w-5 items-center justify-center rounded text-[11px] font-black tracking-wide ${
-            isWin 
-              ? 'bg-emerald-100 text-emerald-800' 
-              : 'bg-rose-100 text-rose-800'
+          className={`text-[13px] font-black ${
+            game.result === 'W' ? 'text-emerald-400' : 'text-red-400'
           }`}
         >
           {game.result}
         </span>
-        
-        {/* Confronto */}
-        <span className="truncate text-[12px] font-bold text-slate-700">
-          vs {game.opp}
+        <span className="truncate text-[13px] text-slate-300">
+          &nbsp;vs {game.opp}
         </span>
       </div>
-      
-      {/* Placar Secundário */}
-      <span className="text-[10.5px] font-medium text-slate-400 mt-1 pl-7">
+      <span className="text-[11px] text-slate-500">
         {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
       </span>
     </div>
@@ -159,72 +190,67 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[24px] border transition-all duration-300 ${
+      className={`relative overflow-hidden rounded-[28px] border transition-all duration-200 ${
         isOpen
-          ? 'border-cyan-500 bg-white shadow-md'
-          : 'border-white/80 bg-white/60 hover:bg-white/90 backdrop-blur-sm hover:border-slate-300 shadow-sm'
-      }`}
+          ? 'border-cyan-400/30'
+          : 'border-white/5 hover:border-white/10'
+      } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
-      {/* Gradiente de Reflexo de Luz Metálica (Estilo sites americanos) */}
-      {!isOpen && (
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-white/40 pointer-events-none" />
-      )}
-
-      {/* Badge Reigning */}
+      {/* Badge Reigning — sobreposto no canto superior direito */}
       {index === 0 && (
-        <div className="absolute right-3 top-3 z-10 rounded-lg bg-amber-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
+        <div className="absolute right-3 top-3 z-10 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-300">
           Reigning
         </div>
       )}
 
-      <button
-        onClick={onToggle}
-        className={`flex w-full items-center gap-4 px-5 text-left transition-all relative z-10 ${
-          index === 0 ? 'pb-4 pt-8' : 'py-4'
-        }`}
-      >
+        <button
+          onClick={onToggle}
+          className={`flex w-full items-center gap-4 px-6 text-left transition-all ${
+            index === 0 ? 'pb-5 pt-9' : 'py-5'
+          }`}
+        >
         {!isOpen && (
-          <Trophy className="h-5 w-5 flex-shrink-0 text-amber-500" />
+          <Trophy className="h-5 w-5 flex-shrink-0 text-cyan-400" />
         )}
 
         <span
-          className={`flex-shrink-0 font-['Bebas_Neue'] font-black leading-none transition-all tracking-wide ${
-            isOpen ? 'text-[40px] text-cyan-600' : 'text-[32px] text-slate-400'
+          className={`flex-shrink-0 font-black leading-none transition-all ${
+            isOpen ? 'text-[42px] text-white' : 'text-[28px] text-slate-400'
           }`}
+          style={{ fontFamily: '"Bebas Neue", sans-serif' }}
         >
           {champ.season}
         </span>
 
         <div className="min-w-0 flex-1">
           <div
-            className={`truncate font-black text-slate-800 transition-all ${
-              isOpen ? 'text-lg text-cyan-700' : 'text-base'
+            className={`truncate font-black text-white transition-all ${
+              isOpen ? 'text-xl' : 'text-base'
             }`}
           >
             {champ.team}
           </div>
-          <div className="mt-0.5 text-xs font-bold text-slate-500">
+          <div className="mt-1 text-xs text-slate-500">
             {champ.wins}–{champ.losses} overall
             {champ.playoffWins > 0 || champ.playoffLosses > 0
-              ? ` • ${champ.playoffWins}–${champ.playoffLosses} PO`
+              ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
               : ''}
             {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
           </div>
         </div>
 
         <ChevronRight
-          className={`h-5 w-5 flex-shrink-0 text-slate-400 transition-transform duration-200 ${
-            isOpen ? 'rotate-90 text-cyan-600' : ''
+          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
+            isOpen ? 'rotate-90' : ''
           }`}
         />
       </button>
 
       {isOpen && (
-        /* O painel interno expandido permanece limpo e ultra legível */
-        <div className="border-t border-slate-100 bg-white px-5 pb-5 pt-4 relative z-10">
+        <div className="border-t border-white/5 px-6 pb-6 pt-5">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
                 Reg Season
               </div>
               {regCol1.map((g, i) => (
@@ -232,7 +258,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
               ))}
             </div>
             <div>
-              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] opacity-0 select-none">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] opacity-0">
                 &nbsp;
               </div>
               {regCol2.map((g, i) => (
@@ -240,7 +266,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
               ))}
             </div>
             <div>
-              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-600">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-400">
                 Playoffs
               </div>
               {champ.playoffGames.length > 0 ? (
@@ -248,7 +274,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
                   <GameRow key={i} game={g} />
                 ))
               ) : (
-                <div className="text-[11px] font-medium text-slate-400">Sem dados</div>
+                <div className="text-[11px] text-slate-600">Sem dados</div>
               )}
             </div>
           </div>
@@ -257,7 +283,6 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
     </div>
   )
 }
-
 
 function ChampionsWall({ champions }) {
   const [openSet, setOpenSet] = useState(new Set())
@@ -276,28 +301,25 @@ function ChampionsWall({ champions }) {
 
   return (
     <section className="mt-8 mb-8">
-      {/* CONTAINER COM EFEITO DE VIDRO REFLEXIVO */}
-      <div className="overflow-hidden rounded-[38px] border border-white/60 bg-white/70 backdrop-blur-md shadow-lg shadow-slate-100/50">
+      <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200/60 px-8 py-6">
+        <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-600/10">
-              <Trophy className="h-5 w-5 text-cyan-600" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Trophy className="h-5 w-5 text-cyan-300" />
             </div>
             <div>
-              <div className="text-xs font-black uppercase tracking-[0.25em] text-cyan-600">
+              <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
                 Champions Wall
               </div>
-              <div className="text-sm font-bold text-slate-600 mt-0.5">
+              <div className="text-base text-slate-400">
                 Every title. Every campaign.
               </div>
             </div>
           </div>
         </div>
 
-        {/* Grid de Cards — Ajustado para o fundo de vidro */}
-        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start bg-slate-50/30">
+        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
           {champions.map((champ, index) => (
             <ChampionCard
               key={champ.season}
@@ -539,6 +561,8 @@ export default function TapitasLeagueHomepage() {
   const [sortSub, setSortSub] = useState('Total')
   const [standingsPage, setStandingsPage] = useState(0)
   const [streakMap, setStreakMap] = useState({})
+  const [drawerOpen, setDrawerOpen] = useState(false)
+const [seasonSummary, setSeasonSummary] = useState(null)
 
  const [leagueStats, setLeagueStats] = useState({
   franchises: 0,
@@ -971,201 +995,419 @@ const selectedRivalry = useMemo(() => {
   }
 }, [h2hData, selectedTeamA, selectedTeamB])
 
+useEffect(() => {
+  if (!drawerOpen || seasonSummary) return
+
+  async function loadSummary() {
+    const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
+    const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+
+    const [historyJson, gamesJson] = await Promise.all([
+      safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+      safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
+    ])
+
+    const SEASON = '2025'
+
+    const seasonTeams = historyJson.filter(r =>
+      String(r?.Season || '').trim() === SEASON
+    )
+
+    const champion = seasonTeams.find(r =>
+      String(r?.Champion || '').toUpperCase() === 'TRUE'
+    )
+
+    const finalist = seasonTeams.find(r =>
+      String(r?.Reached_Final || '').toUpperCase() === 'TRUE' &&
+      String(r?.Champion || '').toUpperCase() !== 'TRUE'
+    )
+
+    const sortedByWins = [...seasonTeams].sort((a, b) =>
+      parseNumber(b?.RS_W) - parseNumber(a?.RS_W)
+    )
+
+    const bestRecord = sortedByWins[0]
+    const worstRecord = sortedByWins[sortedByWins.length - 1]
+
+    const sortedByPF = [...seasonTeams].sort((a, b) =>
+      parseNumber(b?.RS_PF) - parseNumber(a?.RS_PF)
+    )
+    const highestScorer = sortedByPF[0]
+    const lowestScorer  = sortedByPF[sortedByPF.length - 1]
+
+    const playoffTeams = seasonTeams.filter(r =>
+      String(r?.Made_Playoffs || '').toUpperCase() === 'TRUE'
+    )
+
+    // Maior pontuação em um único jogo
+    const seasonGames = gamesJson.filter(r => {
+      const s = String(r?.Season || '').trim()
+      const stage = String(r?.gameStage || '').trim()
+      return s === SEASON && stage === 'Reg Season'
+    })
+    console.log('seasonGames length:', seasonGames.length)
+    console.log('seasonGames[0]:', seasonGames[0])
+
+    const highestGame = seasonGames.reduce((best, g) => {
+      const score = parseNumber(g?.Score || g?.score || g?.PF || 0)
+      return score > (best?.score ?? 0) ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() } : best
+    }, null)
+
+    const lowestGame = seasonGames.reduce((worst, g) => {
+      const score = parseNumber(g?.Score || g?.score || g?.PF || 0)
+      if (score === 0) return worst
+      return score < (worst?.score ?? 9999) ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() } : worst
+    }, null)
+
+    // Jogo mais disputado
+    const closestGame = seasonGames.reduce((closest, g) => {
+      const score = parseNumber(g?.Score || g?.score || g?.PF || 0)
+      const opp   = parseNumber(g?.OpponentScore || g?.OppPF || g?.PA || 0)
+      if (score === 0 || opp === 0) return closest
+      const margin = Math.abs(score - opp)
+      return margin < (closest?.margin ?? 9999)
+        ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week }
+        : closest
+    }, null)
+
+    // Maior virada (maior margem de vitória)
+    const biggestWin = seasonGames.reduce((best, g) => {
+      const score = parseNumber(g?.Score || g?.score || g?.PF || 0)
+      const opp   = parseNumber(g?.OpponentScore || g?.OppPF || g?.PA || 0)
+      if (score <= opp) return best
+      const margin = score - opp
+      return margin > (best?.margin ?? 0)
+        ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week }
+        : best
+    }, null)
+
+    setSeasonSummary({
+      season: SEASON,
+      champion,
+      finalist,
+      bestRecord,
+      worstRecord,
+      highestScorer,
+      lowestScorer,
+      playoffTeams: playoffTeams.length,
+      highestGame,
+      lowestGame,
+      closestGame,
+      biggestWin,
+      totalTeams: seasonTeams.length,
+    })
+  }
+
+  loadSummary()
+}, [drawerOpen])
+
   return (
-  <main className="relative min-h-screen overflow-hidden bg-slate-50 text-slate-900">
-    
-    {/* ===== HEADER ===== */}
-    <header className="relative z-20 mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-      <div className="flex items-center gap-3">
+    <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white">
+      <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+      @keyframes heroFloat {
+        0%, 100% { transform: translateY(0px); }
+        50%       { transform: translateY(-10px); }
+      }
+    `}</style>
+{/* ===== HEADER ===== */}
+<header className="relative z-20 mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
+  <div className="flex items-center gap-3">
+    <Image
+      src="/images/LogoFinalBlack.png"
+      alt="Tapitas League"
+      width={44}
+      height={44}
+      className="rounded-xl invert"
+    />
+    <span className="text-lg font-black tracking-[-0.04em] text-white">
+      Tapitas<span className="text-cyan-400">League</span>
+    </span>
+  </div>
+
+  <nav className="hidden items-center gap-1 md:flex">
+    {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map((item) => (
+  <a
+    key={item}
+    href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
+    className="rounded-xl px-4 py-2 text-sm font-bold text-slate-400 transition-all hover:bg-white/[0.06] hover:text-white"
+  >
+    {item}
+  </a>
+))}
+  </nav>
+
+  <button
+  onClick={() => setDrawerOpen(true)}
+  className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+>
+  2025 Season
+  <ChevronRight className="h-4 w-4" />
+</button>
+</header>
+
+{/* ===== HERO ===== */}
+<section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8">
+  <div className="relative overflow-hidden rounded-[38px] border border-white/10" style={{ background: '#020617', minHeight: '340px' }}>
+
+    {/* Padrão geométrico SVG */}
+    <div className="absolute inset-0 overflow-hidden rounded-[38px]">
+      <svg width="100%" height="100%" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        {/* Listras diagonais */}
+        <g opacity="0.09">
+          {[280,355,400,475,520,595,640,715,760,835].map((x, i) => (
+            <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="520" fill="#22d3ee" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`} />
+          ))}
+        </g>
+        {/* Losangos grade */}
+        <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
+          {[
+            "M380 -30 L460 85 L380 200 L300 85 Z","M460 85 L540 200 L460 315 L380 200 Z",
+            "M540 -30 L620 85 L540 200 L460 85 Z","M620 85 L700 200 L620 315 L540 200 Z",
+            "M700 -30 L780 85 L700 200 L620 85 Z","M780 85 L860 200 L780 315 L700 200 Z",
+            "M300 85 L380 200 L300 315 L220 200 Z","M460 200 L540 315 L460 430 L380 315 Z",
+            "M540 200 L620 315 L540 430 L460 315 Z","M620 200 L700 315 L620 430 L540 315 Z",
+            "M700 200 L780 315 L700 430 L620 315 Z","M860 -30 L940 85 L860 200 L780 85 Z",
+            "M860 200 L940 315 L860 430 L780 315 Z",
+          ].map((d, i) => <path key={i} d={d} />)}
+        </g>
+        {/* Losangos preenchidos */}
+        <g opacity="0.08" fill="#22d3ee">
+          {[
+            "M420 30 L440 58 L420 86 L400 58 Z","M500 120 L520 148 L500 176 L480 148 Z",
+            "M580 30 L600 58 L580 86 L560 58 Z","M660 120 L680 148 L660 176 L640 148 Z",
+            "M740 30 L760 58 L740 86 L720 58 Z","M820 120 L840 148 L820 176 L800 148 Z",
+            "M460 210 L480 238 L460 266 L440 238 Z","M540 300 L560 328 L540 356 L520 328 Z",
+            "M620 210 L640 238 L620 266 L600 238 Z","M700 300 L720 328 L700 356 L680 328 Z",
+            "M780 210 L800 238 L780 266 L760 238 Z","M860 300 L880 328 L860 356 L840 328 Z",
+          ].map((d, i) => <path key={i} d={d} />)}
+        </g>
+        {/* Chevrons */}
+        <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round">
+          {[500,540,580,620,660].map((x, i) => (
+            <polyline key={i} points={`${x},0 ${x+160},170 ${x},340`} />
+          ))}
+        </g>
+        {/* Triângulos cantos */}
+        <g opacity="0.07" fill="#22d3ee">
+          <polygon points="900,0 900,140 760,0"/>
+          <polygon points="900,340 900,200 760,340"/>
+          <polygon points="280,0 380,0 280,90"/>
+          <polygon points="280,340 380,340 280,250"/>
+        </g>
+        {/* Círculos concêntricos */}
+        <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
+          {[30,50,70].map(r => <circle key={r} cx="870" cy="60" r={r} />)}
+          {[25,45,65].map(r => <circle key={r} cx="320" cy="300" r={r} />)}
+        </g>
+        {/* Grid de pontos */}
+        <g opacity="0.09" fill="#22d3ee">
+          {[40,60,80,100].map(y => [310,330,350].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />))}
+          {[240,260,280,300].map(y => [800,820,840,860].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />))}
+        </g>
+        {/* Linhas horizontais */}
+        <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
+          {[56,113,226,284].map(y => <line key={y} x1="0" y1={y} x2="900" y2={y} />)}
+        </g>
+        {/* Hexágonos */}
+        <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
+          <polygon points="850,150 870,136 890,150 890,178 870,192 850,178"/>
+          <polygon points="320,160 340,146 360,160 360,188 340,202 320,188"/>
+          <polygon points="590,280 610,266 630,280 630,308 610,322 590,308"/>
+        </g>
+        {/* Número jersey fantasma */}
+        <text x="820" y="310" fontFamily="'Bebas Neue', sans-serif" fontSize="340" fill="#22d3ee" opacity="0.025" textAnchor="middle">12</text>
+        {/* Cruzes */}
+        <g opacity="0.06" stroke="#22d3ee" strokeWidth="1">
+          <line x1="355" y1="260" x2="395" y2="260"/><line x1="375" y1="240" x2="375" y2="280"/>
+          <line x1="845" y1="50" x2="885" y2="50"/><line x1="865" y1="30" x2="865" y2="70"/>
+        </g>
+      </svg>
+
+      {/* Overlay escuro */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.9) 48%, rgba(2,6,23,0.15) 100%)' }}
+      />
+    </div>
+
+    {/* Conteúdo */}
+    <div className="relative z-10 flex items-center justify-between gap-8 p-10 md:p-14">
+      {/* Texto */}
+      <div className="flex-1">
+        <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
+          <Flame className="h-4 w-4 text-cyan-300" />
+          <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
+            EST. 2014 &nbsp;|&nbsp; A LEAGUE. A HISTORY. A LEGACY.
+          </span>
+        </div>
+
+        <h1
+          className="mb-5 leading-[0.88]"
+          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(96px, 6vw, 120px)', letterSpacing: '0.02em' }}
+        >
+          <span style={{ display: 'block', background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            THE HOME OF
+          </span>
+          <span style={{ display: 'block', background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))' }}>
+            TAPITAS{' '}
+            <span style={{ background: 'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              HISTORY
+            </span>
+          </span>
+        </h1>
+
+        <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-400">
+          All the stats. All the moments. All the rivalry.
+          <br />
+          <span className="text-slate-500">Explore the history that built the league.</span>
+        </p>
+
+        <div className="flex flex-wrap gap-3">
+            <a
+            href="/standings"
+            className="inline-flex h-12 items-center gap-2 rounded-2xl bg-cyan-400 px-6 text-sm font-black text-[#020617] transition-all hover:bg-cyan-300"
+          >
+            <Trophy className="h-4 w-4" />
+            Ver Standings
+          </a>
+          <button className="inline-flex h-12 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 text-sm font-black text-white transition-all hover:bg-white/[0.08]">
+            <Swords className="h-4 w-4" />
+            Rivalries
+          </button>
+        </div>
+      </div>
+
+      {/* Logo */}
+      <div
+        className="relative hidden flex-shrink-0 items-center justify-center md:flex"
+        style={{ animation: 'heroFloat 5s ease-in-out infinite' }}
+      >
         <Image
           src="/images/LogoFinalBlack.png"
-          alt="Tapitas League"
-          width={44}
-          height={44}
-          className="rounded-xl" 
+          alt="Tapitas League Logo"
+          width={580}
+          height={580}
+          style={{
+            width: 'clamp(180px, 28vw, 580px)',
+            height: 'clamp(180px, 28vw, 580px)',
+            objectFit: 'contain',
+          }}
         />
-        <span className="text-lg font-black tracking-[-0.04em] text-slate-900">
-          Tapitas<span className="text-cyan-600">League</span>
-        </span>
       </div>
+    </div>
+  </div>
+</section>
 
-      <nav className="hidden items-center gap-1 md:flex">
-        {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map((item) => (
-          <button
-            key={item}
-            className="rounded-xl px-4 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-200/60 hover:text-slate-900"
-          >
-            {item}
-          </button>
-        ))}
-      </nav>
-
-      <button className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-5 text-sm font-black text-cyan-700 transition-all hover:bg-cyan-500/20">
-        2024 Season
-        <ChevronRight className="h-4 w-4" />
-      </button>
-    </header>
-
-    {/* ===== HERO ===== */}
-    <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8">
-      {/* Container do Hero: Fundo totalmente limpo para dar destaque à imagem */}
-      <div className="relative overflow-hidden rounded-[38px] border border-slate-200/80 bg-slate-50 p-10 shadow-md md:p-14">
-        
-        {/* Camada da Imagem de Fundo — Visível, nítida e contínua */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
-          <Image
-            src="/images/Hero_bg.webp"
-            alt="Estádio ao fundo"
-            layout="fill"
-            objectFit="cover"
-            className="opacity-85" 
-            priority
-          />
-          
-          {/* DEGRADÊ SUAVE PARA A DIREITA: Protege a leitura na esquerda sem criar uma parede branca sólida */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/100 via-white/90 via-white/70 to-transparent" />
-          
-          {/* Luzes internas sutis integradas ao ambiente */}
-          <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.08] blur-[80px]" />
-          <div className="absolute -bottom-20 left-1/3 h-[300px] w-[300px] rounded-full bg-cyan-400/[0.06] blur-[60px]" />
-        </div>
-
-        <div className="relative flex flex-col items-center gap-12 xl:flex-row xl:items-center xl:justify-between">
-
-          {/* Texto */}
-          <div className="flex-1">
-            {/* Badge */}
-            <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-2">
-              <Flame className="h-4 w-4 text-cyan-600" />
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-700">
-                EST. 2014 &nbsp;|&nbsp; A LEAGUE. A HISTORY. A LEGACY.
-              </span>
+      <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
+        <div className="mb-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
+          {/* Franchises */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Shield className="h-5 w-5 text-cyan-300" />
             </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Franchises</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.franchises}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">Current</div>
+          </div>
 
-            {/* Título com contraste máximo e nitidez esportiva */}
-            <h1 className="mb-5 font-['Bebas_Neue'] text-[clamp(64px,9vw,120px)] Convertible leading-[0.85] tracking-wide select-none">
-              {/* Slate 950 sólido para eliminar o embaçado do gradiente cinza */}
-              <span className="block text-slate-950 filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.4)]">
-                THE HOME OF
-              </span>
-              
-              {/* Cyan robusto com drop-shadow preto cirúrgico de alta definição */}
-              <span className="block bg-gradient-to-r from-cyan-500 via-cyan-600 to-cyan-700 bg-clip-text text-transparent filter drop-shadow-[0_4px_12px_rgba(6,182,212,0.25)]">
-                TAPITAS{' '}
-                <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent drop-shadow-none">
-                  HISTORY
-                </span>
-              </span>
-            </h1>
-
-            {/* Subtítulo original */}
-            <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-600 md:text-lg">
-              All the stats. All the moments. All the rivalry.
-              <br />
-              <span className="text-slate-400">Explore the history that built the league.</span>
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <button className="inline-flex h-12 items-center gap-2 rounded-2xl bg-cyan-600 px-6 text-sm font-black text-white transition-all hover:bg-cyan-700 shadow-md shadow-cyan-600/10">
-                <Trophy className="h-4 w-4" />
-                Ver Standings
-              </button>
-              {/* Botão secundário ajustado para ornar com o vidro transparente */}
-              <button className="inline-flex h-12 items-center gap-2 rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm px-6 text-sm font-black text-slate-700 transition-all hover:bg-white/90">
-                <Swords className="h-4 w-4" />
-                Rivalries
-              </button>
+          {/* Seasons — com scroll */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Calendar className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Seasons</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.seasons}</div>
+            <div
+              className="overflow-x-auto whitespace-nowrap pb-1 text-sm font-bold text-cyan-300"
+              style={{ scrollbarWidth: 'none' }}
+            >
+              {buildSeasonRanges(leagueStats.allSeasons)}
             </div>
           </div>
 
-          {/* Imagem original com sua animação intacta */}
-          <div
-            className="relative flex-shrink-0 flex items-center justify-center animate-[heroFloat_5s_ease-in-out_infinite]"
-          >
-            <Image
-              src="/images/LogoFinalBlack.png"
-              alt="Tapitas League Logo"
-              width={580}
-              height={580}
-              className="object-contain"
-              style={{
-                width: 'clamp(200px, 28vw, 580px)',
-                height: 'clamp(200px, 28vw, 580px)',
-              }}
-            />
+          {/* Games */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Radar className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+              Games Disputed
+            </div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.games}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">All-Time</div>
+          </div>
+
+          {/* Highest Score */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Flame className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Highest Score</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.highestScore}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">{leagueStats.highestScoreTeam}</div>
           </div>
         </div>
-      </div>
-    </section>
 
-    {/* ===== STATS SECTION ===== */}
-    <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
-      <div className="mb-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
-        
-        {/* Usando uma função interna para renderizar os cards de Stats repetitivos de forma limpa */}
-        {[
-          { label: 'Franchises', value: leagueStats.franchises, sub: 'Current', icon: Shield },
-          { label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), icon: Calendar, isScroll: true },
-          { label: 'Games Disputed', value: leagueStats.games, sub: 'All-Time', icon: Radar },
-          { label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, icon: Flame }
-        ].map((card, i) => {
-          const Icon = card.icon;
-          return (
-            <div key={i} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
-                <Icon className="h-5 w-5 text-cyan-600" />
-              </div>
-              <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-400">{card.label}</div>
-              <div className="mb-3 text-4xl font-black lg:text-5xl text-slate-800">{card.value}</div>
-              <div className={`${card.isScroll ? 'overflow-x-auto whitespace-nowrap pb-1' : 'truncate'} text-sm font-bold text-cyan-600`} style={card.isScroll ? { scrollbarWidth: 'none' } : {}}>
-                {card.sub}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+        {/* ===== CHAMPIONS WALL ===== */}
+        {championsData.length > 0 && (
+          <ChampionsWall champions={championsData} />
+        )}
 
-      {/* ===== CHAMPIONS WALL ===== */}
-      {championsData.length > 0 && (
-        <ChampionsWall champions={championsData} />
-      )}
+        <div className="flex flex-col gap-8 xl:flex-row">
 
-      {/* ===== TWO COLUMN LAYOUT (Rivalry & Leaders) ===== */}
-      <div className="flex flex-col gap-8 xl:flex-row">
-        
         {/* RIVALRY SPOTLIGHT */}
-        <div className="w-full overflow-hidden rounded-[38px] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100/80 shadow-md xl:flex-[1.15]">
+        <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[1.15]">
           <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
 
             {/* Header */}
             <div className="mb-8 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
-                  <Swords className="h-5 w-5 text-cyan-600" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                  <Swords className="h-5 w-5 text-cyan-300" />
                 </div>
                 <div>
-                  <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-600">
+                  <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
                     Rivalry Spotlight
                   </div>
-                  <div className="text-base text-slate-500">
+                  <div className="text-base text-slate-400">
                     The league's fiercest matchup.
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Seletores Envelopados em Placa de Vidro Transparente */}
-            <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-white/60 bg-white/50 p-2 backdrop-blur-sm shadow-sm sm:flex-row sm:items-center sm:gap-4">
-              <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB(''); }} options={allTeams} placeholder="Select a team..." />
-              <div className="flex-shrink-0 text-center font-['Bebas_Neue'] text-xl font-black tracking-wider text-slate-400 uppercase">vs</div>
-              <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Select opponent..." disabled={!selectedTeamA} />
+            {/* Seletores */}
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <TeamSelect
+                value={selectedTeamA}
+                onChange={(val) => {
+                  setSelectedTeamA(val)
+                  setSelectedTeamB('')
+                }}
+                options={allTeams}
+                placeholder="Select a team..."
+              />
+
+              <div className="flex-shrink-0 text-center text-lg font-black text-cyan-400">
+                vs
+              </div>
+
+              <TeamSelect
+                value={selectedTeamB}
+                onChange={setSelectedTeamB}
+                options={teamsForB}
+                placeholder="Select opponent..."
+                disabled={!selectedTeamA}
+              />
             </div>
 
             {/* Estado vazio */}
             {!selectedRivalry && (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[26px] border border-slate-200/40 bg-white/40 backdrop-blur-sm py-12 text-center shadow-inner">
-                <Swords className="h-8 w-8 text-slate-400" />
-                <p className="text-sm font-bold text-slate-400">
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[26px] border border-white/5 bg-white/[0.02] py-12 text-center">
+                <Swords className="h-8 w-8 text-slate-600" />
+                <p className="text-sm font-bold text-slate-600">
                   Select two teams to see their rivalry stats
                 </p>
               </div>
@@ -1173,226 +1415,434 @@ const selectedRivalry = useMemo(() => {
 
             {/* Stats do confronto */}
             {selectedRivalry && (
-              <>
-                {/* Título do Confronto em Bebas Neue para combinar com o Hero */}
-                <h2 className="mb-6 font-['Bebas_Neue'] font-black leading-none tracking-wide text-slate-900 text-[clamp(28px,5vw,56px)] select-none">
-                  {selectedRivalry.teamA}
-                  <span className="mx-3 text-cyan-600">VS</span>
-                  {selectedRivalry.teamB}
-                </h2>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  [Target,   'Record',                                             selectedRivalry.record],
+                  [Trophy,   'Playoffs',                                           selectedRivalry.playoffRecord],
+                  [Activity, 'Avg Margin',                                         `${selectedRivalry.avgMargin} ppg`],
+                  [Stars,    `Last Game${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
+                  [Radar,    'Current Streak',                                     selectedRivalry.streak],
+                  [Flame,    'Rivalry Heat',                                       selectedRivalry.heat],
+                ].map(([Icon, label, value]) => (
+                  <div
+                    key={label}
+                    className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] p-4 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/30 hover:bg-white/[0.06]"
+                  >
+                    {/* Efeito de Brilho Metálico Refletivo */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
 
-                {/* Grid de mini-cards com efeito reflexivo metálico individual */}
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    [Target,   'Record',                                             selectedRivalry.record],
-                    [Trophy,   'Playoffs',                                           selectedRivalry.playoffRecord],
-                    [Activity, 'Avg Margin',                                         `${selectedRivalry.avgMargin} ppg`],
-                    [Stars,    `Last Game${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
-                    [Radar,    'Current Streak',                                     selectedRivalry.streak],
-                    [Flame,    'Rivalry Heat',                                       selectedRivalry.heat],
-                  ].map(([Icon, label, value]) => (
-                    <div key={label} className="group relative overflow-hidden rounded-[26px] border border-white bg-gradient-to-b from-white to-slate-50 p-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
-                      {/* Brilho reflexivo interno no hover */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/50 to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
-                      
-                      <div className="relative z-10 mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/10 bg-cyan-500/5">
-                        <Icon className="h-3.5 w-3.5 text-cyan-600" />
-                      </div>
-                      <div className="relative z-10 mb-2 text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-slate-400 sm:text-[10px] lg:text-[11px] break-words">
-                        {label}
-                      </div>
-                      {/* Alinhamento de fonte pesada para os números */}
-                      <div className="relative z-10 font-['Bebas_Neue'] font-black leading-none text-slate-900 text-[clamp(18px,4vw,36px)] tracking-wide break-words group-hover:text-cyan-600 transition-colors">
-                        {value}
-                      </div>
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 transition-colors group-hover:border-cyan-400/40">
+                      <Icon className="h-3.5 w-3.5 text-cyan-300" />
                     </div>
-                  ))}
-                </div>
-              </>
+                    <div className="mb-2 text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-slate-500 sm:text-[10px] lg:text-[11px]"
+                      style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      className="font-black leading-none text-white transition-colors group-hover:text-cyan-300"
+                      style={{ fontSize: 'clamp(14px, 3.5vw, 30px)', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                    >
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
+
           </div>
         </div>
 
         {/* FRANCHISE LEADERS */}
-        <div className="w-full overflow-hidden rounded-[38px] border border-slate-200 bg-white shadow-sm xl:flex-[0.85]">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 px-8 py-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/10 bg-cyan-500/5">
-                <Medal className="h-5 w-5 text-cyan-600" />
-              </div>
-              <div>
-                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-600">
-                  Franchise Leaders
+        <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
+          <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+            
+            {/* Header */}
+            <div className="mb-8 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                  <Medal className="h-5 w-5 text-cyan-300" />
                 </div>
-                <div className="text-base text-slate-500">League Rankings</div>
+                <div>
+                  <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+                    Franchise Leaders
+                  </div>
+                  <div className="text-base text-slate-400">
+                    League Rankings
+                  </div>
+                </div>
               </div>
+
+              {/* Setas de paginação */}
+              {standings.length > 5 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
+                    disabled={standingsPage === 0}
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-xs font-black text-slate-500">
+                    {standingsPage + 1}/{Math.ceil(standings.length / 5)}
+                  </span>
+                  <button
+                    onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
+                    disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Paginador */}
-            {standings.length > 5 && (
-              <div className="flex items-center gap-2">
-                <button onClick={() => setStandingsPage((p) => Math.max(0, p - 1))} disabled={standingsPage === 0} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 disabled:opacity-30">
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="text-xs font-black text-slate-400">{standingsPage + 1}/{Math.ceil(standings.length / 5)}</span>
-                <button onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))} disabled={standingsPage >= Math.ceil(standings.length / 5) - 1} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:bg-slate-100 disabled:opacity-30">
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Sort By */}
-          {/* Sort by — abaixo do header, dois dropdowns lado a lado */}
-          <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
-            <span className="flex-shrink-0 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-              Sort by
-            </span>
-            <TeamSelect
-              value={sortCategory}
-              onChange={(val) => setSortCategory(val)}
-              options={SORT_OPTIONS.map((o) => o.label)}
-              placeholder="Category..."
-            />
-            {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
+            {/* Seletores */}
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <TeamSelect
-                value={sortSub}
-                onChange={(val) => setSortSub(val)}
-                options={
-                  SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
-                }
-                placeholder="Type..."
+                value={sortCategory}
+                onChange={(val) => setSortCategory(val)}
+                options={SORT_OPTIONS.map((o) => o.label)}
+                placeholder="Category..."
               />
-            )}
+              {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
+                <TeamSelect
+                  value={sortSub}
+                  onChange={(val) => setSortSub(val)}
+                  options={
+                    SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
+                  }
+                  placeholder="Type..."
+                />
+              )}
+            </div>
+
+            {/* Lista */}
+            <div className="space-y-4">
+              {standings
+                .slice(standingsPage * 5, standingsPage * 5 + 5)
+                .map((team, index) => {
+                  const globalIndex = standingsPage * 5 + index
+                  const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+                  const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
+                  console.log('cat:', sortCategory, 'sub:', sortSub, 'found:', cat?.subs.find((s) => s.label === sortSub))
+                  
+                  const keyMap = {
+                    'W':              (t) => t.wins,
+                    'RS_W':           (t) => t.rsW,
+                    'PO_W':           (t) => t.poW,
+                    'L':              (t) => t.losses,
+                    'RS_L':           (t) => t.rsL,
+                    'PO_L':           (t) => t.poL,
+                    'W%':             (t) => `${t.winPct}%`,
+                    'RS_W%':          (t) => `${t.rsWinPct}%`,
+                    'PO_W%':          (t) => `${t.poWinPct}%`,
+                    'PF':             (t) => Math.round(t.pf),
+                    'RS_PF':          (t) => Math.round(t.rsPF),
+                    'PO_PF':          (t) => Math.round(t.poPF),
+                    'W Streak RS':    (t) => t.wStreakRS,
+                    'W Streak Total': (t) => t.wStreakTotal,
+                    'L Streak RS':    (t) => t.lStreakRS,
+                    'L Streak Total': (t) => t.lStreakTotal,
+                    'Playoff Apps':   (t) => t.playoffApps,
+                    'Finals':         (t) => t.finals,
+                    'Titles':         (t) => t.titles,
+                  }
+
+                  const shortLabelMap = {
+                    'W':              'Wins',
+                    'RS_W':           'Wins',
+                    'PO_W':           'Wins',
+                    'L':              'Losses',
+                    'RS_L':           'Losses',
+                    'PO_L':           'Losses',
+                    'W%':             'Win %',
+                    'RS_W%':          'Win %',
+                    'PO_W%':          'Win %',
+                    'PF':             'Points',
+                    'RS_PF':          'Points',
+                    'PO_PF':          'Points',
+                    'W Streak RS':    'Win Streak',
+                    'W Streak Total': 'Win Streak',
+                    'L Streak RS':    'Loss Streak',
+                    'L Streak Total': 'Loss Streak',
+                    'Playoff Apps':   'Playoffs',
+                    'Finals':         'Finals',
+                    'Titles':         'Titles',
+                  }
+
+                  const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
+                  const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
+
+                  return (
+                    <div
+                      key={`${team.team}-${globalIndex}`}
+                      className="group relative overflow-hidden grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-white/5 bg-white/[0.03] px-4 py-4 sm:px-6 sm:py-5 transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 hover:bg-white/[0.05]"
+                    >
+                      {/* Efeito de Brilho Metálico Refletivo */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
+
+                      <div className="relative z-10 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 font-black text-cyan-300 sm:h-14 sm:w-14 transition-colors group-hover:border-cyan-400/40"
+                        style={{ fontSize: 'clamp(14px, 3vw, 22px)' }}
+                      >
+                        {globalIndex + 1}
+                      </div>
+
+                      <div className="relative z-10 min-w-0">
+                        <div
+                          className="mb-1 truncate font-black text-white transition-colors group-hover:text-cyan-300"
+                          style={{ fontSize: 'clamp(14px, 3.5vw, 24px)' }}
+                        >
+                          {team.team}
+                        </div>
+
+                        {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' ||
+                          sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') ? (() => {
+                          const keyLookup = {
+                            'W Streak RS':    'streakRS',
+                            'W Streak Total': 'streakTotal',
+                            'L Streak RS':    'lStreakRS',
+                            'L Streak Total': 'lStreakTotal',
+                        }
+                          const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
+                          if (!streakInfo) return null
+                          return (
+                            <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
+                              W{streakInfo.startWeek}, {streakInfo.startSeason}
+                              <span className="mx-1 text-slate-600">→</span>
+                              W{streakInfo.endWeek}, {streakInfo.endSeason}
+                              {streakInfo.active && <span className="ml-1 text-cyan-400">(active)</span>}
+                            </div>
+                          )
+                        })() : (
+                          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
+                            {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="relative z-10 flex-shrink-0 text-right">
+                        <div
+                          className="mb-1 font-black leading-none text-cyan-300"
+                          style={{ fontSize: 'clamp(22px, 5vw, 40px)' }}
+                        >
+                          {displayValue}
+                        </div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:text-xs">
+                          {shortLabel}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+
           </div>
+        </div>
+        </div>
+      </section>
+      {/* FOOTER */}
+        <footer className="relative z-10 mx-auto max-w-[1680px] px-6 pb-12 pt-4">
+          <div className="flex flex-col items-center gap-8 rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] px-8 py-16 text-center">
 
-          {/* Lista */}
-          <div className="space-y-4 p-6">
-            {standings
-              .slice(standingsPage * 5, standingsPage * 5 + 5)
-              .map((team, index) => {
-                const globalIndex = standingsPage * 5 + index
-                const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
-                const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
-                
-                // Garantindo a existência dos mapas declarados localmente dentro do escopo do map loop
-                const keyMap = {
-                  'W':              (t) => t.wins,
-                  'RS_W':           (t) => t.rsW,
-                  'PO_W':           (t) => t.poW,
-                  'L':              (t) => t.losses,
-                  'RS_L':           (t) => t.rsL,
-                  'PO_L':           (t) => t.poL,
-                  'W%':             (t) => `${t.winPct}%`,
-                  'RS_W%':          (t) => `${t.rsWinPct}%`,
-                  'PO_W%':          (t) => `${t.poWinPct}%`,
-                  'PF':             (t) => Math.round(t.pf),
-                  'RS_PF':          (t) => Math.round(t.rsPF),
-                  'PO_PF':          (t) => Math.round(t.poPF),
-                  'W Streak RS':    (t) => t.wStreakRS,
-                  'W Streak Total': (t) => t.wStreakTotal,
-                  'L Streak RS':    (t) => t.lStreakRS,
-                  'L Streak Total': (t) => t.lStreakTotal,
-                  'Playoff Apps':   (t) => t.playoffApps,
-                  'Finals':         (t) => t.finals,
-                  'Titles':         (t) => t.titles,
-                }
+            {/* Frase */}
+            <h2
+              className="whitespace-nowrap leading-[0.9] tracking-[-0.03em]"
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: 'clamp(24px, 5vw, 96px)',
+                background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              The game ends.{' '}
+              <span
+                style={{
+                  background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                The history remains.
+              </span>
+            </h2>
 
-                const shortLabelMap = {
-                  'W':              'Wins',
-                  'RS_W':           'Wins',
-                  'PO_W':           'Wins',
-                  'L':              'Losses',
-                  'RS_L':           'Losses',
-                  'PO_L':           'Losses',
-                  'W%':             'Win %',
-                  'RS_W%':          'Win %',
-                  'PO_W%':          'Win %',
-                  'PF':             'Points',
-                  'RS_PF':          'Points',
-                  'PO_PF':          'Points',
-                  'W Streak RS':    'Win Streak',
-                  'W Streak Total': 'Win Streak',
-                  'L Streak RS':    'Loss Streak',
-                  'L Streak Total': 'Loss Streak',
-                  'Playoff Apps':   'Playoffs',
-                  'Finals':         'Finals',
-                  'Titles':         'Titles',
-                }
+            {/* Linha divisória */}
+            <div className="h-px w-24 bg-white/10" />
 
-                // O console.log agora consegue ler 'sub' e 'cat' sem estourar o erro de escopo
-                console.log('cat:', sortCategory, 'sub:', sortSub, 'found:', cat?.subs.find((s) => s.label === sortSub))
-                
-                const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
-                const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
+            {/* Logo + nome */}
+            <div className="flex items-center gap-3">
+              <Image
+                src="/images/LogoFinalBlack.png"
+                alt="Tapitas League"
+                width={32}
+                height={32}
+                className="opacity-40"
+                style={{ filter: 'invert(1)' }}
+              />
+              <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-500">
+                Tapitas League
+              </span>
+            </div>
 
-                return (
-                  <div
-                  key={`${team.team}-${globalIndex}`}
-                  className="group relative overflow-hidden rounded-[24px] border border-white bg-gradient-to-br from-slate-50 via-white to-slate-100/80 p-4 transition-all duration-300 hover:scale-[1.01] hover:border-slate-300 hover:shadow-md shadow-sm grid grid-cols-[auto_1fr_auto] items-center gap-4"
-                >
-                  {/* Linha reflexiva diagonal (Simula o brilho do metal ao passar o mouse) */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
+            {/* Copyright */}
+            <p className="text-xs font-bold text-slate-600">
+              © {new Date().getFullYear()} Tapitas League · Est. 2014 · All rights reserved.
+            </p>
 
-                  {/* Número da Posição (Estilo Badge de Metal) */}
-                  <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-900 font-['Bebas_Neue'] font-black text-white text-2xl tracking-wide shadow-inner">
-                    {globalIndex + 1}
-                  </div>
+          </div>
+        </footer>
+        {/* DRAWER — Season Summary */}
+        <>
+          {/* Overlay */}
+          {drawerOpen && (
+            <div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setDrawerOpen(false)}
+            />
+          )}
 
-                  {/* Nome da Franquia */}
-                  <div className="relative z-10 min-w-0">
-                    <div className="font-black text-slate-900 text-lg truncate leading-tight group-hover:text-cyan-600 transition-colors">
-                      {team.team}
-                    </div>
-                    <div className="mt-1 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
-                    </div>
-                  </div>
-
-                  {/* Valor da Estatística Destacado */}
-                  <div className="relative z-10 text-right">
-                    <div className="font-['Bebas_Neue'] font-black text-3xl text-slate-900 leading-none tracking-wide group-hover:text-cyan-600 transition-colors">
-                      {displayValue}
-                    </div>
-                    <div className="text-[10px] font-black uppercase tracking-wider text-cyan-600 mt-0.5">
-                      {shortLabel}
-                    </div>
-                  </div>
+          {/* Drawer */}
+          <div
+            className={`fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-[#080f1e] border-l border-white/10 transition-transform duration-300 ${
+              drawerOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            {/* Header do drawer */}
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#080f1e] px-6 py-5">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+                  Season Summary
                 </div>
-                )
-              })}
+                <div className="text-xl font-black text-white">2025 Season</div>
+              </div>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="p-6">
+              {!seasonSummary ? (
+                <div className="flex items-center justify-center py-20 text-slate-500 font-bold">
+                  Loading...
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+
+                  {/* Campeão */}
+                  {seasonSummary.champion && (
+                    <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
+                      <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
+                      <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
+                      <div className="mt-1 text-sm text-slate-400">
+                        {parseNumber(seasonSummary.champion.W)}–{parseNumber(seasonSummary.champion.L)} overall
+                        {' • '}
+                        {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Finalista */}
+                  {seasonSummary.finalist && (
+                    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                      <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 Runner-Up</div>
+                      <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
+                      <div className="mt-1 text-sm text-slate-400">
+                        {parseNumber(seasonSummary.finalist.W)}–{parseNumber(seasonSummary.finalist.L)} overall
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Grid de stats */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {seasonSummary.bestRecord && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Best Record</div>
+                        <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
+                        <div className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</div>
+                      </div>
+                    )}
+                    {seasonSummary.worstRecord && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Worst Record</div>
+                        <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
+                        <div className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</div>
+                      </div>
+                    )}
+                    {seasonSummary.highestScorer && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Top Scorer</div>
+                        <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
+                        <div className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</div>
+                      </div>
+                    )}
+                    {seasonSummary.lowestScorer && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Lowest Scorer</div>
+                        <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
+                        <div className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Playoff teams */}
+                  <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                    <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Playoff Teams</div>
+                    <div className="text-3xl font-black text-cyan-300">{seasonSummary.playoffTeams}</div>
+                    <div className="text-xs text-slate-500">of {seasonSummary.totalTeams} franchises</div>
+                  </div>
+
+                  {/* Jogos notáveis */}
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-2">Notable Games</div>
+
+                  {seasonSummary.highestGame && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🔥 Highest Score</div>
+                      <div className="text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
+                      <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
+                      <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · W{seasonSummary.highestGame.week}</div>
+                    </div>
+                  )}
+
+                  {seasonSummary.closestGame && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
+                      <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
+                      <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
+                      <div className="text-xs text-slate-500">Margin: {seasonSummary.closestGame.margin.toFixed(2)} · W{seasonSummary.closestGame.week}</div>
+                    </div>
+                  )}
+
+                  {seasonSummary.biggestWin && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
+                      <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
+                      <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
+                      <div className="text-xs text-slate-500">Margin: {seasonSummary.biggestWin.margin.toFixed(2)} · W{seasonSummary.biggestWin.week}</div>
+                    </div>
+                  )}
+
+                  {seasonSummary.lowestGame && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Lowest Score</div>
+                      <div className="text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
+                      <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
+                      <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · W{seasonSummary.lowestGame.week}</div>
+                    </div>
+                  )}
+
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    {/* ===== FOOTER ===== */}
-    <footer className="relative z-10 mx-auto max-w-[1680px] px-6 pb-12 pt-4">
-      <div className="flex flex-col items-center gap-8 rounded-[38px] border border-slate-200 bg-white px-8 py-16 text-center shadow-sm">
-        <h2 className="whitespace-nowrap leading-[0.9] tracking-[-0.03em] font-['Bebas_Neue'] text-[clamp(24px,5vw,96px)] bg-gradient-to-r from-slate-800 via-slate-600 to-cyan-600 bg-clip-text text-transparent">
-          The game ends. <span className="bg-gradient-to-r from-cyan-500 to-cyan-700 bg-clip-text text-transparent">The history remains.</span>
-        </h2>
-        <div className="h-px w-24 bg-slate-200" />
-        <div className="flex items-center gap-3">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={32} height={32} className="opacity-60" />
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Tapitas League</span>
-        </div>
-        <p className="text-xs font-bold text-slate-400">
-          © {new Date().getFullYear()} Tapitas League · Est. 2014 · All rights reserved.
-        </p>
-      </div>
-    </footer>
-
-    {/* Injeção global das animações e fontes limpas via tag style do Next */}
-    <style jsx global>{`
-      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-      @keyframes heroFloat {
-        0%, 100% { transform: translateY(0px); }
-        50%       { transform: translateY(-10px); }
-      }
-    `}</style>
-  </main>
-)
+        </>
+    </main>
+  )
 }
