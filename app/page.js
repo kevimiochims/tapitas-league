@@ -562,7 +562,8 @@ export default function TapitasLeagueHomepage() {
   const [standingsPage, setStandingsPage] = useState(0)
   const [streakMap, setStreakMap] = useState({})
   const [drawerOpen, setDrawerOpen] = useState(false)
-const [seasonSummary, setSeasonSummary] = useState(null)
+  const [seasonSummary, setSeasonSummary] = useState(null)
+  const [selectedSeason, setSelectedSeason] = useState('2025')
 
  const [leagueStats, setLeagueStats] = useState({
   franchises: 0,
@@ -1001,49 +1002,59 @@ useEffect(() => {
     const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
     const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
-    const [historyJson, gamesJson] = await Promise.all([
+    const [historyJson, historyRawJson, gamesJson] = await Promise.all([
       safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+      safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_RAW`),
       safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
     ])
 
-    const SEASON = '2025'
+    const SEASON = String(selectedSeason)
 
     const seasonTeams = historyJson.filter(r =>
       String(r?.Season || '').trim() === SEASON
     )
+    const rawSeasonTeams = historyRawJson.filter(r =>
+      String(r?.Season || '').trim() === SEASON
+    )
 
-    const champion = seasonTeams.find(r =>
+    const champion = rawSeasonTeams.find(r =>
       String(r?.Champion || '').toUpperCase() === 'TRUE'
     )
 
-    const finalist = seasonTeams.find(r =>
+    const finalist = rawSeasonTeams.find(r =>
       String(r?.Reached_Final || '').toUpperCase() === 'TRUE' &&
       String(r?.Champion || '').toUpperCase() !== 'TRUE'
     )
 
-    const sortedByWins = [...seasonTeams].sort((a, b) =>
+    const sortedByWins = [...rawSeasonTeams].sort((a, b) =>
       parseNumber(b?.RS_W) - parseNumber(a?.RS_W)
     )
 
     const bestRecord = sortedByWins[0]
     const worstRecord = sortedByWins[sortedByWins.length - 1]
 
-    const sortedByPF = [...seasonTeams].sort((a, b) =>
+    const sortedByPF = [...rawSeasonTeams].sort((a, b) =>
       parseNumber(b?.RS_PF) - parseNumber(a?.RS_PF)
     )
+
     const highestScorer = sortedByPF[0]
     const lowestScorer  = sortedByPF[sortedByPF.length - 1]
 
-    const unicorn = seasonTeams.sort((a, b) =>
-  parseNumber(a?.Standing || 99) - parseNumber(b?.Standing || 99)
-)[seasonTeams.length - 1]
+    const validStandings = rawSeasonTeams.filter((team) => {
+      const standing = parseNumber(team?.Standing)
+      return standing > 0
+    })
+
+    const unicorn = [...validStandings].sort((a, b) =>
+      parseNumber(a?.Standing) - parseNumber(b?.Standing)
+    )[validStandings.length - 1]
 
     // Maior pontuação em um único jogo
     const seasonGames = gamesJson.filter(r => {
-  const s     = String(r?.Season || '').trim()
-  const stage = String(r?.GameStage || '').trim()
-  return s === SEASON && stage === 'Reg Season'
-})
+    const s     = String(r?.Season || '').trim()
+    const stage = String(r?.GameStage || '').trim()
+    return s === SEASON && stage === 'Reg Season'
+  })
 
     const highestGame = seasonGames.reduce((best, g) => {
       const score = parseNumber(g?.PF || 0)
@@ -1098,7 +1109,7 @@ useEffect(() => {
   }
 
   loadSummary()
-}, [drawerOpen])
+}, [drawerOpen, selectedSeason])
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white">
@@ -1694,157 +1705,183 @@ useEffect(() => {
           </div>
         </footer>
         {/* DRAWER — Season Summary */}
-        <>
-          {/* Overlay */}
-          {drawerOpen && (
-            <div
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-              onClick={() => setDrawerOpen(false)}
-            />
-          )}
-
-          {/* Drawer */}
-          <div
-            className={`fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-[#080f1e] border-l border-white/10 transition-transform duration-300 ${
-              drawerOpen ? 'translate-x-0' : 'translate-x-full'
-            }`}
-          >
-            {/* Header do drawer */}
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#080f1e] px-6 py-5">
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
-                  Season Summary
-                </div>
-                <div className="text-xl font-black text-white">2025 Season</div>
-              </div>
-              <button
+          <>
+            {/* Overlay */}
+            {drawerOpen && (
+              <div
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
                 onClick={() => setDrawerOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white transition-all"
-              >
-                ✕
-              </button>
-            </div>
+              />
+            )}
 
-            {/* Conteúdo */}
-            <div className="p-6">
-              {!seasonSummary ? (
-                <div className="flex items-center justify-center py-20 text-slate-500 font-bold">
-                  Loading...
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-
-                  {/* Campeão */}
-                  {seasonSummary.champion && (
-                    <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
-                      <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
-                      <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
-                      <div className="mt-1 text-sm text-slate-400">
-                        {parseNumber(seasonSummary.champion.W)}–{parseNumber(seasonSummary.champion.L)} overall
-                        {' • '}
-                        {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Finalista */}
-                  {seasonSummary.finalist && (
-                    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                      <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 Runner-Up</div>
-                      <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
-                      <div className="mt-1 text-sm text-slate-400">
-                        {parseNumber(seasonSummary.finalist.W)}–{parseNumber(seasonSummary.finalist.L)} overall
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Grid de stats */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {seasonSummary.bestRecord && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Best Record</div>
-                        <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
-                        <div className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</div>
-                      </div>
-                    )}
-                    {seasonSummary.worstRecord && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Worst Record</div>
-                        <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
-                        <div className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</div>
-                      </div>
-                    )}
-                    {seasonSummary.highestScorer && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Top Scorer</div>
-                        <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
-                        <div className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</div>
-                      </div>
-                    )}
-                    {seasonSummary.lowestScorer && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Lowest Scorer</div>
-                        <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
-                        <div className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</div>
-                      </div>
-                    )}
+            {/* Drawer */}
+            <div
+              className={`fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-[#080f1e] border-l border-white/10 transition-transform duration-300 ${
+                drawerOpen ? 'translate-x-0' : 'translate-x-full'
+              }`}
+            >
+              {/* Header do drawer */}
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#080f1e] px-6 py-5">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+                    Season Summary
                   </div>
-
-                  {/* Unicornio */}
-                  {seasonSummary.unicorn && (
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
-                      <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
-                      <div className="text-sm text-slate-400">
-                        {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
-                      </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="text-xl font-black text-white">
+                      {selectedSeason} Season
                     </div>
-                  )}
 
-                  {/* Jogos notáveis */}
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-2">Notable Games</div>
-
-                  {seasonSummary.highestGame && (
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🔥 Highest Score</div>
-                      <div className="text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
-                      <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
-                      <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · W{seasonSummary.highestGame.week}</div>
-                    </div>
-                  )}
-
-                  {seasonSummary.closestGame && (
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
-                      <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
-                      <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
-                      <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · W{seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
-                    </div>
-                  )}
-
-                  {seasonSummary.biggestWin && (
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
-                      <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
-                      <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
-                      <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · W{seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
-                    </div>
-                  )}
-
-                  {seasonSummary.lowestGame && (
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Lowest Score</div>
-                      <div className="text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
-                      <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
-                      <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · W{seasonSummary.lowestGame.week}</div>
-                    </div>
-                  )}
-
+                    <select
+                      value={selectedSeason}
+                      onChange={(e) => {
+                        setSeasonSummary(null)
+                        setSelectedSeason(e.target.value)
+                      }}
+                      className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-1 text-sm font-bold text-white outline-none"
+                    >
+                      {leagueStats?.allSeasons
+                        ?.slice()
+                        .sort((a, b) => b - a)
+                        .map((season) => (
+                          <option
+                            key={season}
+                            value={season}
+                            className="bg-[#080f1e]"
+                          >
+                            {season}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
-              )}
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Conteúdo */}
+              <div className="p-6">
+                {!seasonSummary ? (
+                  <div className="flex items-center justify-center py-20 text-slate-500 font-bold">
+                    Loading...
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+
+                    {/* Campeão */}
+                    {seasonSummary.champion && (
+                      <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
+                        <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
+                        <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
+                        <div className="mt-1 text-sm text-slate-400">
+                          {parseNumber(seasonSummary.champion.W)}–{parseNumber(seasonSummary.champion.L)} overall
+                          {' • '}
+                          {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Finalista */}
+                    {seasonSummary.finalist && (
+                      <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                        <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 Runner-Up</div>
+                        <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
+                        <div className="mt-1 text-sm text-slate-400">
+                          {parseNumber(seasonSummary.finalist.W)}–{parseNumber(seasonSummary.finalist.L)} overall
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Grid de stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {seasonSummary.bestRecord && (
+                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Best Record</div>
+                          <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
+                          <div className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</div>
+                        </div>
+                      )}
+                      {seasonSummary.worstRecord && (
+                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Worst Record</div>
+                          <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
+                          <div className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</div>
+                        </div>
+                      )}
+                      {seasonSummary.highestScorer && (
+                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Top Scorer</div>
+                          <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
+                          <div className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</div>
+                        </div>
+                      )}
+                      {seasonSummary.lowestScorer && (
+                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Lowest Scorer</div>
+                          <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
+                          <div className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Unicórnio */}
+                    {seasonSummary.unicorn && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
+                        <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
+                        <div className="text-sm text-slate-400">
+                          {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Jogos notáveis */}
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-2">Notable Games</div>
+
+                    {seasonSummary.highestGame && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🔥 Highest Score</div>
+                        <div className="text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
+                        <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
+                        <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · W{seasonSummary.highestGame.week}</div>
+                      </div>
+                    )}
+
+                    {seasonSummary.closestGame && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
+                        <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
+                        <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
+                        <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · W{seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
+                      </div>
+                    )}
+
+                    {seasonSummary.biggestWin && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
+                        <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
+                        <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
+                        <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · W{seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
+                      </div>
+                    )}
+
+                    {seasonSummary.lowestGame && (
+                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Lowest Score</div>
+                        <div className="text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
+                        <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
+                        <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · W{seasonSummary.lowestGame.week}</div>
+                      </div>
+                    )}
+
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </>
+          </>
     </main>
   )
 }

@@ -84,7 +84,7 @@ function Select({ value, onChange, options, placeholder, disabled }) {
   )
 }
 
-function WinChart({ data }) {
+function WinChart({ data, chartStats }) {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -103,32 +103,41 @@ function WinChart({ data }) {
   const points = data.map((d, i) => `${xScale(i)},${yScale(d.value)}`).join(' ')
   const areaPoints = `${xScale(0)},${H - padB} ${points} ${xScale(data.length - 1)},${H - padB}`
   const gridVals = [0, Math.round(maxV * 0.33), Math.round(maxV * 0.66), Math.round(maxV)]
-  const fsAxis   = isMobile ? 16 : 11
-  const fsValue  = isMobile ? 15 : 10
-  const fsTrophy = isMobile ? 16 : 12
+  const fsAxis   = isMobile ? 16 : 9
+  const fsValue  = isMobile ? 15 : 8
   return (
+    
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
-      {gridVals.map(v => (
-        <g key={v}>
-          <line x1={padL} y1={yScale(v)} x2={W - padR} y2={yScale(v)} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-          <text x={padL - 6} y={yScale(v) + 4} textAnchor="end" fontSize={fsAxis} fill="#475569">
-            {Math.round(v)}
-          </text>
-        </g>
-      ))}
-      <polygon points={areaPoints} fill="#22d3ee" opacity="0.07" />
       <polyline points={points} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />
       {data.map((d, i) => (
         <g key={i}>
-          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#475569">
+          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#f4f6f8">
             {`'${String(d.season).slice(2)}`}
           </text>
-          {d.champion && (
-            <text x={xScale(i)} y={yScale(d.value) - 22} textAnchor="middle" fontSize={fsTrophy}>🏆</text>
-          )}
-          <text x={xScale(i)} y={yScale(d.value) - 10} textAnchor="middle" fontSize={fsValue} fill="#22d3ee">
-            {Math.round(d.value)}
-          </text>
+          <text 
+              x={xScale(i)} 
+              y={yScale(d.value) - 10} 
+              textAnchor="middle" 
+              fontSize={fsValue} 
+              fill={
+                d.champion 
+                  ? "#f59e0b" // 🏆 Amarelo Ouro se foi Campeão
+                  : chartStats?.bestSeasons?.includes(d.season)
+                  ? "#17e287" // 🟢 Verde Esmeralda para as Melhores Temporadas (Recorde do time)
+                  : chartStats?.worstSeasons?.includes(d.season)
+                  ? "#ef4444" // 🔴 Vermelho Vivo para as Piores Temporadas (Fundo do poço do time)
+                  : "#22d3ee" // 🔵 Ciano padrão para as temporadas regulares
+              }
+              className={
+                d.champion || 
+                chartStats?.bestSeasons?.includes(d.season) || 
+                chartStats?.worstSeasons?.includes(d.season) 
+                  ? "font-black" 
+                  : ""
+              }
+            >
+              {Math.round(d.value)}
+            </text>
           <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#22d3ee" />
         </g>
       ))}
@@ -279,22 +288,32 @@ export default function StandingsPage() {
 }, [historyData, chartTeam, chartStat, chartScope])
 
   const chartStats = useMemo(() => {
-    if (!chartData.length) return null
-    const vals    = chartData.map(d => d.value)
-    const titles  = chartData.filter(d => d.champion).length
-    const avg     = vals.reduce((a, b) => a + b, 0) / vals.length
-    const isLoss  = chartStat === 'Losses'
+  if (!chartData.length) return null
+  const vals   = chartData.map(d => d.value)
+  const avg    = vals.reduce((a, b) => a + b, 0) / vals.length
+  const isLoss = chartStat === 'Losses'
 
-    const best  = isLoss
-      ? chartData.reduce((a, b) => b.value < a.value ? b : a, chartData[0])
-      : chartData.reduce((a, b) => b.value > a.value ? b : a, chartData[0])
+  const bestVal  = isLoss ? Math.min(...vals) : Math.max(...vals)
+  const worstVal = isLoss ? Math.max(...vals) : Math.min(...vals)
 
-    const worst = isLoss
-      ? chartData.reduce((a, b) => b.value > a.value ? b : a, chartData[0])
-      : chartData.reduce((a, b) => b.value < a.value ? b : a, chartData[0])
+  const bestSeasons  = chartData.filter(d => d.value === bestVal).map(d => d.season)
+  const worstSeasons = chartData.filter(d => d.value === worstVal).map(d => d.season)
 
-    return { best, worst, avg: Math.round(avg * 10) / 10, titles }
-  }, [chartData, chartStat])
+  // Descobre quais foram as temporadas de título
+  const championSeasons = chartData.filter(d => d.champion).map(d => d.season)
+  // Mantém a contagem total baseada no tamanho desse novo array
+  const titles          = championSeasons.length
+
+  return { 
+    bestVal, 
+    worstVal, 
+    bestSeasons, 
+    worstSeasons, 
+    avg: Math.round(avg * 10) / 10, 
+    titles,
+    championSeasons // Agora você tem a lista exata de temporadas campeãs aqui!
+  }
+}, [chartData, chartStat])
 
   const paged      = tableData.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
   const totalPages = Math.ceil(tableData.length / PER_PAGE)
@@ -578,27 +597,61 @@ export default function StandingsPage() {
               </div>
             </div>
           </div>
+          {/* LEGENDA DO GRÁFICO */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs tracking-wider">
+            {/* Campeão */}
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+              <span className="text-slate-300">Championships</span>
+            </div>
+
+            {/* Melhores Temporadas */}
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <span className="text-slate-300">Best Seasons</span>
+            </div>
+
+            {/* Piores Temporadas */}
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+              <span className="text-slate-300">Worst Seasons</span>
+            </div>
+          </div>
 
           <div className="overflow-x-auto px-6 pb-2 pt-6">
             <div style={{ minWidth: '360px' }}>
-              <WinChart data={chartData} />
+              <WinChart data={chartData} chartStats={chartStats} />
             </div>
           </div>
 
           {chartStats && (
             <div className="grid grid-cols-2 gap-4 p-6 md:grid-cols-4">
-              {[
-                ['Best Season',   Math.round(chartStats.best.value),  `'${String(chartStats.best.season).slice(2)}`],
-                ['Worst Season',  Math.round(chartStats.worst.value), `'${String(chartStats.worst.season).slice(2)}`],
-                ['Season Avg',    chartStats.avg,                      'per season'],
-                ['Championships', chartStats.titles,                   'titles'],
-              ].map(([label, value, sub]) => (
-                <div key={label} className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
-                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
-                  <div className="text-3xl font-black text-cyan-300">{value}</div>
-                  <div className="mt-1 text-xs font-bold text-slate-500">{sub}</div>
+              <div className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Best Season</div>
+                <div className="text-3xl font-black text-cyan-300">{chartStats.bestVal}</div>
+                <div className="mt-1 text-xs font-bold text-slate-500">
+                  {chartStats.bestSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
                 </div>
-              ))}
+              </div>
+              <div className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Worst Season</div>
+                <div className="text-3xl font-black text-cyan-300">{chartStats.worstVal}</div>
+                <div className="mt-1 text-xs font-bold text-slate-500">
+                  {chartStats.worstSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
+                </div>
+              </div>
+              <div className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Season Avg</div>
+                <div className="text-3xl font-black text-cyan-300">{chartStats.avg}</div>
+                <div className="mt-1 text-xs font-bold text-slate-500">per season</div>
+              </div>
+              <div className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Championships</div>
+                <div className="text-3xl font-black text-cyan-300">{chartStats.titles}</div>
+                <div className="mt-1 text-xs font-bold text-slate-500">
+                  {chartStats.championSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
+                </div>
+              </div>
             </div>
           )}
         </div>
