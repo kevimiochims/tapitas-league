@@ -103,9 +103,9 @@ function WinChart({ data }) {
   const points = data.map((d, i) => `${xScale(i)},${yScale(d.value)}`).join(' ')
   const areaPoints = `${xScale(0)},${H - padB} ${points} ${xScale(data.length - 1)},${H - padB}`
   const gridVals = [0, Math.round(maxV * 0.33), Math.round(maxV * 0.66), Math.round(maxV)]
-  const fsAxis   = isMobile ? 14 : 9
-  const fsValue  = isMobile ? 13 : 8
-  const fsTrophy = isMobile ? 14 : 10
+  const fsAxis   = isMobile ? 16 : 11
+  const fsValue  = isMobile ? 15 : 10
+  const fsTrophy = isMobile ? 16 : 12
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
       {gridVals.map(v => (
