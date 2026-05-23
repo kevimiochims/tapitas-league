@@ -581,19 +581,19 @@ export default function MatchupsPage() {
                   })()}
 
                 {/* Starters */}
-                {/* Ajustado: px-4 em telas pequenas, px-8 no desktop */}
-                <div className="px-4 md:px-8 py-6 border-b border-white/5">
+                {/* Ajustado: px-3 no mobile para economizar espaço nas bordas, px-8 no desktop */}
+                <div className="px-3 md:px-8 py-6 border-b border-white/5">
                   <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-4">Starters</div>
 
-                  {/* Header colunas — Oculto em telas muito pequenas, visível a partir de 'md' */}
-                  <div className="hidden md:grid grid-cols-[1fr_60px_1fr] gap-2 mb-3">
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5">
+                  {/* Header colunas */}
+                  <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-3">
+                    <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 truncate">
                       {String(selected?.Team || '').trim()}
                     </div>
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 text-center">
+                    <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 text-center">
                       Pos
                     </div>
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 text-right">
+                    <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 text-right truncate">
                       {String(selected?.Opponent || '').trim()}
                     </div>
                   </div>
@@ -608,31 +608,32 @@ export default function MatchupsPage() {
                       const pos  = positions[i] || ''
                       return (
                         <React.Fragment key={i}>
-                          {/* Ajustado: vira flex-col em mobile para não esmagar, e grid no desktop */}
-                          <div className="flex flex-col gap-2 mb-4 md:mb-2 md:grid md:grid-cols-[1fr_60px_1fr] md:gap-2 items-center border-b border-white/[0.02] pb-3 md:border-b-0 md:pb-0">
+                          {/* Mantido o grid original, apenas reduzindo o gap no mobile */}
+                          <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-2 items-center">
                             
-                            {/* Posição central — No mobile ela aparece no topo da "linha" para orientar o usuário */}
-                            <div className="flex items-center justify-center md:order-none order-first mb-1 md:mb-0">
-                              <span className={`text-[10px] font-black uppercase tracking-widest rounded-lg px-2 py-1 border ${getPosColor(pos)}`}>
-                                {pos}
-                              </span>
-                            </div>
-
                             {/* Time A — Nome → Pts */}
-                            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 w-full md:w-auto md:order-none ${home ? 'bg-white/[0.03] border border-white/5' : 'opacity-0 hidden md:flex'}`}>
-                              <span className="text-sm font-bold text-white truncate max-w-[180px] md:max-w-[140px]">{home?.name ?? ''}</span>
-                              <span className={`text-sm font-black ml-2 flex-shrink-0 ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
+                            {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
+                            <div className={`flex items-center justify-between rounded-2xl px-2 md:px-4 py-3 min-w-0 ${home ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
+                              <span className="text-xs md:text-sm font-bold text-white truncate mr-1">{home?.name ?? ''}</span>
+                              <span className={`text-xs md:text-sm font-black flex-shrink-0 ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
                                 {home ? home.pts.toFixed(1) : ''}
                               </span>
                             </div>
 
+                            {/* Posição central — Sempre centralizada perfeitamente */}
+                            <div className="flex items-center justify-center">
+                              <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg px-1.5 md:px-2 py-1 border ${getPosColor(pos)} whitespace-nowrap`}>
+                                {pos}
+                              </span>
+                            </div>
+
                             {/* Time B — Pts → Nome (espelhado) */}
-                            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 w-full md:w-auto ${away ? 'bg-white/[0.03] border border-white/5' : 'opacity-0 hidden md:flex'}`}>
-                              <span className={`text-sm font-black mr-2 flex-shrink-0 ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
+                            {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
+                            <div className={`flex items-center justify-between rounded-2xl px-2 md:px-4 py-3 min-w-0 ${away ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
+                              <span className={`text-xs md:text-sm font-black flex-shrink-0 ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
                                 {away ? away.pts.toFixed(1) : ''}
                               </span>
-                              {/* Removido o text-right no mobile para alinhar melhor o nome à esquerda, mantendo no desktop */}
-                              <span className="text-sm font-bold text-white truncate max-w-[180px] md:max-w-[140px] text-left md:text-right">{away?.name ?? ''}</span>
+                              <span className="text-xs md:text-sm font-bold text-white truncate text-right ml-1">{away?.name ?? ''}</span>
                             </div>
                           </div>
                         </React.Fragment>
@@ -643,16 +644,15 @@ export default function MatchupsPage() {
 
                 {/* Bench */}
                 {(bench.length > 0 || oppBench.length > 0) && (
-                  <div className="px-4 md:px-8 py-6 border-b border-white/5">
+                  <div className="px-3 md:px-8 py-6 border-b border-white/5">
                     <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Bench</div>
 
-                    {/* Header Bench — Oculto no mobile */}
-                    <div className="hidden md:grid grid-cols-[1fr_60px_1fr] gap-2 mb-3">
-                      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-600 pb-2 border-b border-white/5">
+                    <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-3">
+                      <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-600 pb-2 border-b border-white/5 truncate">
                         {String(selected?.Team || '').trim()}
                       </div>
                       <div className="pb-2 border-b border-white/5" />
-                      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-600 pb-2 border-b border-white/5 text-right">
+                      <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-600 pb-2 border-b border-white/5 text-right truncate">
                         {String(selected?.Opponent || '').trim()}
                       </div>
                     </div>
@@ -662,28 +662,26 @@ export default function MatchupsPage() {
                       const away = oppBench[i]
                       return (
                         <React.Fragment key={i}>
-                          {/* Ajustado: flex-col no mobile, grid no desktop */}
-                          <div className="flex flex-col gap-2 mb-4 md:mb-2 md:grid md:grid-cols-[1fr_60px_1fr] md:gap-2 items-center border-b border-white/[0.02] pb-3 md:border-b-0 md:pb-0">
+                          <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-2 items-center">
                             
-                            {/* Tag BN (Bench) no topo no mobile */}
-                            <div className="flex items-center justify-center order-first mb-1 md:mb-0 md:order-none">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2 py-1">
-                                BN
-                              </span>
-                            </div>
-
-                            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 w-full md:w-auto ${home ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0 hidden md:flex'}`}>
-                              <span className="text-sm font-bold text-slate-400 truncate max-w-[180px] md:max-w-[140px]">{home?.name ?? ''}</span>
-                              <span className={`text-sm font-black ml-2 flex-shrink-0 ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
+                            <div className={`flex items-center justify-between rounded-2xl px-2 md:px-4 py-3 min-w-0 ${home ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
+                              <span className="text-xs md:text-sm font-bold text-slate-400 truncate mr-1">{home?.name ?? ''}</span>
+                              <span className={`text-xs md:text-sm font-black flex-shrink-0 ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
                                 {home ? home.pts.toFixed(1) : ''}
                               </span>
                             </div>
-
-                            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 w-full md:w-auto ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0 hidden md:flex'}`}>
-                              <span className={`text-sm font-black mr-2 flex-shrink-0 ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
+                            
+                            <div className="flex items-center justify-center">
+                              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-600 bg-white/[0.03] border border-white/[0.06] rounded-lg px-1.5 md:px-2 py-1 whitespace-nowrap">
+                                BN
+                              </span>
+                            </div>
+                            
+                            <div className={`flex items-center justify-between rounded-2xl px-2 md:px-4 py-3 min-w-0 ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
+                              <span className={`text-xs md:text-sm font-black flex-shrink-0 ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
                                 {away ? away.pts.toFixed(1) : ''}
                               </span>
-                              <span className="text-sm font-bold text-slate-400 truncate max-w-[180px] md:max-w-[140px] text-left md:text-right">{away?.name ?? ''}</span>
+                              <span className="text-xs md:text-sm font-bold text-slate-400 truncate text-right ml-1">{away?.name ?? ''}</span>
                             </div>
                           </div>
                         </React.Fragment>
