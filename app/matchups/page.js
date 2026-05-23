@@ -50,6 +50,19 @@ function getRosterPositions(seasonYear) {
   return positions
 }
 
+function getPosColor(pos) {
+  const colors = {
+    'QB':   'text-red-400 border-red-400/20 bg-red-400/10',
+    'RB':   'text-emerald-400 border-emerald-400/20 bg-emerald-400/10',
+    'WR':   'text-blue-400 border-blue-400/20 bg-blue-400/10',
+    'TE':   'text-yellow-400 border-yellow-400/20 bg-yellow-400/10',
+    'FLEX': 'text-pink-400 border-pink-400/20 bg-pink-400/10',
+    'K':    'text-purple-400 border-purple-400/20 bg-purple-400/10',
+    'DEF':  'text-orange-400 border-orange-400/20 bg-orange-400/10',
+  }
+  return colors[pos] ?? 'text-slate-500 border-white/10 bg-white/[0.04]'
+}
+
 // Extrai jogadores de uma linha do GAME_FACTS_ALL
 function extractPlayers(game, prefix) {
   const players = []
@@ -453,46 +466,119 @@ export default function MatchupsPage() {
               <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
                 {/* Header do confronto */}
-                <div className="border-b border-white/5 px-8 py-6">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-2">
-                        {season} · Week {week}{selected?.GameType && selected.GameType !== 'Reg Season' ? ` · ${selected.GameType}` : ''}
+                  {(() => {
+                    // Calcula record até aquela semana para cada time
+                    const calcRecord = (teamName) => {
+                      const teamGames = games.filter(g => {
+                        const s = String(g?.Season || '').trim()
+                        const w = parseFloat(String(g?.Week || '0'))
+                        const currentW = parseFloat(String(week || '0'))
+                        const t = String(g?.Team || '').trim()
+                        return s === season && w <= currentW && t === teamName
+                      })
+                      const w = teamGames.filter(g => String(g?.Result || '').trim().toUpperCase() === 'W').length
+                      const l = teamGames.filter(g => String(g?.Result || '').trim().toUpperCase() === 'L').length
+                      return { w, l }
+                    }
+
+                    const teamName = String(selected?.Team || '').trim()
+                    const oppName  = String(selected?.Opponent || '').trim()
+                    const teamRecord = calcRecord(teamName)
+                    const oppRecord  = calcRecord(oppName)
+                    const teamStreak = String(selected?.Streak_Total || '').trim()
+
+                    // Streak do oponente — busca o jogo oposto
+                    const oppGame = games.find(g =>
+                      String(g?.Season || '').trim() === season &&
+                      String(g?.Week || '').trim() === week &&
+                      String(g?.Team || '').trim() === oppName &&
+                      String(g?.Opponent || '').trim() === teamName
+                    )
+                    const oppStreak = String(oppGame?.Streak_Total || '').trim()
+
+                    const gameType = String(selected?.GameType || '').trim()
+
+                    return (
+                      <div className="border-b border-white/5 px-6 py-8">
+
+                        {/* Badge do tipo de jogo */}
+                        <div className="flex justify-center mb-6">
+                          <div className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-1.5">
+                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
+                              {season} · Week {week}{gameType && gameType !== 'Reg Season' ? ` · ${gameType}` : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Confronto principal */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+
+                          {/* Time A */}
+                          <div className="flex flex-col items-center gap-2">
+                            <div className={`text-center font-black leading-tight ${teamWon ? 'text-white' : 'text-slate-400'}`}
+                              style={{ fontSize: 'clamp(14px, 2.5vw, 22px)' }}>
+                              {teamName}
+                            </div>
+                            <div className={`font-black leading-none ${teamWon ? 'text-cyan-300' : 'text-slate-500'}`}
+                              style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(42px, 7vw, 80px)' }}>
+                              {teamPF.toFixed(2)}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-xs font-black text-slate-500">
+                                {teamRecord.w}–{teamRecord.l}
+                              </span>
+                              <span className={`text-[10px] font-black rounded-lg px-2 py-0.5 border ${
+                                teamStreak.startsWith('W')
+                                  ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10'
+                                  : 'text-red-400 border-red-400/20 bg-red-400/10'
+                              }`}>
+                                {teamStreak}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* VS central */}
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="text-slate-600 font-black text-lg">VS</div>
+                            <div className="text-[10px] font-bold text-slate-600">
+                              {Math.abs(teamPF - teamPA).toFixed(2)}
+                            </div>
+                            <div className="text-[9px] font-black uppercase tracking-widest text-slate-600">margin</div>
+                            {teamWon ? (
+                              <div className="mt-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">← WIN</div>
+                            ) : (
+                              <div className="mt-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">WIN →</div>
+                            )}
+                          </div>
+
+                          {/* Time B */}
+                          <div className="flex flex-col items-center gap-2">
+                            <div className={`text-center font-black leading-tight ${!teamWon ? 'text-white' : 'text-slate-400'}`}
+                              style={{ fontSize: 'clamp(14px, 2.5vw, 22px)' }}>
+                              {oppName}
+                            </div>
+                            <div className={`font-black leading-none ${!teamWon ? 'text-cyan-300' : 'text-slate-500'}`}
+                              style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(42px, 7vw, 80px)' }}>
+                              {teamPA.toFixed(2)}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-xs font-black text-slate-500">
+                                {oppRecord.w}–{oppRecord.l}
+                              </span>
+                              <span className={`text-[10px] font-black rounded-lg px-2 py-0.5 border ${
+                                oppStreak.startsWith('W')
+                                  ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10'
+                                  : 'text-red-400 border-red-400/20 bg-red-400/10'
+                              }`}>
+                                {oppStreak}
+                              </span>
+                            </div>
+                          </div>
+
+                        </div>
                       </div>
-                      <div
-                        className="font-black leading-none"
-                        style={{
-                          fontFamily: '"Bebas Neue", sans-serif',
-                          fontSize: 'clamp(28px, 5vw, 56px)',
-                        }}
-                      >
-                        <span className={teamWon ? 'text-white' : 'text-slate-500'}>
-                          {String(selected?.Team || '').trim()}
-                        </span>
-                        <span className="mx-3 text-cyan-400" style={{ fontSize: '0.6em' }}>vs</span>
-                        <span className={!teamWon ? 'text-white' : 'text-slate-500'}>
-                          {String(selected?.Opponent || '').trim()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div
-                        className="font-black leading-none"
-                        style={{
-                          fontFamily: '"Bebas Neue", sans-serif',
-                          fontSize: 'clamp(32px, 5vw, 64px)',
-                        }}
-                      >
-                        <span className={teamWon ? 'text-cyan-300' : 'text-slate-500'}>{teamPF.toFixed(2)}</span>
-                        <span className="mx-2 text-slate-600 text-2xl">—</span>
-                        <span className={!teamWon ? 'text-cyan-300' : 'text-slate-500'}>{teamPA.toFixed(2)}</span>
-                      </div>
-                      <div className="text-xs font-bold text-slate-500 mt-1">
-                        Margin: {Math.abs(teamPF - teamPA).toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    )
+                  })()}
 
                 {/* Starters */}
                   <div className="px-8 py-6 border-b border-white/5">
@@ -532,7 +618,7 @@ export default function MatchupsPage() {
 
                               {/* Posição central */}
                               <div className="flex items-center justify-center">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/[0.04] border border-white/10 rounded-lg px-2 py-1">
+                                <span className={`text-[10px] font-black uppercase tracking-widest rounded-lg px-2 py-1 border ${getPosColor(pos)}`}>
                                   {pos}
                                 </span>
                               </div>
@@ -578,7 +664,11 @@ export default function MatchupsPage() {
                                 {home ? home.pts.toFixed(1) : ''}
                               </span>
                             </div>
-                            <div />
+                            <div className="flex items-center justify-center">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2 py-1">
+                                BN
+                              </span>
+                            </div>
                             <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
                               <span className={`text-sm font-black mr-2 flex-shrink-0 ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
                                 {away ? away.pts.toFixed(1) : ''}
