@@ -180,7 +180,7 @@ function GameRow({ game }) {
   )
 }
 
-const ChampionCard = memo (function ChampionCard({ champ, index, isOpen, onToggle }) {
+const ChampionCard = memo(function ChampionCard({ champ, index, isOpen, onToggle }) {
   const half = Math.ceil(champ.regGames.length / 2)
   const regCol1 = champ.regGames.slice(0, half)
   const regCol2 = champ.regGames.slice(half)
@@ -199,11 +199,10 @@ const ChampionCard = memo (function ChampionCard({ champ, index, isOpen, onToggl
         duration: 0.45,
         ease: 'easeOut',
       }}
-      className={`mb-4 break-inside-avoid relative overflow-hidden rounded-[28px] border transition-all duration-200 ${
-        isOpen
+      className={`mb-4 break-inside-avoid relative overflow-hidden rounded-[28px] border transition-all duration-200 ${isOpen
           ? 'border-cyan-400/30'
           : 'border-white/5 hover:border-white/10'
-      } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
+        } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
       {/* Badge Reigning — sobreposto no canto superior direito */}
       {index === 0 && (
@@ -324,7 +323,7 @@ function ChampionsWall({ champions }) {
         duration: 0.45,
         ease: 'easeOut',
       }}
-      >
+    >
 
       <section className="mt-8 mb-8">
         <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
@@ -345,22 +344,22 @@ function ChampionsWall({ champions }) {
             </div>
           </div>
 
-          <div className="columns-1 gap-4 p-6 md:columns-2 xl:columns-3">
-          {champions.map((champ, index) => (
-            <ChampionCard
-              key={champ.season}
-              champ={champ}
-              index={index}
-              isOpen={openSet.has(index)}
-              onToggle={() => toggle(index)}
-            />
-          ))}
-        </div>
+          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
+            {champions.map((champ, index) => (
+              <ChampionCard
+                key={champ.season}
+                champ={champ}
+                index={index}
+                isOpen={openSet.has(index)}
+                onToggle={() => toggle(index)}
+              />
+            ))}
+          </div>
 
         </div>
       </section>
 
-      </motion.div>
+    </motion.div>
   )
 }
 

@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import {
   Medal, Activity, ChevronRight, ChevronLeft,
 } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -53,11 +54,10 @@ function Select({ value, onChange, options, placeholder, disabled }) {
       <button
         onClick={() => !disabled && setOpen(p => !p)}
         disabled={disabled}
-        className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 text-sm font-bold transition-all w-full ${
-          disabled ? 'cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-600'
+        className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 text-sm font-bold transition-all w-full ${disabled ? 'cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-600'
           : open ? 'border-cyan-400/40 bg-white/[0.07] text-white'
-          : 'border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07]'
-        }`}
+            : 'border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07]'
+          }`}
       >
         <span className={value ? 'text-white' : 'text-slate-500'}>
           {value || placeholder}
@@ -103,10 +103,10 @@ function WinChart({ data, chartStats }) {
   const points = data.map((d, i) => `${xScale(i)},${yScale(d.value)}`).join(' ')
   const areaPoints = `${xScale(0)},${H - padB} ${points} ${xScale(data.length - 1)},${H - padB}`
   const gridVals = [0, Math.round(maxV * 0.33), Math.round(maxV * 0.66), Math.round(maxV)]
-  const fsAxis   = isMobile ? 16 : 9
-  const fsValue  = isMobile ? 15 : 8
+  const fsAxis = isMobile ? 16 : 9
+  const fsValue = isMobile ? 15 : 8
   return (
-    
+
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
       <polyline points={points} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />
       {data.map((d, i) => (
@@ -114,30 +114,30 @@ function WinChart({ data, chartStats }) {
           <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#f4f6f8">
             {`'${String(d.season).slice(2)}`}
           </text>
-          <text 
-              x={xScale(i)} 
-              y={yScale(d.value) - 10} 
-              textAnchor="middle" 
-              fontSize={fsValue} 
-              fill={
-                d.champion 
-                  ? "#f59e0b" // 🏆 Amarelo Ouro se foi Campeão
-                  : chartStats?.bestSeasons?.includes(d.season)
+          <text
+            x={xScale(i)}
+            y={yScale(d.value) - 10}
+            textAnchor="middle"
+            fontSize={fsValue}
+            fill={
+              d.champion
+                ? "#f59e0b" // 🏆 Amarelo Ouro se foi Campeão
+                : chartStats?.bestSeasons?.includes(d.season)
                   ? "#17e287" // 🟢 Verde Esmeralda para as Melhores Temporadas (Recorde do time)
                   : chartStats?.worstSeasons?.includes(d.season)
-                  ? "#ef4444" // 🔴 Vermelho Vivo para as Piores Temporadas (Fundo do poço do time)
-                  : "#22d3ee" // 🔵 Ciano padrão para as temporadas regulares
-              }
-              className={
-                d.champion || 
-                chartStats?.bestSeasons?.includes(d.season) || 
-                chartStats?.worstSeasons?.includes(d.season) 
-                  ? "font-black" 
-                  : ""
-              }
-            >
-              {Math.round(d.value)}
-            </text>
+                    ? "#ef4444" // 🔴 Vermelho Vivo para as Piores Temporadas (Fundo do poço do time)
+                    : "#22d3ee" // 🔵 Ciano padrão para as temporadas regulares
+            }
+            className={
+              d.champion ||
+                chartStats?.bestSeasons?.includes(d.season) ||
+                chartStats?.worstSeasons?.includes(d.season)
+                ? "font-black"
+                : ""
+            }
+          >
+            {Math.round(d.value)}
+          </text>
           <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#22d3ee" />
         </g>
       ))}
@@ -146,23 +146,23 @@ function WinChart({ data, chartStats }) {
 }
 
 const CHART_STATS = [
-  { label: 'Wins',   keys: { 'Reg Season': 'RS_W',  'Playoffs': 'PO_W',  'Total': 'W'   } },
-  { label: 'Losses', keys: { 'Reg Season': 'RS_L',  'Playoffs': 'PO_L',  'Total': 'L'   } },
-  { label: 'Points', keys: { 'Reg Season': 'RS_PF', 'Playoffs': 'PO_PF', 'Total': 'PF'  } },
-  { label: 'Win %',  keys: { 'Reg Season': 'RS_W%', 'Playoffs': 'PO_W%', 'Total': 'W%'  } },
+  { label: 'Wins', keys: { 'Reg Season': 'RS_W', 'Playoffs': 'PO_W', 'Total': 'W' } },
+  { label: 'Losses', keys: { 'Reg Season': 'RS_L', 'Playoffs': 'PO_L', 'Total': 'L' } },
+  { label: 'Points', keys: { 'Reg Season': 'RS_PF', 'Playoffs': 'PO_PF', 'Total': 'PF' } },
+  { label: 'Win %', keys: { 'Reg Season': 'RS_W%', 'Playoffs': 'PO_W%', 'Total': 'W%' } },
 ]
 
 export default function StandingsPage() {
   const [allTimeData, setAllTimeData] = useState([])
   const [historyData, setHistoryData] = useState([])
-  const [loading,     setLoading]     = useState(true)
-  const [tab,         setTab]         = useState('Overall')
-  const [season,      setSeason]      = useState('All-Time')
-  const [chartTeam,   setChartTeam]   = useState('')
-  const [page,        setPage]        = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState('Overall')
+  const [season, setSeason] = useState('All-Time')
+  const [chartTeam, setChartTeam] = useState('')
+  const [page, setPage] = useState(0)
   const [sortCol, setSortCol] = useState('W')
   const [sortDir, setSortDir] = useState('desc')
-  const [chartStat,  setChartStat]  = useState('Wins')
+  const [chartStat, setChartStat] = useState('Wins')
   const [chartScope, setChartScope] = useState('Reg Season')
 
   const TABS = ['Overall', 'Reg Season', 'Playoffs']
@@ -188,11 +188,11 @@ export default function StandingsPage() {
   }, [])
 
   useEffect(() => {
-  if (season === 'All-Time' && sortCol === 'Pos') {
-    setSortCol('W')
-    setSortDir('desc')
-  }
-}, [season])
+    if (season === 'All-Time' && sortCol === 'Pos') {
+      setSortCol('W')
+      setSortDir('desc')
+    }
+  }, [season])
 
   const seasons = useMemo(() => {
     const s = new Set()
@@ -216,14 +216,14 @@ export default function StandingsPage() {
     let rows = []
     if (season === 'All-Time') {
       rows = allTimeData.map(r => ({
-        team:    String(r?.Team || r?.team || '').trim(),
-        w:       parseNumber(tab === 'Overall' ? r?.W : tab === 'Reg Season' ? r?.RS_W : r?.PO_W),
-        l:       parseNumber(tab === 'Overall' ? r?.L : tab === 'Reg Season' ? r?.RS_L : r?.PO_L),
-        pf:      parseNumber(tab === 'Overall' ? r?.PF : tab === 'Reg Season' ? r?.RS_PF : r?.PO_PF),
-        winPct:  parseNumber(String(tab === 'Overall' ? r?.['W%'] : tab === 'Reg Season' ? r?.['RS_W%'] : r?.['PO_W%'] || '0').replace('%', '')),
-        titles:  parseNumber(r?.Titles || 0),
-        finals:  parseNumber(r?.Finals || 0),
-        poApps:  parseNumber(r?.['Playoff Apps'] || 0),
+        team: String(r?.Team || r?.team || '').trim(),
+        w: parseNumber(tab === 'Overall' ? r?.W : tab === 'Reg Season' ? r?.RS_W : r?.PO_W),
+        l: parseNumber(tab === 'Overall' ? r?.L : tab === 'Reg Season' ? r?.RS_L : r?.PO_L),
+        pf: parseNumber(tab === 'Overall' ? r?.PF : tab === 'Reg Season' ? r?.RS_PF : r?.PO_PF),
+        winPct: parseNumber(String(tab === 'Overall' ? r?.['W%'] : tab === 'Reg Season' ? r?.['RS_W%'] : r?.['PO_W%'] || '0').replace('%', '')),
+        titles: parseNumber(r?.Titles || 0),
+        finals: parseNumber(r?.Finals || 0),
+        poApps: parseNumber(r?.['Playoff Apps'] || 0),
         champion: false,
       }))
     } else {
@@ -240,112 +240,112 @@ export default function StandingsPage() {
           return {
             team,
             standing: parseNumber(r?.Standing || r?.standing || 0),
-            w:        parseNumber(tab === 'Overall' ? r?.W : tab === 'Reg Season' ? r?.RS_W : r?.PO_W),
-            l:        parseNumber(tab === 'Overall' ? r?.L : tab === 'Reg Season' ? r?.RS_L : r?.PO_L),
-            pf:       parseNumber(tab === 'Overall' ? r?.PF : tab === 'Reg Season' ? r?.RS_PF : r?.PO_PF),
-            winPct:   parseNumber(String(tab === 'Overall' ? r?.['W%'] : tab === 'Reg Season' ? r?.['RS_W%'] : r?.['PO_W%'] || '0').replace('%', '')),
-            titles:   String(r?.Champion || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
-            finals:   String(r?.Reached_Final || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
-            poApps:   String(r?.Made_Playoffs || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
+            w: parseNumber(tab === 'Overall' ? r?.W : tab === 'Reg Season' ? r?.RS_W : r?.PO_W),
+            l: parseNumber(tab === 'Overall' ? r?.L : tab === 'Reg Season' ? r?.RS_L : r?.PO_L),
+            pf: parseNumber(tab === 'Overall' ? r?.PF : tab === 'Reg Season' ? r?.RS_PF : r?.PO_PF),
+            winPct: parseNumber(String(tab === 'Overall' ? r?.['W%'] : tab === 'Reg Season' ? r?.['RS_W%'] : r?.['PO_W%'] || '0').replace('%', '')),
+            titles: String(r?.Champion || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
+            finals: String(r?.Reached_Final || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
+            poApps: String(r?.Made_Playoffs || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
             champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
           }
         })
     }
     return rows
-  .filter(r => r.team)
-  .sort((a, b) => {
-    const getVal = (row) => {
-      if (sortCol === 'Pos')     return row.standing || 999
-      if (sortCol === 'W')       return row.w
-      if (sortCol === 'L')       return row.l
-      if (sortCol === 'W%')      return row.winPct
-      if (sortCol === 'PF')      return row.pf
-      if (sortCol === 'Titles')  return row.titles
-      if (sortCol === 'Finals')  return row.finals
-      if (sortCol === 'PO Apps') return row.poApps
-      return row.w
-    }
-    const diff = sortDir === 'desc' ? getVal(b) - getVal(a) : getVal(a) - getVal(b)
-      if (diff !== 0) return diff
-      if (b.w !== a.w) return b.w - a.w
-      if (a.l !== b.l) return a.l - b.l
-      return b.pf - a.pf
-  })
+      .filter(r => r.team)
+      .sort((a, b) => {
+        const getVal = (row) => {
+          if (sortCol === 'Pos') return row.standing || 999
+          if (sortCol === 'W') return row.w
+          if (sortCol === 'L') return row.l
+          if (sortCol === 'W%') return row.winPct
+          if (sortCol === 'PF') return row.pf
+          if (sortCol === 'Titles') return row.titles
+          if (sortCol === 'Finals') return row.finals
+          if (sortCol === 'PO Apps') return row.poApps
+          return row.w
+        }
+        const diff = sortDir === 'desc' ? getVal(b) - getVal(a) : getVal(a) - getVal(b)
+        if (diff !== 0) return diff
+        if (b.w !== a.w) return b.w - a.w
+        if (a.l !== b.l) return a.l - b.l
+        return b.pf - a.pf
+      })
   }, [allTimeData, historyData, tab, season, sortCol, sortDir])
 
   const chartData = useMemo(() => {
-  if (!chartTeam) return []
-  const stat = CHART_STATS.find(s => s.label === chartStat)
-  const key  = stat?.keys?.[chartScope] ?? 'RS_W'
-  return historyData
-    .filter(r => normalizeString(r?.Team || r?.team || '') === normalizeString(chartTeam))
-    .map(r => ({
-      season:   String(r?.Season || r?.season || '').trim(),
-      value:    parseNumber(String(r?.[key] || '0').replace('%', '')),
-      champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
-    }))
-    .sort((a, b) => Number(a.season) - Number(b.season))
-}, [historyData, chartTeam, chartStat, chartScope])
+    if (!chartTeam) return []
+    const stat = CHART_STATS.find(s => s.label === chartStat)
+    const key = stat?.keys?.[chartScope] ?? 'RS_W'
+    return historyData
+      .filter(r => normalizeString(r?.Team || r?.team || '') === normalizeString(chartTeam))
+      .map(r => ({
+        season: String(r?.Season || r?.season || '').trim(),
+        value: parseNumber(String(r?.[key] || '0').replace('%', '')),
+        champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
+      }))
+      .sort((a, b) => Number(a.season) - Number(b.season))
+  }, [historyData, chartTeam, chartStat, chartScope])
 
   const chartStats = useMemo(() => {
-  if (!chartData.length) return null
-  const vals   = chartData.map(d => d.value)
-  const avg    = vals.reduce((a, b) => a + b, 0) / vals.length
-  const isLoss = chartStat === 'Losses'
+    if (!chartData.length) return null
+    const vals = chartData.map(d => d.value)
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length
+    const isLoss = chartStat === 'Losses'
 
-  const bestVal  = isLoss ? Math.min(...vals) : Math.max(...vals)
-  const worstVal = isLoss ? Math.max(...vals) : Math.min(...vals)
+    const bestVal = isLoss ? Math.min(...vals) : Math.max(...vals)
+    const worstVal = isLoss ? Math.max(...vals) : Math.min(...vals)
 
-  const bestSeasons  = chartData.filter(d => d.value === bestVal).map(d => d.season)
-  const worstSeasons = chartData.filter(d => d.value === worstVal).map(d => d.season)
+    const bestSeasons = chartData.filter(d => d.value === bestVal).map(d => d.season)
+    const worstSeasons = chartData.filter(d => d.value === worstVal).map(d => d.season)
 
-  // Descobre quais foram as temporadas de título
-  const championSeasons = chartData.filter(d => d.champion).map(d => d.season)
-  // Mantém a contagem total baseada no tamanho desse novo array
-  const titles          = championSeasons.length
+    // Descobre quais foram as temporadas de título
+    const championSeasons = chartData.filter(d => d.champion).map(d => d.season)
+    // Mantém a contagem total baseada no tamanho desse novo array
+    const titles = championSeasons.length
 
-  return { 
-    bestVal, 
-    worstVal, 
-    bestSeasons, 
-    worstSeasons, 
-    avg: Math.round(avg * 10) / 10, 
-    titles,
-    championSeasons // Agora você tem a lista exata de temporadas campeãs aqui!
-  }
-}, [chartData, chartStat])
+    return {
+      bestVal,
+      worstVal,
+      bestSeasons,
+      worstSeasons,
+      avg: Math.round(avg * 10) / 10,
+      titles,
+      championSeasons // Agora você tem a lista exata de temporadas campeãs aqui!
+    }
+  }, [chartData, chartStat])
 
-  const paged      = tableData.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
+  const paged = tableData.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
   const totalPages = Math.ceil(tableData.length / PER_PAGE)
 
   useEffect(() => { setPage(0) }, [tab, season, sortCol, sortDir])
 
   const tabCols = {
-  'Overall':    ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles'],
-  'Reg Season': ['W', 'L', 'W%', 'PF'],
-  'Playoffs':   ['W', 'L', 'PF'],
-}
-  
-  const handleSort = (col) => {
-  if (sortCol === col) {
-    setSortDir(d => d === 'desc' ? 'asc' : 'desc')
-  } else {
-    setSortCol(col)
-    setSortDir('desc')
+    'Overall': ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles'],
+    'Reg Season': ['W', 'L', 'W%', 'PF'],
+    'Playoffs': ['W', 'L', 'PF'],
   }
-}
+
+  const handleSort = (col) => {
+    if (sortCol === col) {
+      setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+    } else {
+      setSortCol(col)
+      setSortDir('desc')
+    }
+  }
 
   const getCol = (row, col) => {
-  if (col === 'Pos')     return row.standing ? (['1st','2nd','3rd'][row.standing - 1] ?? `${row.standing}th`) : '—'
-  if (col === 'W')       return row.w
-  if (col === 'L')       return row.l
-  if (col === 'W%')      return `${row.winPct.toFixed(1)}%`
-  if (col === 'PF')      return Math.round(row.pf).toLocaleString()
-  if (col === 'Titles')  return row.titles
-  if (col === 'Finals')  return row.finals
-  if (col === 'PO Apps') return row.poApps
-  return '—'
-}
+    if (col === 'Pos') return row.standing ? (['1st', '2nd', '3rd'][row.standing - 1] ?? `${row.standing}th`) : '—'
+    if (col === 'W') return row.w
+    if (col === 'L') return row.l
+    if (col === 'W%') return `${row.winPct.toFixed(1)}%`
+    if (col === 'PF') return Math.round(row.pf).toLocaleString()
+    if (col === 'Titles') return row.titles
+    if (col === 'Finals') return row.finals
+    if (col === 'PO Apps') return row.poApps
+    return '—'
+  }
 
   return (
     <main className="min-h-screen bg-[#020617] text-white">
@@ -380,47 +380,198 @@ export default function StandingsPage() {
         </nav>
       </header>
 
-      <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+      <section className="mx-auto max-w-[1680px] px-3 pb-8 pt-4">
 
         {/* Hero */}
-        <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)] p-10">
-          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[38px]">
-            <div className="absolute -right-32 -top-32 h-[300px] w-[300px] rounded-full bg-cyan-500/[0.05] blur-[80px]" />
+        <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
+
+          {/* Background */}
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-[38px]">
+
+            <svg
+              className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
+              preserveAspectRatio="xMidYMid slice"
+              viewBox="0 0 900 340"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+
+              {/* Listras diagonais */}
+              <g opacity="0.09">
+                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
+                  <rect
+                    key={i}
+                    x={x}
+                    y="-80"
+                    width={i % 2 === 0 ? 55 : 22}
+                    height="520"
+                    fill="#22d3ee"
+                    transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`}
+                  />
+                ))}
+              </g>
+
+              {/* Losangos */}
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
+                {[
+                  "M380 -30 L460 85 L380 200 L300 85 Z",
+                  "M460 85 L540 200 L460 315 L380 200 Z",
+                  "M540 -30 L620 85 L540 200 L460 85 Z",
+                  "M620 85 L700 200 L620 315 L540 200 Z",
+                  "M700 -30 L780 85 L700 200 L620 85 Z",
+                  "M780 85 L860 200 L780 315 L700 200 Z",
+                ].map((d, i) => (
+                  <path key={i} d={d} />
+                ))}
+              </g>
+
+              {/* Losangos preenchidos */}
+              <g opacity="0.08" fill="#22d3ee">
+                {[
+                  "M420 30 L440 58 L420 86 L400 58 Z",
+                  "M500 120 L520 148 L500 176 L480 148 Z",
+                  "M580 30 L600 58 L580 86 L560 58 Z",
+                  "M660 120 L680 148 L660 176 L640 148 Z",
+                  "M740 30 L760 58 L740 86 L720 58 Z",
+                ].map((d, i) => (
+                  <path key={i} d={d} />
+                ))}
+              </g>
+
+              {/* Chevrons */}
+              <g
+                opacity="0.07"
+                fill="none"
+                stroke="#22d3ee"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              >
+                {[520, 600, 680].map((x, i) => (
+                  <polyline
+                    key={i}
+                    points={`${x},0 ${x + 160},170 ${x},340`}
+                  />
+                ))}
+              </g>
+
+              {/* Triângulos */}
+              <g opacity="0.07" fill="#22d3ee">
+                <polygon points="900,0 900,140 760,0" />
+                <polygon points="900,340 900,200 760,340" />
+              </g>
+
+              {/* Círculos */}
+              <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
+                {[30, 50, 70].map((r) => (
+                  <circle key={r} cx="870" cy="60" r={r} />
+                ))}
+              </g>
+
+              {/* Grid pontos */}
+              <g opacity="0.09" fill="#22d3ee">
+                {[40, 60, 80, 100].map((y) =>
+                  [310, 330, 350].map((x) => (
+                    <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
+                  ))
+                )}
+              </g>
+
+              {/* Linhas */}
+              <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
+                {[56, 113, 226, 284].map((y) => (
+                  <line key={y} x1="0" y1={y} x2="900" y2={y} />
+                ))}
+              </g>
+
+              {/* Número fantasma */}
+              <text
+                x="820"
+                y="310"
+                fontFamily="'Bebas Neue', sans-serif"
+                fontSize="340"
+                fill="#22d3ee"
+                opacity="0.02"
+                textAnchor="middle"
+              >
+                12
+              </text>
+            </svg>
+
+            {/* Overlay */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)',
+              }}
+            />
           </div>
-          <div className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
-            <Medal className="h-4 w-4 text-cyan-300" />
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
-              All-Time Records
-            </span>
+
+          {/* Content */}
+          <div className="relative z-10 p-6 sm:p-8 md:p-10">
+
+            <div className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
+              <Medal className="h-4 w-4 text-cyan-300" />
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
+                All-Time Records
+              </span>
+            </div>
+
+            <h1
+              className="leading-[0.9] tracking-[-0.02em]"
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: 'clamp(48px, 7vw, 96px)',
+                background:
+                  'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              League{' '}
+              <span
+                style={{
+                  background:
+                    'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                Standings
+              </span>
+            </h1>
+
+            <p className="mt-4 max-w-lg text-base text-slate-400">
+              Every team. Every season. Every stat.
+            </p>
+
           </div>
-          <h1
-            className="leading-[0.9] tracking-[-0.02em]"
-            style={{
-              fontFamily: '"Bebas Neue", sans-serif',
-              fontSize: 'clamp(48px, 7vw, 96px)',
-              background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            League{' '}
-            <span style={{
-              background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>
-              Standings
-            </span>
-          </h1>
-          <p className="mt-4 max-w-lg text-base text-slate-400">
-            Every team. Every season. Every stat.
-          </p>
         </div>
 
         {/* Tabela */}
-        <div className="mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 50,
+            filter: 'blur(10px)',
+          }}
+          whileInView={{
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px)',
+          }}
+          viewport={{
+            once: false,
+            amount: 0.15,
+          }}
+          transition={{
+            duration: 0.8,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+
+          className="mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 px-8 py-6">
             <div className="flex items-center gap-3">
@@ -444,11 +595,10 @@ export default function StandingsPage() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`rounded-2xl px-4 py-2 text-sm font-black transition-all ${
-                  tab === t
-                    ? 'border border-cyan-400/20 bg-cyan-400/10 text-cyan-300'
-                    : 'text-slate-500 hover:text-slate-300'
-                }`}
+                className={`rounded-2xl px-4 py-2 text-sm font-black transition-all ${tab === t
+                  ? 'border border-cyan-400/20 bg-cyan-400/10 text-cyan-300'
+                  : 'text-slate-500 hover:text-slate-300'
+                  }`}
               >
                 {t}
               </button>
@@ -464,9 +614,8 @@ export default function StandingsPage() {
                   <tr className="border-b border-white/5">
                     <th
                       onClick={() => season !== 'All-Time' && handleSort('Pos')}
-                      className={`px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${
-                        season !== 'All-Time' ? 'cursor-pointer hover:text-cyan-300' : 'cursor-default'
-                      }`}
+                      className={`px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${season !== 'All-Time' ? 'cursor-pointer hover:text-cyan-300' : 'cursor-default'
+                        }`}
                       style={{ color: sortCol === 'Pos' && season !== 'All-Time' ? '#22d3ee' : '#94a3b8' }}
                     >
                       <span className="inline-flex items-center gap-1">
@@ -502,11 +651,10 @@ export default function StandingsPage() {
                     return (
                       <tr key={row.team} className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]">
                         <td className="px-6 py-4">
-                          <span className={`text-sm font-black ${
-                            (season !== 'All-Time' ? row.standing : rank) <= 3 ? 'text-cyan-300' : 'text-slate-600'
-                          }`}>
+                          <span className={`text-sm font-black ${(season !== 'All-Time' ? row.standing : rank) <= 3 ? 'text-cyan-300' : 'text-slate-600'
+                            }`}>
                             {season !== 'All-Time' && row.standing
-                              ? ['1st','2nd','3rd'][row.standing - 1] ?? `${row.standing}th`
+                              ? ['1st', '2nd', '3rd'][row.standing - 1] ?? `${row.standing}th`
                               : rank}
                           </span>
                         </td>
@@ -560,10 +708,29 @@ export default function StandingsPage() {
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Gráfico */}
-        <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 50,
+            filter: 'blur(10px)',
+          }}
+          whileInView={{
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px)',
+          }}
+          viewport={{
+            once: false,
+            amount: 0.15,
+          }}
+          transition={{
+            duration: 0.8,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 px-8 py-6">
             <div className="flex items-center gap-3">
@@ -654,12 +821,12 @@ export default function StandingsPage() {
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
 
       </section>
 
       {/* Footer */}
-      <footer className="mx-auto max-w-[1680px] px-6 pb-12">
+      <footer className="mx-auto max-w-[1680px] px-3 pb-6">
         <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
           <Image
             src="/images/LogoFinalBlack.png"
