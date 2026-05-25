@@ -310,45 +310,45 @@ function ChampionsWall({ champions }) {
   }
 
   return (
-    <section className="mt-8 mb-8">
-      <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+    <motion.div
+      initial={{
+        opacity: 0,
+        y: 30,
+      }}
+      whileInView={{
+        opacity: 1,
+        y: 0,
+      }}
+      viewport={{
+        once: true,
+        amount: 0.15,
+      }}
+      transition={{
+        duration: 0.45,
+        ease: 'easeOut',
+      }}
+      >
 
-        <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Trophy className="h-5 w-5 text-cyan-300" />
-            </div>
-            <div>
-              <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
-                Champions Wall
+      <section className="mt-8 mb-8">
+        <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+
+          <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                <Trophy className="h-5 w-5 text-cyan-300" />
               </div>
-              <div className="text-base text-slate-400">
-                Every title. Every campaign.
+              <div>
+                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+                  Champions Wall
+                </div>
+                <div className="text-base text-slate-400">
+                  Every title. Every campaign.
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 50,
-            filter: 'blur(10px)',
-          }}
-          whileInView={{
-            opacity: 1,
-            y: 0,
-            filter: 'blur(0px)',
-          }}
-          viewport={{
-            once: false,
-            amount: 0.15,
-          }}
-          transition={{
-            duration: 0.8,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-        className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
+          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
           {champions.map((champ, index) => (
             <ChampionCard
               key={champ.season}
@@ -358,10 +358,12 @@ function ChampionsWall({ champions }) {
               onToggle={() => toggle(index)}
             />
           ))}
-        </motion.div>
+        </div>
 
-      </div>
-    </section>
+        </div>
+      </section>
+
+      </motion.div>
   )
 }
 
@@ -1453,7 +1455,7 @@ export default function TapitasLeagueHomepage() {
             duration: 0.8,
             ease: [0.22, 1, 0.36, 1],
           }}
-        className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
+          className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
           {/* Franchises */}
           <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
@@ -1533,7 +1535,7 @@ export default function TapitasLeagueHomepage() {
                 duration: 0.8,
                 ease: [0.22, 1, 0.36, 1],
               }}
-            className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+              className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
 
               {/* Header */}
               <div className="mb-8 flex items-center justify-between gap-4">
@@ -1648,7 +1650,7 @@ export default function TapitasLeagueHomepage() {
                 duration: 0.8,
                 ease: [0.22, 1, 0.36, 1],
               }}
-            className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+              className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
 
               {/* Header */}
               <div className="mb-8 flex items-center justify-between gap-4">
