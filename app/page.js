@@ -1273,11 +1273,17 @@ export default function TapitasLeagueHomepage() {
             <div className="flex-1 text-left">
 
               {/* Badge */}
-              <div className="mb-6 md:mb-6 inline-flex items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
+              <div className="mb-6 inline-flex max-w-full items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
 
                 <Flame className="h-3 w-3 md:h-4 md:w-4 text-cyan-300 flex-shrink-0" />
 
-                <span className="text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-[0.08em] md:tracking-[0.25em] text-cyan-300 whitespace-nowrap leading-none">
+                <span
+                  className="font-black uppercase text-cyan-300 whitespace-nowrap leading-none"
+                  style={{
+                    fontSize: 'clamp(8px, 0.9vw, 14px)',
+                    letterSpacing: 'clamp(0.02em, 0.12vw, 0.12em)',
+                  }}
+                >
                   EST. 2014 | A LEAGUE. A HISTORY. A LEGACY.
                 </span>
 
@@ -1288,14 +1294,14 @@ export default function TapitasLeagueHomepage() {
                 className="mb-2 leading-[0.9]"
                 style={{
                   fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: 'clamp(96px, 9vw, 140px)',
+                  fontSize: 'clamp(84px, 9vw, 140px)',
                   letterSpacing: '0.02em',
                 }}
               >
                 <span
                   style={{
                     display: 'block',
-                    fontSize: 'clamp(64px, 9vw, 140px)',
+                    fontSize: 'clamp(58px, 9vw, 140px)',
                     background:
                       'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                     WebkitBackgroundClip: 'text',
@@ -1329,17 +1335,17 @@ export default function TapitasLeagueHomepage() {
                 </span>
               </h1>
 
-             <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
+              <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
 
-              <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight whitespace-nowrap">
-                All the stats. All the moments. All the rivalry.
-              </p>
+                <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight whitespace-nowrap">
+                  All the stats. All the moments. All the rivalry.
+                </p>
 
-              <p className="text-[14px] sm:text-[14px] md:text-base text-slate-500 leading-tight">
-                Explore the history that built the league.
-              </p>
+                <p className="text-[14px] sm:text-[14px] md:text-base text-slate-500 leading-tight">
+                  Explore the history that built the league.
+                </p>
 
-            </div>
+              </div>
               {/* Botões */}
               <div className="flex flex-row items-start gap-1.5 md:gap-3">
 
@@ -1361,26 +1367,26 @@ export default function TapitasLeagueHomepage() {
               </div>
             </div>
 
-{/* Logo */}
-<div
-  className="hidden [@media(min-width:480px)]:flex relative flex-shrink-0 items-center justify-center"
-  style={{
-    animation: 'heroFloat 5s ease-in-out infinite',
-  }}
->
-  <Image
-    src="/images/LogoFinalBlack.png"
-    alt="Tapitas League Logo"
-    width={700}
-    height={700}
-    priority
-    style={{
-      width: 'clamp(210px, 24vw, 700px )',
-      height: 'clamp(210px, 24vw, 700px)',
-      objectFit: 'contain',
-    }}
-  />
-</div>
+            {/* Logo */}
+            <div
+              className="hidden [@media(min-width:480px)]:flex relative items-center justify-center min-w-[240px]"
+              style={{
+                animation: 'heroFloat 5s ease-in-out infinite',
+              }}
+            >
+              <Image
+                src="/images/LogoFinalBlack.png"
+                alt="Tapitas League Logo"
+                width={600}
+                height={600}
+                priority
+                style={{
+                  width: 'clamp(240px, 24vw, 600px)',
+                  height: 'auto',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
 
           </div>
         </div>
