@@ -1389,53 +1389,95 @@ export default function TapitasLeagueHomepage() {
       <section className="relative z-10 mx-auto max-w-[1680px] px-3 pb-12 pt-8">
 
         {/* ===== 4 Cards com Estatisticas ===== */}
-        <div className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
+        <div className="mb-4 md:mb-6 grid grid-cols-2 gap-2.5 md:gap-5 lg:grid-cols-4">
+
           {/* Franchises */}
-          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Shield className="h-5 w-5 text-cyan-300" />
+          <div className="rounded-[20px] md:rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-3 md:p-6">
+
+            <div className="mb-3 md:mb-6 flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Shield className="h-4 w-4 md:h-5 md:w-5 text-cyan-300" />
             </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Franchises</div>
-            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.franchises}</div>
-            <div className="truncate text-sm font-bold text-cyan-300">Current</div>
+
+            <div className="mb-1.5 md:mb-3 text-[9px] md:text-xs font-black uppercase tracking-[0.12em] md:tracking-[0.22em] text-slate-500">
+              Franchises
+            </div>
+
+            <div className="mb-1.5 md:mb-3 text-2xl md:text-4xl lg:text-5xl font-black">
+              {leagueStats.franchises}
+            </div>
+
+            <div className="truncate text-[10px] md:text-sm font-bold text-cyan-300">
+              Current
+            </div>
+
           </div>
 
-          {/* Seasons — com scroll */}
-          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Calendar className="h-5 w-5 text-cyan-300" />
+          {/* Seasons */}
+          <div className="rounded-[20px] md:rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-3 md:p-6">
+
+            <div className="mb-3 md:mb-6 flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Calendar className="h-4 w-4 md:h-5 md:w-5 text-cyan-300" />
             </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Seasons</div>
-            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.seasons}</div>
+
+            <div className="mb-1.5 md:mb-3 text-[9px] md:text-xs font-black uppercase tracking-[0.12em] md:tracking-[0.22em] text-slate-500">
+              Seasons
+            </div>
+
+            <div className="mb-1.5 md:mb-3 text-2xl md:text-4xl lg:text-5xl font-black">
+              {leagueStats.seasons}
+            </div>
+
             <div
-              className="overflow-x-auto whitespace-nowrap pb-1 text-sm font-bold text-cyan-300"
+              className="overflow-x-auto whitespace-nowrap pb-1 text-[10px] md:text-sm font-bold text-cyan-300"
               style={{ scrollbarWidth: 'none' }}
             >
               {buildSeasonRanges(leagueStats.allSeasons)}
             </div>
+
           </div>
 
           {/* Games */}
-          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Radar className="h-5 w-5 text-cyan-300" />
+          <div className="rounded-[20px] md:rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-3 md:p-6">
+
+            <div className="mb-3 md:mb-6 flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Radar className="h-4 w-4 md:h-5 md:w-5 text-cyan-300" />
             </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+
+            <div className="mb-1.5 md:mb-3 text-[9px] md:text-xs font-black uppercase tracking-[0.12em] md:tracking-[0.22em] text-slate-500">
               Games Disputed
             </div>
-            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.games}</div>
-            <div className="truncate text-sm font-bold text-cyan-300">All-Time</div>
+
+            <div className="mb-1.5 md:mb-3 text-2xl md:text-4xl lg:text-5xl font-black">
+              {leagueStats.games}
+            </div>
+
+            <div className="truncate text-[10px] md:text-sm font-bold text-cyan-300">
+              All-Time
+            </div>
+
           </div>
 
           {/* Highest Score */}
-          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Flame className="h-5 w-5 text-cyan-300" />
+          <div className="rounded-[20px] md:rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-3 md:p-6">
+
+            <div className="mb-3 md:mb-6 flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Flame className="h-4 w-4 md:h-5 md:w-5 text-cyan-300" />
             </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Highest Score</div>
-            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.highestScore}</div>
-            <div className="truncate text-sm font-bold text-cyan-300">{leagueStats.highestScoreTeam}</div>
+
+            <div className="mb-1.5 md:mb-3 text-[9px] md:text-xs font-black uppercase tracking-[0.12em] md:tracking-[0.22em] text-slate-500">
+              Highest Score
+            </div>
+
+            <div className="mb-1.5 md:mb-3 text-2xl md:text-4xl lg:text-5xl font-black">
+              {leagueStats.highestScore}
+            </div>
+
+            <div className="truncate text-[10px] md:text-sm font-bold text-cyan-300">
+              {leagueStats.highestScoreTeam}
+            </div>
+
           </div>
+
         </div>
 
         {/* ===== CHAMPIONS WALL ===== */}
