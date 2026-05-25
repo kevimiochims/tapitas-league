@@ -1334,7 +1334,7 @@ export default function TapitasLeagueHomepage() {
                 All the stats. All the moments. All the rivalry.
               </p>
 
-              <p className="text-[11px] sm:text-[11px] md:text-sm text-slate-500 leading-tight">
+              <p className="text-[11px] sm:text-xs md:text-base font-medium leading-tight whitespace-nowrap">
                 Explore the history that built the league.
               </p>
 
