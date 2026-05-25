@@ -13,6 +13,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -171,22 +172,22 @@ export default function HistoryPage() {
       })
 
       // CHAMPION
-const finalsGames = seasonGames.filter(g =>
-  String(g?.GameType || '')
-    .trim()
-    .toLowerCase() === 'tapitas bowl'
-)
+      const finalsGames = seasonGames.filter(g =>
+        String(g?.GameType || '')
+          .trim()
+          .toLowerCase() === 'tapitas bowl'
+      )
 
-const finalsWinner = finalsGames.find(
-  g =>
-    String(g?.Result || '')
-      .trim()
-      .toUpperCase() === 'W'
-)
+      const finalsWinner = finalsGames.find(
+        g =>
+          String(g?.Result || '')
+            .trim()
+            .toUpperCase() === 'W'
+      )
 
-const champion = finalsWinner
-  ? String(finalsWinner?.Team || '').trim()
-  : null
+      const champion = finalsWinner
+        ? String(finalsWinner?.Team || '').trim()
+        : null
 
       // UNICORN
       let unicorn = null
@@ -240,17 +241,17 @@ const champion = finalsWinner
           return marginB - marginA
         })[0]
 
-      // BEST RECAP
-      const recapGame = seasonGames.find(g => {
-        const recap = String(g?.['Recap da Partida'] || '').trim()
-        return recap.length > 120
-      })
+      // SEASON RECAP
+      const seasonRecapRow = [...seasonGames]
+        .reverse()
+        .find(g => {
+          const recap = String(g?.Season_Recap || '').trim()
+          return recap.length > 0
+        })
 
       const recap =
-        String(recapGame?.['Recap da Partida'] || '')
-          .replace(/[#*_>`-]/g, '')
-          .trim()
-          .slice(0, 260) || null
+        String(seasonRecapRow?.Season_Recap || '')
+          .trim() || null
 
       // BEST RECORD
       const bestRecord = Object.entries(records).sort((a, b) => {
@@ -1065,16 +1066,86 @@ const champion = finalsWinner
                                   </div>
                                 </div>
 
-                                {/* QUOTE */}
+                                {/* RECAP */}
                                 {s.recap && (
                                   <div className="mt-5 rounded-[28px] border border-white/5 bg-white/[0.03] p-6">
+
                                     <div className="mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
-                                      Legendary Moment
+                                      Season Recap
                                     </div>
 
-                                    <p className="text-lg leading-relaxed text-slate-300 italic">
-                                      “{s.recap}”
-                                    </p>
+                                    <div className="text-sm leading-relaxed">
+                                      <ReactMarkdown
+                                        components={{
+                                          h1: ({ children }) => (
+                                            <h1 className="text-2xl font-black text-white mb-4 mt-6 leading-tight">
+                                              {children}
+                                            </h1>
+                                          ),
+
+                                          h2: ({ children }) => (
+                                            <h2 className="text-xl font-black text-white mb-3 mt-5 leading-tight">
+                                              {children}
+                                            </h2>
+                                          ),
+
+                                          h3: ({ children }) => (
+                                            <h3 className="text-lg font-black text-white mb-2 mt-4">
+                                              {children}
+                                            </h3>
+                                          ),
+
+                                          p: ({ children }) => (
+                                            <p className="text-slate-300 mb-3 leading-relaxed">
+                                              {children}
+                                            </p>
+                                          ),
+
+                                          strong: ({ children }) => (
+                                            <strong className="text-white font-black">
+                                              {children}
+                                            </strong>
+                                          ),
+
+                                          em: ({ children }) => (
+                                            <em className="text-cyan-300 not-italic font-bold">
+                                              {children}
+                                            </em>
+                                          ),
+
+                                          ul: ({ children }) => (
+                                            <ul className="list-disc list-inside mb-3 text-slate-300 space-y-1">
+                                              {children}
+                                            </ul>
+                                          ),
+
+                                          ol: ({ children }) => (
+                                            <ol className="list-decimal list-inside mb-3 text-slate-300 space-y-1">
+                                              {children}
+                                            </ol>
+                                          ),
+
+                                          li: ({ children }) => (
+                                            <li className="text-slate-300">
+                                              {children}
+                                            </li>
+                                          ),
+
+                                          hr: () => (
+                                            <hr className="border-white/10 my-4" />
+                                          ),
+
+                                          blockquote: ({ children }) => (
+                                            <blockquote className="border-l-2 border-cyan-400 pl-4 my-3 text-slate-400 italic">
+                                              {children}
+                                            </blockquote>
+                                          ),
+                                        }}
+                                      >
+                                        {s.recap}
+                                      </ReactMarkdown>
+                                    </div>
+
                                   </div>
                                 )}
                               </div>
