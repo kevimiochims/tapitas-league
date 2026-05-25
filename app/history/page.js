@@ -171,35 +171,22 @@ export default function HistoryPage() {
       })
 
       // CHAMPION
-      const playoffGames = seasonGames.filter(g => {
-        const gt = String(g?.GameType || '').trim()
-        return gt && gt !== 'Reg Season'
-      })
+const finalsGames = seasonGames.filter(g =>
+  String(g?.GameType || '')
+    .trim()
+    .toLowerCase() === 'tapitas bowl'
+)
 
-      let champion = null
+const finalsWinner = finalsGames.find(
+  g =>
+    String(g?.Result || '')
+      .trim()
+      .toUpperCase() === 'W'
+)
 
-      if (playoffGames.length > 0) {
-        const finalsWeek = Math.max(
-          ...playoffGames.map(g =>
-            parseFloat(String(g?.Week || 0))
-          )
-        )
-
-        const finals = playoffGames.filter(
-          g => parseFloat(String(g?.Week || 0)) === finalsWeek
-        )
-
-        const winner = finals.find(
-          g =>
-            String(g?.Result || '')
-              .trim()
-              .toUpperCase() === 'W'
-        )
-
-        champion = winner
-          ? String(winner?.Team || '').trim()
-          : null
-      }
+const champion = finalsWinner
+  ? String(finalsWinner?.Team || '').trim()
+  : null
 
       // UNICORN
       let unicorn = null
