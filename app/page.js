@@ -1288,7 +1288,7 @@ export default function TapitasLeagueHomepage() {
                 className="mb-2 leading-[0.9]"
                 style={{
                   fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: 'clamp(42px, 9vw, 120px)',
+                  fontSize: 'clamp(64px, 9vw, 120px)',
                   letterSpacing: '0.02em',
                 }}
               >
@@ -1330,11 +1330,11 @@ export default function TapitasLeagueHomepage() {
 
              <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
 
-              <p className="text-[11px] sm:text-[11px] md:text-base font-medium leading-tight whitespace-nowrap">
+              <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight whitespace-nowrap">
                 All the stats. All the moments. All the rivalry.
               </p>
 
-              <p className="text-[11px] sm:text-[11px] md:text-base text-slate-500 leading-tight">
+              <p className="text-[14px] sm:text-[14px] md:text-base text-slate-500 leading-tight">
                 Explore the history that built the league.
               </p>
 
@@ -1344,14 +1344,14 @@ export default function TapitasLeagueHomepage() {
 
                 <a
                   href="/standings"
-                  className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[10px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
+                  className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
                 >
                   <Trophy className="h-3 w-3 md:h-4 md:w-4" />
                   Ver Standings
                 </a>
 
                 <button
-                  className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[10px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
+                  className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
                 >
                   <Swords className="h-3 w-3 md:h-4 md:w-4" />
                   Rivalries
@@ -1388,97 +1388,55 @@ export default function TapitasLeagueHomepage() {
       {/* ===== Tudo entre o Hero e o Footer ===== */}
       <section className="relative z-10 mx-auto max-w-[1680px] px-3 pb-12 pt-8">
 
-       {/* ===== 4 Cards com Estatisticas ===== */}
-<div className="mb-4 md:mb-6 grid grid-cols-4 gap-1.5 md:gap-5">
+        {/* ===== 4 Cards com Estatisticas ===== */}
+        <div className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
+          {/* Franchises */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Shield className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Franchises</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.franchises}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">Current</div>
+          </div>
 
-  {/* Franchises */}
-  <div className="rounded-[16px] md:rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-2 md:p-6">
+          {/* Seasons — com scroll */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Calendar className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Seasons</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.seasons}</div>
+            <div
+              className="overflow-x-auto whitespace-nowrap pb-1 text-sm font-bold text-cyan-300"
+              style={{ scrollbarWidth: 'none' }}
+            >
+              {buildSeasonRanges(leagueStats.allSeasons)}
+            </div>
+          </div>
 
-    <div className="mb-2 md:mb-6 flex h-7 w-7 md:h-12 md:w-12 items-center justify-center rounded-lg md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-      <Shield className="h-3.5 w-3.5 md:h-5 md:w-5 text-cyan-300" />
-    </div>
+          {/* Games */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Radar className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+              Games Disputed
+            </div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.games}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">All-Time</div>
+          </div>
 
-    <div className="mb-1 text-[7px] md:text-xs font-black uppercase tracking-[0.08em] md:tracking-[0.22em] text-slate-500 leading-none">
-      Franchises
-    </div>
-
-    <div className="mb-1 text-lg md:text-4xl lg:text-5xl font-black leading-none">
-      {leagueStats.franchises}
-    </div>
-
-    <div className="truncate text-[8px] md:text-sm font-bold text-cyan-300 leading-none">
-      Current
-    </div>
-
-  </div>
-
-  {/* Seasons */}
-  <div className="rounded-[16px] md:rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-2 md:p-6">
-
-    <div className="mb-2 md:mb-6 flex h-7 w-7 md:h-12 md:w-12 items-center justify-center rounded-lg md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-      <Calendar className="h-3.5 w-3.5 md:h-5 md:w-5 text-cyan-300" />
-    </div>
-
-    <div className="mb-1 text-[7px] md:text-xs font-black uppercase tracking-[0.08em] md:tracking-[0.22em] text-slate-500 leading-none">
-      Seasons
-    </div>
-
-    <div className="mb-1 text-lg md:text-4xl lg:text-5xl font-black leading-none">
-      {leagueStats.seasons}
-    </div>
-
-    <div
-      className="overflow-x-auto whitespace-nowrap text-[8px] md:text-sm font-bold text-cyan-300 leading-none"
-      style={{ scrollbarWidth: 'none' }}
-    >
-      {buildSeasonRanges(leagueStats.allSeasons)}
-    </div>
-
-  </div>
-
-  {/* Games */}
-  <div className="rounded-[16px] md:rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-2 md:p-6">
-
-    <div className="mb-2 md:mb-6 flex h-7 w-7 md:h-12 md:w-12 items-center justify-center rounded-lg md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-      <Radar className="h-3.5 w-3.5 md:h-5 md:w-5 text-cyan-300" />
-    </div>
-
-    <div className="mb-1 text-[7px] md:text-xs font-black uppercase tracking-[0.08em] md:tracking-[0.22em] text-slate-500 leading-none">
-      Games
-    </div>
-
-    <div className="mb-1 text-lg md:text-4xl lg:text-5xl font-black leading-none">
-      {leagueStats.games}
-    </div>
-
-    <div className="truncate text-[8px] md:text-sm font-bold text-cyan-300 leading-none">
-      All-Time
-    </div>
-
-  </div>
-
-  {/* Highest Score */}
-  <div className="rounded-[16px] md:rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-2 md:p-6">
-
-    <div className="mb-2 md:mb-6 flex h-7 w-7 md:h-12 md:w-12 items-center justify-center rounded-lg md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-      <Flame className="h-3.5 w-3.5 md:h-5 md:w-5 text-cyan-300" />
-    </div>
-
-    <div className="mb-1 text-[7px] md:text-xs font-black uppercase tracking-[0.08em] md:tracking-[0.22em] text-slate-500 leading-none">
-      High Score
-    </div>
-
-    <div className="mb-1 text-lg md:text-4xl lg:text-5xl font-black leading-none">
-      {leagueStats.highestScore}
-    </div>
-
-    <div className="truncate text-[8px] md:text-sm font-bold text-cyan-300 leading-none">
-      {leagueStats.highestScoreTeam}
-    </div>
-
-  </div>
-
-</div>
+          {/* Highest Score */}
+          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <Flame className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Highest Score</div>
+            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.highestScore}</div>
+            <div className="truncate text-sm font-bold text-cyan-300">{leagueStats.highestScoreTeam}</div>
+          </div>
+        </div>
 
         {/* ===== CHAMPIONS WALL ===== */}
         {championsData.length > 0 && (
