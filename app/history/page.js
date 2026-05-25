@@ -20,7 +20,10 @@ const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 const TEAM_LOGOS = {
   'H-Lera do Mahl': '/images/teams/h-lera-do-mahl.png',
   'Peytao da Massa': '/images/teams/peytao-da-massa.png',
-  'Outro Time': '/images/teams/outro-time.png',
+  'Moneyball': '/images/teams/moneyball.png',
+  'OldBrady': '/images/teams/oldbrady.png',
+  'I am Megatron': '/images/teams/i-am-megatron.png',
+  'Ocupa e Resiste': '/images/teams/ocupa-e-resiste.png',
 }
 
 function parseNumber(value) {
