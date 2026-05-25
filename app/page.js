@@ -1386,7 +1386,7 @@ export default function TapitasLeagueHomepage() {
       </section>
 
       {/* ===== Tudo entre o Hero e o Footer ===== */}
-      <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
+      <section className="relative z-10 mx-auto max-w-[1680px] px-3 pb-12 pt-8">
 
         {/* ===== 4 Cards com Estatisticas ===== */}
         <div className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
@@ -1731,7 +1731,7 @@ export default function TapitasLeagueHomepage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-10 mx-auto max-w-[1680px] px-6 pb-12 pt-4">
+      <footer className="relative z-10 mx-auto max-w-[1680px] px-3 pb-8 pt-0">
         <div className="flex flex-col items-center gap-8 rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] px-8 py-16 text-center">
 
           {/* Frase */}
