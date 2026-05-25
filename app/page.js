@@ -310,28 +310,8 @@ function ChampionsWall({ champions }) {
   }
 
   return (
-    <motion.section
-        initial={{
-          opacity: 0,
-          y: 50,
-          filter: 'blur(10px)',
-        }}
-        whileInView={{
-          opacity: 1,
-          y: 0,
-          filter: 'blur(0px)',
-        }}
-        viewport={{
-          once: false,
-          amount: 0.15,
-        }}
-        transition={{
-          duration: 0.8,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-     className="mt-8 mb-8">
-      <div
-      className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+    <section className="mt-8 mb-8">
+      <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
         <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
           <div className="flex items-center gap-3">
@@ -349,7 +329,26 @@ function ChampionsWall({ champions }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 50,
+            filter: 'blur(10px)',
+          }}
+          whileInView={{
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px)',
+          }}
+          viewport={{
+            once: false,
+            amount: 0.15,
+          }}
+          transition={{
+            duration: 0.8,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+        className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
           {champions.map((champ, index) => (
             <ChampionCard
               key={champ.season}
@@ -359,10 +358,10 @@ function ChampionsWall({ champions }) {
               onToggle={() => toggle(index)}
             />
           ))}
-        </div>
+        </motion.div>
 
       </div>
-    </motion.section>
+    </section>
   )
 }
 
