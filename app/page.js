@@ -1348,7 +1348,7 @@ export default function TapitasLeagueHomepage() {
                   className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
                 >
                   <Trophy className="h-3 w-3 md:h-4 md:w-4" />
-                  Ver Standings
+                  Standings
                 </a>
 
                 <button
@@ -1375,8 +1375,8 @@ export default function TapitasLeagueHomepage() {
                 height={580}
                 priority
                 style={{
-                  width: 'clamp(110px, 24vw, 580px)',
-                  height: 'clamp(110px, 24vw, 580px)',
+                  width: 'clamp(100px, 24vw, 580px)',
+                  height: 'clamp(140px, 24vw, 580px)',
                   objectFit: 'contain',
                 }}
               />
