@@ -68,21 +68,19 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
       <button
         onClick={() => !disabled && setOpen((p) => !p)}
         disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition-all duration-300 ${
-          disabled
-            ? 'cursor-not-allowed border-white/5 bg-white/[0.01] text-slate-600'
-            : open
+        className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition-all duration-300 ${disabled
+          ? 'cursor-not-allowed border-white/5 bg-white/[0.01] text-slate-600'
+          : open
             ? 'border-cyan-400 bg-cyan-950/30 text-white shadow-[0_0_15px_rgba(34,211,238,0.15)]'
             : 'border-white/10 bg-white/[0.04] text-white hover:border-white/20 hover:bg-white/[0.07]'
-        }`}
+          }`}
       >
         <span className={value ? 'text-white' : 'text-slate-500'}>
           {selected || placeholder}
         </span>
         <ChevronRight
-          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-300 ${
-            open ? 'rotate-90 text-cyan-400' : ''
-          }`}
+          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-300 ${open ? 'rotate-90 text-cyan-400' : ''
+            }`}
         />
       </button>
 
@@ -96,9 +94,8 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
                   onChange(opt)
                   setOpen(false)
                 }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all duration-200 hover:bg-white/[0.06] ${
-                  opt === value ? 'text-cyan-300 bg-cyan-500/[0.03]' : 'text-slate-300'
-                }`}
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all duration-200 hover:bg-white/[0.06] ${opt === value ? 'text-cyan-300 bg-cyan-500/[0.03]' : 'text-slate-300'
+                  }`}
               >
                 {opt === value && (
                   <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,1)]" />
@@ -118,29 +115,29 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
 function normalizeTeam(team, index) {
   return {
     team: (team && (team.Team || team.team || team.Name)) || `Franchise ${index + 1}`,
-    wins:        parseNumber(team?.W      || team?.Wins   || team?.wins  || 0),
-    losses:      parseNumber(team?.L      || team?.Losses || team?.losses || 0),
-    pf:          parseNumber(team?.PF     || team?.Points || team?.points_for || 0),
-    rsW:         parseNumber(team?.RS_W   || 0),
-    rsL:         parseNumber(team?.RS_L   || 0),
-    rsPF:        parseNumber(team?.RS_PF  || 0),
-    poW:         parseNumber(team?.PO_W   || 0),
-    poL:         parseNumber(team?.PO_L   || 0),
-    poPF:        parseNumber(team?.PO_PF  || 0),
-    winPct:   parseNumber(team?.['W%']    || 0),
+    wins: parseNumber(team?.W || team?.Wins || team?.wins || 0),
+    losses: parseNumber(team?.L || team?.Losses || team?.losses || 0),
+    pf: parseNumber(team?.PF || team?.Points || team?.points_for || 0),
+    rsW: parseNumber(team?.RS_W || 0),
+    rsL: parseNumber(team?.RS_L || 0),
+    rsPF: parseNumber(team?.RS_PF || 0),
+    poW: parseNumber(team?.PO_W || 0),
+    poL: parseNumber(team?.PO_L || 0),
+    poPF: parseNumber(team?.PO_PF || 0),
+    winPct: parseNumber(team?.['W%'] || 0),
     rsWinPct: parseNumber(
-  team?.['RS_W%'] ?? team?.RS_W_pct ?? team?.['RS_W%'.toString()] ?? 0
-),
-poWinPct: parseNumber(
-  team?.['PO_W%'] ?? team?.PO_W_pct ?? team?.['PO_W%'.toString()] ?? 0
-),
-    wStreakRS:   parseNumber(team?.['W Streak RS']    || 0),
-    wStreakTotal:parseNumber(team?.['W Streak Total'] || 0),
-    lStreakRS:   parseNumber(team?.['L Streak RS']    || 0),
-    lStreakTotal:parseNumber(team?.['L Streak Total'] || 0),
-    playoffApps: parseNumber(team?.['Playoff Apps']   || 0),
-    finals:      parseNumber(team?.Finals  || 0),
-    titles:      parseNumber(team?.Titles  || 0),
+      team?.['RS_W%'] ?? team?.RS_W_pct ?? team?.['RS_W%'.toString()] ?? 0
+    ),
+    poWinPct: parseNumber(
+      team?.['PO_W%'] ?? team?.PO_W_pct ?? team?.['PO_W%'.toString()] ?? 0
+    ),
+    wStreakRS: parseNumber(team?.['W Streak RS'] || 0),
+    wStreakTotal: parseNumber(team?.['W Streak Total'] || 0),
+    lStreakRS: parseNumber(team?.['L Streak RS'] || 0),
+    lStreakTotal: parseNumber(team?.['L Streak Total'] || 0),
+    playoffApps: parseNumber(team?.['Playoff Apps'] || 0),
+    finals: parseNumber(team?.Finals || 0),
+    titles: parseNumber(team?.Titles || 0),
   }
 }
 
@@ -166,9 +163,8 @@ function GameRow({ game }) {
     <div className="flex flex-col border-b border-white/5 py-[6px] last:border-0">
       <div className="flex items-center gap-1">
         <span
-          className={`text-[13px] font-black ${
-            game.result === 'W' ? 'text-emerald-400' : 'text-red-400'
-          }`}
+          className={`text-[13px] font-black ${game.result === 'W' ? 'text-emerald-400' : 'text-red-400'
+            }`}
         >
           {game.result}
         </span>
@@ -190,11 +186,10 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[28px] border transition-all duration-200 ${
-        isOpen
-          ? 'border-cyan-400/30'
-          : 'border-white/5 hover:border-white/10'
-      } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
+      className={`relative overflow-hidden rounded-[28px] border transition-all duration-200 ${isOpen
+        ? 'border-cyan-400/30'
+        : 'border-white/5 hover:border-white/10'
+        } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
       {/* Badge Reigning — sobreposto no canto superior direito */}
       {index === 0 && (
@@ -203,20 +198,18 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         </div>
       )}
 
-        <button
-          onClick={onToggle}
-          className={`flex w-full items-center gap-4 px-6 text-left transition-all ${
-            index === 0 ? 'pb-5 pt-9' : 'py-5'
+      <button
+        onClick={onToggle}
+        className={`flex w-full items-center gap-4 px-6 text-left transition-all ${index === 0 ? 'pb-5 pt-9' : 'py-5'
           }`}
-        >
+      >
         {!isOpen && (
           <Trophy className="h-5 w-5 flex-shrink-0 text-cyan-400" />
         )}
 
         <span
-          className={`flex-shrink-0 font-black leading-none transition-all ${
-            isOpen ? 'text-[42px] text-white' : 'text-[28px] text-slate-400'
-          }`}
+          className={`flex-shrink-0 font-black leading-none transition-all ${isOpen ? 'text-[42px] text-white' : 'text-[28px] text-slate-400'
+            }`}
           style={{ fontFamily: '"Bebas Neue", sans-serif' }}
         >
           {champ.season}
@@ -224,9 +217,8 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
 
         <div className="min-w-0 flex-1">
           <div
-            className={`truncate font-black text-white transition-all ${
-              isOpen ? 'text-xl' : 'text-base'
-            }`}
+            className={`truncate font-black text-white transition-all ${isOpen ? 'text-xl' : 'text-base'
+              }`}
           >
             {champ.team}
           </div>
@@ -240,9 +232,8 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         </div>
 
         <ChevronRight
-          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
-            isOpen ? 'rotate-90' : ''
-          }`}
+          className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''
+            }`}
         />
       </button>
 
@@ -337,23 +328,23 @@ function ChampionsWall({ champions }) {
 }
 
 const TEAM_AVATARS = {
-  'peytão da massa':       '/images/peytao.jpg',
-  'peytao da massa':       '/images/peytao.jpg',
-  'moneyball fc':          '/images/Moneyball.png',
-  'old brady bunch':       '/images/oldbrady.png',
-  'i am megatron':         '/images/megatron.png',
-  'ocupa meu slot':        '/images/ocupa.jpg',
-  'ocupa e resiste':       '/images/ocupa.jpg',
-  'green bay pequers':     '/images/pequers.png',
-  'pequers verde':         '/images/pequers.png',
-  'patrolão':              '/images/patrolao.png',
-  'patrolao':              '/images/patrolao.png',
-  'patrolao squad':        '/images/patrolao.png',
-  'how much is the fish':  '/images/howmuch.jpg',
-  'settlers of rincão':    '/images/rincao.png',
-  'settlers of rincao':    '/images/rincao.png',
-  'rincao settlers':       '/images/rincao.png',
-  'h-lera do mahl':        '/images/HLera.jpg',
+  'peytão da massa': '/images/peytao.jpg',
+  'peytao da massa': '/images/peytao.jpg',
+  'moneyball fc': '/images/Moneyball.png',
+  'old brady bunch': '/images/oldbrady.png',
+  'i am megatron': '/images/megatron.png',
+  'ocupa meu slot': '/images/ocupa.jpg',
+  'ocupa e resiste': '/images/ocupa.jpg',
+  'green bay pequers': '/images/pequers.png',
+  'pequers verde': '/images/pequers.png',
+  'patrolão': '/images/patrolao.png',
+  'patrolao': '/images/patrolao.png',
+  'patrolao squad': '/images/patrolao.png',
+  'how much is the fish': '/images/howmuch.jpg',
+  'settlers of rincão': '/images/rincao.png',
+  'settlers of rincao': '/images/rincao.png',
+  'rincao settlers': '/images/rincao.png',
+  'h-lera do mahl': '/images/HLera.jpg',
 }
 
 function getTeamAvatar(name) {
@@ -387,65 +378,65 @@ const SORT_OPTIONS = [
   {
     label: 'Wins',
     subs: [
-      { label: 'Total',       key: 'W',      order: 'desc' },
-      { label: 'Reg Season',  key: 'RS_W',   order: 'desc' },
-      { label: 'Playoffs',    key: 'PO_W',   order: 'desc' },
+      { label: 'Total', key: 'W', order: 'desc' },
+      { label: 'Reg Season', key: 'RS_W', order: 'desc' },
+      { label: 'Playoffs', key: 'PO_W', order: 'desc' },
     ],
   },
   {
     label: 'Losses',
     subs: [
-      { label: 'Total',       key: 'L',      order: 'desc' },
-      { label: 'Reg Season',  key: 'RS_L',   order: 'desc' },
-      { label: 'Playoffs',    key: 'PO_L',   order: 'desc' },
+      { label: 'Total', key: 'L', order: 'desc' },
+      { label: 'Reg Season', key: 'RS_L', order: 'desc' },
+      { label: 'Playoffs', key: 'PO_L', order: 'desc' },
     ],
   },
   {
-  label: 'Win %',
+    label: 'Win %',
     subs: [
-      { label: 'Total',      key: 'W%',    order: 'desc' },
+      { label: 'Total', key: 'W%', order: 'desc' },
       { label: 'Reg Season', key: 'RS_W%', order: 'desc' },
-      { label: 'Playoffs',   key: 'PO_W%', order: 'desc' },
+      { label: 'Playoffs', key: 'PO_W%', order: 'desc' },
     ],
   },
   {
     label: 'Points',
     subs: [
-      { label: 'All-Time',    key: 'PF',     order: 'desc' },
-      { label: 'Reg Season',  key: 'RS_PF',  order: 'desc' },
-      { label: 'Playoffs',    key: 'PO_PF',  order: 'desc' },
+      { label: 'All-Time', key: 'PF', order: 'desc' },
+      { label: 'Reg Season', key: 'RS_PF', order: 'desc' },
+      { label: 'Playoffs', key: 'PO_PF', order: 'desc' },
     ],
   },
   {
     label: 'Win Streak',
     subs: [
-      { label: 'Reg Season',  key: 'W Streak RS',    order: 'desc' },
-      { label: 'Total',       key: 'W Streak Total', order: 'desc' },
+      { label: 'Reg Season', key: 'W Streak RS', order: 'desc' },
+      { label: 'Total', key: 'W Streak Total', order: 'desc' },
     ],
   },
   {
     label: 'Loss Streak',
     subs: [
-      { label: 'Reg Season',  key: 'L Streak RS',    order: 'desc' },
-      { label: 'Total',       key: 'L Streak Total', order: 'desc' },
+      { label: 'Reg Season', key: 'L Streak RS', order: 'desc' },
+      { label: 'Total', key: 'L Streak Total', order: 'desc' },
     ],
   },
   {
-  label: 'Playoffs Appearances',
-  subs: [
-    { label: 'Appearances', key: 'Playoff Apps', order: 'desc' },
-  ],
-},
-{
-  label: 'Finals Appearances',
-  subs: [
-    { label: 'Appearances', key: 'Finals', order: 'desc' },
-  ],
-},
+    label: 'Playoffs Appearances',
+    subs: [
+      { label: 'Appearances', key: 'Playoff Apps', order: 'desc' },
+    ],
+  },
+  {
+    label: 'Finals Appearances',
+    subs: [
+      { label: 'Appearances', key: 'Finals', order: 'desc' },
+    ],
+  },
   {
     label: 'Championships',
     subs: [
-      { label: 'Titles',      key: 'Titles', order: 'desc' },
+      { label: 'Titles', key: 'Titles', order: 'desc' },
     ],
   },
 ]
@@ -466,9 +457,9 @@ function buildStreakMap(gamesJson, teamsJson) {
     const team = String(row?.Team || row?.team || '').trim()
     if (!team) return
     bestStreakByTeam[team] = {
-      wStreakRS:    parseNumber(String(row?.['W Streak RS']    || '0').replace(/[WL]/i, '')),
+      wStreakRS: parseNumber(String(row?.['W Streak RS'] || '0').replace(/[WL]/i, '')),
       wStreakTotal: parseNumber(String(row?.['W Streak Total'] || '0').replace(/[WL]/i, '')),
-      lStreakRS:    parseNumber(String(row?.['L Streak RS']    || '0').replace(/[WL]/i, '')),
+      lStreakRS: parseNumber(String(row?.['L Streak RS'] || '0').replace(/[WL]/i, '')),
       lStreakTotal: parseNumber(String(row?.['L Streak Total'] || '0').replace(/[WL]/i, '')),
     }
   })
@@ -478,9 +469,9 @@ function buildStreakMap(gamesJson, teamsJson) {
     const team = String(game?.Team || game?.team || '').trim()
     if (!team) return
 
-    const week        = parseNumber(game?.Week   || game?.week   || 0)
-    const season      = parseNumber(game?.Season || game?.season || 0)
-    const streakRS    = parseNumber(game?.Streak       || 0)
+    const week = parseNumber(game?.Week || game?.week || 0)
+    const season = parseNumber(game?.Season || game?.season || 0)
+    const streakRS = parseNumber(game?.Streak || 0)
     const streakTotal = parseNumber(game?.Streak_Total || 0)
 
     if (!byTeam[team]) byTeam[team] = []
@@ -533,19 +524,19 @@ function buildStreakMap(gamesJson, teamsJson) {
       const isActive = lastGame.season === maxSeason && Math.abs(sorted[sorted.length - 1][key]) >= bestVal
 
       return {
-        startWeek:   startGame.week,
+        startWeek: startGame.week,
         startSeason: startGame.season,
-        endWeek:     endGame.week,
-        endSeason:   endGame.season,
-        active:      isActive,
+        endWeek: endGame.week,
+        endSeason: endGame.season,
+        active: isActive,
       }
     }
 
     result[team] = {
-      streakRS:    findBestStreak('streakRS',    best.wStreakRS,    true),
+      streakRS: findBestStreak('streakRS', best.wStreakRS, true),
       streakTotal: findBestStreak('streakTotal', best.wStreakTotal, true),
-      lStreakRS:   findBestStreak('streakRS',    best.lStreakRS,    false),
-      lStreakTotal:findBestStreak('streakTotal', best.lStreakTotal, false),
+      lStreakRS: findBestStreak('streakRS', best.lStreakRS, false),
+      lStreakTotal: findBestStreak('streakTotal', best.lStreakTotal, false),
     }
   })
 
@@ -565,123 +556,123 @@ export default function TapitasLeagueHomepage() {
   const [seasonSummary, setSeasonSummary] = useState(null)
   const [selectedSeason, setSelectedSeason] = useState('2025')
 
- const [leagueStats, setLeagueStats] = useState({
-  franchises: 0,
-  seasons: 0,
-  seasonRange: '',
-  allSeasons: [],  // <-- adicione
-  games: 0,
-  highestScore: 0,
-  highestScoreTeam: '',
-})
+  const [leagueStats, setLeagueStats] = useState({
+    franchises: 0,
+    seasons: 0,
+    seasonRange: '',
+    allSeasons: [],  // <-- adicione
+    games: 0,
+    highestScore: 0,
+    highestScoreTeam: '',
+  })
 
   // ===== CHAMPIONS WALL =====
-// Adicione este useEffect e estado junto aos outros no componente principal
+  // Adicione este useEffect e estado junto aos outros no componente principal
 
-const [championsData, setChampionsData] = useState([])
+  const [championsData, setChampionsData] = useState([])
 
-useEffect(() => {
-  const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
-  if (cat && !cat.subs.find((s) => s.label === sortSub)) {
-    setSortSub(cat.subs[0].label)
-  }
-  setStandingsPage(0)
-}, [sortCategory])
-
-useEffect(() => {
-  setStandingsPage(0)
-}, [sortSub])
-
-useEffect(() => {
-  let mounted = true
-
-  async function loadChampionsData() {
-    try {
-      const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-      const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
-
-      const [historyJson, gamesJson] = await Promise.all([
-        safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
-        safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-      ])
-
-      if (!mounted) return
-
-      // Filtra apenas os campeões de cada temporada
-      const champions = historyJson
-        .filter((row) => {
-          const isChamp = String(
-            row?.Champion || row?.champion || ''
-          ).trim().toUpperCase()
-          return isChamp === 'TRUE'
-        })
-        .map((row) => ({
-          season: String(row?.Season || row?.season || '').trim(),
-          team: String(row?.Team || row?.team || '').trim(),
-          wins: parseNumber(row?.Wins || row?.wins || row?.W || 0),
-          losses: parseNumber(row?.Losses || row?.losses || row?.L || 0),
-          pf: parseNumber(row?.PF || row?.Points || row?.points_for || 0),
-          playoffWins: parseNumber(row?.PlayoffWins || row?.playoff_wins || row?.POW || 0),
-          playoffLosses: parseNumber(row?.PlayoffLosses || row?.playoff_losses || row?.POL || 0),
-          playoffPF: parseNumber(row?.PlayoffPF || row?.playoff_pf || row?.POPF || 0),
-        }))
-        .sort((a, b) => Number(b.season) - Number(a.season))
-
-      // Para cada campeão, busca os jogos daquela temporada
-      const championsWithGames = champions.map((champ) => {
-        const seasonGames = gamesJson.filter((game) => {
-          const season = String(game?.Season || game?.season || '').trim()
-          const team = String(game?.Team || game?.team || '').trim()
-          const stage = String(game?.gameStage || game?.GameStage || '').trim()
-          return (
-            season === champ.season &&
-            normalizeString(team) === normalizeString(champ.team) &&
-            (stage === 'Reg Season' || stage === 'Playoffs')
-          )
-        })
-
-        // Ordena por semana cronologicamente
-        const sorted = seasonGames.sort((a, b) => {
-          const wA = parseNumber(String(a?.Week || a?.week || '0').replace(/\D/g, ''))
-          const wB = parseNumber(String(b?.Week || b?.week || '0').replace(/\D/g, ''))
-          return wA - wB
-        })
-
-        const regGames = sorted.filter((g) => {
-          const stage = String(g?.gameStage || g?.GameStage || '').trim()
-          return stage === 'Reg Season'
-        })
-
-        const playoffGames = sorted.filter((g) => {
-          const stage = String(g?.gameStage || g?.GameStage || '').trim()
-          return stage === 'Playoffs'
-        })
-
-        const mapGame = (game) => {
-          const score = parseNumber(game?.Score || game?.score || game?.PF || 0)
-          const oppScore = parseNumber(game?.OpponentScore || game?.opponent_score || game?.OppPF || game?.PA || 0)
-          const opp = String(game?.Opponent || game?.opponent || '').trim()
-          const week = String(game?.Week || game?.week || '').trim()
-          const result = score > oppScore ? 'W' : 'L'
-          return { result, opp, score, oppScore, week }
-        }
-
-        return {
-          ...champ,
-          regGames: regGames.map(mapGame),
-          playoffGames: playoffGames.map(mapGame),
-        }
-      })
-
-      if (mounted) setChampionsData(championsWithGames)
-    } catch (error) {
-      console.error(error)
+  useEffect(() => {
+    const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+    if (cat && !cat.subs.find((s) => s.label === sortSub)) {
+      setSortSub(cat.subs[0].label)
     }
-  }
+    setStandingsPage(0)
+  }, [sortCategory])
 
-  loadChampionsData()
-  return () => { mounted = false }
-}, [])
+  useEffect(() => {
+    setStandingsPage(0)
+  }, [sortSub])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadChampionsData() {
+      try {
+        const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
+        const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+
+        const [historyJson, gamesJson] = await Promise.all([
+          safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+          safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
+        ])
+
+        if (!mounted) return
+
+        // Filtra apenas os campeões de cada temporada
+        const champions = historyJson
+          .filter((row) => {
+            const isChamp = String(
+              row?.Champion || row?.champion || ''
+            ).trim().toUpperCase()
+            return isChamp === 'TRUE'
+          })
+          .map((row) => ({
+            season: String(row?.Season || row?.season || '').trim(),
+            team: String(row?.Team || row?.team || '').trim(),
+            wins: parseNumber(row?.Wins || row?.wins || row?.W || 0),
+            losses: parseNumber(row?.Losses || row?.losses || row?.L || 0),
+            pf: parseNumber(row?.PF || row?.Points || row?.points_for || 0),
+            playoffWins: parseNumber(row?.PlayoffWins || row?.playoff_wins || row?.POW || 0),
+            playoffLosses: parseNumber(row?.PlayoffLosses || row?.playoff_losses || row?.POL || 0),
+            playoffPF: parseNumber(row?.PlayoffPF || row?.playoff_pf || row?.POPF || 0),
+          }))
+          .sort((a, b) => Number(b.season) - Number(a.season))
+
+        // Para cada campeão, busca os jogos daquela temporada
+        const championsWithGames = champions.map((champ) => {
+          const seasonGames = gamesJson.filter((game) => {
+            const season = String(game?.Season || game?.season || '').trim()
+            const team = String(game?.Team || game?.team || '').trim()
+            const stage = String(game?.gameStage || game?.GameStage || '').trim()
+            return (
+              season === champ.season &&
+              normalizeString(team) === normalizeString(champ.team) &&
+              (stage === 'Reg Season' || stage === 'Playoffs')
+            )
+          })
+
+          // Ordena por semana cronologicamente
+          const sorted = seasonGames.sort((a, b) => {
+            const wA = parseNumber(String(a?.Week || a?.week || '0').replace(/\D/g, ''))
+            const wB = parseNumber(String(b?.Week || b?.week || '0').replace(/\D/g, ''))
+            return wA - wB
+          })
+
+          const regGames = sorted.filter((g) => {
+            const stage = String(g?.gameStage || g?.GameStage || '').trim()
+            return stage === 'Reg Season'
+          })
+
+          const playoffGames = sorted.filter((g) => {
+            const stage = String(g?.gameStage || g?.GameStage || '').trim()
+            return stage === 'Playoffs'
+          })
+
+          const mapGame = (game) => {
+            const score = parseNumber(game?.Score || game?.score || game?.PF || 0)
+            const oppScore = parseNumber(game?.OpponentScore || game?.opponent_score || game?.OppPF || game?.PA || 0)
+            const opp = String(game?.Opponent || game?.opponent || '').trim()
+            const week = String(game?.Week || game?.week || '').trim()
+            const result = score > oppScore ? 'W' : 'L'
+            return { result, opp, score, oppScore, week }
+          }
+
+          return {
+            ...champ,
+            regGames: regGames.map(mapGame),
+            playoffGames: playoffGames.map(mapGame),
+          }
+        })
+
+        if (mounted) setChampionsData(championsWithGames)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    loadChampionsData()
+    return () => { mounted = false }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -696,7 +687,7 @@ useEffect(() => {
           safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
           safeSheetFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
         ])
-        
+
 
         if (!mounted) {
           return
@@ -714,10 +705,10 @@ useEffect(() => {
         teamsJson.forEach((teamRow) => {
           const franchiseName = String(
             teamRow?.Team ||
-              teamRow?.team ||
-              teamRow?.Name ||
-              teamRow?.Franchise ||
-              ''
+            teamRow?.team ||
+            teamRow?.Name ||
+            teamRow?.Franchise ||
+            ''
           ).trim()
 
           if (franchiseName) {
@@ -772,28 +763,28 @@ useEffect(() => {
         const seasonRange =
           sortedSeasons.length > 0
             ? `'${String(sortedSeasons[0]).slice(2)}-'${String(
-                sortedSeasons[sortedSeasons.length - 1]
-              ).slice(2)}`
+              sortedSeasons[sortedSeasons.length - 1]
+            ).slice(2)}`
             : ''
 
         setLeagueStats({
-        franchises: uniqueFranchises.size,
-        seasons: uniqueSeasons.size,
-        seasonRange:
-          sortedSeasons.length > 0
-            ? `'${String(sortedSeasons[0]).slice(2)}-'${String(
+          franchises: uniqueFranchises.size,
+          seasons: uniqueSeasons.size,
+          seasonRange:
+            sortedSeasons.length > 0
+              ? `'${String(sortedSeasons[0]).slice(2)}-'${String(
                 sortedSeasons[sortedSeasons.length - 1]
               ).slice(2)}`
-            : '',
-        allSeasons: sortedSeasons,
-        games: uniqueGames.size,
-        highestScore: Math.round(highestScore * 100) / 100,
-        highestScoreTeam,
-      })
+              : '',
+          allSeasons: sortedSeasons,
+          games: uniqueGames.size,
+          highestScore: Math.round(highestScore * 100) / 100,
+          highestScoreTeam,
+        })
 
-      if (mounted) {
-        setStreakMap(buildStreakMap(gamesJson, teamsJson))
-      }
+        if (mounted) {
+          setStreakMap(buildStreakMap(gamesJson, teamsJson))
+        }
 
         if (Array.isArray(h2hSortedJson) && h2hSortedJson.length > 0) {
           setH2hData(h2hSortedJson)
@@ -811,292 +802,292 @@ useEffect(() => {
   }, [])
 
   const standings = useMemo(() => {
-  const base =
-    Array.isArray(rawData) && rawData.length > 0
-      ? rawData : FALLBACK_TEAMS
+    const base =
+      Array.isArray(rawData) && rawData.length > 0
+        ? rawData : FALLBACK_TEAMS
 
-  const mapped = base.map(normalizeTeam)
- 
+    const mapped = base.map(normalizeTeam)
 
-  const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
-  const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
 
-  const keyMap = {
-    'W':              (t) => t.wins,
-    'RS_W':           (t) => t.rsW,
-    'PO_W':           (t) => t.poW,
-    'L':              (t) => t.losses,
-    'RS_L':           (t) => t.rsL,
-    'PO_L':           (t) => t.poL,
-    'W%':             (t) => t.winPct,
-    'RS_W%':          (t) => t.rsWinPct,
-    'PO_W%':          (t) => t.poWinPct,
-    'PF':             (t) => t.pf,
-    'RS_PF':          (t) => t.rsPF,
-    'PO_PF':          (t) => t.poPF,
-    'W Streak RS':    (t) => t.wStreakRS,
-    'W Streak Total': (t) => t.wStreakTotal,
-    'L Streak RS':    (t) => t.lStreakRS,
-    'L Streak Total': (t) => t.lStreakTotal,
-    'Playoff Apps':   (t) => t.playoffApps,
-    'Finals':         (t) => t.finals,
-    'Titles':         (t) => t.titles,
-  }
+    const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+    const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
 
-  const getter = sub ? keyMap[sub.key] : (t) => t.wins
-  const order  = sub?.order ?? 'desc'
+    const keyMap = {
+      'W': (t) => t.wins,
+      'RS_W': (t) => t.rsW,
+      'PO_W': (t) => t.poW,
+      'L': (t) => t.losses,
+      'RS_L': (t) => t.rsL,
+      'PO_L': (t) => t.poL,
+      'W%': (t) => t.winPct,
+      'RS_W%': (t) => t.rsWinPct,
+      'PO_W%': (t) => t.poWinPct,
+      'PF': (t) => t.pf,
+      'RS_PF': (t) => t.rsPF,
+      'PO_PF': (t) => t.poPF,
+      'W Streak RS': (t) => t.wStreakRS,
+      'W Streak Total': (t) => t.wStreakTotal,
+      'L Streak RS': (t) => t.lStreakRS,
+      'L Streak Total': (t) => t.lStreakTotal,
+      'Playoff Apps': (t) => t.playoffApps,
+      'Finals': (t) => t.finals,
+      'Titles': (t) => t.titles,
+    }
 
-  return mapped.sort((a, b) => {
-    const diff = order === 'desc'
-      ? getter(b) - getter(a)
-      : getter(a) - getter(b)
-    if (diff !== 0) return diff
-    // desempate sempre por wins desc → losses asc → pf desc
-    if (b.wins !== a.wins) return b.wins - a.wins
-    if (a.losses !== b.losses) return a.losses - b.losses
-    return b.pf - a.pf
-  })
-}, [rawData, sortCategory, sortSub])
+    const getter = sub ? keyMap[sub.key] : (t) => t.wins
+    const order = sub?.order ?? 'desc'
+
+    return mapped.sort((a, b) => {
+      const diff = order === 'desc'
+        ? getter(b) - getter(a)
+        : getter(a) - getter(b)
+      if (diff !== 0) return diff
+      // desempate sempre por wins desc → losses asc → pf desc
+      if (b.wins !== a.wins) return b.wins - a.wins
+      if (a.losses !== b.losses) return a.losses - b.losses
+      return b.pf - a.pf
+    })
+  }, [rawData, sortCategory, sortSub])
 
   // Lista única de times extraída do h2h
-const allTeams = useMemo(() => {
-  const teams = new Set()
-  h2hData.forEach((row) => {
-    const keys = Object.keys(row)
-    const a = String(row[keys[0]] || '').trim()
-    const b = String(row[keys[1]] || '').trim()
-    if (a) teams.add(a)
-    if (b) teams.add(b)
-  })
-  return Array.from(teams).sort()
-}, [h2hData])
-
-// Times disponíveis para o segundo dropdown (exclui o time A)
-const teamsForB = useMemo(() => {
-  if (!selectedTeamA) return allTeams.filter((t) => t !== selectedTeamA)
-  // Só mostra times que têm confronto com teamA na planilha
-  return h2hData
-    .filter((row) => {
+  const allTeams = useMemo(() => {
+    const teams = new Set()
+    h2hData.forEach((row) => {
       const keys = Object.keys(row)
       const a = String(row[keys[0]] || '').trim()
-      return normalizeString(a) === normalizeString(selectedTeamA)
+      const b = String(row[keys[1]] || '').trim()
+      if (a) teams.add(a)
+      if (b) teams.add(b)
     })
-    .map((row) => {
-      const keys = Object.keys(row)
-      return String(row[keys[1]] || '').trim()
+    return Array.from(teams).sort()
+  }, [h2hData])
+
+  // Times disponíveis para o segundo dropdown (exclui o time A)
+  const teamsForB = useMemo(() => {
+    if (!selectedTeamA) return allTeams.filter((t) => t !== selectedTeamA)
+    // Só mostra times que têm confronto com teamA na planilha
+    return h2hData
+      .filter((row) => {
+        const keys = Object.keys(row)
+        const a = String(row[keys[0]] || '').trim()
+        return normalizeString(a) === normalizeString(selectedTeamA)
+      })
+      .map((row) => {
+        const keys = Object.keys(row)
+        return String(row[keys[1]] || '').trim()
+      })
+      .filter(Boolean)
+      .sort()
+  }, [h2hData, selectedTeamA])
+
+  // Confronto selecionado
+  const selectedRivalry = useMemo(() => {
+    if (!selectedTeamA || !selectedTeamB) return null
+
+    const row = h2hData.find((r) => {
+      const keys = Object.keys(r)
+      const a = String(r[keys[0]] || '').trim()
+      const b = String(r[keys[1]] || '').trim()
+      return (
+        normalizeString(a) === normalizeString(selectedTeamA) &&
+        normalizeString(b) === normalizeString(selectedTeamB)
+      )
     })
-    .filter(Boolean)
-    .sort()
-}, [h2hData, selectedTeamA])
 
-// Confronto selecionado
-const selectedRivalry = useMemo(() => {
-  if (!selectedTeamA || !selectedTeamB) return null
+    if (!row) return null
 
-  const row = h2hData.find((r) => {
-    const keys = Object.keys(r)
-    const a = String(r[keys[0]] || '').trim()
-    const b = String(r[keys[1]] || '').trim()
-    return (
-      normalizeString(a) === normalizeString(selectedTeamA) &&
-      normalizeString(b) === normalizeString(selectedTeamB)
+    const lastMatch = String(row['Last Match'] || row['last match'] || '')
+    const scoreMatch = lastMatch.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
+    const weekMatch = lastMatch.match(/W(\d+)/i)
+    const yearMatch = lastMatch.match(/(20\d{2})/)
+
+    const winsA = parseNumber(
+      row['A W'] || row['A_W'] || row['A_WINS'] || row['A Wins'] || row['A'] || 0
     )
-  })
+    const winsB = parseNumber(
+      row['B W'] || row['B_W'] || row['B_WINS'] || row['B Wins'] || row['B'] || 0
+    )
+    const poWinsA = parseNumber(row['A PO_W'] || 0)
+    const poWinsB = parseNumber(row['B PO_W'] || 0)
+    const avgMargin = String(
+      row['Avg Margin'] || row['AVG_MARGIN'] || row['Average Margin'] || row['Margin'] || '0.0'
+    )
+    const streak = String(row['Current Streak'] || '--')
 
-  if (!row) return null
+    const totalGames = winsA + winsB
+    const recordGap = Math.abs(winsA - winsB)
+    const margin = Math.abs(parseFloat(avgMargin) || 0)
+    let rivalryScore = 0
+    if (recordGap === 0) rivalryScore += 7
+    else if (recordGap === 1) rivalryScore += 5
+    else if (recordGap === 2) rivalryScore += 3
+    else if (recordGap === 3) rivalryScore += 1
+    else rivalryScore -= 3
+    if (totalGames >= 14) rivalryScore += 5
+    else if (totalGames >= 10) rivalryScore += 4
+    else if (totalGames >= 6) rivalryScore += 2
+    if (margin <= 3) rivalryScore += 5
+    else if (margin <= 7) rivalryScore += 3
+    else if (margin <= 12) rivalryScore += 1
+    const heat =
+      rivalryScore >= 13 ? 'Legendary' :
+        rivalryScore >= 10 ? 'Elite' :
+          rivalryScore >= 7 ? 'High' :
+            rivalryScore >= 4 ? 'Medium' : 'Low'
 
-  const lastMatch = String(row['Last Match'] || row['last match'] || '')
-  const scoreMatch = lastMatch.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
-  const weekMatch = lastMatch.match(/W(\d+)/i)
-  const yearMatch = lastMatch.match(/(20\d{2})/)
-
-  const winsA = parseNumber(
-    row['A W'] || row['A_W'] || row['A_WINS'] || row['A Wins'] || row['A'] || 0
-  )
-  const winsB = parseNumber(
-    row['B W'] || row['B_W'] || row['B_WINS'] || row['B Wins'] || row['B'] || 0
-  )
-  const poWinsA = parseNumber(row['A PO_W'] || 0)
-  const poWinsB = parseNumber(row['B PO_W'] || 0)
-  const avgMargin = String(
-    row['Avg Margin'] || row['AVG_MARGIN'] || row['Average Margin'] || row['Margin'] || '0.0'
-  )
-  const streak = String(row['Current Streak'] || '--')
-
-  const totalGames = winsA + winsB
-  const recordGap = Math.abs(winsA - winsB)
-  const margin = Math.abs(parseFloat(avgMargin) || 0)
-  let rivalryScore = 0
-  if (recordGap === 0) rivalryScore += 7
-  else if (recordGap === 1) rivalryScore += 5
-  else if (recordGap === 2) rivalryScore += 3
-  else if (recordGap === 3) rivalryScore += 1
-  else rivalryScore -= 3
-  if (totalGames >= 14) rivalryScore += 5
-  else if (totalGames >= 10) rivalryScore += 4
-  else if (totalGames >= 6) rivalryScore += 2
-  if (margin <= 3) rivalryScore += 5
-  else if (margin <= 7) rivalryScore += 3
-  else if (margin <= 12) rivalryScore += 1
-  const heat =
-    rivalryScore >= 13 ? 'Legendary' :
-    rivalryScore >= 10 ? 'Elite' :
-    rivalryScore >= 7  ? 'High' :
-    rivalryScore >= 4  ? 'Medium' : 'Low'
-
-  const shortName = (name) => {
-    const mappings = {
-      'i am megatron': 'Megatron', 'h-lera do mahl': 'H-Lera',
-      'peytão da massa': 'Peytao', 'peytao da massa': 'Peytao',
-      'ocupa meu slot': 'Ocupa', 'green bay pequers': 'Pequers',
-      'settlers of rincão': 'Rincão', 'settlers of rincao': 'Rincão',
-      'old brady bunch': 'OldBrady', 'moneyball fc': 'Moneyball',
-      'patrolão': 'Patrolao', 'patrolao': 'Patrolao',
-      'how much is the fish': 'Howmuch',
+    const shortName = (name) => {
+      const mappings = {
+        'i am megatron': 'Megatron', 'h-lera do mahl': 'H-Lera',
+        'peytão da massa': 'Peytao', 'peytao da massa': 'Peytao',
+        'ocupa meu slot': 'Ocupa', 'green bay pequers': 'Pequers',
+        'settlers of rincão': 'Rincão', 'settlers of rincao': 'Rincão',
+        'old brady bunch': 'OldBrady', 'moneyball fc': 'Moneyball',
+        'patrolão': 'Patrolao', 'patrolao': 'Patrolao',
+        'how much is the fish': 'Howmuch',
+      }
+      const n = normalizeString(name)
+      return mappings[n] || String(name).split(' ')[0]
     }
-    const n = normalizeString(name)
-    return mappings[n] || String(name).split(' ')[0]
-  }
 
-  const formattedStreak = streak
-    .replace(selectedTeamA, shortName(selectedTeamA))
-    .replace(selectedTeamB, shortName(selectedTeamB))
-  const streakParts = formattedStreak.split(' ')
-  const streakVal = streakParts.pop()
-  const streakTeam = streakParts.join(' ')
+    const formattedStreak = streak
+      .replace(selectedTeamA, shortName(selectedTeamA))
+      .replace(selectedTeamB, shortName(selectedTeamB))
+    const streakParts = formattedStreak.split(' ')
+    const streakVal = streakParts.pop()
+    const streakTeam = streakParts.join(' ')
 
-  return {
-    teamA: selectedTeamA,
-    teamB: selectedTeamB,
-    record: `${winsA}-${winsB}`,
-    playoffRecord: `${poWinsA}-${poWinsB}`,
-    avgMargin,
-    heat,
-    streak: `${streakTeam} ${streakVal}`,
-    lastMeeting: {
-      score: scoreMatch ? `${scoreMatch[1]} vs ${scoreMatch[2]}` : '-- vs --',
-      meta: weekMatch || yearMatch
-        ? `W${weekMatch ? weekMatch[1] : '?'} • ${yearMatch ? yearMatch[1] : ''}`
-        : '',
-    },
-  }
-}, [h2hData, selectedTeamA, selectedTeamB])
+    return {
+      teamA: selectedTeamA,
+      teamB: selectedTeamB,
+      record: `${winsA}-${winsB}`,
+      playoffRecord: `${poWinsA}-${poWinsB}`,
+      avgMargin,
+      heat,
+      streak: `${streakTeam} ${streakVal}`,
+      lastMeeting: {
+        score: scoreMatch ? `${scoreMatch[1]} vs ${scoreMatch[2]}` : '-- vs --',
+        meta: weekMatch || yearMatch
+          ? `W${weekMatch ? weekMatch[1] : '?'} • ${yearMatch ? yearMatch[1] : ''}`
+          : '',
+      },
+    }
+  }, [h2hData, selectedTeamA, selectedTeamB])
 
-useEffect(() => {
-  if (!drawerOpen || seasonSummary) return
+  useEffect(() => {
+    if (!drawerOpen || seasonSummary) return
 
-  async function loadSummary() {
-    const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-    const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+    async function loadSummary() {
+      const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
+      const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
-    const [historyJson, historyRawJson, gamesJson] = await Promise.all([
-      safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
-      safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_RAW`),
-      safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-    ])
+      const [historyJson, historyRawJson, gamesJson] = await Promise.all([
+        safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+        safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_RAW`),
+        safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
+      ])
 
-    const SEASON = String(selectedSeason)
+      const SEASON = String(selectedSeason)
 
-    const seasonTeams = historyJson.filter(r =>
-      String(r?.Season || '').trim() === SEASON
-    )
-    const rawSeasonTeams = historyRawJson.filter(r =>
-      String(r?.Season || '').trim() === SEASON
-    )
+      const seasonTeams = historyJson.filter(r =>
+        String(r?.Season || '').trim() === SEASON
+      )
+      const rawSeasonTeams = historyRawJson.filter(r =>
+        String(r?.Season || '').trim() === SEASON
+      )
 
-    const champion = rawSeasonTeams.find(r =>
-      String(r?.Champion || '').toUpperCase() === 'TRUE'
-    )
+      const champion = rawSeasonTeams.find(r =>
+        String(r?.Champion || '').toUpperCase() === 'TRUE'
+      )
 
-    const finalist = rawSeasonTeams.find(r =>
-      String(r?.Reached_Final || '').toUpperCase() === 'TRUE' &&
-      String(r?.Champion || '').toUpperCase() !== 'TRUE'
-    )
+      const finalist = rawSeasonTeams.find(r =>
+        String(r?.Reached_Final || '').toUpperCase() === 'TRUE' &&
+        String(r?.Champion || '').toUpperCase() !== 'TRUE'
+      )
 
-    const sortedByWins = [...rawSeasonTeams].sort((a, b) =>
-      parseNumber(b?.RS_W) - parseNumber(a?.RS_W)
-    )
+      const sortedByWins = [...rawSeasonTeams].sort((a, b) =>
+        parseNumber(b?.RS_W) - parseNumber(a?.RS_W)
+      )
 
-    const bestRecord = sortedByWins[0]
-    const worstRecord = sortedByWins[sortedByWins.length - 1]
+      const bestRecord = sortedByWins[0]
+      const worstRecord = sortedByWins[sortedByWins.length - 1]
 
-    const sortedByPF = [...rawSeasonTeams].sort((a, b) =>
-      parseNumber(b?.RS_PF) - parseNumber(a?.RS_PF)
-    )
+      const sortedByPF = [...rawSeasonTeams].sort((a, b) =>
+        parseNumber(b?.RS_PF) - parseNumber(a?.RS_PF)
+      )
 
-    const highestScorer = sortedByPF[0]
-    const lowestScorer  = sortedByPF[sortedByPF.length - 1]
+      const highestScorer = sortedByPF[0]
+      const lowestScorer = sortedByPF[sortedByPF.length - 1]
 
-    const validStandings = rawSeasonTeams.filter((team) => {
-      const standing = parseNumber(team?.Standing)
-      return standing > 0
-    })
+      const validStandings = rawSeasonTeams.filter((team) => {
+        const standing = parseNumber(team?.Standing)
+        return standing > 0
+      })
 
-    const unicorn = [...validStandings].sort((a, b) =>
-      parseNumber(a?.Standing) - parseNumber(b?.Standing)
-    )[validStandings.length - 1]
+      const unicorn = [...validStandings].sort((a, b) =>
+        parseNumber(a?.Standing) - parseNumber(b?.Standing)
+      )[validStandings.length - 1]
 
-    // Maior pontuação em um único jogo
-    const seasonGames = gamesJson.filter(r => {
-    const s     = String(r?.Season || '').trim()
-    const stage = String(r?.GameStage || '').trim()
-    return s === SEASON && stage === 'Reg Season'
-  })
+      // Maior pontuação em um único jogo
+      const seasonGames = gamesJson.filter(r => {
+        const s = String(r?.Season || '').trim()
+        const stage = String(r?.GameStage || '').trim()
+        return s === SEASON && stage === 'Reg Season'
+      })
 
-    const highestGame = seasonGames.reduce((best, g) => {
-      const score = parseNumber(g?.PF || 0)
-      return score > (best?.score ?? 0)
-        ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() }
-        : best
-    }, null)
+      const highestGame = seasonGames.reduce((best, g) => {
+        const score = parseNumber(g?.PF || 0)
+        return score > (best?.score ?? 0)
+          ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() }
+          : best
+      }, null)
 
-    const lowestGame = seasonGames.reduce((worst, g) => {
-      const score = parseNumber(g?.PF || 0)
-      if (score === 0) return worst
-      return score < (worst?.score ?? 9999)
-        ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() }
-        : worst
-    }, null)
+      const lowestGame = seasonGames.reduce((worst, g) => {
+        const score = parseNumber(g?.PF || 0)
+        if (score === 0) return worst
+        return score < (worst?.score ?? 9999)
+          ? { score, team: String(g?.Team || '').trim(), week: g?.Week, opponent: String(g?.Opponent || '').trim() }
+          : worst
+      }, null)
 
-    const closestGame = seasonGames.reduce((closest, g) => {
-      const score  = parseNumber(g?.PF || 0)
-      const opp    = parseNumber(g?.PA || 0)
-      if (score === 0 || opp === 0) return closest
-      const margin = Math.abs(score - opp)
-      return margin < (closest?.margin ?? 9999)
-        ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week, opponent: String(g?.Opponent || '').trim() }
-        : closest
-    }, null)
+      const closestGame = seasonGames.reduce((closest, g) => {
+        const score = parseNumber(g?.PF || 0)
+        const opp = parseNumber(g?.PA || 0)
+        if (score === 0 || opp === 0) return closest
+        const margin = Math.abs(score - opp)
+        return margin < (closest?.margin ?? 9999)
+          ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week, opponent: String(g?.Opponent || '').trim() }
+          : closest
+      }, null)
 
-    const biggestWin = seasonGames.reduce((best, g) => {
-      const score  = parseNumber(g?.PF || 0)
-      const opp    = parseNumber(g?.PA || 0)
-      if (score <= opp) return best
-      const margin = score - opp
-      return margin > (best?.margin ?? 0)
-        ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week, opponent: String(g?.Opponent || '').trim() }
-        : best
-    }, null)
+      const biggestWin = seasonGames.reduce((best, g) => {
+        const score = parseNumber(g?.PF || 0)
+        const opp = parseNumber(g?.PA || 0)
+        if (score <= opp) return best
+        const margin = score - opp
+        return margin > (best?.margin ?? 0)
+          ? { margin, team: String(g?.Team || '').trim(), score, opp, week: g?.Week, opponent: String(g?.Opponent || '').trim() }
+          : best
+      }, null)
 
-    setSeasonSummary({
-      season: SEASON,
-      champion,
-      finalist,
-      bestRecord,
-      worstRecord,
-      highestScorer,
-      lowestScorer,
-      unicorn,
-      highestGame,
-      lowestGame,
-      closestGame,
-      biggestWin,
-      totalTeams: seasonTeams.length,
-    })
-  }
+      setSeasonSummary({
+        season: SEASON,
+        champion,
+        finalist,
+        bestRecord,
+        worstRecord,
+        highestScorer,
+        lowestScorer,
+        unicorn,
+        highestGame,
+        lowestGame,
+        closestGame,
+        biggestWin,
+        totalTeams: seasonTeams.length,
+      })
+    }
 
-  loadSummary()
-}, [drawerOpen, selectedSeason])
+    loadSummary()
+  }, [drawerOpen, selectedSeason])
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white">
@@ -1108,197 +1099,295 @@ useEffect(() => {
         50%       { transform: translateY(-10px); }
       }
     `}</style>
-{/* ===== HEADER ===== */}
-<header className="relative z-20 mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-  <div className="flex items-center gap-3">
-    <Image
-      src="/images/LogoFinalBlack.png"
-      alt="Tapitas League"
-      width={44}
-      height={44}
-      className="rounded-xl invert"
-    />
-    <span className="text-lg font-black tracking-[-0.04em] text-white">
-      Tapitas<span className="text-cyan-400">League</span>
-    </span>
-  </div>
-
-  <nav className="hidden items-center gap-1 md:flex">
-    {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map((item) => (
-  <a
-    key={item}
-    href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
-    className="rounded-xl px-4 py-2 text-sm font-bold text-slate-400 transition-all hover:bg-white/[0.06] hover:text-white"
-  >
-    {item}
-  </a>
-))}
-  </nav>
-
-  <button
-  onClick={() => setDrawerOpen(true)}
-  className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
->
-  Season Summary
-  <ChevronRight className="h-4 w-4" />
-</button>
-</header>
-
-{/* ===== HERO ===== */}
-<section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-16 pt-8">
-  <div className="relative overflow-hidden rounded-[38px] border border-white/10" style={{ background: '#020617', minHeight: '340px' }}>
-
-    {/* Padrão geométrico SVG */}
-    <div className="absolute inset-0 overflow-hidden rounded-[38px]">
-      <svg width="100%" height="100%" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        {/* Listras diagonais */}
-        <g opacity="0.09">
-          {[280,355,400,475,520,595,640,715,760,835].map((x, i) => (
-            <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="520" fill="#22d3ee" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`} />
-          ))}
-        </g>
-        {/* Losangos grade */}
-        <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
-          {[
-            "M380 -30 L460 85 L380 200 L300 85 Z","M460 85 L540 200 L460 315 L380 200 Z",
-            "M540 -30 L620 85 L540 200 L460 85 Z","M620 85 L700 200 L620 315 L540 200 Z",
-            "M700 -30 L780 85 L700 200 L620 85 Z","M780 85 L860 200 L780 315 L700 200 Z",
-            "M300 85 L380 200 L300 315 L220 200 Z","M460 200 L540 315 L460 430 L380 315 Z",
-            "M540 200 L620 315 L540 430 L460 315 Z","M620 200 L700 315 L620 430 L540 315 Z",
-            "M700 200 L780 315 L700 430 L620 315 Z","M860 -30 L940 85 L860 200 L780 85 Z",
-            "M860 200 L940 315 L860 430 L780 315 Z",
-          ].map((d, i) => <path key={i} d={d} />)}
-        </g>
-        {/* Losangos preenchidos */}
-        <g opacity="0.08" fill="#22d3ee">
-          {[
-            "M420 30 L440 58 L420 86 L400 58 Z","M500 120 L520 148 L500 176 L480 148 Z",
-            "M580 30 L600 58 L580 86 L560 58 Z","M660 120 L680 148 L660 176 L640 148 Z",
-            "M740 30 L760 58 L740 86 L720 58 Z","M820 120 L840 148 L820 176 L800 148 Z",
-            "M460 210 L480 238 L460 266 L440 238 Z","M540 300 L560 328 L540 356 L520 328 Z",
-            "M620 210 L640 238 L620 266 L600 238 Z","M700 300 L720 328 L700 356 L680 328 Z",
-            "M780 210 L800 238 L780 266 L760 238 Z","M860 300 L880 328 L860 356 L840 328 Z",
-          ].map((d, i) => <path key={i} d={d} />)}
-        </g>
-        {/* Chevrons */}
-        <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round">
-          {[500,540,580,620,660].map((x, i) => (
-            <polyline key={i} points={`${x},0 ${x+160},170 ${x},340`} />
-          ))}
-        </g>
-        {/* Triângulos cantos */}
-        <g opacity="0.07" fill="#22d3ee">
-          <polygon points="900,0 900,140 760,0"/>
-          <polygon points="900,340 900,200 760,340"/>
-          <polygon points="280,0 380,0 280,90"/>
-          <polygon points="280,340 380,340 280,250"/>
-        </g>
-        {/* Círculos concêntricos */}
-        <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
-          {[30,50,70].map(r => <circle key={r} cx="870" cy="60" r={r} />)}
-          {[25,45,65].map(r => <circle key={r} cx="320" cy="300" r={r} />)}
-        </g>
-        {/* Grid de pontos */}
-        <g opacity="0.09" fill="#22d3ee">
-          {[40,60,80,100].map(y => [310,330,350].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />))}
-          {[240,260,280,300].map(y => [800,820,840,860].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />))}
-        </g>
-        {/* Linhas horizontais */}
-        <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
-          {[56,113,226,284].map(y => <line key={y} x1="0" y1={y} x2="900" y2={y} />)}
-        </g>
-        {/* Hexágonos */}
-        <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
-          <polygon points="850,150 870,136 890,150 890,178 870,192 850,178"/>
-          <polygon points="320,160 340,146 360,160 360,188 340,202 320,188"/>
-          <polygon points="590,280 610,266 630,280 630,308 610,322 590,308"/>
-        </g>
-        {/* Número jersey fantasma */}
-        <text x="820" y="310" fontFamily="'Bebas Neue', sans-serif" fontSize="340" fill="#22d3ee" opacity="0.025" textAnchor="middle">12</text>
-        {/* Cruzes */}
-        <g opacity="0.06" stroke="#22d3ee" strokeWidth="1">
-          <line x1="355" y1="260" x2="395" y2="260"/><line x1="375" y1="240" x2="375" y2="280"/>
-          <line x1="845" y1="50" x2="885" y2="50"/><line x1="865" y1="30" x2="865" y2="70"/>
-        </g>
-      </svg>
-
-      {/* Overlay escuro */}
-      <div
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.9) 48%, rgba(2,6,23,0.15) 100%)' }}
-      />
-    </div>
-
-    {/* Conteúdo */}
-    <div className="relative z-10 flex items-center justify-between gap-8 p-10 md:p-14">
-      {/* Texto */}
-      <div className="flex-1">
-        <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
-          <Flame className="h-4 w-4 text-cyan-300" />
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
-            EST. 2014 &nbsp;|&nbsp; A LEAGUE. A HISTORY. A LEGACY.
+      {/* ===== HEADER ===== */}
+      <header className="relative z-20 mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
+        <div className="flex items-center gap-3">
+          <Image
+            src="/images/LogoFinalBlack.png"
+            alt="Tapitas League"
+            width={44}
+            height={44}
+            className="rounded-xl invert"
+          />
+          <span className="text-lg font-black tracking-[-0.04em] text-white">
+            Tapitas<span className="text-cyan-400">League</span>
           </span>
         </div>
 
-        <h1
-          className="mb-5 leading-[0.88]"
-          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(96px, 6vw, 120px)', letterSpacing: '0.02em' }}
-        >
-          <span style={{ display: 'block', background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-            THE HOME OF
-          </span>
-          <span style={{ display: 'block', background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))' }}>
-            TAPITAS{' '}
-            <span style={{ background: 'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              HISTORY
-            </span>
-          </span>
-        </h1>
-
-        <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-slate-400">
-          All the stats. All the moments. All the rivalry.
-          <br />
-          <span className="text-slate-500">Explore the history that built the league.</span>
-        </p>
-
-        <div className="flex flex-wrap gap-3">
+        <nav className="hidden items-center gap-1 md:flex">
+          {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map((item) => (
             <a
-            href="/standings"
-            className="inline-flex h-12 items-center gap-2 rounded-2xl bg-cyan-400 px-6 text-sm font-black text-[#020617] transition-all hover:bg-cyan-300"
-          >
-            <Trophy className="h-4 w-4" />
-            Ver Standings
-          </a>
-          <button className="inline-flex h-12 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 text-sm font-black text-white transition-all hover:bg-white/[0.08]">
-            <Swords className="h-4 w-4" />
-            Rivalries
-          </button>
-        </div>
-      </div>
+              key={item}
+              href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
+              className="rounded-xl px-4 py-2 text-sm font-bold text-slate-400 transition-all hover:bg-white/[0.06] hover:text-white"
+            >
+              {item}
+            </a>
+          ))}
+        </nav>
 
-      {/* Logo */}
-      <div
-        className="relative hidden flex-shrink-0 items-center justify-center md:flex"
-        style={{ animation: 'heroFloat 5s ease-in-out infinite' }}
-      >
-        <Image
-          src="/images/LogoFinalBlack.png"
-          alt="Tapitas League Logo"
-          width={580}
-          height={580}
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+        >
+          Summary
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </header>
+
+      {/* ===== HERO ===== */}
+      <section className="relative z-10 mx-auto max-w-[1680px] px-3 sm:px-5 md:px-6 pb-0 md:pb-0 pt-4 md:pt-8">
+        <div
+          className="relative isolate overflow-hidden rounded-[28px] md:rounded-[38px] border border-white/10"
           style={{
-            width: 'clamp(180px, 28vw, 580px)',
-            height: 'clamp(180px, 28vw, 580px)',
-            objectFit: 'contain',
+            background: '#020617',
           }}
-        />
-      </div>
-    </div>
-  </div>
-</section>
+        >
 
+          {/* Background */}
+          <div className="absolute inset-0 overflow-hidden rounded-[28px] md:rounded-[38px] pointer-events-none">
+
+            <svg
+              className="absolute inset-0 h-full w-full"
+              viewBox="0 0 900 340"
+              preserveAspectRatio="xMidYMid meet"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+
+              {/* Listras diagonais */}
+              <g opacity="0.09">
+                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
+                  <rect
+                    key={i}
+                    x={x}
+                    y="-80"
+                    width={i % 2 === 0 ? 55 : 22}
+                    height="520"
+                    fill="#22d3ee"
+                    transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`}
+                  />
+                ))}
+              </g>
+
+              {/* Losangos */}
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
+                {[
+                  "M380 -30 L460 85 L380 200 L300 85 Z",
+                  "M460 85 L540 200 L460 315 L380 200 Z",
+                  "M540 -30 L620 85 L540 200 L460 85 Z",
+                  "M620 85 L700 200 L620 315 L540 200 Z",
+                  "M700 -30 L780 85 L700 200 L620 85 Z",
+                  "M780 85 L860 200 L780 315 L700 200 Z",
+                ].map((d, i) => (
+                  <path key={i} d={d} />
+                ))}
+              </g>
+
+              {/* Losangos preenchidos */}
+              <g opacity="0.08" fill="#22d3ee">
+                {[
+                  "M420 30 L440 58 L420 86 L400 58 Z",
+                  "M500 120 L520 148 L500 176 L480 148 Z",
+                  "M580 30 L600 58 L580 86 L560 58 Z",
+                  "M660 120 L680 148 L660 176 L640 148 Z",
+                  "M740 30 L760 58 L740 86 L720 58 Z",
+                ].map((d, i) => (
+                  <path key={i} d={d} />
+                ))}
+              </g>
+
+              {/* Chevrons */}
+              <g
+                opacity="0.07"
+                fill="none"
+                stroke="#22d3ee"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              >
+                {[520, 600, 680].map((x, i) => (
+                  <polyline
+                    key={i}
+                    points={`${x},0 ${x + 160},170 ${x},340`}
+                  />
+                ))}
+              </g>
+
+              {/* Triângulos */}
+              <g opacity="0.07" fill="#22d3ee">
+                <polygon points="900,0 900,140 760,0" />
+                <polygon points="900,340 900,200 760,340" />
+              </g>
+
+              {/* Círculos */}
+              <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
+                {[30, 50, 70].map((r) => (
+                  <circle key={r} cx="870" cy="60" r={r} />
+                ))}
+              </g>
+
+              {/* Grid pontos */}
+              <g opacity="0.09" fill="#22d3ee">
+                {[40, 60, 80, 100].map((y) =>
+                  [310, 330, 350].map((x) => (
+                    <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
+                  ))
+                )}
+              </g>
+
+              {/* Linhas */}
+              <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
+                {[56, 113, 226, 284].map((y) => (
+                  <line key={y} x1="0" y1={y} x2="900" y2={y} />
+                ))}
+              </g>
+
+              {/* Número fantasma */}
+              <text
+                x="820"
+                y="310"
+                fontFamily="'Bebas Neue', sans-serif"
+                fontSize="340"
+                fill="#22d3ee"
+                opacity="0.02"
+                textAnchor="middle"
+              >
+                12
+              </text>
+            </svg>
+
+            {/* Overlay */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)',
+              }}
+            />
+          </div>
+
+          {/* Conteúdo */}
+          <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
+
+            {/* Texto */}
+            <div className="flex-1 text-left">
+
+              {/* Badge */}
+              <div className="mb-6 md:mb-6 inline-flex items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
+
+                <Flame className="h-3 w-3 md:h-4 md:w-4 text-cyan-300 flex-shrink-0" />
+
+                <span className="text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-[0.08em] md:tracking-[0.25em] text-cyan-300 whitespace-nowrap leading-none">
+                  EST. 2014 | A LEAGUE. A HISTORY. A LEGACY.
+                </span>
+
+              </div>
+
+              {/* Título */}
+              <h1
+                className="mb-2 leading-[0.9]"
+                style={{
+                  fontFamily: '"Bebas Neue", sans-serif',
+                  fontSize: 'clamp(36px, 9vw, 120px)',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'block',
+                    background:
+                      'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  THE HOME OF
+                </span>
+
+                <span
+                  style={{
+                    display: 'block',
+                    background:
+                      'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
+                  }}
+                >
+                  TAPITAS{' '}
+                  <span
+                    style={{
+                      background:
+                        'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    HISTORY
+                  </span>
+                </span>
+              </h1>
+
+              {/* Texto */}
+              <p className="mx-0 mb-6 max-w-md md:max-w-lg text-sm sm:text-base font-medium leading-relaxed text-slate-400">
+                All the stats. All the moments. All the rivalry.
+                <br />
+                <span className="text-slate-500">
+                  Explore the history that built the league.
+                </span>
+              </p>
+
+              {/* Botões */}
+              <div className="flex flex-row items-start gap-1.5 md:gap-3">
+
+                <a
+                  href="/standings"
+                  className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[10px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
+                >
+                  <Trophy className="h-3 w-3 md:h-4 md:w-4" />
+                  Ver Standings
+                </a>
+
+                <button
+                  className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[10px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
+                >
+                  <Swords className="h-3 w-3 md:h-4 md:w-4" />
+                  Rivalries
+                </button>
+
+              </div>
+            </div>
+
+            {/* Logo */}
+            <div
+              className="relative flex-shrink-0 flex items-center justify-center"
+              style={{
+                animation: 'heroFloat 5s ease-in-out infinite',
+              }}
+            >
+              <Image
+                src="/images/LogoFinalBlack.png"
+                alt="Tapitas League Logo"
+                width={580}
+                height={580}
+                priority
+                style={{
+                  width: 'clamp(110px, 24vw, 580px)',
+                  height: 'clamp(110px, 24vw, 580px)',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Tudo entre o Hero e o Footer ===== */}
       <section className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-10">
-        <div className="mb-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
+
+        {/* ===== 4 Cards com Estatisticas ===== */}
+        <div className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
           {/* Franchises */}
           <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
@@ -1352,529 +1441,530 @@ useEffect(() => {
           <ChampionsWall champions={championsData} />
         )}
 
+        {/* RIVALRY SPOTLIGHT e Franchise Leaders*/}
         <div className="flex flex-col gap-8 xl:flex-row">
 
-        {/* RIVALRY SPOTLIGHT */}
-        <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[1.15]">
-          <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+          {/* RIVALRY SPOTLIGHT */}
+          <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[1.15]">
+            <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
 
-            {/* Header */}
-            <div className="mb-8 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                  <Swords className="h-5 w-5 text-cyan-300" />
-                </div>
-                <div>
-                  <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
-                    Rivalry Spotlight
+              {/* Header */}
+              <div className="mb-8 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                    <Swords className="h-5 w-5 text-cyan-300" />
                   </div>
-                  <div className="text-base text-slate-400">
-                    The league's fiercest matchup.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Seletores */}
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <TeamSelect
-                value={selectedTeamA}
-                onChange={(val) => {
-                  setSelectedTeamA(val)
-                  setSelectedTeamB('')
-                }}
-                options={allTeams}
-                placeholder="Select a team..."
-              />
-
-              <div className="flex-shrink-0 text-center text-lg font-black text-cyan-400">
-                vs
-              </div>
-
-              <TeamSelect
-                value={selectedTeamB}
-                onChange={setSelectedTeamB}
-                options={teamsForB}
-                placeholder="Select opponent..."
-                disabled={!selectedTeamA}
-              />
-            </div>
-
-            {/* Estado vazio */}
-            {!selectedRivalry && (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[26px] border border-white/5 bg-white/[0.02] py-12 text-center">
-                <Swords className="h-8 w-8 text-slate-600" />
-                <p className="text-sm font-bold text-slate-600">
-                  Select two teams to see their rivalry stats
-                </p>
-              </div>
-            )}
-
-            {/* Stats do confronto */}
-            {selectedRivalry && (
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  [Target,   'Record',                                             selectedRivalry.record],
-                  [Trophy,   'Playoffs',                                           selectedRivalry.playoffRecord],
-                  [Activity, 'Avg Margin',                                         `${selectedRivalry.avgMargin} ppg`],
-                  [Stars,    `Last Game${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
-                  [Radar,    'Current Streak',                                     selectedRivalry.streak],
-                  [Flame,    'Rivalry Heat',                                       selectedRivalry.heat],
-                ].map(([Icon, label, value]) => (
-                  <div
-                    key={label}
-                    className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] p-4 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/30 hover:bg-white/[0.06]"
-                  >
-                    {/* Efeito de Brilho Metálico Refletivo */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
-
-                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 transition-colors group-hover:border-cyan-400/40">
-                      <Icon className="h-3.5 w-3.5 text-cyan-300" />
+                  <div>
+                    <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+                      Rivalry Spotlight
                     </div>
-                    <div className="mb-2 text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-slate-500 sm:text-[10px] lg:text-[11px]"
-                      style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                    >
-                      {label}
-                    </div>
-                    <div
-                      className="font-black leading-none text-white transition-colors group-hover:text-cyan-300"
-                      style={{ fontSize: 'clamp(14px, 3.5vw, 30px)', wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                    >
-                      {value}
+                    <div className="text-base text-slate-400">
+                      The league's fiercest matchup.
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-
-          </div>
-        </div>
-
-        {/* FRANCHISE LEADERS */}
-        <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
-          <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
-            
-            {/* Header */}
-            <div className="mb-8 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                  <Medal className="h-5 w-5 text-cyan-300" />
-                </div>
-                <div>
-                  <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
-                    Franchise Leaders
-                  </div>
-                  <div className="text-base text-slate-400">
-                    League Rankings
-                  </div>
                 </div>
               </div>
 
-              {/* Setas de paginação */}
-              {standings.length > 5 && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
-                    disabled={standingsPage === 0}
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <span className="text-xs font-black text-slate-500">
-                    {standingsPage + 1}/{Math.ceil(standings.length / 5)}
-                  </span>
-                  <button
-                    onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
-                    disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Seletores */}
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <TeamSelect
-                value={sortCategory}
-                onChange={(val) => setSortCategory(val)}
-                options={SORT_OPTIONS.map((o) => o.label)}
-                placeholder="Category..."
-              />
-              {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
+              {/* Seletores */}
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                 <TeamSelect
-                  value={sortSub}
-                  onChange={(val) => setSortSub(val)}
-                  options={
-                    SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
-                  }
-                  placeholder="Type..."
+                  value={selectedTeamA}
+                  onChange={(val) => {
+                    setSelectedTeamA(val)
+                    setSelectedTeamB('')
+                  }}
+                  options={allTeams}
+                  placeholder="Select a team..."
                 />
+
+                <div className="flex-shrink-0 text-center text-lg font-black text-cyan-400">
+                  vs
+                </div>
+
+                <TeamSelect
+                  value={selectedTeamB}
+                  onChange={setSelectedTeamB}
+                  options={teamsForB}
+                  placeholder="Select opponent..."
+                  disabled={!selectedTeamA}
+                />
+              </div>
+
+              {/* Estado vazio */}
+              {!selectedRivalry && (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[26px] border border-white/5 bg-white/[0.02] py-12 text-center">
+                  <Swords className="h-8 w-8 text-slate-600" />
+                  <p className="text-sm font-bold text-slate-600">
+                    Select two teams to see their rivalry stats
+                  </p>
+                </div>
               )}
-            </div>
 
-            {/* Lista */}
-            <div className="space-y-4">
-              {standings
-                .slice(standingsPage * 5, standingsPage * 5 + 5)
-                .map((team, index) => {
-                  const globalIndex = standingsPage * 5 + index
-                  const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
-                  const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
-                  
-                  const keyMap = {
-                    'W':              (t) => t.wins,
-                    'RS_W':           (t) => t.rsW,
-                    'PO_W':           (t) => t.poW,
-                    'L':              (t) => t.losses,
-                    'RS_L':           (t) => t.rsL,
-                    'PO_L':           (t) => t.poL,
-                    'W%':             (t) => `${t.winPct}%`,
-                    'RS_W%':          (t) => `${t.rsWinPct}%`,
-                    'PO_W%':          (t) => `${t.poWinPct}%`,
-                    'PF':             (t) => Math.round(t.pf),
-                    'RS_PF':          (t) => Math.round(t.rsPF),
-                    'PO_PF':          (t) => Math.round(t.poPF),
-                    'W Streak RS':    (t) => t.wStreakRS,
-                    'W Streak Total': (t) => t.wStreakTotal,
-                    'L Streak RS':    (t) => t.lStreakRS,
-                    'L Streak Total': (t) => t.lStreakTotal,
-                    'Playoff Apps':   (t) => t.playoffApps,
-                    'Finals':         (t) => t.finals,
-                    'Titles':         (t) => t.titles,
-                  }
-
-                  const shortLabelMap = {
-                    'W':              'Wins',
-                    'RS_W':           'Wins',
-                    'PO_W':           'Wins',
-                    'L':              'Losses',
-                    'RS_L':           'Losses',
-                    'PO_L':           'Losses',
-                    'W%':             'Win %',
-                    'RS_W%':          'Win %',
-                    'PO_W%':          'Win %',
-                    'PF':             'Points',
-                    'RS_PF':          'Points',
-                    'PO_PF':          'Points',
-                    'W Streak RS':    'Win Streak',
-                    'W Streak Total': 'Win Streak',
-                    'L Streak RS':    'Loss Streak',
-                    'L Streak Total': 'Loss Streak',
-                    'Playoff Apps':   'Playoffs',
-                    'Finals':         'Finals',
-                    'Titles':         'Titles',
-                  }
-
-                  const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
-                  const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
-
-                  return (
+              {/* Stats do confronto */}
+              {selectedRivalry && (
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    [Target, 'Record', selectedRivalry.record],
+                    [Trophy, 'Playoffs', selectedRivalry.playoffRecord],
+                    [Activity, 'Avg Margin', `${selectedRivalry.avgMargin} ppg`],
+                    [Stars, `Last Game${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
+                    [Radar, 'Current Streak', selectedRivalry.streak],
+                    [Flame, 'Rivalry Heat', selectedRivalry.heat],
+                  ].map(([Icon, label, value]) => (
                     <div
-                      key={`${team.team}-${globalIndex}`}
-                      className="group relative overflow-hidden grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-white/5 bg-white/[0.03] px-4 py-4 sm:px-6 sm:py-5 transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 hover:bg-white/[0.05]"
+                      key={label}
+                      className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] p-4 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/30 hover:bg-white/[0.06]"
                     >
                       {/* Efeito de Brilho Metálico Refletivo */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
 
-                      <div className="relative z-10 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 font-black text-cyan-300 sm:h-14 sm:w-14 transition-colors group-hover:border-cyan-400/40"
-                        style={{ fontSize: 'clamp(14px, 3vw, 22px)' }}
+                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 transition-colors group-hover:border-cyan-400/40">
+                        <Icon className="h-3.5 w-3.5 text-cyan-300" />
+                      </div>
+                      <div className="mb-2 text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-slate-500 sm:text-[10px] lg:text-[11px]"
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                       >
-                        {globalIndex + 1}
+                        {label}
                       </div>
-
-                      <div className="relative z-10 min-w-0">
-                        <div
-                          className="mb-1 truncate font-black text-white transition-colors group-hover:text-cyan-300"
-                          style={{ fontSize: 'clamp(14px, 3.5vw, 24px)' }}
-                        >
-                          {team.team}
-                        </div>
-
-                        {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' ||
-                          sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') ? (() => {
-                          const keyLookup = {
-                            'W Streak RS':    'streakRS',
-                            'W Streak Total': 'streakTotal',
-                            'L Streak RS':    'lStreakRS',
-                            'L Streak Total': 'lStreakTotal',
-                        }
-                          const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
-                          if (!streakInfo) return null
-                          return (
-                            <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
-                              W{streakInfo.startWeek}, {streakInfo.startSeason}
-                              <span className="mx-1 text-slate-600">→</span>
-                              W{streakInfo.endWeek}, {streakInfo.endSeason}
-                              {streakInfo.active && <span className="ml-1 text-cyan-400">(active)</span>}
-                            </div>
-                          )
-                        })() : (
-                          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
-                            {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="relative z-10 flex-shrink-0 text-right">
-                        <div
-                          className="mb-1 font-black leading-none text-cyan-300"
-                          style={{ fontSize: 'clamp(22px, 5vw, 40px)' }}
-                        >
-                          {displayValue}
-                        </div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:text-xs">
-                          {shortLabel}
-                        </div>
+                      <div
+                        className="font-black leading-none text-white transition-colors group-hover:text-cyan-300"
+                        style={{ fontSize: 'clamp(14px, 3.5vw, 30px)', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                      >
+                        {value}
                       </div>
                     </div>
-                  )
-                })}
-            </div>
+                  ))}
+                </div>
+              )}
 
+            </div>
+          </div>
+
+          {/* FRANCHISE LEADERS */}
+          <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
+            <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+
+              {/* Header */}
+              <div className="mb-8 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+                    <Medal className="h-5 w-5 text-cyan-300" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
+                      Franchise Leaders
+                    </div>
+                    <div className="text-base text-slate-400">
+                      League Rankings
+                    </div>
+                  </div>
+                </div>
+
+                {/* Setas de paginação */}
+                {standings.length > 5 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
+                      disabled={standingsPage === 0}
+                      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <span className="text-xs font-black text-slate-500">
+                      {standingsPage + 1}/{Math.ceil(standings.length / 5)}
+                    </span>
+                    <button
+                      onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
+                      disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
+                      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Seletores */}
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <TeamSelect
+                  value={sortCategory}
+                  onChange={(val) => setSortCategory(val)}
+                  options={SORT_OPTIONS.map((o) => o.label)}
+                  placeholder="Category..."
+                />
+                {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
+                  <TeamSelect
+                    value={sortSub}
+                    onChange={(val) => setSortSub(val)}
+                    options={
+                      SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
+                    }
+                    placeholder="Type..."
+                  />
+                )}
+              </div>
+
+              {/* Lista */}
+              <div className="space-y-4">
+                {standings
+                  .slice(standingsPage * 5, standingsPage * 5 + 5)
+                  .map((team, index) => {
+                    const globalIndex = standingsPage * 5 + index
+                    const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+                    const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
+
+                    const keyMap = {
+                      'W': (t) => t.wins,
+                      'RS_W': (t) => t.rsW,
+                      'PO_W': (t) => t.poW,
+                      'L': (t) => t.losses,
+                      'RS_L': (t) => t.rsL,
+                      'PO_L': (t) => t.poL,
+                      'W%': (t) => `${t.winPct}%`,
+                      'RS_W%': (t) => `${t.rsWinPct}%`,
+                      'PO_W%': (t) => `${t.poWinPct}%`,
+                      'PF': (t) => Math.round(t.pf),
+                      'RS_PF': (t) => Math.round(t.rsPF),
+                      'PO_PF': (t) => Math.round(t.poPF),
+                      'W Streak RS': (t) => t.wStreakRS,
+                      'W Streak Total': (t) => t.wStreakTotal,
+                      'L Streak RS': (t) => t.lStreakRS,
+                      'L Streak Total': (t) => t.lStreakTotal,
+                      'Playoff Apps': (t) => t.playoffApps,
+                      'Finals': (t) => t.finals,
+                      'Titles': (t) => t.titles,
+                    }
+
+                    const shortLabelMap = {
+                      'W': 'Wins',
+                      'RS_W': 'Wins',
+                      'PO_W': 'Wins',
+                      'L': 'Losses',
+                      'RS_L': 'Losses',
+                      'PO_L': 'Losses',
+                      'W%': 'Win %',
+                      'RS_W%': 'Win %',
+                      'PO_W%': 'Win %',
+                      'PF': 'Points',
+                      'RS_PF': 'Points',
+                      'PO_PF': 'Points',
+                      'W Streak RS': 'Win Streak',
+                      'W Streak Total': 'Win Streak',
+                      'L Streak RS': 'Loss Streak',
+                      'L Streak Total': 'Loss Streak',
+                      'Playoff Apps': 'Playoffs',
+                      'Finals': 'Finals',
+                      'Titles': 'Titles',
+                    }
+
+                    const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
+                    const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
+
+                    return (
+                      <div
+                        key={`${team.team}-${globalIndex}`}
+                        className="group relative overflow-hidden grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-white/5 bg-white/[0.03] px-4 py-4 sm:px-6 sm:py-5 transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 hover:bg-white/[0.05]"
+                      >
+                        {/* Efeito de Brilho Metálico Refletivo */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
+
+                        <div className="relative z-10 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 font-black text-cyan-300 sm:h-14 sm:w-14 transition-colors group-hover:border-cyan-400/40"
+                          style={{ fontSize: 'clamp(14px, 3vw, 22px)' }}
+                        >
+                          {globalIndex + 1}
+                        </div>
+
+                        <div className="relative z-10 min-w-0">
+                          <div
+                            className="mb-1 truncate font-black text-white transition-colors group-hover:text-cyan-300"
+                            style={{ fontSize: 'clamp(14px, 3.5vw, 24px)' }}
+                          >
+                            {team.team}
+                          </div>
+
+                          {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' ||
+                            sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') ? (() => {
+                              const keyLookup = {
+                                'W Streak RS': 'streakRS',
+                                'W Streak Total': 'streakTotal',
+                                'L Streak RS': 'lStreakRS',
+                                'L Streak Total': 'lStreakTotal',
+                              }
+                              const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
+                              if (!streakInfo) return null
+                              return (
+                                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
+                                  W{streakInfo.startWeek}, {streakInfo.startSeason}
+                                  <span className="mx-1 text-slate-600">→</span>
+                                  W{streakInfo.endWeek}, {streakInfo.endSeason}
+                                  {streakInfo.active && <span className="ml-1 text-cyan-400">(active)</span>}
+                                </div>
+                              )
+                            })() : (
+                            <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
+                              {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="relative z-10 flex-shrink-0 text-right">
+                          <div
+                            className="mb-1 font-black leading-none text-cyan-300"
+                            style={{ fontSize: 'clamp(22px, 5vw, 40px)' }}
+                          >
+                            {displayValue}
+                          </div>
+                          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:text-xs">
+                            {shortLabel}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+
+            </div>
           </div>
         </div>
-        </div>
       </section>
-      {/* FOOTER */}
-        <footer className="relative z-10 mx-auto max-w-[1680px] px-6 pb-12 pt-4">
-          <div className="flex flex-col items-center gap-8 rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] px-8 py-16 text-center">
 
-            {/* Frase */}
-            <h2
-              className="whitespace-nowrap leading-[0.9] tracking-[-0.03em]"
+      {/* FOOTER */}
+      <footer className="relative z-10 mx-auto max-w-[1680px] px-6 pb-12 pt-4">
+        <div className="flex flex-col items-center gap-8 rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] px-8 py-16 text-center">
+
+          {/* Frase */}
+          <h2
+            className="whitespace-nowrap leading-[0.9] tracking-[-0.03em]"
+            style={{
+              fontFamily: '"Bebas Neue", sans-serif',
+              fontSize: 'clamp(24px, 5vw, 96px)',
+              background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            The game ends.{' '}
+            <span
               style={{
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(24px, 5vw, 96px)',
-                background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+                background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
               }}
             >
-              The game ends.{' '}
-              <span
-                style={{
-                  background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                The history remains.
-              </span>
-            </h2>
+              The history remains.
+            </span>
+          </h2>
 
-            {/* Linha divisória */}
-            <div className="h-px w-24 bg-white/10" />
+          {/* Linha divisória */}
+          <div className="h-px w-24 bg-white/10" />
 
-            {/* Logo + nome */}
-            <div className="flex items-center gap-3">
-              <Image
-                src="/images/LogoFinalBlack.png"
-                alt="Tapitas League"
-                width={32}
-                height={32}
-                className="opacity-40"
-                style={{ filter: 'invert(1)' }}
-              />
-              <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-500">
-                Tapitas League
-              </span>
-            </div>
-
-            {/* Copyright */}
-            <p className="text-xs font-bold text-slate-600">
-              © {new Date().getFullYear()} Tapitas League · Est. 2014 · All rights reserved.
-            </p>
-
+          {/* Logo + nome */}
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/LogoFinalBlack.png"
+              alt="Tapitas League"
+              width={32}
+              height={32}
+              className="opacity-40"
+              style={{ filter: 'invert(1)' }}
+            />
+            <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-500">
+              Tapitas League
+            </span>
           </div>
-        </footer>
-        {/* DRAWER — Season Summary */}
-          <>
-            {/* Overlay */}
-            {drawerOpen && (
-              <div
-                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-                onClick={() => setDrawerOpen(false)}
-              />
-            )}
 
-            {/* Drawer */}
-            <div
-              className={`fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-[#080f1e] border-l border-white/10 transition-transform duration-300 ${
-                drawerOpen ? 'translate-x-0' : 'translate-x-full'
-              }`}
-            >
-              {/* Header do drawer */}
-              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#080f1e] px-6 py-5">
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
-                    Season Summary
-                  </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    <div className="text-xl font-black text-white">
-                      {selectedSeason} Season
-                    </div>
+          {/* Copyright */}
+          <p className="text-xs font-bold text-slate-600">
+            © {new Date().getFullYear()} Tapitas League · Est. 2014 · All rights reserved.
+          </p>
 
-                    <select
-                      value={selectedSeason}
-                      onChange={(e) => {
-                        setSeasonSummary(null)
-                        setSelectedSeason(e.target.value)
-                      }}
-                      className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-1 text-sm font-bold text-white outline-none"
-                    >
-                      {leagueStats?.allSeasons
-                        ?.slice()
-                        .sort((a, b) => b - a)
-                        .map((season) => (
-                          <option
-                            key={season}
-                            value={season}
-                            className="bg-[#080f1e]"
-                          >
-                            {season}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setDrawerOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white transition-all"
-                >
-                  ✕
-                </button>
+        </div>
+      </footer>
+
+      {/* DRAWER — Season Summary */}
+      <>
+        {/* Overlay */}
+        {drawerOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setDrawerOpen(false)}
+          />
+        )}
+
+        {/* Drawer */}
+        <div
+          className={`fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-[#080f1e] border-l border-white/10 transition-transform duration-300 ${drawerOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+        >
+          {/* Header do drawer */}
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#080f1e] px-6 py-5">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
+                Season Summary
               </div>
+              <div className="flex items-center gap-3 mt-1">
+                <div className="text-xl font-black text-white">
+                  Season {'                 '}
+                  <select
+                    value={selectedSeason}
+                    onChange={(e) => {
+                      setSeasonSummary(null)
+                      setSelectedSeason(e.target.value)
+                    }}
+                    className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-1 text-sm font-bold text-white outline-none"
+                  >
+                    {leagueStats?.allSeasons
+                      ?.slice()
+                      .sort((a, b) => b - a)
+                      .map((season) => (
+                        <option
+                          key={season}
+                          value={season}
+                          className="bg-[#080f1e]"
+                        >
+                          {season}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setDrawerOpen(false)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white transition-all"
+            >
+              ✕
+            </button>
+          </div>
 
-              {/* Conteúdo */}
-              <div className="p-6">
-                {!seasonSummary ? (
-                  <div className="flex items-center justify-center py-20 text-slate-500 font-bold">
-                    Loading...
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-4">
+          {/* Conteúdo */}
+          <div className="p-6">
+            {!seasonSummary ? (
+              <div className="flex items-center justify-center py-20 text-slate-500 font-bold">
+                Loading...
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
 
-                    {/* Campeão */}
-                    {seasonSummary.champion && (
-                      <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
-                        <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
-                        <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
-                        <div className="mt-1 text-sm text-slate-400">
-                          {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
-                          {' • '}
-                          {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Finalista */}
-                    {seasonSummary.finalist && (
-                      <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                        <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 2nd Place</div>
-                        <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
-                        <div className="mt-1 text-sm text-slate-400">
-                          {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
-                          {' • '}
-                          {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Grid de stats */}
-                    <div className="grid grid-cols-2 gap-3">
-                      {seasonSummary.bestRecord && (
-                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🚀 Best Record</div>
-                          <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
-                          <span className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</span>
-                          <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
-                        </div>
-                      )}
-                      {seasonSummary.worstRecord && (
-                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💩 Worst Record</div>
-                          <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
-                          <span className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</span>
-                          <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
-                        </div>
-                      )}
-                      {seasonSummary.highestScorer && (
-                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💯 Top Scorer</div>
-                          <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
-                          <span className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
-                          <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
-                        </div>
-                      )}
-                      {seasonSummary.lowestScorer && (
-                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😵‍💫 Lowest Scorer</div>
-                          <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
-                          <span className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</span>
-                          <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
-                        </div>
-                      )}
+                {/* Campeão */}
+                {seasonSummary.champion && (
+                  <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
+                    <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
+                    <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
+                    <div className="mt-1 text-sm text-slate-400">
+                      {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
+                      {' • '}
+                      {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
                     </div>
-
-                    {/* Unicórnio */}
-                    {seasonSummary.unicorn && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
-                        <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
-                        <div className="text-sm text-slate-400">
-                          {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Jogos notáveis */}
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-2">Notable Games</div>
-
-                    {seasonSummary.highestGame && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🔥 Highest Score</div>
-                        <div className="text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
-                        <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
-                        <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · W{seasonSummary.highestGame.week}</div>
-                      </div>
-                    )}
-
-                    {seasonSummary.closestGame && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
-                        <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
-                        <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
-                        <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · W{seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
-                      </div>
-                    )}
-
-                    {seasonSummary.biggestWin && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
-                        <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
-                        <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
-                        <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · W{seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
-                      </div>
-                    )}
-
-                    {seasonSummary.lowestGame && (
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Lowest Score</div>
-                        <div className="text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
-                        <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
-                        <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · W{seasonSummary.lowestGame.week}</div>
-                      </div>
-                    )}
-
                   </div>
                 )}
+
+                {/* Finalista */}
+                {seasonSummary.finalist && (
+                  <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                    <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 2nd Place</div>
+                    <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
+                    <div className="mt-1 text-sm text-slate-400">
+                      {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
+                      {' • '}
+                      {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
+                    </div>
+                  </div>
+                )}
+
+                {/* Grid de stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  {seasonSummary.bestRecord && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🚀 Best Record</div>
+                      <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
+                      <span className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</span>
+                      <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
+                    </div>
+                  )}
+                  {seasonSummary.worstRecord && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💩 Worst Record</div>
+                      <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
+                      <span className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</span>
+                      <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
+                    </div>
+                  )}
+                  {seasonSummary.highestScorer && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💯 Top Scorer</div>
+                      <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
+                      <span className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
+                      <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
+                    </div>
+                  )}
+                  {seasonSummary.lowestScorer && (
+                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😵‍💫 Lowest Scorer</div>
+                      <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
+                      <span className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</span>
+                      <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Unicórnio */}
+                {seasonSummary.unicorn && (
+                  <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                    <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
+                    <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
+                    <div className="text-sm text-slate-400">
+                      {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
+                    </div>
+                  </div>
+                )}
+
+                {/* Jogos notáveis */}
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-2">Notable Games</div>
+
+                {seasonSummary.highestGame && (
+                  <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🔥 Highest Score</div>
+                    <div className="text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
+                    <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · W{seasonSummary.highestGame.week}</div>
+                  </div>
+                )}
+
+                {seasonSummary.closestGame && (
+                  <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
+                    <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
+                    <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · W{seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
+                  </div>
+                )}
+
+                {seasonSummary.biggestWin && (
+                  <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
+                    <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
+                    <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · W{seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
+                  </div>
+                )}
+
+                {seasonSummary.lowestGame && (
+                  <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Lowest Score</div>
+                    <div className="text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
+                    <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · W{seasonSummary.lowestGame.week}</div>
+                  </div>
+                )}
+
               </div>
-            </div>
-          </>
+            )}
+          </div>
+        </div>
+      </>
     </main>
   )
 }
