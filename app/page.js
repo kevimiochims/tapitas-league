@@ -1328,14 +1328,17 @@ export default function TapitasLeagueHomepage() {
                 </span>
               </h1>
 
-              {/* Texto */}
-              <p className="mx-0 mb-6 max-w-md md:max-w-lg text-sm sm:text-base font-medium leading-relaxed text-slate-400">
-                All the stats. All the moments. All the rivalry.
-                <br />
-                <span className="text-slate-500">
+              <div className="mx-0 mb-5 md:mb-6 text-slate-400">
+
+                <p className="text-[9px] sm:text-xs md:text-sm font-medium leading-tight whitespace-nowrap">
+                  All the stats. All the moments. All the rivalry.
+                </p>
+
+                <p className="text-[8px] sm:text-[11px] md:text-sm text-slate-500 leading-tight">
                   Explore the history that built the league.
-                </span>
-              </p>
+                </p>
+
+              </div>
 
               {/* Botões */}
               <div className="flex flex-row items-start gap-1.5 md:gap-3">
