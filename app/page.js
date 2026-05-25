@@ -1288,14 +1288,14 @@ export default function TapitasLeagueHomepage() {
                 className="mb-2 leading-[0.9]"
                 style={{
                   fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: 'clamp(72px, 9vw, 120px)',
+                  fontSize: 'clamp(104px, 9vw, 140px)',
                   letterSpacing: '0.02em',
                 }}
               >
                 <span
                   style={{
                     display: 'block',
-                    fontSize: 'clamp(64px, 9vw, 120px)',
+                    fontSize: 'clamp(98px, 9vw, 140px)',
                     background:
                       'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                     WebkitBackgroundClip: 'text',
