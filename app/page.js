@@ -189,24 +189,21 @@ const ChampionCard = memo (function ChampionCard({ champ, index, isOpen, onToggl
     <motion.div
       initial={{
         opacity: 0,
-        y: 50,
+        y: 30,
       }}
-      whileInView={{
+      animate={{
         opacity: 1,
         y: 0,
       }}
-      viewport={{
-        once: false,
-        amount: 0.15,
-      }}
       transition={{
-        duration: 0.8,
-        ease: [0.22, 1, 0.36, 1],
+        duration: 0.45,
+        ease: 'easeOut',
       }}
-      className={`relative overflow-hidden rounded-[28px] border transition-all duration-200 ${isOpen
-        ? 'border-cyan-400/30'
-        : 'border-white/5 hover:border-white/10'
-        } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
+      className={`mb-4 break-inside-avoid relative overflow-hidden rounded-[28px] border transition-all duration-200 ${
+        isOpen
+          ? 'border-cyan-400/30'
+          : 'border-white/5 hover:border-white/10'
+      } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
       {/* Badge Reigning — sobreposto no canto superior direito */}
       {index === 0 && (
@@ -348,7 +345,7 @@ function ChampionsWall({ champions }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3 items-start">
+          <div className="columns-1 gap-4 p-6 md:columns-2 xl:columns-3">
           {champions.map((champ, index) => (
             <ChampionCard
               key={champ.season}
