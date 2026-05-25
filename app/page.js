@@ -1288,14 +1288,14 @@ export default function TapitasLeagueHomepage() {
                 className="mb-2 leading-[0.9]"
                 style={{
                   fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: 'clamp(104px, 9vw, 140px)',
+                  fontSize: 'clamp(96px, 9vw, 140px)',
                   letterSpacing: '0.02em',
                 }}
               >
                 <span
                   style={{
                     display: 'block',
-                    fontSize: 'clamp(72px, 9vw, 140px)',
+                    fontSize: 'clamp(64px, 9vw, 140px)',
                     background:
                       'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                     WebkitBackgroundClip: 'text',
@@ -1363,7 +1363,7 @@ export default function TapitasLeagueHomepage() {
 
 {/* Logo */}
 <div
-  className="hidden md:flex relative flex-shrink-0 items-center justify-center"
+  className="hidden [@media(min-width:320px)]:flex relative flex-shrink-0 items-center justify-center"
   style={{
     animation: 'heroFloat 5s ease-in-out infinite',
   }}
@@ -1375,8 +1375,8 @@ export default function TapitasLeagueHomepage() {
     height={580}
     priority
     style={{
-      width: 'clamp(100px, 24vw, 580px)',
-      height: 'clamp(140px, 24vw, 580px)',
+      width: 'clamp(200px, 24vw, 580px)',
+      height: 'clamp(200px, 24vw, 580px)',
       objectFit: 'contain',
     }}
   />
