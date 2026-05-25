@@ -5,7 +5,7 @@ import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
   Swords, Stars, Activity, Radar, Target, Medal
 } from 'lucide-react'
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 
 
@@ -180,7 +180,7 @@ function GameRow({ game }) {
   )
 }
 
-function ChampionCard({ champ, index, isOpen, onToggle }) {
+const ChampionCard = memo (function ChampionCard({ champ, index, isOpen, onToggle }) {
   const half = Math.ceil(champ.regGames.length / 2)
   const regCol1 = champ.regGames.slice(0, half)
   const regCol2 = champ.regGames.slice(half)
@@ -190,12 +190,10 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
       initial={{
         opacity: 0,
         y: 50,
-        filter: 'blur(10px)',
       }}
       whileInView={{
         opacity: 1,
         y: 0,
-        filter: 'blur(0px)',
       }}
       viewport={{
         once: false,
@@ -292,7 +290,9 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
       )}
     </motion.div>
   )
-}
+})
+
+
 
 function ChampionsWall({ champions }) {
   const [openSet, setOpenSet] = useState(new Set())
