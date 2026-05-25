@@ -1433,14 +1433,7 @@ export default function TapitasLeagueHomepage() {
       {/* ===== Tudo entre o Hero e o Footer ===== */}
       <section className="relative z-10 mx-auto max-w-[1680px] px-3 pb-12 pt-8">
 
-        <div className="relative my-20 flex items-center justify-center">
-
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
-
-        </div>
-
         {/* ===== 4 Cards com Estatisticas ===== */}
-
         <motion.div
           initial={{
             opacity: 0,
@@ -1510,22 +1503,10 @@ export default function TapitasLeagueHomepage() {
           </div>
         </motion.div>
 
-        <div className="relative my-20 flex items-center justify-center">
-
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
-
-        </div>
-
         {/* ===== CHAMPIONS WALL ===== */}
         {championsData.length > 0 && (
           <ChampionsWall champions={championsData} />
         )}
-
-        <div className="relative my-20 flex items-center justify-center">
-
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
-
-        </div>
 
         {/* RIVALRY SPOTLIGHT e Franchise Leaders*/}
         <div className="flex flex-col gap-8 xl:flex-row">
@@ -1645,12 +1626,6 @@ export default function TapitasLeagueHomepage() {
 
             </motion.div>
           </div>
-
-          <div className="relative my-20 flex items-center justify-center">
-
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
-
-        </div>
 
           {/* FRANCHISE LEADERS */}
           <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
