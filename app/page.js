@@ -1330,7 +1330,7 @@ export default function TapitasLeagueHomepage() {
 
              <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
 
-              <p className="text-[11x] sm:text-xs md:text-base font-medium leading-tight whitespace-nowrap">
+              <p className="text-[11px] sm:text-[11px] md:text-base font-medium leading-tight whitespace-nowrap">
                 All the stats. All the moments. All the rivalry.
               </p>
 
