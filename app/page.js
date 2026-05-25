@@ -1371,12 +1371,12 @@ export default function TapitasLeagueHomepage() {
   <Image
     src="/images/LogoFinalBlack.png"
     alt="Tapitas League Logo"
-    width={580}
-    height={580}
+    width={700}
+    height={700}
     priority
     style={{
-      width: 'clamp(200px, 24vw, 580px)',
-      height: 'clamp(200px, 24vw, 580px)',
+      width: 'clamp(210px, 28vw, 700px )',
+      height: 'clamp(210px, 28vw, 700px)',
       objectFit: 'contain',
     }}
   />
