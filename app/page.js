@@ -1288,7 +1288,7 @@ export default function TapitasLeagueHomepage() {
                 className="mb-2 leading-[0.9]"
                 style={{
                   fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: 'clamp(36px, 9vw, 120px)',
+                  fontSize: 'clamp(48px, 9vw, 120px)',
                   letterSpacing: '0.02em',
                 }}
               >
@@ -1330,11 +1330,11 @@ export default function TapitasLeagueHomepage() {
 
              <div className="mx-0 mb-5 md:mb-6 text-slate-400">
 
-              <p className="text-[10px] sm:text-xs md:text-base font-medium leading-tight whitespace-nowrap">
+              <p className="text-[11px] sm:text-xs md:text-base font-medium leading-tight whitespace-nowrap">
                 All the stats. All the moments. All the rivalry.
               </p>
 
-              <p className="text-[9px] sm:text-[11px] md:text-sm text-slate-500 leading-tight">
+              <p className="text-[11px] sm:text-[11px] md:text-sm text-slate-500 leading-tight">
                 Explore the history that built the league.
               </p>
 
