@@ -6,6 +6,7 @@ import {
   Swords, Stars, Activity, Radar, Target, Medal
 } from 'lucide-react'
 import { useEffect, useMemo, useState, useRef } from 'react'
+import { motion } from 'framer-motion'
 
 
 const FALLBACK_TEAMS = [
@@ -185,7 +186,25 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
   const regCol2 = champ.regGames.slice(half)
 
   return (
-    <div
+    <motion.div
+      initial={{
+        opacity: 0,
+        y: 50,
+        filter: 'blur(10px)',
+      }}
+      whileInView={{
+        opacity: 1,
+        y: 0,
+        filter: 'blur(0px)',
+      }}
+      viewport={{
+        once: true,
+        amount: 0.15,
+      }}
+      transition={{
+        duration: 0.8,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       className={`relative overflow-hidden rounded-[28px] border transition-all duration-200 ${isOpen
         ? 'border-cyan-400/30'
         : 'border-white/5 hover:border-white/10'
@@ -271,7 +290,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }
 
@@ -292,7 +311,26 @@ function ChampionsWall({ champions }) {
 
   return (
     <section className="mt-8 mb-8">
-      <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+      <motion.div
+        initial={{
+          opacity: 0,
+          y: 50,
+          filter: 'blur(10px)',
+        }}
+        whileInView={{
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+        }}
+        viewport={{
+          once: true,
+          amount: 0.15,
+        }}
+        transition={{
+          duration: 0.8,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+      className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
         <div className="flex items-center justify-between border-b border-white/5 px-8 py-6">
           <div className="flex items-center gap-3">
@@ -322,7 +360,7 @@ function ChampionsWall({ champions }) {
           ))}
         </div>
 
-      </div>
+      </motion.div>
     </section>
   )
 }
@@ -1148,9 +1186,9 @@ export default function TapitasLeagueHomepage() {
           <div className="absolute inset-0 overflow-hidden rounded-[28px] md:rounded-[38px] pointer-events-none">
 
             <svg
-              className="absolute inset-0 h-full w-full"
+              className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
+              preserveAspectRatio="xMidYMid slice"
               viewBox="0 0 900 340"
-              preserveAspectRatio="xMidYMid meet"
               xmlns="http://www.w3.org/2000/svg"
               aria-hidden="true"
             >
@@ -1395,8 +1433,34 @@ export default function TapitasLeagueHomepage() {
       {/* ===== Tudo entre o Hero e o Footer ===== */}
       <section className="relative z-10 mx-auto max-w-[1680px] px-3 pb-12 pt-8">
 
+        <div className="relative my-20 flex items-center justify-center">
+
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
+
+        </div>
+
         {/* ===== 4 Cards com Estatisticas ===== */}
-        <div className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
+
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 50,
+            filter: 'blur(10px)',
+          }}
+          whileInView={{
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px)',
+          }}
+          viewport={{
+            once: true,
+            amount: 0.15,
+          }}
+          transition={{
+            duration: 0.8,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+        className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
           {/* Franchises */}
           <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
@@ -1422,6 +1486,7 @@ export default function TapitasLeagueHomepage() {
             </div>
           </div>
 
+
           {/* Games */}
           <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
@@ -1443,6 +1508,12 @@ export default function TapitasLeagueHomepage() {
             <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.highestScore}</div>
             <div className="truncate text-sm font-bold text-cyan-300">{leagueStats.highestScoreTeam}</div>
           </div>
+        </motion.div>
+
+        <div className="relative my-20 flex items-center justify-center">
+
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
+
         </div>
 
         {/* ===== CHAMPIONS WALL ===== */}
@@ -1450,12 +1521,38 @@ export default function TapitasLeagueHomepage() {
           <ChampionsWall champions={championsData} />
         )}
 
+        <div className="relative my-20 flex items-center justify-center">
+
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
+
+        </div>
+
         {/* RIVALRY SPOTLIGHT e Franchise Leaders*/}
         <div className="flex flex-col gap-8 xl:flex-row">
 
+
           {/* RIVALRY SPOTLIGHT */}
           <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[1.15]">
-            <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: 50,
+                filter: 'blur(10px)',
+              }}
+              whileInView={{
+                opacity: 1,
+                y: 0,
+                filter: 'blur(0px)',
+              }}
+              viewport={{
+                once: true,
+                amount: 0.15,
+              }}
+              transition={{
+                duration: 0.8,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
 
               {/* Header */}
               <div className="mb-8 flex items-center justify-between gap-4">
@@ -1546,12 +1643,37 @@ export default function TapitasLeagueHomepage() {
                 </div>
               )}
 
-            </div>
+            </motion.div>
           </div>
+
+          <div className="relative my-20 flex items-center justify-center">
+
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
+
+        </div>
 
           {/* FRANCHISE LEADERS */}
           <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
-            <div className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: 50,
+                filter: 'blur(10px)',
+              }}
+              whileInView={{
+                opacity: 1,
+                y: 0,
+                filter: 'blur(0px)',
+              }}
+              viewport={{
+                once: true,
+                amount: 0.15,
+              }}
+              transition={{
+                duration: 0.8,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
 
               {/* Header */}
               <div className="mb-8 flex items-center justify-between gap-4">
@@ -1732,7 +1854,7 @@ export default function TapitasLeagueHomepage() {
                   })}
               </div>
 
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
