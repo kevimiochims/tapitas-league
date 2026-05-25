@@ -1295,6 +1295,7 @@ export default function TapitasLeagueHomepage() {
                 <span
                   style={{
                     display: 'block',
+                    fontSize: 'clamp(58px, 9vw, 120px)',
                     background:
                       'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                     WebkitBackgroundClip: 'text',
