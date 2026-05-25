@@ -1375,8 +1375,8 @@ export default function TapitasLeagueHomepage() {
     height={700}
     priority
     style={{
-      width: 'clamp(210px, 28vw, 700px )',
-      height: 'clamp(210px, 28vw, 700px)',
+      width: 'clamp(210px, 24vw, 700px )',
+      height: 'clamp(210px, 24vw, 700px)',
       objectFit: 'contain',
     }}
   />
