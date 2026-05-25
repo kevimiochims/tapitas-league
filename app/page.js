@@ -1288,7 +1288,7 @@ export default function TapitasLeagueHomepage() {
                 className="mb-2 leading-[0.9]"
                 style={{
                   fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: 'clamp(48px, 9vw, 120px)',
+                  fontSize: 'clamp(42px, 9vw, 120px)',
                   letterSpacing: '0.02em',
                 }}
               >
