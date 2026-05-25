@@ -198,7 +198,7 @@ function ChampionCard({ champ, index, isOpen, onToggle }) {
         filter: 'blur(0px)',
       }}
       viewport={{
-        once: true,
+        once: false,
         amount: 0.15,
       }}
       transition={{
@@ -323,7 +323,7 @@ function ChampionsWall({ champions }) {
           filter: 'blur(0px)',
         }}
         viewport={{
-          once: true,
+          once: false,
           amount: 0.15,
         }}
         transition={{
@@ -1446,7 +1446,7 @@ export default function TapitasLeagueHomepage() {
             filter: 'blur(0px)',
           }}
           viewport={{
-            once: true,
+            once: false,
             amount: 0.15,
           }}
           transition={{
@@ -1526,7 +1526,7 @@ export default function TapitasLeagueHomepage() {
                 filter: 'blur(0px)',
               }}
               viewport={{
-                once: true,
+                once: false,
                 amount: 0.15,
               }}
               transition={{
@@ -1641,7 +1641,7 @@ export default function TapitasLeagueHomepage() {
                 filter: 'blur(0px)',
               }}
               viewport={{
-                once: true,
+                once: false,
                 amount: 0.15,
               }}
               transition={{
