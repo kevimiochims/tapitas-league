@@ -1288,14 +1288,14 @@ export default function TapitasLeagueHomepage() {
                 className="mb-2 leading-[0.9]"
                 style={{
                   fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: 'clamp(64px, 9vw, 120px)',
+                  fontSize: 'clamp(72px, 9vw, 120px)',
                   letterSpacing: '0.02em',
                 }}
               >
                 <span
                   style={{
                     display: 'block',
-                    fontSize: 'clamp(58px, 9vw, 120px)',
+                    fontSize: 'clamp(64px, 9vw, 120px)',
                     background:
                       'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                     WebkitBackgroundClip: 'text',
@@ -1361,26 +1361,26 @@ export default function TapitasLeagueHomepage() {
               </div>
             </div>
 
-            {/* Logo */}
-            <div
-              className="relative flex-shrink-0 flex items-center justify-center"
-              style={{
-                animation: 'heroFloat 5s ease-in-out infinite',
-              }}
-            >
-              <Image
-                src="/images/LogoFinalBlack.png"
-                alt="Tapitas League Logo"
-                width={580}
-                height={580}
-                priority
-                style={{
-                  width: 'clamp(100px, 24vw, 580px)',
-                  height: 'clamp(140px, 24vw, 580px)',
-                  objectFit: 'contain',
-                }}
-              />
-            </div>
+{/* Logo */}
+<div
+  className="hidden md:flex relative flex-shrink-0 items-center justify-center"
+  style={{
+    animation: 'heroFloat 5s ease-in-out infinite',
+  }}
+>
+  <Image
+    src="/images/LogoFinalBlack.png"
+    alt="Tapitas League Logo"
+    width={580}
+    height={580}
+    priority
+    style={{
+      width: 'clamp(100px, 24vw, 580px)',
+      height: 'clamp(140px, 24vw, 580px)',
+      objectFit: 'contain',
+    }}
+  />
+</div>
 
           </div>
         </div>
