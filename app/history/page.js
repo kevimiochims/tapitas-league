@@ -772,8 +772,7 @@ export default function HistoryPage() {
                                   {/* UNICORN */}
                                   <div className="rounded-3xl border border-pink-400/15 bg-pink-400/5 p-5">
                                     <div className="mb-4 flex items-center gap-2">
-                                      <Skull className="h-4 w-4 text-pink-300" />
-
+                                      🦄
                                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-pink-300">
                                         Unicorn
                                       </span>
