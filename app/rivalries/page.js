@@ -22,21 +22,21 @@ UTILS
 ===================================================== */
 
 function parseNumber(value) {
-if (
-value === null ||
-value === undefined ||
-value === ''
-)
-return 0
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+    return 0
+  }
 
-const cleaned = String(value)
-.replace(/./g, '')
-.replace(',', '.')
-.replace(/[^0-9.-]/g, '')
+  const text = String(value)
+    .replace(',', '.')
+    .trim()
 
-const parsed = Number(cleaned)
+  const parsed = parseFloat(text)
 
-return Number.isNaN(parsed) ? 0 : parsed
+  return Number.isNaN(parsed) ? 0 : parsed
 }
 
 function normalizeString(value) {
@@ -402,21 +402,13 @@ HISTORY
 ===================================================== */
 
 const history = useMemo(() => {
-if (!selected) return []
+  if (!selected) return []
 
-
-const seen = new Set()
-
-return gamesData
-  .filter((g) => {
-    const team = normalizeString(g?.Team || '')
-
-    const opp = normalizeString(
-      g?.Opponent || ''
-    )
+  const games = gamesData.filter((g) => {
+    const team = normalizeString(g.Team)
+    const opp = normalizeString(g.Opponent)
 
     const a = normalizeString(selected.teamA)
-
     const b = normalizeString(selected.teamB)
 
     return (
@@ -424,51 +416,58 @@ return gamesData
       (team === b && opp === a)
     )
   })
-  .filter((g) => {
-    const key = [
-      g?.Season,
-      g?.Week,
-      g?.Team,
-      g?.Opponent
+
+  const uniqueGames = []
+
+  const seen = new Set()
+
+  games.forEach((g) => {
+    const season = String(g.Season || '')
+    const week = String(g.Week || '')
+
+    const teams = [
+      normalizeString(g.Team),
+      normalizeString(g.Opponent)
     ]
       .sort()
       .join('|')
 
-    if (seen.has(key)) return false
+    const key = `${season}-${week}-${teams}`
+
+    if (seen.has(key)) return
 
     seen.add(key)
 
-    return true
+    uniqueGames.push({
+      season,
+
+      week,
+
+      team: String(g.Team || ''),
+
+      opponent: String(g.Opponent || ''),
+
+      pf: parseNumber(g.PF),
+
+      pa: parseNumber(g.PA),
+
+      result: String(g.Result || '')
+        .trim()
+        .toUpperCase(),
+
+      stage:
+        String(g.GameStage || '') ||
+        String(g.GameType || '')
+    })
   })
-  .map((g) => ({
-    season: String(g?.Season || ''),
 
-    week: String(g?.Week || ''),
-
-    team: String(g?.Team || ''),
-
-    opponent: String(g?.Opponent || ''),
-
-    pf: parseNumber(g?.PF || 0),
-
-    pa: parseNumber(g?.PA || 0),
-
-    result: String(g?.Result || '')
-      .trim()
-      .toUpperCase(),
-
-    stage: String(
-      g?.GameType || g?.GameStage || ''
-    ).trim()
-  }))
-  .sort((a, b) => {
-    if (a.season !== b.season)
+  return uniqueGames.sort((a, b) => {
+    if (a.season !== b.season) {
       return Number(b.season) - Number(a.season)
+    }
 
     return Number(b.week) - Number(a.week)
   })
-
-
 }, [selected, gamesData])
 
 /* =====================================================
