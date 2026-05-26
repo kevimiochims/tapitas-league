@@ -1,487 +1,1162 @@
 'use client'
 
-import Image from 'next/image'
-import { useEffect, useState, useMemo, useRef } from 'react'
-import { Swords, Flame, Trophy, Target, Activity, ChevronRight, Radar, Stars } from 'lucide-react'
+/*
 
-const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
+TAPITAS LEAGUE — RIVALRIES V3
+Cinematic + Responsive + Real UX
+================================
+
+MELHORIAS:
+✓ mobile-first
+✓ filtros reais
+✓ search
+✓ timeline responsiva
+✓ parsing resiliente
+✓ hero cinematográfico
+✓ cards editoriais
+✓ dados seguros
+✓ sections respiráveis
+✓ sticky filters
+✓ layout ESPN/Bleacher style
+
+*/
+
+import Image from 'next/image'
+import { useEffect, useMemo, useState } from 'react'
+
+import {
+Activity,
+ChevronDown,
+Flame,
+Search,
+Shield,
+Swords,
+Trophy,
+Stars
+} from 'lucide-react'
+
+const SHEET_ID =
+'1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
+
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
+/* =====================================================
+UTILS
+===================================================== */
+
 function parseNumber(value) {
-  if (value === null || value === undefined || value === '') return 0
-  const cleaned = String(value).replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '')
-  const parsed = Number(cleaned)
-  return Number.isNaN(parsed) ? 0 : parsed
+if (
+value === null ||
+value === undefined ||
+value === ''
+)
+return 0
+
+const cleaned = String(value)
+.replace(/./g, '')
+.replace(',', '.')
+.replace(/[^0-9.-]/g, '')
+
+const parsed = Number(cleaned)
+
+return Number.isNaN(parsed) ? 0 : parsed
 }
 
 function normalizeString(value) {
-  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+return String(value || '')
+.normalize('NFD')
+.replace(/[\u0300-\u036f]/g, '')
+.toLowerCase()
+.trim()
 }
 
 async function safeFetch(url) {
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return []
-    const json = await res.json()
-    return Array.isArray(json) ? json : []
-  } catch { return [] }
+try {
+const res = await fetch(url)
+
+
+if (!res.ok) return []
+
+const json = await res.json()
+
+return Array.isArray(json) ? json : []
+
+
+} catch {
+return []
+}
 }
 
-function getRivalryHeat(games, aWins, bWins, avgMargin) {
-  const totalGames = parseNumber(games)
-  const winsA = parseNumber(aWins)
-  const winsB = parseNumber(bWins)
-  const recordGap = Math.abs(winsA - winsB)
-  const margin = Math.abs(parseFloat(String(avgMargin).replace(',', '.')) || 0)
-  let score = 0
-  if (recordGap === 0) score += 7
-  else if (recordGap === 1) score += 5
-  else if (recordGap === 2) score += 3
-  else if (recordGap === 3) score += 1
-  else score -= 3
-  if (totalGames >= 14) score += 5
-  else if (totalGames >= 10) score += 4
-  else if (totalGames >= 6) score += 2
-  if (margin <= 3) score += 5
-  else if (margin <= 7) score += 3
-  else if (margin <= 12) score += 1
-  if (score >= 13) return { label: 'Legendary', color: 'text-yellow-400 border-yellow-400/20 bg-yellow-400/10' }
-  if (score >= 10) return { label: 'Elite',     color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' }
-  if (score >= 7)  return { label: 'High',      color: 'text-cyan-400 border-cyan-400/20 bg-cyan-400/10' }
-  if (score >= 4)  return { label: 'Medium',    color: 'text-slate-300 border-slate-300/20 bg-slate-300/10' }
-  return { label: 'Low', color: 'text-slate-500 border-slate-500/20 bg-slate-500/10' }
+function getRivalryHeat(
+games,
+aWins,
+bWins,
+avgMargin
+) {
+const totalGames = parseNumber(games)
+
+const winsA = parseNumber(aWins)
+
+const winsB = parseNumber(bWins)
+
+const recordGap = Math.abs(winsA - winsB)
+
+const margin =
+Math.abs(parseFloat(String(avgMargin).replace(',', '.')) || 0)
+
+let score = 0
+
+if (recordGap === 0) score += 7
+else if (recordGap === 1) score += 5
+else if (recordGap === 2) score += 3
+else if (recordGap === 3) score += 1
+else score -= 3
+
+if (totalGames >= 14) score += 5
+else if (totalGames >= 10) score += 4
+else if (totalGames >= 6) score += 2
+
+if (margin <= 3) score += 5
+else if (margin <= 7) score += 3
+else if (margin <= 12) score += 1
+
+if (score >= 13) return 'LEGENDARY'
+
+if (score >= 10) return 'ELITE'
+
+if (score >= 7) return 'HIGH'
+
+if (score >= 4) return 'MEDIUM'
+
+return 'LOW'
 }
 
-// Dropdown customizado
-function Select({ value, onChange, options, placeholder }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useEffect(() => {
-    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(p => !p)}
-        className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 text-sm font-bold transition-all w-full ${
-          open ? 'border-cyan-400/40 bg-white/[0.07] text-white' : 'border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07]'
-        }`}
+/* =====================================================
+ROBUST PARSERS
+===================================================== */
+
+function parseStreak(streak) {
+if (!streak || streak === '—') return null
+
+const text = String(streak)
+
+const streakMatch = text.match(/([WL])(\d+)/i)
+
+const weeks = text.match(
+/(\d{4}\sW\d+).*?(\d{4}\sW\d+)/i
+)
+
+return {
+raw: text,
+
+
+result: streakMatch?.[1] || '',
+
+count: streakMatch?.[2] || '',
+
+start: weeks?.[1]
+  ? weeks[1].replace(/W(\d+)/, 'Week $1')
+  : '',
+
+end: weeks?.[2]
+  ? weeks[2].replace(/W(\d+)/, 'Week $1')
+  : ''
+
+
+}
+}
+
+function parseBiggestWin(value) {
+if (!value || value === '—') return null
+
+const text = String(value)
+
+const scores = text.match(
+/(\d+.?\d*)\s*[-–]\s*(\d+.?\d*)/
+)
+
+const week = text.match(/((.*?))/)
+
+return {
+raw: text,
+
+
+scoreA: scores?.[1] || '0',
+
+scoreB: scores?.[2] || '0',
+
+info: week?.[1]
+  ? week[1].replace(/W(\d+)/, 'Week $1')
+  : ''
+
+
+}
+}
+
+/* =====================================================
+BADGES
+===================================================== */
+
+function HeatBadge({ heat }) {
+const colors = {
+LEGENDARY:
+'bg-yellow-400/15 text-yellow-300 border-yellow-400/20',
+
+
+ELITE:
+  'bg-orange-400/15 text-orange-300 border-orange-400/20',
+
+HIGH:
+  'bg-cyan-400/15 text-cyan-300 border-cyan-400/20',
+
+MEDIUM:
+  'bg-slate-400/15 text-slate-300 border-slate-400/20',
+
+LOW:
+  'bg-slate-700/20 text-slate-500 border-slate-700/20'
+
+
+}
+
+return (
+<div
+className={`rounded-full border px-3 py-1.5 text-[10px] font-black tracking-[0.3em] ${colors[heat]}`}
+>
+{heat} </div>
+)
+}
+
+/* =====================================================
+PAGE
+===================================================== */
+
+export default function RivalriesPage() {
+const [h2hData, setH2hData] = useState([])
+
+const [gamesData, setGamesData] = useState([])
+
+const [loading, setLoading] = useState(true)
+
+const [selected, setSelected] = useState(null)
+
+const [search, setSearch] = useState('')
+
+const [filterHeat, setFilterHeat] =
+useState('ALL')
+
+const [mobileSidebar, setMobileSidebar] =
+useState(false)
+
+/* =====================================================
+LOAD
+===================================================== */
+
+useEffect(() => {
+async function load() {
+const [h2h, games] = await Promise.all([
+safeFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
+
+
+    safeFetch(`${BASE_URL}/GAME_FACTS_ALL`)
+  ])
+
+  setH2hData(h2h)
+
+  setGamesData(games)
+
+  setLoading(false)
+}
+
+load()
+
+
+}, [])
+
+/* =====================================================
+RIVALRIES
+===================================================== */
+
+const rivalries = useMemo(() => {
+const seen = new Set()
+
+
+const result = []
+
+h2hData.forEach((r) => {
+  const a = String(r?.['Team A'] || '').trim()
+
+  const b = String(r?.['Team B'] || '').trim()
+
+  if (!a || !b) return
+
+  const key = [normalizeString(a), normalizeString(b)]
+    .sort()
+    .join('|')
+
+  if (seen.has(key)) return
+
+  seen.add(key)
+
+  const heat = getRivalryHeat(
+    r?.Games,
+    r?.['A Wins'],
+    r?.['B Wins'],
+    r?.['Avg Margin']
+  )
+
+  result.push({
+    teamA: a,
+
+    teamB: b,
+
+    games: parseNumber(r?.Games),
+
+    aWins: parseNumber(r?.['A Wins']),
+
+    bWins: parseNumber(r?.['B Wins']),
+
+    avgMargin: String(r?.['Avg Margin'] || '0'),
+
+    aPoW: parseNumber(r?.['A PO_W']),
+
+    bPoW: parseNumber(r?.['B PO_W']),
+
+    aRsW: parseNumber(r?.['A RS_W']),
+
+    bRsW: parseNumber(r?.['B RS_W']),
+
+    streak: String(
+      r?.['Current Streak'] || '—'
+    ),
+
+    biggestA: String(
+      r?.['Biggest Win Team A'] || '—'
+    ),
+
+    biggestB: String(
+      r?.['Biggest Win Team B'] || '—'
+    ),
+
+    bestA: String(
+      r?.['Best Streak Team A'] || '—'
+    ),
+
+    bestB: String(
+      r?.['Best Streak Team B'] || '—'
+    ),
+
+    heat
+  })
+})
+
+return result
+  .filter((r) => {
+    const text =
+      `${r.teamA} ${r.teamB}`.toLowerCase()
+
+    const matchesSearch =
+      !search ||
+      text.includes(search.toLowerCase())
+
+    const matchesHeat =
+      filterHeat === 'ALL' ||
+      r.heat === filterHeat
+
+    return matchesSearch && matchesHeat
+  })
+  .sort((a, b) => b.games - a.games)
+
+
+}, [h2hData, search, filterHeat])
+
+/* =====================================================
+HISTORY
+===================================================== */
+
+const history = useMemo(() => {
+if (!selected) return []
+
+
+const seen = new Set()
+
+return gamesData
+  .filter((g) => {
+    const team = normalizeString(g?.Team || '')
+
+    const opp = normalizeString(
+      g?.Opponent || ''
+    )
+
+    const a = normalizeString(selected.teamA)
+
+    const b = normalizeString(selected.teamB)
+
+    return (
+      (team === a && opp === b) ||
+      (team === b && opp === a)
+    )
+  })
+  .filter((g) => {
+    const key = [
+      g?.Season,
+      g?.Week,
+      g?.Team,
+      g?.Opponent
+    ]
+      .sort()
+      .join('|')
+
+    if (seen.has(key)) return false
+
+    seen.add(key)
+
+    return true
+  })
+  .map((g) => ({
+    season: String(g?.Season || ''),
+
+    week: String(g?.Week || ''),
+
+    team: String(g?.Team || ''),
+
+    opponent: String(g?.Opponent || ''),
+
+    pf: parseNumber(g?.PF || 0),
+
+    pa: parseNumber(g?.PA || 0),
+
+    result: String(g?.Result || '')
+      .trim()
+      .toUpperCase(),
+
+    stage: String(
+      g?.GameType || g?.GameStage || ''
+    ).trim()
+  }))
+  .sort((a, b) => {
+    if (a.season !== b.season)
+      return Number(b.season) - Number(a.season)
+
+    return Number(b.week) - Number(a.week)
+  })
+
+
+}, [selected, gamesData])
+
+/* =====================================================
+PARSED
+===================================================== */
+
+const currentStreak = selected
+? parseStreak(selected.streak)
+: null
+
+const biggestA = selected
+? parseBiggestWin(selected.biggestA)
+: null
+
+const biggestB = selected
+? parseBiggestWin(selected.biggestB)
+: null
+
+/* =====================================================
+RENDER
+===================================================== */
+
+return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+
+    body {
+      background: #020617;
+    }
+  `}</style>
+
+  {/* =====================================================
+  HEADER
+  ===================================================== */}
+
+  <header className="sticky top-0 z-50 border-b border-white/5 bg-[#020617]/90 backdrop-blur-xl">
+    <div className="mx-auto flex max-w-[1700px] items-center justify-between px-4 py-4 md:px-6">
+      <a
+        href="/"
+        className="flex items-center gap-3"
       >
-        <span className={value ? 'text-white' : 'text-slate-500'}>{value || placeholder}</span>
-        <ChevronRight className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
+        <Image
+          src="/images/LogoFinalBlack.png"
+          alt="Tapitas"
+          width={34}
+          height={34}
+          style={{ filter: 'invert(1)' }}
+        />
+
+        <span className="text-base font-black tracking-[-0.04em]">
+          Tapitas
+          <span className="text-cyan-400">
+            League
+          </span>
+        </span>
+      </a>
+
+      <button
+        onClick={() =>
+          setMobileSidebar(!mobileSidebar)
+        }
+        className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-black text-white lg:hidden"
+      >
+        Matchups
       </button>
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1525] shadow-2xl">
-          <div className="max-h-56 overflow-y-auto">
-            {options.map(opt => (
+    </div>
+  </header>
+
+  {/* =====================================================
+  BODY
+  ===================================================== */}
+
+  <section className="mx-auto flex max-w-[1700px] gap-6 px-4 py-6 md:px-6">
+    {/* =====================================================
+    SIDEBAR
+    ===================================================== */}
+
+    <aside
+      className={`
+        fixed inset-y-0 left-0 z-40 w-[88vw] max-w-[380px]
+        transform border-r border-white/10 bg-[#071120]
+        transition-transform duration-300 lg:sticky lg:top-[90px]
+        lg:h-[calc(100vh-120px)] lg:translate-x-0 lg:overflow-hidden
+        ${
+          mobileSidebar
+            ? 'translate-x-0'
+            : '-translate-x-full'
+        }
+      `}
+    >
+      <div className="flex h-full flex-col">
+        {/* FILTERS */}
+        <div className="border-b border-white/5 p-5">
+          <div className="mb-4 text-[11px] font-black uppercase tracking-[0.35em] text-cyan-300">
+            Rivalries
+          </div>
+
+          {/* SEARCH */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+
+            <input
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+              placeholder="Search teams..."
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm outline-none transition-all focus:border-cyan-400/40"
+            />
+          </div>
+
+          {/* HEAT FILTER */}
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {[
+              'ALL',
+              'LEGENDARY',
+              'ELITE',
+              'HIGH',
+              'MEDIUM',
+              'LOW'
+            ].map((heat) => (
               <button
-                key={opt}
-                onClick={() => { onChange(opt); setOpen(false) }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all hover:bg-white/[0.06] ${opt === value ? 'text-cyan-300' : 'text-slate-300'}`}
+                key={heat}
+                onClick={() =>
+                  setFilterHeat(heat)
+                }
+                className={`rounded-xl border px-2 py-2 text-[10px] font-black tracking-[0.15em] transition-all ${
+                  filterHeat === heat
+                    ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-300'
+                    : 'border-white/5 bg-white/[0.03] text-slate-500'
+                }`}
               >
-                {opt === value && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400" />}
-                <span className={opt === value ? '' : 'ml-[14px]'}>{opt}</span>
+                {heat}
               </button>
             ))}
           </div>
         </div>
-      )}
-    </div>
-  )
-}
 
-export default function RivalriesPage() {
-  const [h2hData,   setH2hData]   = useState([])
-  const [gamesData, setGamesData] = useState([])
-  const [loading,   setLoading]   = useState(true)
-  const [filterTeam, setFilterTeam] = useState('')
-  const [selected,  setSelected]  = useState(null)
-  const [sortBy,    setSortBy]    = useState('heat')
+        {/* LIST */}
+        <div className="flex-1 overflow-y-auto">
+          {rivalries.map((r, i) => {
+            const active = selected === r
 
-  useEffect(() => {
-    async function load() {
-      const [h2h, games] = await Promise.all([
-        safeFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
-        safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-      ])
-      setH2hData(h2h)
-      setGamesData(games)
-      setLoading(false)
-    }
-    load()
-  }, [])
-
-  const allTeams = useMemo(() => {
-    const teams = new Set()
-    h2hData.forEach(r => {
-      if (r?.['Team A']) teams.add(String(r['Team A']).trim())
-      if (r?.['Team B']) teams.add(String(r['Team B']).trim())
-    })
-    return Array.from(teams).sort()
-  }, [h2hData])
-
-  // Deduplica — pega só uma linha por par de times
-  const rivalries = useMemo(() => {
-    const seen = new Set()
-    const result = []
-    h2hData.forEach(r => {
-      const a = String(r?.['Team A'] || '').trim()
-      const b = String(r?.['Team B'] || '').trim()
-      if (!a || !b) return
-      const key = [normalizeString(a), normalizeString(b)].sort().join('|')
-      if (seen.has(key)) return
-      seen.add(key)
-
-      const heat = getRivalryHeat(r?.Games, r?.['A Wins'], r?.['B Wins'], r?.['Avg Margin'])
-      const heatScore = heat.label === 'Legendary' ? 5 : heat.label === 'Elite' ? 4 : heat.label === 'High' ? 3 : heat.label === 'Medium' ? 2 : 1
-
-      result.push({
-        teamA:       a,
-        teamB:       b,
-        games:       parseNumber(r?.Games),
-        aWins:       parseNumber(r?.['A Wins']),
-        bWins:       parseNumber(r?.['B Wins']),
-        pfA:         parseNumber(r?.['PF A']),
-        pfB:         parseNumber(r?.['PF B']),
-        avgMargin:   String(r?.['Avg Margin'] || '0'),
-        aRsW:        parseNumber(r?.['A RS_W']),
-        bRsW:        parseNumber(r?.['B RS_W']),
-        aPoW:        parseNumber(r?.['A PO_W']),
-        bPoW:        parseNumber(r?.['B PO_W']),
-        streak:      String(r?.['Current Streak'] || '—'),
-        bestStreakA:  String(r?.['Best Streak Team A'] || '—'),
-        bestStreakB:  String(r?.['Best Streak Team B'] || '—'),
-        lastMatch:   String(r?.['Last Match'] || ''),
-        biggestWinA: String(r?.['Biggest Win Team A'] || '—'),
-        biggestWinB: String(r?.['Biggest Win Team B'] || '—'),
-        heat,
-        heatScore,
-      })
-    })
-
-    // Filtra por time
-    const filtered = filterTeam
-      ? result.filter(r =>
-          normalizeString(r.teamA) === normalizeString(filterTeam) ||
-          normalizeString(r.teamB) === normalizeString(filterTeam)
-        )
-      : result
-
-    // Ordena
-    return filtered.sort((a, b) => {
-      if (sortBy === 'heat')  return b.heatScore - a.heatScore
-      if (sortBy === 'games') return b.games - a.games
-      if (sortBy === 'close') return Math.abs(a.aWins - a.bWins) - Math.abs(b.aWins - b.bWins)
-      return 0
-    })
-  }, [h2hData, filterTeam, sortBy])
-
-  // Histórico jogo a jogo do confronto selecionado
-  const matchHistory = useMemo(() => {
-    if (!selected) return []
-    const seen = new Set()
-    return gamesData
-      .filter(g => {
-        const team = normalizeString(g?.Team || '')
-        const opp  = normalizeString(g?.Opponent || '')
-        const a    = normalizeString(selected.teamA)
-        const b    = normalizeString(selected.teamB)
-        return (team === a && opp === b) || (team === b && opp === a)
-      })
-      .filter(g => {
-        const key = [
-          String(g?.Season || '').trim(),
-          String(g?.Week || '').trim(),
-          normalizeString(g?.Team || ''),
-          normalizeString(g?.Opponent || ''),
-        ].sort().join('|')
-        if (seen.has(key)) return false
-        seen.add(key)
-        return true
-      })
-      .map(g => ({
-        season:   String(g?.Season || '').trim(),
-        week:     String(g?.Week || '').trim(),
-        team:     String(g?.Team || '').trim(),
-        opponent: String(g?.Opponent || '').trim(),
-        pf:       parseNumber(g?.PF || 0),
-        pa:       parseNumber(g?.PA || 0),
-        result:   String(g?.Result || '').trim().toUpperCase(),
-        stage:    String(g?.GameType || g?.GameStage || '').trim(),
-      }))
-      .sort((a, b) => {
-        if (a.season !== b.season) return Number(a.season) - Number(b.season)
-        return parseFloat(a.week) - parseFloat(b.week)
-      })
-  }, [selected, gamesData])
-
-  return (
-    <main className="min-h-screen bg-[#020617] text-white">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
-
-      {/* Header */}
-      <header className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-        <a href="/" className="flex items-center gap-3">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={36} height={36} style={{ filter: 'invert(1)' }} className="opacity-80" />
-          <span className="text-base font-black tracking-[-0.04em]">
-            Tapitas<span className="text-cyan-400">League</span>
-          </span>
-        </a>
-        <nav className="hidden items-center gap-1 md:flex">
-          {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map(item => {
-            const href = item === 'Home' ? '/' : `/${item.toLowerCase()}`
-            const isActive = item === 'Rivalries'
             return (
-              <a key={item} href={href}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${isActive ? 'bg-white/[0.06] text-white' : 'text-slate-400'}`}
-              >{item}</a>
-            )
-          })}
-        </nav>
-      </header>
+              <button
+                key={i}
+                onClick={() => {
+                  setSelected(r)
 
-      <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+                  setMobileSidebar(false)
+                }}
+                className={`w-full border-b border-white/[0.03] px-5 py-5 text-left transition-all ${
+                  active
+                    ? 'bg-cyan-400/[0.05]'
+                    : 'hover:bg-white/[0.03]'
+                }`}
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <HeatBadge heat={r.heat} />
 
-        {/* Hero */}
-        <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)] p-10">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -right-32 -top-32 h-[300px] w-[300px] rounded-full bg-cyan-500/[0.05] blur-[80px]" />
-          </div>
-          <div className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
-            <Swords className="h-4 w-4 text-cyan-300" />
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">Head to Head</span>
-          </div>
-          <h1 className="leading-[0.9] tracking-[-0.02em]"
-            style={{
-              fontFamily: '"Bebas Neue", sans-serif',
-              fontSize: 'clamp(48px, 7vw, 96px)',
-              background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>
-            All{' '}
-            <span style={{
-              background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>Rivalries</span>
-          </h1>
-          <p className="mt-4 max-w-lg text-base text-slate-400">
-            Every matchup. Every grudge. Every chapter of the league's fiercest battles.
-          </p>
-        </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-slate-600 transition-transform ${
+                      active ? 'rotate-180' : ''
+                    }`}
+                  />
+                </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-slate-500 font-bold">Loading...</div>
-        ) : (
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+                <div
+                  style={{
+                    fontFamily:
+                      '"Bebas Neue", sans-serif',
+                    fontSize: '32px',
+                    lineHeight: 0.9
+                  }}
+                >
+                  {r.teamA}
+                </div>
 
-            {/* Coluna esquerda — lista de rivalidades */}
-            <div className="w-full xl:w-[420px] flex-shrink-0">
-              <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+                <div className="my-2 text-xs font-black uppercase tracking-[0.3em] text-cyan-400">
+                  vs
+                </div>
 
-                {/* Filtros */}
-                <div className="border-b border-white/5 p-6 flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 flex-shrink-0">
-                      <Swords className="h-5 w-5 text-cyan-300" />
+                <div
+                  style={{
+                    fontFamily:
+                      '"Bebas Neue", sans-serif',
+                    fontSize: '32px',
+                    lineHeight: 0.9
+                  }}
+                >
+                  {r.teamB}
+                </div>
+
+                <div className="mt-5 flex items-end justify-between">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                      Record
                     </div>
-                    <div>
-                      <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Rivalries</div>
-                      <div className="text-base text-slate-400">{rivalries.length} matchups</div>
+
+                    <div className="mt-1 text-2xl font-black">
+                      {r.aWins}–{r.bWins}
                     </div>
                   </div>
 
-                  <Select
-                    value={filterTeam}
-                    onChange={setFilterTeam}
-                    options={['', ...allTeams]}
-                    placeholder="Filter by team..."
-                  />
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                      Games
+                    </div>
 
-                  <div className="flex gap-2">
-                    {[
-                      { key: 'heat',  label: '🔥 Heat' },
-                      { key: 'games', label: '📊 Games' },
-                      { key: 'close', label: '⚔️ Closest' },
-                    ].map(s => (
-                      <button key={s.key} onClick={() => setSortBy(s.key)}
-                        className={`flex-1 rounded-2xl px-3 py-2 text-xs font-black transition-all ${
-                          sortBy === s.key
-                            ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
-                            : 'border border-white/5 bg-white/[0.03] text-slate-500 hover:text-slate-300'
-                        }`}
-                      >{s.label}</button>
-                    ))}
+                    <div className="mt-1 text-2xl font-black text-cyan-300">
+                      {r.games}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </aside>
+
+    {/* OVERLAY */}
+    {mobileSidebar && (
+      <div
+        onClick={() =>
+          setMobileSidebar(false)
+        }
+        className="fixed inset-0 z-30 bg-black/70 lg:hidden"
+      />
+    )}
+
+    {/* =====================================================
+    MAIN
+    ===================================================== */}
+
+    <div className="min-w-0 flex-1">
+      {selected ? (
+        <>
+          {/* =====================================================
+          HERO
+          ===================================================== */}
+
+          <section className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]">
+            <div className="absolute inset-0">
+              <div className="absolute left-[-120px] top-[-120px] h-[360px] w-[360px] rounded-full bg-cyan-400/10 blur-3xl" />
+
+              <div className="absolute bottom-[-140px] right-[-100px] h-[360px] w-[360px] rounded-full bg-purple-500/10 blur-3xl" />
+            </div>
+
+            <div className="relative z-10 p-6 md:p-10">
+              <div className="mb-5 flex flex-wrap items-center gap-3">
+                <HeatBadge heat={selected.heat} />
+
+                <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                  Historic Rivalry
+                </div>
+              </div>
+
+              {/* MATCHUP */}
+              <div
+                className="leading-[0.82]"
+                style={{
+                  fontFamily:
+                    '"Bebas Neue", sans-serif',
+                  fontSize:
+                    'clamp(48px,9vw,120px)'
+                }}
+              >
+                <div>{selected.teamA}</div>
+
+                <div className="text-cyan-400">
+                  VS
+                </div>
+
+                <div>{selected.teamB}</div>
+              </div>
+
+              {/* SCORE */}
+              <div className="mt-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                    Overall Record
+                  </div>
+
+                  <div className="mt-2 flex items-end gap-3">
+                    <div className="text-[72px] font-black leading-none md:text-[120px]">
+                      {selected.aWins}
+                    </div>
+
+                    <div className="pb-3 text-4xl font-black text-cyan-400 md:pb-5 md:text-6xl">
+                      —
+                    </div>
+
+                    <div className="text-[72px] font-black leading-none md:text-[120px]">
+                      {selected.bWins}
+                    </div>
                   </div>
                 </div>
 
-                {/* Lista */}
-                <div className="max-h-[600px] overflow-y-auto">
-                  {rivalries.map((r, i) => {
-                    const isSelected = selected === r
-                    const leader = r.aWins > r.bWins ? r.teamA : r.bWins > r.aWins ? r.teamB : null
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => setSelected(isSelected ? null : r)}
-                        className={`w-full flex items-center gap-4 px-6 py-4 text-left transition-all border-b border-white/[0.03] last:border-0 ${
-                          isSelected ? 'bg-cyan-400/[0.05]' : 'hover:bg-white/[0.02]'
-                        }`}
-                      >
-                        {/* Heat badge */}
-                        <div className={`flex-shrink-0 rounded-xl border px-2 py-1 text-[9px] font-black uppercase tracking-widest ${r.heat.color}`}>
-                          {r.heat.label}
-                        </div>
+                {/* STREAK */}
+                <div className="w-full max-w-[360px] rounded-[28px] border border-white/10 bg-white/[0.03] p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Flame className="h-5 w-5 text-orange-300" />
 
-                        {/* Times */}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-black text-white truncate">
-                            {r.teamA} <span className="text-cyan-400 mx-1">vs</span> {r.teamB}
-                          </div>
-                          <div className="text-xs text-slate-500 mt-0.5">
-                            {r.aWins}–{r.bWins} · {r.games} games
-                            {leader ? ` · ${leader.split(' ')[0]} leads` : ' · Tied'}
-                          </div>
-                        </div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.35em] text-orange-300">
+                      Current Streak
+                    </div>
+                  </div>
 
-                        <ChevronRight className={`h-4 w-4 flex-shrink-0 text-slate-600 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
-                      </button>
-                    )
-                  })}
+                  <div className="text-6xl font-black leading-none text-orange-300">
+                    {currentStreak?.result}
+                    {currentStreak?.count}
+                  </div>
+
+                  <div className="mt-3 text-xl font-black">
+                    {selected.streak}
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                        Started
+                      </div>
+
+                      <div className="mt-1 text-sm font-bold">
+                        {currentStreak?.start}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                        Latest
+                      </div>
+
+                      <div className="mt-1 text-sm font-bold">
+                        {currentStreak?.end}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* MINI STATS */}
+              <div className="mt-10 grid grid-cols-2 gap-4 border-t border-white/5 pt-8 md:grid-cols-4">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">
+                    Games
+                  </div>
+
+                  <div className="mt-2 text-4xl font-black">
+                    {selected.games}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">
+                    Avg Margin
+                  </div>
+
+                  <div className="mt-2 text-4xl font-black text-cyan-300">
+                    {selected.avgMargin}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">
+                    Playoffs
+                  </div>
+
+                  <div className="mt-2 text-4xl font-black text-purple-300">
+                    {selected.aPoW}—
+                    {selected.bPoW}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">
+                    Regular Season
+                  </div>
+
+                  <div className="mt-2 text-4xl font-black text-blue-300">
+                    {selected.aRsW}—
+                    {selected.bRsW}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* =====================================================
+          BIGGEST WINS
+          ===================================================== */}
+
+          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+            {/* A */}
+            <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[#071120]">
+              <div className="border-b border-white/5 p-6">
+                <div className="mb-2 flex items-center gap-2">
+                  <Stars className="h-5 w-5 text-yellow-300" />
+
+                  <div className="text-[10px] font-black uppercase tracking-[0.35em] text-yellow-300">
+                    Biggest Win
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    fontFamily:
+                      '"Bebas Neue", sans-serif',
+                    fontSize: '54px',
+                    lineHeight: 0.9
+                  }}
+                >
+                  {selected.teamA}
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="flex items-end gap-3">
+                  <div className="text-[80px] font-black leading-none md:text-[110px]">
+                    {biggestA?.scoreA}
+                  </div>
+
+                  <div className="pb-3 text-4xl font-black text-slate-600">
+                    —
+                  </div>
+
+                  <div className="pb-3 text-5xl font-black text-slate-500">
+                    {biggestA?.scoreB}
+                  </div>
+                </div>
+
+                <div className="mt-6 border-t border-white/5 pt-5">
+                  <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                    Game
+                  </div>
+
+                  <div className="mt-2 text-lg font-black">
+                    {biggestA?.info}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Coluna direita — detalhe */}
-            {selected ? (
-              <div className="flex-1 flex flex-col gap-6">
+            {/* B */}
+            <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[#071120]">
+              <div className="border-b border-white/5 p-6">
+                <div className="mb-2 flex items-center gap-2">
+                  <Stars className="h-5 w-5 text-orange-300" />
 
-                {/* Stats do confronto */}
-                <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+                  <div className="text-[10px] font-black uppercase tracking-[0.35em] text-orange-300">
+                    Biggest Win
+                  </div>
+                </div>
 
-                  {/* Header */}
-                  <div className="border-b border-white/5 px-8 py-6">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                      <h2 className="font-black leading-tight"
-                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(22px, 4vw, 44px)' }}>
-                        {selected.teamA}
-                        <span className="mx-3 text-cyan-400" style={{ fontSize: '0.6em' }}>vs</span>
-                        {selected.teamB}
-                      </h2>
-                      <div className={`rounded-2xl border px-4 py-1.5 text-sm font-black uppercase tracking-widest ${selected.heat.color}`}>
-                        {selected.heat.label} Rivalry
+                <div
+                  style={{
+                    fontFamily:
+                      '"Bebas Neue", sans-serif',
+                    fontSize: '54px',
+                    lineHeight: 0.9
+                  }}
+                >
+                  {selected.teamB}
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="flex items-end gap-3">
+                  <div className="text-[80px] font-black leading-none md:text-[110px]">
+                    {biggestB?.scoreA}
+                  </div>
+
+                  <div className="pb-3 text-4xl font-black text-slate-600">
+                    —
+                  </div>
+
+                  <div className="pb-3 text-5xl font-black text-slate-500">
+                    {biggestB?.scoreB}
+                  </div>
+                </div>
+
+                <div className="mt-6 border-t border-white/5 pt-5">
+                  <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                    Game
+                  </div>
+
+                  <div className="mt-2 text-lg font-black">
+                    {biggestB?.info}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* =====================================================
+          TIMELINE
+          ===================================================== */}
+
+          <section className="mt-6 overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]">
+            <div className="border-b border-white/5 p-6 md:p-8">
+              <div className="flex items-center gap-3">
+                <Activity className="h-6 w-6 text-cyan-300" />
+
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.35em] text-cyan-300">
+                    Rivalry Timeline
+                  </div>
+
+                  <div className="mt-2 text-3xl font-black md:text-5xl">
+                    Every Chapter
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* MOBILE */}
+            <div className="space-y-4 p-5 md:hidden">
+              {history.map((g, i) => {
+                const won = g.result === 'W'
+
+                const winner = won
+                  ? g.team
+                  : g.opponent
+
+                const loser = won
+                  ? g.opponent
+                  : g.team
+
+                const winnerScore = won
+                  ? g.pf
+                  : g.pa
+
+                const loserScore = won
+                  ? g.pa
+                  : g.pf
+
+                const winnerIsA =
+                  normalizeString(winner) ===
+                  normalizeString(selected.teamA)
+
+                return (
+                  <div
+                    key={i}
+                    className="rounded-[28px] border border-white/5 bg-white/[0.03] p-5"
+                  >
+                    <div className="mb-3 flex items-center gap-3">
+                      <div
+                        className={`h-3 w-3 rounded-full ${
+                          winnerIsA
+                            ? 'bg-cyan-400'
+                            : 'bg-purple-400'
+                        }`}
+                      />
+
+                      <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                        {g.season} · Week{' '}
+                        {g.week}
+                      </div>
+                    </div>
+
+                    <div className="text-xl font-black leading-tight">
+                      <span
+                        className={
+                          winnerIsA
+                            ? 'text-cyan-300'
+                            : 'text-purple-300'
+                        }
+                      >
+                        {winner}
+                      </span>
+
+                      <span className="mx-2 text-slate-600">
+                        def.
+                      </span>
+
+                      <span>{loser}</span>
+                    </div>
+
+                    <div className="mt-5 flex items-end gap-2">
+                      <div className="text-5xl font-black leading-none">
+                        {winnerScore.toFixed(1)}
+                      </div>
+
+                      <div className="pb-1 text-2xl font-black text-slate-600">
+                        —
+                      </div>
+
+                      <div className="pb-1 text-3xl font-black text-slate-500">
+                        {loserScore.toFixed(1)}
                       </div>
                     </div>
                   </div>
+                )
+              })}
+            </div>
 
-                  {/* Stats grid */}
-                  <div className="grid grid-cols-2 gap-4 p-6 md:grid-cols-3">
-                    {[
-                      [Target,   'Overall Record',    `${selected.aWins}–${selected.bWins}`],
-                      [Activity, 'Total Games',        selected.games],
-                      [Flame,    'Avg Margin',         `${selected.avgMargin} pts`],
-                      [Trophy,   'Playoff Record',     `${selected.aPoW}–${selected.bPoW}`],
-                      [Radar,    'RS Record',          `${selected.aRsW}–${selected.bRsW}`],
-                      [Stars,    'Current Streak',     selected.streak],
-                      [Swords,   'Best Streak A',      selected.bestStreakA],
-                      [Swords,   'Best Streak B',      selected.bestStreakB],
-                      [Flame,    'Biggest Win A',      selected.biggestWinA],
-                      [Flame,    'Biggest Win B',      selected.biggestWinB],
-                    ].map(([Icon, label, value]) => (
-                      <div key={label} className="rounded-[24px] border border-white/5 bg-white/[0.03] p-4">
-                        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
-                          <Icon className="h-4 w-4 text-cyan-300" />
+            {/* DESKTOP */}
+            <div className="relative hidden px-8 py-10 md:block">
+              <div className="absolute bottom-0 left-[42px] top-0 w-[2px] bg-white/5" />
+
+              <div className="space-y-8">
+                {history.map((g, i) => {
+                  const won = g.result === 'W'
+
+                  const winner = won
+                    ? g.team
+                    : g.opponent
+
+                  const loser = won
+                    ? g.opponent
+                    : g.team
+
+                  const winnerScore = won
+                    ? g.pf
+                    : g.pa
+
+                  const loserScore = won
+                    ? g.pa
+                    : g.pf
+
+                  const winnerIsA =
+                    normalizeString(winner) ===
+                    normalizeString(selected.teamA)
+
+                  return (
+                    <div
+                      key={i}
+                      className="relative flex gap-7"
+                    >
+                      <div
+                        className={`relative z-10 mt-2 h-5 w-5 rounded-full border-4 ${
+                          winnerIsA
+                            ? 'border-cyan-400 bg-cyan-400'
+                            : 'border-purple-400 bg-purple-400'
+                        }`}
+                      />
+
+                      <div className="flex-1 rounded-[28px] border border-white/5 bg-white/[0.03] p-6 transition-all duration-300 hover:border-white/15">
+                        <div className="flex items-start justify-between gap-6">
+                          <div>
+                            <div className="mb-3 flex items-center gap-3">
+                              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                                {g.season}
+                              </div>
+
+                              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">
+                                Week {g.week}
+                              </div>
+                            </div>
+
+                            <div className="text-3xl font-black">
+                              <span
+                                className={
+                                  winnerIsA
+                                    ? 'text-cyan-300'
+                                    : 'text-purple-300'
+                                }
+                              >
+                                {winner}
+                              </span>
+
+                              <span className="mx-2 text-slate-600">
+                                def.
+                              </span>
+
+                              <span>{loser}</span>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-6xl font-black leading-none">
+                              {winnerScore.toFixed(
+                                1
+                              )}
+                            </div>
+
+                            <div className="mt-2 text-3xl font-black text-slate-500">
+                              {loserScore.toFixed(
+                                1
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="mb-1 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">{label}</div>
-                        <div className="text-xl font-black text-white leading-tight">{value}</div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Histórico jogo a jogo */}
-                <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-                  <div className="border-b border-white/5 px-8 py-6 flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                      <Activity className="h-5 w-5 text-cyan-300" />
                     </div>
-                    <div>
-                      <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Game History</div>
-                      <div className="text-base text-slate-400">{matchHistory.length} games played</div>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-white/5">
-                          <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Season</th>
-                          <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Week</th>
-                          <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Type</th>
-                          <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Winner</th>
-                          <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Score</th>
-                          <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Margin</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {matchHistory.map((g, i) => {
-                          const won = g.result === 'W'
-                          const winner = won ? g.team : g.opponent
-                          const margin = Math.abs(g.pf - g.pa)
-                          const isPlayoff = g.stage && g.stage !== 'Reg Season'
-                          return (
-                            <tr key={i} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
-                              <td className="px-6 py-3 text-sm font-black text-white">{g.season}</td>
-                              <td className="px-4 py-3 text-sm text-slate-400">W{g.week}</td>
-                              <td className="px-4 py-3">
-                                {isPlayoff ? (
-                                  <span className="text-[9px] font-black uppercase tracking-widest rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-cyan-300">
-                                    {g.stage}
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-slate-600">Reg</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="text-sm font-black text-white">{winner}</span>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <span className="text-sm font-bold text-cyan-300">{won ? g.pf.toFixed(2) : g.pa.toFixed(2)}</span>
-                                <span className="text-slate-600 mx-1">–</span>
-                                <span className="text-sm font-bold text-slate-400">{won ? g.pa.toFixed(2) : g.pf.toFixed(2)}</span>
-                              </td>
-                              <td className="px-4 py-3 text-right text-sm text-slate-500">{margin.toFixed(2)}</td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
+                  )
+                })}
               </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center rounded-[38px] border border-white/5 bg-white/[0.02] py-20">
-                <div className="text-center">
-                  <Swords className="h-10 w-10 text-slate-700 mx-auto mb-4" />
-                  <p className="text-slate-600 font-bold">Select a rivalry to see the full history</p>
-                </div>
-              </div>
-            )}
+            </div>
+          </section>
+        </>
+      ) : (
+        <div className="flex min-h-[70vh] items-center justify-center rounded-[34px] border border-white/10 bg-[#071120]">
+          <div className="text-center">
+            <Swords className="mx-auto mb-6 h-14 w-14 text-slate-700" />
 
+            <div
+              style={{
+                fontFamily:
+                  '"Bebas Neue", sans-serif',
+                fontSize: '64px'
+              }}
+            >
+              SELECT A RIVALRY
+            </div>
+
+            <p className="mt-2 text-slate-500">
+              Explore the greatest battles in
+              league history
+            </p>
           </div>
-        )}
-
-      </section>
-
-      {/* Footer */}
-      <footer className="mx-auto max-w-[1680px] px-6 pb-12">
-        <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-30" />
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Tapitas League · Est. 2014</span>
         </div>
-      </footer>
-    </main>
-  )
+      )}
+    </div>
+  </section>
+</main>
+)
 }
