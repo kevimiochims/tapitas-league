@@ -1,26 +1,5 @@
 'use client'
 
-/*
-
-TAPITAS LEAGUE — RIVALRIES V3
-Cinematic + Responsive + Real UX
-================================
-
-MELHORIAS:
-✓ mobile-first
-✓ filtros reais
-✓ search
-✓ timeline responsiva
-✓ parsing resiliente
-✓ hero cinematográfico
-✓ cards editoriais
-✓ dados seguros
-✓ sections respiráveis
-✓ sticky filters
-✓ layout ESPN/Bleacher style
-
-*/
-
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -29,10 +8,8 @@ Activity,
 ChevronDown,
 Flame,
 Search,
-Shield,
-Swords,
-Trophy,
-Stars
+Stars,
+Swords
 } from 'lucide-react'
 
 const SHEET_ID =
@@ -132,69 +109,118 @@ return 'LOW'
 }
 
 /* =====================================================
-ROBUST PARSERS
+REAL PARSERS
 ===================================================== */
 
-function parseStreak(streak) {
+function parseCurrentStreak(streak) {
 if (!streak || streak === '—') return null
 
 const text = String(streak)
 
-const streakMatch = text.match(/([WL])(\d+)/i)
-
-const weeks = text.match(
-/(\d{4}\sW\d+).*?(\d{4}\sW\d+)/i
+const match = text.match(
+/(.*?)\s([WL])(\d+)/i
 )
+
+if (!match) {
+return {
+raw: text,
+team: text,
+result: '',
+count: ''
+}
+}
 
 return {
 raw: text,
 
 
-result: streakMatch?.[1] || '',
+team: match[1].trim(),
 
-count: streakMatch?.[2] || '',
+result: match[2],
 
-start: weeks?.[1]
-  ? weeks[1].replace(/W(\d+)/, 'Week $1')
-  : '',
+count: match[3]
 
-end: weeks?.[2]
-  ? weeks[2].replace(/W(\d+)/, 'Week $1')
-  : ''
+
+}
+}
+
+function parseBestStreak(streak) {
+if (!streak || streak === '—') return null
+
+const text = String(streak)
+
+const match = text.match(
+/(.*?)\s([WL])(\d+)\s((.*?)\s→\s(.*?))/i
+)
+
+if (!match) {
+return {
+raw: text
+}
+}
+
+return {
+team: match[1].trim(),
+
+
+result: match[2],
+
+count: match[3],
+
+start: match[4].replace(
+  /W(\d+)/,
+  'Week $1'
+),
+
+end: match[5].replace(
+  /W(\d+)/,
+  'Week $1'
+)
 
 
 }
 }
 
 function parseBiggestWin(value) {
-if (!value || value === '—') return null
+  if (!value || value === '—') return null
 
-const text = String(value)
+  const text = String(value)
 
-const scores = text.match(
-/(\d+.?\d*)\s*[-–]\s*(\d+.?\d*)/
-)
+  // score
+  const scoreMatch = text.match(
+    /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
+  )
 
-const week = text.match(/((.*?))/)
+  // margin
+  const marginMatch = text.match(
+    /\(\+?(\d+(?:\.\d+)?)\)/
+  )
 
-return {
-raw: text,
+  // week
+  const weekMatch = text.match(
+    /(\d{4}\sW\d+)/
+  )
 
+  return {
+    raw: text,
 
-scoreA: scores?.[1] || '0',
+    scoreA: scoreMatch?.[1] || '0',
 
-scoreB: scores?.[2] || '0',
+    scoreB: scoreMatch?.[2] || '0',
 
-info: week?.[1]
-  ? week[1].replace(/W(\d+)/, 'Week $1')
-  : ''
+    margin: marginMatch?.[1] || '0',
 
-
-}
+    game: weekMatch?.[1]
+      ? weekMatch[1].replace(
+          /W(\d+)/,
+          'Week $1'
+        )
+      : ''
+  }
 }
 
 /* =====================================================
-BADGES
+BADGE
 ===================================================== */
 
 function HeatBadge({ heat }) {
@@ -315,7 +341,9 @@ h2hData.forEach((r) => {
 
     bWins: parseNumber(r?.['B Wins']),
 
-    avgMargin: String(r?.['Avg Margin'] || '0'),
+    avgMargin: String(
+      r?.['Avg Margin'] || '0'
+    ),
 
     aPoW: parseNumber(r?.['A PO_W']),
 
@@ -448,7 +476,15 @@ PARSED
 ===================================================== */
 
 const currentStreak = selected
-? parseStreak(selected.streak)
+? parseCurrentStreak(selected.streak)
+: null
+
+const bestA = selected
+? parseBestStreak(selected.bestA)
+: null
+
+const bestB = selected
+? parseBestStreak(selected.bestB)
 : null
 
 const biggestA = selected
@@ -463,12 +499,21 @@ const biggestB = selected
 RENDER
 ===================================================== */
 
-return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
+return ( <main className="min-h-screen bg-[#020617] text-white overflow-x-hidden"> <style>{`
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 
 
     body {
       background: #020617;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
     }
   `}</style>
 
@@ -552,7 +597,7 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
             />
           </div>
 
-          {/* HEAT FILTER */}
+          {/* FILTERS */}
           <div className="mt-4 grid grid-cols-3 gap-2">
             {[
               'ALL',
@@ -676,13 +721,10 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
     MAIN
     ===================================================== */}
 
-    <div className="min-w-0 flex-1">
+    <div className="min-w-0 flex-1 overflow-hidden">
       {selected ? (
         <>
-          {/* =====================================================
-          HERO
-          ===================================================== */}
-
+          {/* HERO */}
           <section className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]">
             <div className="absolute inset-0">
               <div className="absolute left-[-120px] top-[-120px] h-[360px] w-[360px] rounded-full bg-cyan-400/10 blur-3xl" />
@@ -706,7 +748,7 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
                   fontFamily:
                     '"Bebas Neue", sans-serif',
                   fontSize:
-                    'clamp(48px,9vw,120px)'
+                    'clamp(38px,11vw,120px)'
                 }}
               >
                 <div>{selected.teamA}</div>
@@ -725,8 +767,8 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
                     Overall Record
                   </div>
 
-                  <div className="mt-2 flex items-end gap-3">
-                    <div className="text-[72px] font-black leading-none md:text-[120px]">
+                  <div className="mt-2 flex flex-wrap items-end gap-3">
+                    <div className="text-[54px] font-black leading-none sm:text-[72px] md:text-[120px]">
                       {selected.aWins}
                     </div>
 
@@ -734,7 +776,7 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
                       —
                     </div>
 
-                    <div className="text-[72px] font-black leading-none md:text-[120px]">
+                    <div className="text-[54px] font-black leading-none sm:text-[72px] md:text-[120px]">
                       {selected.bWins}
                     </div>
                   </div>
@@ -755,35 +797,13 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
                     {currentStreak?.count}
                   </div>
 
-                  <div className="mt-3 text-xl font-black">
-                    {selected.streak}
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
-                        Started
-                      </div>
-
-                      <div className="mt-1 text-sm font-bold">
-                        {currentStreak?.start}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
-                        Latest
-                      </div>
-
-                      <div className="mt-1 text-sm font-bold">
-                        {currentStreak?.end}
-                      </div>
-                    </div>
+                  <div className="mt-3 text-lg font-black">
+                    {currentStreak?.team}
                   </div>
                 </div>
               </div>
 
-              {/* MINI STATS */}
+              {/* STATS */}
               <div className="mt-10 grid grid-cols-2 gap-4 border-t border-white/5 pt-8 md:grid-cols-4">
                 <div>
                   <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">
@@ -830,10 +850,7 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
             </div>
           </section>
 
-          {/* =====================================================
-          BIGGEST WINS
-          ===================================================== */}
-
+          {/* BIGGEST WINS */}
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
             {/* A */}
             <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[#071120]">
@@ -860,7 +877,7 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
 
               <div className="p-6">
                 <div className="flex items-end gap-3">
-                  <div className="text-[80px] font-black leading-none md:text-[110px]">
+                  <div className="text-[58px] font-black leading-none sm:text-[80px] md:text-[110px]">
                     {biggestA?.scoreA}
                   </div>
 
@@ -879,7 +896,11 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
                   </div>
 
                   <div className="mt-2 text-lg font-black">
-                    {biggestA?.info}
+                    {biggestA?.game}
+                  </div>
+
+                  <div className="mt-2 text-sm text-slate-500">
+                    +{biggestA?.margin} margin
                   </div>
                 </div>
               </div>
@@ -910,7 +931,7 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
 
               <div className="p-6">
                 <div className="flex items-end gap-3">
-                  <div className="text-[80px] font-black leading-none md:text-[110px]">
+                  <div className="text-[58px] font-black leading-none sm:text-[80px] md:text-[110px]">
                     {biggestB?.scoreA}
                   </div>
 
@@ -929,17 +950,18 @@ return ( <main className="min-h-screen bg-[#020617] text-white"> <style>{`
                   </div>
 
                   <div className="mt-2 text-lg font-black">
-                    {biggestB?.info}
+                    {biggestB?.game}
+                  </div>
+
+                  <div className="mt-2 text-sm text-slate-500">
+                    +{biggestB?.margin} margin
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* =====================================================
-          TIMELINE
-          ===================================================== */}
-
+          {/* TIMELINE */}
           <section className="mt-6 overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]">
             <div className="border-b border-white/5 p-6 md:p-8">
               <div className="flex items-center gap-3">
