@@ -679,6 +679,58 @@ export default function RivalriesPage() {
               'shadow-cyan-500/10'
           }
 
+
+  const marginValue = Math.abs(
+    winnerScore - loserScore
+  )
+
+  const marginStyle =
+    marginValue >= 40
+      ? {
+        border:
+          'border-red-400/30',
+        bg: 'bg-red-400/15',
+        text: 'text-red-300',
+        label: 'text-red-200'
+      }
+      : marginValue >= 25
+        ? {
+          border:
+            'border-orange-400/30',
+          bg: 'bg-orange-400/15',
+          text: 'text-orange-300',
+          label:
+            'text-orange-200'
+        }
+        : marginValue >= 15
+          ? {
+            border:
+              'border-yellow-400/25',
+            bg: 'bg-yellow-400/10',
+            text: 'text-yellow-300',
+            label:
+              'text-yellow-200'
+          }
+          : marginValue >= 8
+            ? {
+              border:
+                'border-cyan-400/20',
+              bg: 'bg-cyan-400/10',
+              text: 'text-cyan-300',
+              label:
+                'text-cyan-200'
+            }
+            : {
+              border:
+                'border-emerald-400/20',
+              bg: 'bg-emerald-400/10',
+              text:
+                'text-emerald-300',
+              label:
+                'text-emerald-200'
+            }
+
+
   /* =====================================================
 RENDER
 ===================================================== */
@@ -1466,8 +1518,8 @@ RENDER
                             'Reg Season' && (
                               <div
                                 className={`mb-4 inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] ${g.GameStage === 'Playoffs'
-                                    ? 'border-yellow-400/20 bg-yellow-400/10 text-yellow-300'
-                                    : 'border-slate-400/20 bg-slate-400/10 text-slate-300'
+                                  ? 'border-yellow-400/20 bg-yellow-400/10 text-yellow-300'
+                                  : 'border-slate-400/20 bg-slate-400/10 text-slate-300'
                                   }`}
                               >
                                 {g.GameStage === 'Playoffs'
@@ -1518,16 +1570,26 @@ RENDER
 
                             {/* MARGIN */}
 
-                            <div className="rounded-2xl border border-white/5 bg-white/[0.03] px-4 py-3">
-                              <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">
+                            <div
+                              className={`
+    rounded-2xl border px-4 py-3
+    transition-all
+
+    ${marginStyle.border}
+    ${marginStyle.bg}
+  `}
+                            >
+                              <div
+                                className={`text-[9px] uppercase tracking-[0.25em] ${marginStyle.label}`}
+                              >
                                 Margin
                               </div>
 
-                              <div className="mt-1 text-lg font-black">
+                              <div
+                                className={`mt-1 text-lg font-black ${marginStyle.text}`}
+                              >
                                 +
-                                {Math.abs(
-                                  winnerScore - loserScore
-                                ).toFixed(1)}
+                                {marginValue.toFixed(1)}
                               </div>
                             </div>
                           </div>
