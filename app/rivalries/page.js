@@ -729,9 +729,9 @@ RENDER
 
         <aside
           className={`
-          fixed left-0 top-[12px] z-40
+          fixed left-0 top-[76px] z-40
 
-          h-[calc(100vh-24px)]
+          h-[calc(100vh-88px)]
 
           w-[92vw] max-w-[460px]
 
@@ -741,7 +741,8 @@ RENDER
 
           transition-transform duration-300
 
-          lg:sticky lg:top-[12px]
+          lg:sticky
+          lg:top-[12px]
           lg:h-[calc(100vh-24px)]
 
           overflow-hidden shadow-2xl
@@ -938,11 +939,11 @@ RENDER
                         {r.aWins}
                       </div>
 
-                      <div className="pb-1 text-lg font-black text-slate-600">
+                      <div className="pb-[2px] text-xl font-black text-slate-600">
                         —
                       </div>
 
-                      <div className="pb-1 text-2xl font-black text-slate-500">
+                      <div className="text-4xl font-black leading-none text-slate-500">
                         {r.bWins}
                       </div>
                     </div>
