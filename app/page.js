@@ -1389,12 +1389,13 @@ export default function TapitasLeagueHomepage() {
                   Standings
                 </a>
 
-                <button
+                <a
+                  href="/rivalries" 
                   className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
                 >
                   <Swords className="h-3 w-3 md:h-4 md:w-4" />
                   Rivalries
-                </button>
+                </a>
 
               </div>
             </div>

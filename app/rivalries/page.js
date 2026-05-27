@@ -475,41 +475,49 @@ export default function RivalriesPage() {
         }
 
         if (sortBy === 'CLOSEST') {
-          function getClosenessScore(r) {
-            const games = r.games
+          // =====================================================
+          // 1. MENOR DIFERENÇA DE VITÓRIAS
+          // =====================================================
 
-            const winsDiff = Math.abs(
-              r.aWins - r.bWins
-            )
+          const diffA = Math.abs(
+            a.aWins - a.bWins
+          )
 
-            const avgMargin = Math.abs(
-              parseFloat(r.avgMargin)
-            )
+          const diffB = Math.abs(
+            b.aWins - b.bWins
+          )
 
-            // equilíbrio do H2H
-            const parityScore =
-              1 - winsDiff / games
-
-            // jogos apertados
-            const marginScore =
-              1 / (1 + avgMargin)
-
-            // rivalidade longa
-            const gamesScore =
-              Math.min(games / 15, 1)
-
-            // score final
-            return (
-              parityScore * 0.55 +
-              marginScore * 0.3 +
-              gamesScore * 0.15
-            )
+          if (diffA !== diffB) {
+            return diffA - diffB
           }
 
-          return (
-            getClosenessScore(b) -
-            getClosenessScore(a)
+          // =====================================================
+          // 2. MAIS JOGOS DISPUTADOS
+          // =====================================================
+
+          const gamesA =
+            a.aWins + a.bWins
+
+          const gamesB =
+            b.aWins + b.bWins
+
+          if (gamesA !== gamesB) {
+            return gamesB - gamesA
+          }
+
+          // =====================================================
+          // 3. MENOR AVG MARGIN
+          // =====================================================
+
+          const marginA = Math.abs(
+            parseFloat(a.avgMargin)
           )
+
+          const marginB = Math.abs(
+            parseFloat(b.avgMargin)
+          )
+
+          return marginA - marginB
         }
 
         if (sortBy === 'HEAT') {
@@ -768,8 +776,8 @@ RENDER
                   key={item}
                   href={href}
                   className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${isActive
-                      ? 'bg-white/[0.06] text-white'
-                      : 'text-slate-400'
+                    ? 'bg-white/[0.06] text-white'
+                    : 'text-slate-400'
                     }`}
                 >
                   {item}
@@ -1280,7 +1288,7 @@ RENDER
 
                       <div className="flex items-baseline gap-3">
                         <div
-                          className={`leading-none text-[52px] font-black sm:text-[72px] md:text-[92px] ${item.color === 'yellow'
+                          className={`sm:text-[72px] md:text-[92px] leading-none text-[52px] font-black ${item.side === 'A'
                             ? 'text-cyan-300'
                             : 'text-purple-300'
                             }`}
@@ -1403,7 +1411,7 @@ RENDER
                     </div>
 
                     <div
-                      className={`mt-6 text-7xl font-black ${item.color === 'cyan'
+                      className={`mt-6 text-7xl font-black ${item.side === 'A'
                         ? 'text-cyan-300'
                         : 'text-purple-300'
                         }`}

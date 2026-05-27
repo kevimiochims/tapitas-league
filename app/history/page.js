@@ -583,8 +583,8 @@ export default function HistoryPage() {
                                     className={`text-[10px] font-black uppercase tracking-[0.3em] ${theme.text}`}
                                   >
                                     {Number(s.season) === Number(seasonData[0]?.season)
-                                      ? 'Reigning Champ'
-                                      : 'Season Archive'}
+                                      ? 'Reigning'
+                                      : 'Archive'}
                                   </span>
                                 </div>
 
@@ -1073,7 +1073,7 @@ export default function HistoryPage() {
                                       Season Recap
                                     </div>
 
-                                    <div className="text-sm leading-relaxed">
+                                    <div className="text-sm leading-relaxed text-justify">
                                       <ReactMarkdown
                                         components={{
                                           h1: ({ children }) => (
@@ -1095,7 +1095,7 @@ export default function HistoryPage() {
                                           ),
 
                                           p: ({ children }) => (
-                                            <p className="text-slate-300 mb-3 leading-relaxed">
+                                            <p className="text-slate-300 mb-3 leading-relaxed text-justify">
                                               {children}
                                             </p>
                                           ),
