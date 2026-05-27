@@ -939,11 +939,11 @@ RENDER
                         {r.aWins}
                       </div>
 
-                      <div className="text-xl font-black leading-none text-slate-600">
+                      <div className="text-4xl font-black leading-none text-slate-600">
                         —
                       </div>
 
-                      <div className="text-4xl font-black leading-none text-slate-500">
+                      <div className="text-4xl font-black leading-none text-slate-600">
                         {r.bWins}
                       </div>
                     </div>
