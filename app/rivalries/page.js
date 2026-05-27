@@ -639,6 +639,24 @@ export default function RivalriesPage() {
     fontFamily: bebas.style.fontFamily
   }
 
+  const teamAColor =
+  'text-cyan-300'
+
+  const teamABg =
+    'bg-cyan-400'
+
+  const teamAAccent =
+    'border-cyan-400/20 bg-cyan-400/10'
+
+  const teamBColor =
+    'text-purple-300'
+
+  const teamBBg =
+    'bg-purple-400'
+
+  const teamBAccent =
+    'border-purple-400/20 bg-purple-400/10'
+
   const streakCount = parseInt(
     currentStreak?.count || 0
   )
@@ -1151,12 +1169,12 @@ RENDER
                   {
                     team: selected.teamA,
                     data: biggestA,
-                    color: 'yellow'
+                    side: 'A'
                   },
                   {
                     team: selected.teamB,
                     data: biggestB,
-                    color: 'orange'
+                    side: 'B'
                   }
                 ].map((item, idx) => (
                   <motion.div
@@ -1179,9 +1197,9 @@ RENDER
                   >
                     <div className="border-b border-white/5 p-6">
                       <div
-                        className={`mb-6 flex items-center gap-2 ${item.color === 'yellow'
-                          ? 'text-yellow-300'
-                          : 'text-orange-300'
+                        className={`mb-6 flex items-center gap-2 ${item.side === 'A'
+                          ? teamAColor
+                          : teamBColor
                           }`}
                       >
                         <Stars className="h-5 w-5" />
@@ -1281,11 +1299,11 @@ RENDER
                 {[
                   {
                     data: bestA,
-                    color: 'cyan'
+                    side: 'A'
                   },
                   {
                     data: bestB,
-                    color: 'purple'
+                    side: 'B'
                   }
                 ].map((item, idx) => (
                   <motion.div
@@ -1307,7 +1325,7 @@ RENDER
                     className="rounded-[32px] border border-white/10 bg-[#071120] p-6"
                   >
                     <div
-                      className={`mb-6 flex items-center gap-2 ${item.color === 'cyan'
+                      className={`mb-6 flex items-center gap-2 ${item.side === 'A'
                         ? 'text-cyan-300'
                         : 'text-purple-300'
                         }`}
@@ -1544,8 +1562,8 @@ RENDER
                           <div className="mb-3 flex items-center gap-3">
                             <div
                               className={`h-3 w-3 rounded-full ${winnerIsA
-                                ? 'bg-cyan-400'
-                                : 'bg-purple-400'
+                                ? teamABg
+                                : teamBBg
                                 }`}
                             />
 
@@ -1576,8 +1594,8 @@ RENDER
                             <span
                               className={
                                 winnerIsA
-                                  ? 'text-cyan-300'
-                                  : 'text-purple-300'
+                                  ? teamAColor
+                                  : teamBColor
                               }
                             >
                               {winner}
