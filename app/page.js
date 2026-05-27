@@ -833,19 +833,6 @@ export default function TapitasLeagueHomepage() {
     }
   }, [])
 
-  useEffect(() => {
-  if (mobileSidebar) {
-    document.body.style.overflow =
-      'hidden'
-  } else {
-    document.body.style.overflow = ''
-  }
-
-  return () => {
-    document.body.style.overflow = ''
-  }
-}, [mobileSidebar])
-
   const standings = useMemo(() => {
     const base =
       Array.isArray(rawData) && rawData.length > 0

@@ -544,6 +544,19 @@ export default function RivalriesPage() {
     }
   }, [rivalries, selected])
 
+  useEffect(() => {
+    if (mobileSidebar) {
+      document.body.style.overflow =
+        'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+  
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [mobileSidebar])
+
   /* =====================================================
   HISTORY
   ===================================================== */
