@@ -1061,7 +1061,7 @@ RENDER
                     {/* CURRENT STREAK */}
 
                     <div
-  className={`
+                      className={`
     ml-auto w-[210px] shrink-0
     rounded-[24px] border p-4
     shadow-2xl transition-all
@@ -1070,30 +1070,30 @@ RENDER
     ${streakColors.bg}
     ${streakColors.glow}
   `}
->
-  <div className="mb-3 flex items-center gap-2">
-    <Flame
-      className={`h-5 w-5 ${streakColors.text}`}
-    />
+                    >
+                      <div className="mb-3 flex items-center gap-2">
+                        <Flame
+                          className={`h-5 w-5 ${streakColors.text}`}
+                        />
 
-    <div
-      className={`text-[10px] font-black uppercase tracking-[0.35em] ${streakColors.text}`}
-    >
-      Current Streak
-    </div>
-  </div>
+                        <div
+                          className={`text-[10px] font-black uppercase tracking-[0.35em] ${streakColors.text}`}
+                        >
+                          Current Streak
+                        </div>
+                      </div>
 
-  <div
-    className={`text-[64px] font-black leading-none ${streakColors.text}`}
-  >
-    {currentStreak?.result}
-    {currentStreak?.count}
-  </div>
+                      <div
+                        className={`text-[64px] font-black leading-none ${streakColors.text}`}
+                      >
+                        {currentStreak?.result}
+                        {currentStreak?.count}
+                      </div>
 
-  <div className="mt-2 text-base font-black leading-none whitespace-nowrap">
-    {currentStreak?.team}
-  </div>
-</div>
+                      <div className="mt-2 text-base font-black leading-none whitespace-nowrap">
+                        {currentStreak?.team}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.section>
