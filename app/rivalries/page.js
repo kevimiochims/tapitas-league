@@ -729,30 +729,30 @@ RENDER
 
         <aside
           className={`
-    fixed left-0 top-[12px] z-40
+          fixed left-0 top-[12px] z-40
 
-    h-[calc(100vh-24px)]
+          h-[calc(100vh-24px)]
 
-    w-[92vw] max-w-[460px]
+          w-[92vw] max-w-[460px]
 
-    transform rounded-r-[32px]
-    border border-white/10
-    bg-[#071120]
+          transform rounded-r-[32px]
+          border border-white/10
+          bg-[#071120]
 
-    transition-transform duration-300
+          transition-transform duration-300
 
-    lg:sticky lg:top-[12px]
-    lg:h-[calc(100vh-24px)]
+          lg:sticky lg:top-[12px]
+          lg:h-[calc(100vh-24px)]
 
-    overflow-hidden shadow-2xl
+          overflow-hidden shadow-2xl
 
-    lg:translate-x-0
+          lg:translate-x-0
 
-    ${mobileSidebar
-              ? 'translate-x-0'
-              : '-translate-x-full'
-            }
-  `}
+          ${mobileSidebar
+                    ? 'translate-x-0'
+                    : '-translate-x-full'
+                  }
+        `}
         >
           <div className="flex h-full flex-col">
             {/* =====================================================
@@ -974,8 +974,7 @@ RENDER
           {selected ? (
             <>
               {/* =====================================================
-HERO
-===================================================== */}
+              HERO==================================================== */}
 
               <motion.section
                 initial={{
@@ -1036,8 +1035,8 @@ HERO
                   </div>
 
                   {/* =====================================================
-    RECORD + STREAK
-    ===================================================== */}
+                  RECORD + STREAK
+                  ===================================================== */}
 
                   <div className="flex items-end gap-3 overflow-hidden">
                     {/* RECORD */}
@@ -1071,20 +1070,20 @@ HERO
 
                     <div
                       className={`
-          ml-auto shrink-0
+                        ml-auto shrink-0
 
-          w-[145px] sm:w-[210px]
+                        w-[145px] sm:w-[210px]
 
-          rounded-[20px] sm:rounded-[24px]
+                        rounded-[20px] sm:rounded-[24px]
 
-          border p-3 sm:p-4
+                        border p-3 sm:p-4
 
-          shadow-2xl transition-all
+                        shadow-2xl transition-all
 
-          ${streakColors.border}
-          ${streakColors.bg}
-          ${streakColors.glow}
-        `}
+                        ${streakColors.border}
+                        ${streakColors.bg}
+                        ${streakColors.glow}
+                      `}
                     >
                       {/* HEADER */}
 
@@ -1095,12 +1094,12 @@ HERO
 
                         <div
                           className={`
-              text-[8px] sm:text-[10px]
-              font-black uppercase
-              tracking-[0.25em] sm:tracking-[0.35em]
+                          text-[8px] sm:text-[10px]
+                          font-black uppercase
+                          tracking-[0.25em] sm:tracking-[0.35em]
 
-              ${streakColors.text}
-            `}
+                          ${streakColors.text}
+                        `}
                         >
                           Current Streak
                         </div>
