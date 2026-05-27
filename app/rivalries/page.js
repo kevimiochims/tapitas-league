@@ -729,7 +729,7 @@ RENDER
 
         <aside
           className={`
-          fixed left-0 top-[12px] z-40
+          fixed left-4 top-[84px] bottom-3
 
           h-[calc(100vh-24px)]
 
