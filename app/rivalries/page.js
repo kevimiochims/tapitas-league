@@ -934,12 +934,12 @@ RENDER
                       {r.teamB}
                     </div>
 
-                    <div className="mt-4 flex items-end gap-2">
+                    <div className="mt-4 flex items-baseline gap-2">
                       <div className="text-4xl font-black leading-none">
                         {r.aWins}
                       </div>
 
-                      <div className="pb-[2px] text-xl font-black text-slate-600">
+                      <div className="text-xl font-black leading-none text-slate-600">
                         —
                       </div>
 
