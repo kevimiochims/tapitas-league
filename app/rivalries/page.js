@@ -1424,55 +1424,55 @@ RENDER
                         normalizeString(
                           selected.teamA
                         )
-                        const marginValue = Math.abs(
-    winnerScore - loserScore
-  )
+                      const marginValue = Math.abs(
+                        winnerScore - loserScore
+                      )
 
-  const marginStyle =
-    marginValue >= 40
-      ? {
-        border:
-          'border-red-400/30',
-        bg: 'bg-red-400/15',
-        text: 'text-red-300',
-        label: 'text-red-200'
-      }
-      : marginValue >= 25
-        ? {
-          border:
-            'border-orange-400/30',
-          bg: 'bg-orange-400/15',
-          text: 'text-orange-300',
-          label:
-            'text-orange-200'
-        }
-        : marginValue >= 15
-          ? {
-            border:
-              'border-yellow-400/25',
-            bg: 'bg-yellow-400/10',
-            text: 'text-yellow-300',
-            label:
-              'text-yellow-200'
-          }
-          : marginValue >= 8
-            ? {
-              border:
-                'border-cyan-400/20',
-              bg: 'bg-cyan-400/10',
-              text: 'text-cyan-300',
-              label:
-                'text-cyan-200'
-            }
-            : {
-              border:
-                'border-emerald-400/20',
-              bg: 'bg-emerald-400/10',
-              text:
-                'text-emerald-300',
-              label:
-                'text-emerald-200'
-            }
+                      const marginStyle =
+                        marginValue >= 40
+                          ? {
+                            border:
+                              'border-red-400/30',
+                            bg: 'bg-red-400/15',
+                            text: 'text-red-300',
+                            label: 'text-red-200'
+                          }
+                          : marginValue >= 25
+                            ? {
+                              border:
+                                'border-orange-400/30',
+                              bg: 'bg-orange-400/15',
+                              text: 'text-orange-300',
+                              label:
+                                'text-orange-200'
+                            }
+                            : marginValue >= 15
+                              ? {
+                                border:
+                                  'border-yellow-400/25',
+                                bg: 'bg-yellow-400/10',
+                                text: 'text-yellow-300',
+                                label:
+                                  'text-yellow-200'
+                              }
+                              : marginValue >= 8
+                                ? {
+                                  border:
+                                    'border-cyan-400/20',
+                                  bg: 'bg-cyan-400/10',
+                                  text: 'text-cyan-300',
+                                  label:
+                                    'text-cyan-200'
+                                }
+                                : {
+                                  border:
+                                    'border-emerald-400/20',
+                                  bg: 'bg-emerald-400/10',
+                                  text:
+                                    'text-emerald-300',
+                                  label:
+                                    'text-emerald-200'
+                                }
 
 
                       return (
@@ -1549,19 +1549,19 @@ RENDER
 
                           {/* SCORE + MARGIN */}
 
-                          <div className="mt-5 flex items-end justify-between gap-4">
+                          <div className="mt-5 flex items-end justify-between gap-3 overflow-hidden">
                             {/* SCORE */}
 
-                            <div className="flex items-baseline gap-2">
-                              <div className="text-[62px] font-black leading-none">
+                            <div className="min-w-0 flex flex-1 items-baseline gap-1.5">
+                              <div className="text-[44px] font-black leading-none sm:text-[62px]">
                                 {winnerScore.toFixed(1)}
                               </div>
 
-                              <div className="pb-1 text-2xl font-black text-slate-600">
+                              <div className="pb-1 text-lg font-black text-slate-600 sm:text-2xl">
                                 —
                               </div>
 
-                              <div className="pb-1 text-[42px] font-black text-slate-500">
+                              <div className="pb-1 text-[30px] font-black text-slate-500 sm:text-[42px]">
                                 {loserScore.toFixed(1)}
                               </div>
                             </div>
@@ -1570,7 +1570,7 @@ RENDER
 
                             <div
                               className={`
-    rounded-2xl border px-4 py-3
+    shrink-0 rounded-xl border px-3 py-2 sm:px-4 sm:py-3
     transition-all
 
     ${marginStyle.border}
@@ -1584,7 +1584,7 @@ RENDER
                               </div>
 
                               <div
-                                className={`mt-1 text-lg font-black ${marginStyle.text}`}
+                                className={`mt-1 text-base sm:text-lg font-black ${marginStyle.text}`}
                               >
                                 +
                                 {marginValue.toFixed(1)}
