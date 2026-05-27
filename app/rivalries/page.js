@@ -1464,8 +1464,15 @@ RENDER
                           {g.GameStage &&
                             g.GameStage !==
                             'Reg Season' && (
-                              <div className="mb-4 inline-flex rounded-full border border-yellow-400/20 bg-yellow-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-yellow-300">
-                                PLAYOFF
+                              <div
+                                className={`mb-4 inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] ${g.GameStage === 'Playoffs'
+                                    ? 'border-yellow-400/20 bg-yellow-400/10 text-yellow-300'
+                                    : 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300'
+                                  }`}
+                              >
+                                {g.GameStage === 'Playoffs'
+                                  ? 'PLAYOFFS'
+                                  : 'CONSOLATION'}
                               </div>
                             )}
 
