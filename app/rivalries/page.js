@@ -551,7 +551,7 @@ export default function RivalriesPage() {
     } else {
       document.body.style.overflow = ''
     }
-  
+
     return () => {
       document.body.style.overflow = ''
     }
@@ -653,7 +653,7 @@ export default function RivalriesPage() {
   }
 
   const teamAColor =
-  'text-cyan-300'
+    'text-cyan-300'
 
   const teamABg =
     'bg-cyan-400'
@@ -716,27 +716,69 @@ RENDER
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#020617] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#020617]/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1700px] items-center justify-between px-4 py-4 md:px-6">
-          <a
-            href="/"
-            className="flex items-center gap-3"
-          >
-            <Image
-              src="/images/LogoFinalBlack.png"
-              alt="Tapitas"
-              width={34}
-              height={34}
-              style={{ filter: 'invert(1)' }}
-            />
+      {/* HEADER */}
 
-            <span className="text-base font-black tracking-[-0.04em]">
-              Tapitas
-              <span className="text-cyan-400">
-                League
-              </span>
+      <header className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
+        {/* LOGO */}
+
+        <a
+          href="/"
+          className="flex items-center gap-3"
+        >
+          <Image
+            src="/images/LogoFinalBlack.png"
+            alt="Tapitas League"
+            width={36}
+            height={36}
+            style={{ filter: 'invert(1)' }}
+            className="opacity-80"
+          />
+
+          <span className="text-base font-black tracking-[-0.04em]">
+            Tapitas
+            <span className="text-cyan-400">
+              League
             </span>
-          </a>
+          </span>
+        </a>
+
+        {/* RIGHT SIDE */}
+
+        <div className="flex items-center gap-3">
+          {/* DESKTOP NAV */}
+
+          <nav className="hidden items-center gap-1 md:flex">
+            {[
+              'Home',
+              'Standings',
+              'Matchups',
+              'History',
+              'Rivalries'
+            ].map((item) => {
+              const href =
+                item === 'Home'
+                  ? '/'
+                  : `/${item.toLowerCase()}`
+
+              const isActive =
+                item === 'Rivalries'
+
+              return (
+                <a
+                  key={item}
+                  href={href}
+                  className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${isActive
+                      ? 'bg-white/[0.06] text-white'
+                      : 'text-slate-400'
+                    }`}
+                >
+                  {item}
+                </a>
+              )
+            })}
+          </nav>
+
+          {/* MOBILE DRAWER BUTTON */}
 
           <button
             onClick={() =>
@@ -744,7 +786,7 @@ RENDER
                 !mobileSidebar
               )
             }
-            className="rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-black text-white shadow-2xl lg:hidden"
+            className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-black text-white transition-all hover:bg-white/[0.06] md:hidden"
           >
             <div className="flex items-center gap-2">
               <Swords className="h-4 w-4" />
@@ -781,9 +823,9 @@ RENDER
           lg:translate-x-0
 
           ${mobileSidebar
-                    ? 'translate-x-0'
-                    : '-translate-x-full'
-                  }
+              ? 'translate-x-0'
+              : '-translate-x-full'
+            }
         `}
         >
           <div className="flex h-full flex-col">
