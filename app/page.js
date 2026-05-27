@@ -621,7 +621,6 @@ export default function TapitasLeagueHomepage() {
 
   useEffect(() => {
     let mounted = true
-
     async function loadChampionsData() {
       try {
         const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -705,7 +704,6 @@ export default function TapitasLeagueHomepage() {
         console.error(error)
       }
     }
-
     loadChampionsData()
     return () => { mounted = false }
   }, [])
@@ -829,13 +827,24 @@ export default function TapitasLeagueHomepage() {
         console.error(error)
       }
     }
-
     loadLeagueData()
-
     return () => {
       mounted = false
     }
   }, [])
+
+  useEffect(() => {
+  if (mobileSidebar) {
+    document.body.style.overflow =
+      'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+
+  return () => {
+    document.body.style.overflow = ''
+  }
+}, [mobileSidebar])
 
   const standings = useMemo(() => {
     const base =
