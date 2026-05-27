@@ -974,8 +974,8 @@ RENDER
           {selected ? (
             <>
               {/* =====================================================
-              HERO
-              ===================================================== */}
+HERO
+===================================================== */}
 
               <motion.section
                 initial={{
@@ -999,21 +999,24 @@ RENDER
                   <div className="absolute bottom-[-140px] right-[-100px] h-[360px] w-[360px] rounded-full bg-purple-500/10 blur-3xl" />
                 </div>
 
-                <div className="relative z-10 px-6 py-6 md:px-10 md:py-8">
+                <div className="relative z-10 px-5 py-5 md:px-10 md:py-8">
+                  {/* TOP */}
+
                   <div className="mb-5 flex flex-wrap items-center gap-3">
-                    <HeatBadge
-                      heat={selected.heat}
-                    />
+                    <HeatBadge heat={selected.heat} />
 
                     <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
                       Historic Rivalry
                     </div>
                   </div>
 
+                  {/* MATCHUP */}
+
                   <div
                     className="mb-6 leading-[0.82] md:mb-8"
                     style={{
-                      fontFamily: bebas.style.fontFamily,
+                      fontFamily:
+                        bebas.style.fontFamily,
 
                       fontSize:
                         'clamp(38px,11vw,110px)'
@@ -1033,26 +1036,32 @@ RENDER
                   </div>
 
                   {/* =====================================================
-                  RECORD
-                  ===================================================== */}
+    RECORD + STREAK
+    ===================================================== */}
 
-                  <div className="flex items-end gap-4">
-                    <div>
+                  <div className="flex items-end gap-3 overflow-hidden">
+                    {/* RECORD */}
+
+                    <div className="min-w-0 flex-1">
                       <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
                         Overall Record
                       </div>
 
-                      <div className="mt-2 flex items-end gap-2 whitespace-nowrap"
-                        style={{ flexShrink: 0 }}>
-                        <div className="shrink-0 text-[110px] font-black leading-none md:text-[140px]">
+                      <div
+                        className="mt-2 flex items-end gap-1 whitespace-nowrap"
+                        style={{
+                          flexShrink: 0
+                        }}
+                      >
+                        <div className="shrink-0 text-[72px] font-black leading-none sm:text-[110px] md:text-[140px]">
                           {selected.aWins}
                         </div>
 
-                        <div className="shrink-0 pb-2 text-[72px] font-black text-cyan-400 md:pb-5 md:text-[72px]">
+                        <div className="shrink-0 pb-2 text-[42px] font-black text-cyan-400 sm:text-[72px] md:pb-5">
                           —
                         </div>
 
-                        <div className="shrink-0 text-[110px] font-black leading-none md:text-[140px]">
+                        <div className="shrink-0 text-[72px] font-black leading-none sm:text-[110px] md:text-[140px]">
                           {selected.bWins}
                         </div>
                       </div>
@@ -1062,35 +1071,71 @@ RENDER
 
                     <div
                       className={`
-    ml-auto w-[210px] shrink-0
-    rounded-[24px] border p-4
-    shadow-2xl transition-all
+          ml-auto shrink-0
 
-    ${streakColors.border}
-    ${streakColors.bg}
-    ${streakColors.glow}
-  `}
+          w-[145px] sm:w-[210px]
+
+          rounded-[20px] sm:rounded-[24px]
+
+          border p-3 sm:p-4
+
+          shadow-2xl transition-all
+
+          ${streakColors.border}
+          ${streakColors.bg}
+          ${streakColors.glow}
+        `}
                     >
-                      <div className="mb-3 flex items-center gap-2">
+                      {/* HEADER */}
+
+                      <div className="mb-2 flex items-center gap-2 sm:mb-3">
                         <Flame
-                          className={`h-5 w-5 ${streakColors.text}`}
+                          className={`h-4 w-4 sm:h-5 sm:w-5 ${streakColors.text}`}
                         />
 
                         <div
-                          className={`text-[10px] font-black uppercase tracking-[0.35em] ${streakColors.text}`}
+                          className={`
+              text-[8px] sm:text-[10px]
+              font-black uppercase
+              tracking-[0.25em] sm:tracking-[0.35em]
+
+              ${streakColors.text}
+            `}
                         >
                           Current Streak
                         </div>
                       </div>
 
+                      {/* VALUE */}
+
                       <div
-                        className={`text-[64px] font-black leading-none ${streakColors.text}`}
+                        className={`
+            text-[42px] sm:text-[64px]
+            font-black leading-none
+
+            ${streakColors.text}
+          `}
                       >
                         {currentStreak?.result}
                         {currentStreak?.count}
                       </div>
 
-                      <div className="mt-2 text-base font-black leading-none whitespace-nowrap">
+                      {/* TEAM */}
+
+                      <div
+                        className="
+            mt-2
+
+            overflow-hidden
+            text-ellipsis
+            whitespace-nowrap
+
+            text-[11px] sm:text-base
+
+            font-black
+            leading-tight
+          "
+                      >
                         {currentStreak?.team}
                       </div>
                     </div>
