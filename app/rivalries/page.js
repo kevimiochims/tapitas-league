@@ -938,11 +938,11 @@ RENDER
                         {r.aWins}
                       </div>
 
-                      <div className="pb-1 text-lg font-black text-slate-600">
+                      <div className="pb-[2px] text-xl font-black text-slate-600">
                         —
                       </div>
 
-                      <div className="pb-1 text-2xl font-black text-slate-500">
+                      <div className="text-4xl font-black leading-none text-slate-500">
                         {r.bWins}
                       </div>
                     </div>
