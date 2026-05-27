@@ -729,7 +729,7 @@ RENDER
 
         <aside
           className={`
-          fixed left-4 top-[84px] bottom-3
+          fixed left-0 top-[12px] z-40
 
           h-[calc(100vh-24px)]
 
@@ -938,11 +938,11 @@ RENDER
                         {r.aWins}
                       </div>
 
-                      <div className="pb-[2px] text-xl font-black text-slate-600">
+                      <div className="pb-1 text-lg font-black text-slate-600">
                         —
                       </div>
 
-                      <div className="text-4xl font-black leading-none text-slate-500">
+                      <div className="pb-1 text-2xl font-black text-slate-500">
                         {r.bWins}
                       </div>
                     </div>
