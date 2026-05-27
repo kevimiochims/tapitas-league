@@ -2,6 +2,8 @@
 
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import { Bebas_Neue } from 'next/font/google'
 
 import {
   Activity,
@@ -11,12 +13,15 @@ import {
   Swords
 } from 'lucide-react'
 
-import { motion } from 'framer-motion'
-
 const SHEET_ID =
   '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+
+const bebas = Bebas_Neue({
+  subsets: ['latin'],
+  weight: '400'
+})
 
 /* =====================================================
 UTILS
@@ -52,14 +57,11 @@ async function safeFetch(url) {
   try {
     const res = await fetch(url)
 
-
     if (!res.ok) return []
 
     const json = await res.json()
 
     return Array.isArray(json) ? json : []
-
-
   } catch {
     return []
   }
@@ -79,8 +81,11 @@ function getRivalryHeat(
 
   const recordGap = Math.abs(winsA - winsB)
 
-  const margin =
-    Math.abs(parseFloat(String(avgMargin).replace(',', '.')) || 0)
+  const margin = Math.abs(
+    parseFloat(
+      String(avgMargin).replace(',', '.')
+    ) || 0
+  )
 
   let score = 0
 
@@ -99,11 +104,8 @@ function getRivalryHeat(
   else if (margin <= 12) score += 1
 
   if (score >= 13) return 'LEGENDARY'
-
   if (score >= 10) return 'ELITE'
-
   if (score >= 7) return 'HIGH'
-
   if (score >= 4) return 'MEDIUM'
 
   return 'LOW'
@@ -114,7 +116,9 @@ PARSERS
 ===================================================== */
 
 function parseCurrentStreak(streak) {
-  if (!streak || streak === '—') return null
+  if (!streak || streak === '—') {
+    return null
+  }
 
   const text = String(streak)
 
@@ -133,90 +137,117 @@ function parseCurrentStreak(streak) {
 
   return {
     raw: text,
-
-
     team: match[1].trim(),
-
     result: match[2],
-
     count: match[3]
-
-
   }
 }
 
 function parseBestStreak(streak) {
-  if (!streak || streak === '—') return null
+  if (!streak || streak === '—') {
+    return null
+  }
 
-  const text = String(streak)
+  const text = String(streak).trim()
 
-  const match = text.match(
-    /(.*?)\s([WL])(\d+)\s((.*?)\s→\s(.*?))/i
+  const firstMatch = text.match(
+    /^(.*?)\s([WL])([\d/-]+)/
   )
 
-  if (!match) {
+  const rangeMatch = text.match(
+    /\((.*?)\)/
+  )
+
+  if (!firstMatch) {
     return {
       raw: text
     }
   }
 
-  return {
-    team: match[1].trim(),
+  let start = ''
+  let end = ''
 
+  if (rangeMatch) {
+    const cleaned = rangeMatch[1]
 
-    result: match[2],
-
-    count: match[3],
-
-    start: match[4].replace(
-      /W(\d+)/,
-      'Week $1'
-    ),
-
-    end: match[5].replace(
-      /W(\d+)/,
-      'Week $1'
+    const parts = cleaned.split(
+      /\s*(?:→|=>|⇒)\s*/
     )
 
+    if (parts.length >= 2) {
+      start = parts[0]
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(
+          /W\s*([\d/-]+)/i,
+          'Week $1'
+        )
 
+      end = parts[1]
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(
+          /W\s*([\d/-]+)/i,
+          'Week $1'
+        )
+    }
+  }
+
+  return {
+    raw: text,
+
+    team: firstMatch[1].trim(),
+
+    result: firstMatch[2],
+
+    count: firstMatch[3],
+
+    start,
+
+    end
   }
 }
 
 function parseBiggestWin(value) {
-  if (!value || value === '—') return null
+  if (!value || value === '—') {
+    return null
+  }
 
   const text = String(value)
 
   const scoreMatch = text.match(
-    /(\d+(?:.\d+)?)\s*-\s*(\d+(?:.\d+)?)/
+    /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
   )
 
   const marginMatch = text.match(
-    /(+?(\d+(?:.\d+)?))/
+    /\(\+?(\d+(?:\.\d+)?)\)/
   )
 
   const weekMatch = text.match(
-    /(\d{4}\sW\d+)/
+    /(\d{4}\sW[\d/-]+)/
   )
 
   return {
     raw: text,
 
+    scoreA: scoreMatch
+      ? scoreMatch[1]
+      : '0',
 
-    scoreA: scoreMatch?.[1] || '0',
+    scoreB: scoreMatch
+      ? scoreMatch[2]
+      : '0',
 
-    scoreB: scoreMatch?.[2] || '0',
+    margin: marginMatch
+      ? marginMatch[1]
+      : '0',
 
-    margin: marginMatch?.[1] || '0',
-
-    game: weekMatch?.[1]
+    game: weekMatch
       ? weekMatch[1].replace(
         /W(\d+)/,
         'Week $1'
       )
       : ''
-
-
   }
 }
 
@@ -229,7 +260,6 @@ function HeatBadge({ heat }) {
     LEGENDARY:
       'bg-yellow-400/15 text-yellow-300 border-yellow-400/20',
 
-
     ELITE:
       'bg-orange-400/15 text-orange-300 border-orange-400/20',
 
@@ -241,15 +271,14 @@ function HeatBadge({ heat }) {
 
     LOW:
       'bg-slate-700/20 text-slate-500 border-slate-700/20'
-
-
   }
 
   return (
     <div
       className={`rounded-full border px-3 py-1.5 text-[10px] font-black tracking-[0.3em] ${colors[heat]}`}
     >
-      {heat} </div>
+      {heat}
+    </div>
   )
 }
 
@@ -258,16 +287,17 @@ PAGE
 ===================================================== */
 
 export default function RivalriesPage() {
-  const [h2hData, setH2hData] = useState([])
+  const [h2hData, setH2hData] =
+    useState([])
 
-  const [gamesData, setGamesData] = useState([])
+  const [gamesData, setGamesData] =
+    useState([])
 
-  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] =
+    useState(null)
 
-  const [selected, setSelected] = useState(null)
-
-  const [filterHeat, setFilterHeat] =
-    useState('ALL')
+  const [mobileSidebar, setMobileSidebar] =
+    useState(false)
 
   const [teamFilterA, setTeamFilterA] =
     useState('ALL')
@@ -275,8 +305,11 @@ export default function RivalriesPage() {
   const [teamFilterB, setTeamFilterB] =
     useState('ALL')
 
-  const [mobileSidebar, setMobileSidebar] =
-    useState(false)
+  const [sortBy, setSortBy] =
+    useState('HEAT')
+
+  const [seasonFilter, setSeasonFilter] =
+    useState('ALL')
 
   /* =====================================================
   LOAD
@@ -284,23 +317,23 @@ export default function RivalriesPage() {
 
   useEffect(() => {
     async function load() {
-      const [h2h, games] = await Promise.all([
-        safeFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
+      const [h2h, games] =
+        await Promise.all([
+          safeFetch(
+            `${BASE_URL}/HEAD_TO_HEAD_SORTED`
+          ),
 
-
-        safeFetch(`${BASE_URL}/GAME_FACTS_ALL`)
-      ])
+          safeFetch(
+            `${BASE_URL}/GAME_FACTS_ALL`
+          )
+        ])
 
       setH2hData(h2h)
 
       setGamesData(games)
-
-      setLoading(false)
     }
 
     load()
-
-
   }, [])
 
   /* =====================================================
@@ -324,20 +357,34 @@ export default function RivalriesPage() {
   RIVALRIES
   ===================================================== */
 
+  const heatRank = {
+    LEGENDARY: 5,
+    ELITE: 4,
+    HIGH: 3,
+    MEDIUM: 2,
+    LOW: 1
+  }
+
   const rivalries = useMemo(() => {
-    const seen = new Set()
-
-
     const result = []
 
-    h2hData.forEach((r) => {
-      const a = String(r?.['Team A'] || '').trim()
+    const seen = new Set()
 
-      const b = String(r?.['Team B'] || '').trim()
+    h2hData.forEach((r) => {
+      const a = String(
+        r?.['Team A'] || ''
+      ).trim()
+
+      const b = String(
+        r?.['Team B'] || ''
+      ).trim()
 
       if (!a || !b) return
 
-      const key = [normalizeString(a), normalizeString(b)]
+      const key = [
+        normalizeString(a),
+        normalizeString(b)
+      ]
         .sort()
         .join('|')
 
@@ -345,35 +392,41 @@ export default function RivalriesPage() {
 
       seen.add(key)
 
-      const heat = getRivalryHeat(
-        r?.Games,
-        r?.['A Wins'],
-        r?.['B Wins'],
-        r?.['Avg Margin']
+      let teamA = a
+      let teamB = b
+
+      let aWins = parseNumber(
+        r?.['A Wins']
       )
 
-      result.push({
-        teamA: a,
+      let bWins = parseNumber(
+        r?.['B Wins']
+      )
 
-        teamB: b,
+      if (
+        teamFilterA !== 'ALL' &&
+        b === teamFilterA
+      ) {
+        teamA = b
+        teamB = a
+
+          ;[aWins, bWins] = [
+            bWins,
+            aWins
+          ]
+      }
+
+      result.push({
+        teamA,
+        teamB,
+        aWins,
+        bWins,
 
         games: parseNumber(r?.Games),
-
-        aWins: parseNumber(r?.['A Wins']),
-
-        bWins: parseNumber(r?.['B Wins']),
 
         avgMargin: String(
           r?.['Avg Margin'] || '0'
         ),
-
-        aPoW: parseNumber(r?.['A PO_W']),
-
-        bPoW: parseNumber(r?.['B PO_W']),
-
-        aRsW: parseNumber(r?.['A RS_W']),
-
-        bRsW: parseNumber(r?.['B RS_W']),
 
         streak: String(
           r?.['Current Streak'] || '—'
@@ -395,7 +448,12 @@ export default function RivalriesPage() {
           r?.['Best Streak Team B'] || '—'
         ),
 
-        heat
+        heat: getRivalryHeat(
+          r?.Games,
+          r?.['A Wins'],
+          r?.['B Wins'],
+          r?.['Avg Margin']
+        )
       })
     })
 
@@ -403,34 +461,77 @@ export default function RivalriesPage() {
       .filter((r) => {
         const matchA =
           teamFilterA === 'ALL' ||
-          r.teamA === teamFilterA ||
-          r.teamB === teamFilterA
+          r.teamA === teamFilterA
 
         const matchB =
           teamFilterB === 'ALL' ||
-          (r.teamA === teamFilterA &&
-            r.teamB === teamFilterB) ||
-          (r.teamA === teamFilterB &&
-            r.teamB === teamFilterA)
+          r.teamB === teamFilterB
 
-        const matchesHeat =
-          filterHeat === 'ALL' ||
-          r.heat === filterHeat
-
-        return (
-          matchA &&
-          matchB &&
-          matchesHeat
-        )
+        return matchA && matchB
       })
-      .sort((a, b) => b.games - a.games)
+      .sort((a, b) => {
+        if (sortBy === 'GAMES') {
+          return b.games - a.games
+        }
 
+        if (sortBy === 'CLOSEST') {
+          function getClosenessScore(r) {
+            const games = r.games
 
+            const winsDiff = Math.abs(
+              r.aWins - r.bWins
+            )
+
+            const avgMargin = Math.abs(
+              parseFloat(r.avgMargin)
+            )
+
+            // equilíbrio do H2H
+            const parityScore =
+              1 - winsDiff / games
+
+            // jogos apertados
+            const marginScore =
+              1 / (1 + avgMargin)
+
+            // rivalidade longa
+            const gamesScore =
+              Math.min(games / 15, 1)
+
+            // score final
+            return (
+              parityScore * 0.55 +
+              marginScore * 0.3 +
+              gamesScore * 0.15
+            )
+          }
+
+          return (
+            getClosenessScore(b) -
+            getClosenessScore(a)
+          )
+        }
+
+        if (sortBy === 'HEAT') {
+          const heatDiff =
+            heatRank[b.heat] -
+            heatRank[a.heat]
+
+          // desempate por jogos
+          if (heatDiff !== 0) {
+            return heatDiff
+          }
+
+          return b.games - a.games
+        }
+
+        return 0
+      })
   }, [
     h2hData,
-    filterHeat,
     teamFilterA,
-    teamFilterB
+    teamFilterB,
+    sortBy
   ])
 
   /* =====================================================
@@ -450,77 +551,65 @@ export default function RivalriesPage() {
   const history = useMemo(() => {
     if (!selected) return []
 
-
-    const games = gamesData.filter((g) => {
-      const team = normalizeString(g.Team)
-
-      const opp = normalizeString(g.Opponent)
-
-      const a = normalizeString(selected.teamA)
-
-      const b = normalizeString(selected.teamB)
-
-      return (
-        (team === a && opp === b) ||
-        (team === b && opp === a)
-      )
-    })
-
-    const uniqueGames = []
-
     const seen = new Set()
 
-    games.forEach((g) => {
-      const season = String(g.Season || '')
+    return gamesData.filter((g) => {
+      const team = normalizeString(g.Team)
 
-      const week = String(g.Week || '')
+      const opp = normalizeString(
+        g.Opponent
+      )
 
-      const teams = [
-        normalizeString(g.Team),
-        normalizeString(g.Opponent)
+      const a = normalizeString(
+        selected.teamA
+      )
+
+      const b = normalizeString(
+        selected.teamB
+      )
+
+      const isMatch =
+        (team === a && opp === b) ||
+        (team === b && opp === a)
+
+      if (!isMatch) return false
+
+      // chave única da partida
+      const key = [
+        g.Season,
+        g.Week,
+        a,
+        b
       ]
         .sort()
         .join('|')
 
-      const key = `${season}-${week}-${teams}`
-
-      if (seen.has(key)) return
+      // já existe
+      if (seen.has(key)) {
+        return false
+      }
 
       seen.add(key)
 
-      uniqueGames.push({
-        season,
-
-        week,
-
-        team: String(g.Team || ''),
-
-        opponent: String(g.Opponent || ''),
-
-        pf: parseNumber(g.PF),
-
-        pa: parseNumber(g.PA),
-
-        result: String(g.Result || '')
-          .trim()
-          .toUpperCase(),
-
-        stage:
-          String(g.GameStage || '') ||
-          String(g.GameType || '')
-      })
+      return true
     })
-
-    return uniqueGames.sort((a, b) => {
-      if (a.season !== b.season) {
-        return Number(b.season) - Number(a.season)
-      }
-
-      return Number(b.week) - Number(a.week)
-    })
-
-
   }, [selected, gamesData])
+
+  const seasons = [
+    'ALL',
+
+    ...new Set(
+      history.map((g) => g.Season)
+    )
+  ]
+
+  const filteredHistory =
+    seasonFilter === 'ALL'
+      ? history
+      : history.filter(
+        (g) =>
+          g.Season === seasonFilter
+      )
 
   /* =====================================================
   PARSED
@@ -546,583 +635,929 @@ export default function RivalriesPage() {
     ? parseBiggestWin(selected.biggestB)
     : null
 
+  const titleFont = {
+    fontFamily: bebas.style.fontFamily
+  }
+
+  const streakCount = parseInt(
+    currentStreak?.count || 0
+  )
+
+  const streakColors =
+    streakCount >= 8
+      ? {
+        border:
+          'border-red-400/30',
+        bg: 'bg-red-400/10',
+        text: 'text-red-300',
+        glow: 'shadow-red-500/20'
+      }
+      : streakCount >= 5
+        ? {
+          border:
+            'border-orange-400/30',
+          bg: 'bg-orange-400/10',
+          text: 'text-orange-300',
+          glow:
+            'shadow-orange-500/20'
+        }
+        : streakCount >= 3
+          ? {
+            border:
+              'border-yellow-400/30',
+            bg: 'bg-yellow-400/10',
+            text: 'text-yellow-300',
+            glow:
+              'shadow-yellow-500/20'
+          }
+          : {
+            border:
+              'border-cyan-400/20',
+            bg: 'bg-cyan-400/10',
+            text: 'text-cyan-300',
+            glow:
+              'shadow-cyan-500/10'
+          }
+
   /* =====================================================
-  RENDER
-  ===================================================== */
+RENDER
+===================================================== */
 
-  return (<main className="min-h-screen overflow-x-hidden bg-[#020617] text-white"> <style>{`
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+  return (
+    <main className="min-h-screen overflow-x-hidden bg-[#020617] text-white">
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#020617]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1700px] items-center justify-between px-4 py-4 md:px-6">
+          <a
+            href="/"
+            className="flex items-center gap-3"
+          >
+            <Image
+              src="/images/LogoFinalBlack.png"
+              alt="Tapitas"
+              width={34}
+              height={34}
+              style={{ filter: 'invert(1)' }}
+            />
 
-
-    body {
-      background: #020617;
-    }
-  `}</style>
-
-    {/* HEADER */}
-
-    <header className="sticky top-0 z-50 border-b border-white/5 bg-[#020617]/90 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1700px] items-center justify-between px-4 py-4 md:px-6">
-        <a
-          href="/"
-          className="flex items-center gap-3"
-        >
-          <Image
-            src="/images/LogoFinalBlack.png"
-            alt="Tapitas"
-            width={34}
-            height={34}
-            style={{ filter: 'invert(1)' }}
-          />
-
-          <span className="text-base font-black tracking-[-0.04em]">
-            Tapitas
-            <span className="text-cyan-400">
-              League
+            <span className="text-base font-black tracking-[-0.04em]">
+              Tapitas
+              <span className="text-cyan-400">
+                League
+              </span>
             </span>
-          </span>
-        </a>
+          </a>
 
-        <button
-          onClick={() =>
-            setMobileSidebar(!mobileSidebar)
-          }
-          className="rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-black text-white shadow-2xl lg:hidden"
-        >
-          <div className="flex items-center gap-2">
-            <Swords className="h-4 w-4" />
-            Rivalries
-          </div>
-        </button>
-      </div>
-    </header>
-
-    {/* BODY */}
-
-    <section className="mx-auto flex max-w-[1700px] gap-6 px-4 py-6 md:px-6">
-      {/* SIDEBAR */}
-
-      <aside
-        className={`
-        fixed bottom-0 left-0 top-[73px] z-40 w-[88vw] max-w-[380px]
-        transform border-r border-white/10 bg-[#071120]
-        transition-transform duration-300
-        lg:sticky lg:top-[90px]
-        lg:h-[calc(100vh-120px)]
-        lg:translate-x-0
-        lg:overflow-hidden
-        ${mobileSidebar
-            ? 'translate-x-0'
-            : '-translate-x-full'
-          }
-      `}
-      >
-        <div className="flex h-full flex-col">
-          {/* FILTERS */}
-
-          <div className="border-b border-white/5 p-5">
-            <div className="mb-4 text-[11px] font-black uppercase tracking-[0.35em] text-cyan-300">
+          <button
+            onClick={() =>
+              setMobileSidebar(
+                !mobileSidebar
+              )
+            }
+            className="rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-black text-white shadow-2xl lg:hidden"
+          >
+            <div className="flex items-center gap-2">
+              <Swords className="h-4 w-4" />
               Rivalries
             </div>
+          </button>
+        </div>
+      </header>
+      <section className="mx-auto flex max-w-[1800px] gap-8 px-3 py-3 md:px-5">
+        {/* =====================================================
+        SIDEBAR
+        ===================================================== */}
 
-            {/* TEAM FILTERS */}
+        <aside
+          className={`
+    fixed left-0 top-[12px] z-40
 
-            <div className="space-y-3">
-              <select
-                value={teamFilterA}
-                onChange={(e) =>
-                  setTeamFilterA(e.target.value)
-                }
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-bold outline-none"
-              >
-                <option value="ALL">
-                  Select Team
-                </option>
+    h-[calc(100vh-24px)]
 
-                {allTeams.map((team) => (
-                  <option
-                    key={team}
-                    value={team}
+    w-[92vw] max-w-[460px]
+
+    transform rounded-r-[32px]
+    border border-white/10
+    bg-[#071120]
+
+    transition-transform duration-300
+
+    lg:sticky lg:top-[12px]
+    lg:h-[calc(100vh-24px)]
+
+    overflow-hidden shadow-2xl
+
+    lg:translate-x-0
+
+    ${mobileSidebar
+              ? 'translate-x-0'
+              : '-translate-x-full'
+            }
+  `}
+        >
+          <div className="flex h-full flex-col">
+            {/* =====================================================
+            FILTERS
+            ===================================================== */}
+
+            <div className="border-b border-white/5 p-5">
+              <div className="mb-4 text-[11px] font-black uppercase tracking-[0.35em] text-cyan-300">
+                Rivalries
+              </div>
+
+              {/* TEAM FILTER */}
+
+              <div className="space-y-3">
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.03] px-5 py-4">
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                    Team
+                  </div>
+
+                  <select
+                    value={teamFilterA}
+                    onChange={(e) =>
+                      setTeamFilterA(
+                        e.target.value
+                      )
+                    }
+                    className="w-full bg-transparent text-lg font-black outline-none"
                   >
-                    {team}
-                  </option>
-                ))}
-              </select>
+                    <option value="ALL">
+                      Filter by team...
+                    </option>
 
-              <select
-                value={teamFilterB}
-                onChange={(e) =>
-                  setTeamFilterB(e.target.value)
-                }
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-bold outline-none"
-              >
-                <option value="ALL">
-                  Select Opponent
-                </option>
+                    {allTeams.map((team) => (
+                      <option
+                        key={team}
+                        value={team}
+                      >
+                        {team}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                {allTeams.map((team) => (
-                  <option
-                    key={team}
-                    value={team}
+                {/* OPPONENT */}
+
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.03] px-5 py-4">
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                    Opponent
+                  </div>
+
+                  <select
+                    value={teamFilterB}
+                    onChange={(e) =>
+                      setTeamFilterB(
+                        e.target.value
+                      )
+                    }
+                    className="w-full bg-transparent text-lg font-black outline-none"
                   >
-                    {team}
-                  </option>
-                ))}
-              </select>
-            </div>
+                    <option value="ALL">
+                      vs opponent...
+                    </option>
 
-            {/* HEAT */}
+                    {allTeams.map((team) => (
+                      <option
+                        key={team}
+                        value={team}
+                      >
+                        {team}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {[
-                'ALL',
-                'LEGENDARY',
-                'ELITE',
-                'HIGH',
-                'MEDIUM',
-                'LOW'
-              ].map((heat) => (
-                <button
-                  key={heat}
-                  onClick={() =>
-                    setFilterHeat(heat)
+              {/* =====================================================
+              SORT FILTERS
+              ===================================================== */}
+
+              <div className="mt-4 flex gap-2">
+                {[
+                  {
+                    label: 'Heat',
+                    value: 'HEAT',
+                    icon: '🔥'
+                  },
+                  {
+                    label: 'Games',
+                    value: 'GAMES',
+                    icon: '📊'
+                  },
+                  {
+                    label: 'Closest',
+                    value: 'CLOSEST',
+                    icon: '⚔️'
                   }
-                  className={`rounded-xl border px-2 py-2 text-[10px] font-black tracking-[0.15em] transition-all ${filterHeat === heat
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    onClick={() =>
+                      setSortBy(item.value)
+                    }
+                    className={`flex flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-black transition-all ${sortBy === item.value
                       ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-300'
-                      : 'border-white/5 bg-white/[0.03] text-slate-500'
-                    }`}
-                >
-                  {heat}
-                </button>
-              ))}
+                      : 'border-white/10 bg-white/[0.03] text-slate-500'
+                      }`}
+                  >
+                    <span>{item.icon}</span>
+
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* LIST */}
+            {/* =====================================================
+            RIVALRIES LIST
+            ===================================================== */}
 
-          <div className="flex-1 overflow-y-auto">
-            {rivalries.map((r, i) => {
-              const active = selected === r
+            <div className="flex-1 overflow-y-auto pb-80">
+              {rivalries.map((r, i) => {
+                const active =
+                  selected === r
 
-              return (
-                <motion.button
-                  key={i}
-                  whileHover={{ scale: 1.015 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setSelected(r)
+                return (
+                  <motion.button
+                    key={i}
+                    whileHover={{
+                      scale: 1.015
+                    }}
+                    whileTap={{
+                      scale: 0.98
+                    }}
+                    onClick={() => {
+                      setSelected(r)
 
-                    setMobileSidebar(false)
-                  }}
-                  className={`w-full border-b border-white/[0.03] px-5 py-5 text-left transition-all ${active
+                      setMobileSidebar(false)
+                    }}
+                    className={`w-full border-b border-white/[0.03] px-5 py-4 text-left transition-all ${active
                       ? 'bg-cyan-400/[0.05]'
                       : 'hover:bg-white/[0.03]'
-                    }`}
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <HeatBadge heat={r.heat} />
-
-                    <ChevronDown
-                      className={`h-4 w-4 text-slate-600 transition-transform ${active ? 'rotate-180' : ''
-                        }`}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      fontFamily:
-                        '"Bebas Neue", sans-serif',
-                      fontSize: '32px',
-                      lineHeight: 0.9
-                    }}
+                      }`}
                   >
-                    {r.teamA}
-                  </div>
+                    <div className="mb-3 flex items-center justify-between">
+                      <HeatBadge
+                        heat={r.heat}
+                      />
 
-                  <div className="my-2 text-xs font-black uppercase tracking-[0.3em] text-cyan-400">
-                    vs
-                  </div>
-
-                  <div
-                    style={{
-                      fontFamily:
-                        '"Bebas Neue", sans-serif',
-                      fontSize: '32px',
-                      lineHeight: 0.9
-                    }}
-                  >
-                    {r.teamB}
-                  </div>
-                </motion.button>
-              )
-            })}
-          </div>
-        </div>
-      </aside>
-
-      {/* OVERLAY */}
-
-      {mobileSidebar && (
-        <div
-          onClick={() =>
-            setMobileSidebar(false)
-          }
-          className="fixed inset-0 z-30 bg-black/70 lg:hidden"
-        />
-      )}
-
-      {/* MAIN */}
-
-      <div className="min-w-0 flex-1 overflow-hidden">
-        {selected && (
-          <>
-            {/* HERO */}
-
-            <motion.section
-              initial={{
-                opacity: 0,
-                y: 20
-              }}
-              animate={{
-                opacity: 1,
-                y: 0
-              }}
-              transition={{
-                duration: 0.5
-              }}
-              className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]"
-            >
-              <div className="absolute inset-0">
-                <div className="absolute left-[-120px] top-[-120px] h-[360px] w-[360px] rounded-full bg-cyan-400/10 blur-3xl" />
-
-                <div className="absolute bottom-[-140px] right-[-100px] h-[360px] w-[360px] rounded-full bg-purple-500/10 blur-3xl" />
-              </div>
-
-              <div className="relative z-10 p-6 md:p-10">
-                <div className="mb-5 flex flex-wrap items-center gap-3">
-                  <HeatBadge heat={selected.heat} />
-
-                  <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
-                    Historic Rivalry
-                  </div>
-                </div>
-
-                <div
-                  className="leading-[0.82]"
-                  style={{
-                    fontFamily:
-                      '"Bebas Neue", sans-serif',
-                    fontSize:
-                      'clamp(38px,11vw,120px)'
-                  }}
-                >
-                  <div>{selected.teamA}</div>
-
-                  <div className="text-cyan-400">
-                    VS
-                  </div>
-
-                  <div>{selected.teamB}</div>
-                </div>
-
-                <div className="mt-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
-                      Overall Record
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap items-end gap-3">
-                      <div className="text-[54px] font-black leading-none sm:text-[72px] md:text-[120px]">
-                        {selected.aWins}
-                      </div>
-
-                      <div className="pb-3 text-4xl font-black text-cyan-400 md:pb-5 md:text-6xl">
-                        —
-                      </div>
-
-                      <div className="text-[54px] font-black leading-none sm:text-[72px] md:text-[120px]">
-                        {selected.bWins}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-full max-w-[360px] rounded-[28px] border border-white/10 bg-white/[0.03] p-5">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Flame className="h-5 w-5 text-orange-300" />
-
-                      <div className="text-[10px] font-black uppercase tracking-[0.35em] text-orange-300">
-                        Current Streak
-                      </div>
-                    </div>
-
-                    <div className="text-6xl font-black leading-none text-orange-300">
-                      {currentStreak?.result}
-                      {currentStreak?.count}
-                    </div>
-
-                    <div className="mt-3 text-lg font-black">
-                      {currentStreak?.team}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.section>
-
-            {/* BIGGEST WINS */}
-
-            <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-              {[{
-                team: selected.teamA,
-                data: biggestA,
-                color: 'yellow'
-              }, {
-                team: selected.teamB,
-                data: biggestB,
-                color: 'orange'
-              }].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="overflow-hidden rounded-[32px] border border-white/10 bg-[#071120]"
-                >
-                  <div className="border-b border-white/5 p-6">
-                    <div className={`mb-2 flex items-center gap-2 text-${item.color}-300`}>
-                      <Stars className="h-5 w-5" />
-
-                      <div className="text-[10px] font-black uppercase tracking-[0.35em]">
-                        Biggest Win
-                      </div>
+                      <ChevronDown
+                        className={`h-4 w-4 text-slate-600 transition-transform ${active
+                          ? 'rotate-180'
+                          : ''
+                          }`}
+                      />
                     </div>
 
                     <div
                       style={{
-                        fontFamily:
-                          '"Bebas Neue", sans-serif',
-                        fontSize: '54px',
+                        fontFamily: bebas.style.fontFamily,
+                        fontSize: '32px',
                         lineHeight: 0.9
                       }}
                     >
-                      {item.team}
+                      {r.teamA}
                     </div>
-                  </div>
 
-                  <div className="p-6">
-                    <div className="flex items-end gap-3">
-                      <div className="text-[58px] font-black leading-none sm:text-[80px] md:text-[110px]">
-                        {item.data?.scoreA}
+                    <div className="my-2 text-xs font-black uppercase tracking-[0.3em] text-cyan-400">
+                      vs
+                    </div>
+
+                    <div
+                      style={{
+                        fontFamily: bebas.style.fontFamily,
+                        fontSize: '32px',
+                        lineHeight: 0.9
+                      }}
+                    >
+                      {r.teamB}
+                    </div>
+
+                    <div className="mt-4 flex items-end gap-2">
+                      <div className="text-4xl font-black leading-none">
+                        {r.aWins}
                       </div>
 
-                      <div className="pb-3 text-4xl font-black text-slate-600">
+                      <div className="pb-1 text-lg font-black text-slate-600">
                         —
                       </div>
 
-                      <div className="pb-3 text-5xl font-black text-slate-500">
-                        {item.data?.scoreB}
+                      <div className="pb-1 text-2xl font-black text-slate-500">
+                        {r.bWins}
                       </div>
                     </div>
+                  </motion.button>
+                )
+              })}
+            </div>
+          </div>
+        </aside>
 
-                    <div className="mt-6 border-t border-white/5 pt-5">
-                      <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
-                        Game
-                      </div>
+        {/* =====================================================
+        OVERLAY
+        ===================================================== */}
 
-                      <div className="mt-2 text-lg font-black">
-                        {item.data?.game}
-                      </div>
+        {mobileSidebar && (
+          <div
+            onClick={() =>
+              setMobileSidebar(false)
+            }
+            className="fixed inset-0 z-30 bg-black/70 lg:hidden"
+          />
+        )}
 
-                      <div className="mt-2 text-sm text-slate-500">
-                        +{item.data?.margin} margin
-                      </div>
-                    </div>
-                  </div>
+        {/* =====================================================
+        MAIN
+        ===================================================== */}
+
+        <div className="min-w-0 flex-1 overflow-hidden">
+          {selected ? (
+            <>
+              {/* =====================================================
+              HERO
+              ===================================================== */}
+
+              <motion.section
+                initial={{
+                  opacity: 0,
+                  y: 20
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0
+                }}
+                transition={{
+                  duration: 0.5
+                }}
+                className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]"
+              >
+                {/* GLOWS */}
+
+                <div className="absolute inset-0">
+                  <div className="absolute left-[-120px] top-[-120px] h-[360px] w-[360px] rounded-full bg-cyan-400/10 blur-3xl" />
+
+                  <div className="absolute bottom-[-140px] right-[-100px] h-[360px] w-[360px] rounded-full bg-purple-500/10 blur-3xl" />
                 </div>
-              ))}
-            </section>
 
-            {/* BEST STREAKS */}
+                <div className="relative z-10 px-6 py-6 md:px-10 md:py-8">
+                  <div className="mb-5 flex flex-wrap items-center gap-3">
+                    <HeatBadge
+                      heat={selected.heat}
+                    />
 
-            <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-              {[{
-                data: bestA,
-                color: 'cyan'
-              }, {
-                data: bestB,
-                color: 'purple'
-              }].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-[32px] border border-white/10 bg-[#071120] p-6"
-                >
-                  <div className={`text-[10px] font-black uppercase tracking-[0.35em] text-${item.color}-300`}>
-                    Best Streak
+                    <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                      Historic Rivalry
+                    </div>
                   </div>
 
                   <div
-                    className="mt-4 leading-[0.9]"
+                    className="mb-6 leading-[0.82] md:mb-8"
                     style={{
-                      fontFamily:
-                        '"Bebas Neue", sans-serif',
-                      fontSize: '54px'
+                      fontFamily: bebas.style.fontFamily,
+
+                      fontSize:
+                        'clamp(38px,11vw,110px)'
                     }}
                   >
-                    {item.data?.team}
+                    <div className="space-y-1 md:space-y-2">
+                      {selected.teamA}
+                    </div>
+
+                    <div className="text-cyan-400">
+                      vs
+                    </div>
+
+                    <div className="space-y-1 md:space-y-2">
+                      {selected.teamB}
+                    </div>
                   </div>
 
-                  <div className={`mt-6 text-7xl font-black text-${item.color}-300`}>
-                    {item.data?.result}
-                    {item.data?.count}
-                  </div>
+                  {/* =====================================================
+                  RECORD
+                  ===================================================== */}
 
-                  <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/5 pt-5">
+                  <div className="flex items-end gap-4">
                     <div>
-                      <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
-                        Started
+                      <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
+                        Overall Record
                       </div>
 
-                      <div className="mt-2 text-sm font-bold">
-                        {item.data?.start}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
-                        Ended
-                      </div>
-
-                      <div className="mt-2 text-sm font-bold">
-                        {item.data?.end}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </section>
-
-            {/* TIMELINE */}
-
-            <section className="mt-6 overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]">
-              <div className="border-b border-white/5 p-6 md:p-8">
-                <div className="flex items-center gap-3">
-                  <Activity className="h-6 w-6 text-cyan-300" />
-
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.35em] text-cyan-300">
-                      Rivalry Timeline
-                    </div>
-
-                    <div className="mt-2 text-3xl font-black md:text-5xl">
-                      Every Chapter
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4 p-5">
-                {history.map((g, i) => {
-                  const won = g.result === 'W'
-
-                  const winner = won
-                    ? g.team
-                    : g.opponent
-
-                  const loser = won
-                    ? g.opponent
-                    : g.team
-
-                  const winnerScore = won
-                    ? g.pf
-                    : g.pa
-
-                  const loserScore = won
-                    ? g.pa
-                    : g.pf
-
-                  const winnerIsA =
-                    normalizeString(winner) ===
-                    normalizeString(selected.teamA)
-
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={{
-                        opacity: 0,
-                        y: 20
-                      }}
-                      whileInView={{
-                        opacity: 1,
-                        y: 0
-                      }}
-                      viewport={{
-                        once: true
-                      }}
-                      transition={{
-                        duration: 0.35
-                      }}
-                      className="rounded-[28px] border border-white/5 bg-white/[0.03] p-5"
-                    >
-                      <div className="mb-3 flex items-center gap-3">
-                        <div
-                          className={`h-3 w-3 rounded-full ${winnerIsA
-                              ? 'bg-cyan-400'
-                              : 'bg-purple-400'
-                            }`}
-                        />
-
-                        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
-                          {g.season} · Week{' '}
-                          {g.week}
-                        </div>
-                      </div>
-
-                      {g.stage &&
-                        g.stage !==
-                        'Reg Season' && (
-                          <div className="mb-4 inline-flex rounded-full border border-yellow-400/20 bg-yellow-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-yellow-300">
-                            PLAYOFF
-                          </div>
-                        )}
-
-                      <div className="text-xl font-black leading-tight">
-                        <span
-                          className={
-                            winnerIsA
-                              ? 'text-cyan-300'
-                              : 'text-purple-300'
-                          }
-                        >
-                          {winner}
-                        </span>
-
-                        <span className="mx-2 text-slate-600">
-                          def.
-                        </span>
-
-                        <span>{loser}</span>
-                      </div>
-
-                      <div className="mt-5 flex items-baseline gap-2">
-                        <div className="text-5xl font-black leading-none">
-                          {winnerScore.toFixed(1)}
+                      <div className="mt-2 flex items-end gap-2 whitespace-nowrap"
+                        style={{ flexShrink: 0 }}>
+                        <div className="shrink-0 text-[110px] font-black leading-none md:text-[140px]">
+                          {selected.aWins}
                         </div>
 
-                        <div className="pb-1 text-2xl font-black text-slate-600">
+                        <div className="shrink-0 pb-2 text-[72px] font-black text-cyan-400 md:pb-5 md:text-[72px]">
                           —
                         </div>
 
-                        <div className="pb-1 text-3xl font-black text-slate-500">
-                          {loserScore.toFixed(1)}
+                        <div className="shrink-0 text-[110px] font-black leading-none md:text-[140px]">
+                          {selected.bWins}
                         </div>
                       </div>
-                    </motion.div>
-                  )
-                })}
+                    </div>
+
+                    {/* CURRENT STREAK */}
+
+                    <div
+  className={`
+    ml-auto w-[210px] shrink-0
+    rounded-[24px] border p-4
+    shadow-2xl transition-all
+
+    ${streakColors.border}
+    ${streakColors.bg}
+    ${streakColors.glow}
+  `}
+>
+  <div className="mb-3 flex items-center gap-2">
+    <Flame
+      className={`h-5 w-5 ${streakColors.text}`}
+    />
+
+    <div
+      className={`text-[10px] font-black uppercase tracking-[0.35em] ${streakColors.text}`}
+    >
+      Current Streak
+    </div>
+  </div>
+
+  <div
+    className={`text-[64px] font-black leading-none ${streakColors.text}`}
+  >
+    {currentStreak?.result}
+    {currentStreak?.count}
+  </div>
+
+  <div className="mt-2 text-base font-black leading-none whitespace-nowrap">
+    {currentStreak?.team}
+  </div>
+</div>
+                  </div>
+                </div>
+              </motion.section>
+              {/* =====================================================
+              BIGGEST WINS
+              ===================================================== */}
+
+              <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+                {[
+                  {
+                    team: selected.teamA,
+                    data: biggestA,
+                    color: 'yellow'
+                  },
+                  {
+                    team: selected.teamB,
+                    data: biggestB,
+                    color: 'orange'
+                  }
+                ].map((item, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{
+                      opacity: 0,
+                      y: 20
+                    }}
+                    whileInView={{
+                      opacity: 1,
+                      y: 0
+                    }}
+                    viewport={{
+                      once: true
+                    }}
+                    transition={{
+                      duration: 0.35
+                    }}
+                    className="overflow-hidden rounded-[32px] border border-white/10 bg-[#071120]"
+                  >
+                    <div className="border-b border-white/5 p-6">
+                      <div
+                        className={`mb-6 flex items-center gap-2 ${item.color === 'yellow'
+                          ? 'text-yellow-300'
+                          : 'text-orange-300'
+                          }`}
+                      >
+                        <Stars className="h-5 w-5" />
+
+                        <div className="text-[10px] font-black uppercase tracking-[0.35em] ">
+                          Biggest Win
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          fontFamily: bebas.style.fontFamily,
+                          fontSize: '54px',
+                          lineHeight: 0.9
+                        }}
+                      >
+                        {item.team}
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      {/* SCORE */}
+
+                      <div className="flex items-baseline gap-3">
+                        <div
+                          className={`leading-none text-[52px] font-black sm:text-[72px] md:text-[92px] ${item.color === 'yellow'
+                            ? 'text-cyan-300'
+                            : 'text-purple-300'
+                            }`}
+                        >
+                          {item.data?.scoreA}
+                        </div>
+
+                        <div className="pb-3 text-4xl font-black text-slate-600">
+                          —
+                        </div>
+
+                        <div className="pb-3 text-4xl font-black text-slate-500">
+                          {item.data?.scoreB}
+                        </div>
+                      </div>
+
+                      {/* STATS */}
+
+                      <div className="mt-6 grid grid-cols-3 gap-3 border-t border-white/5 pt-5">
+                        {/* SEASON */}
+
+                        <div className="rounded-2xl bg-white/[0.03] p-3">
+                          <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">
+                            Season
+                          </div>
+
+                          <div className="mt-2 text-lg font-black">
+                            {item.data?.game?.split(
+                              ' '
+                            )[0]}
+                          </div>
+                        </div>
+
+                        {/* WEEK */}
+
+                        <div className="rounded-2xl bg-white/[0.03] p-3">
+                          <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">
+                            Week
+                          </div>
+
+                          <div className="mt-2 text-lg font-black">
+                            {item.data?.game?.match(
+                              /Week\s[\d/-]+/
+                            )?.[0]}
+                          </div>
+                        </div>
+
+                        {/* MARGIN */}
+
+                        <div className="rounded-2xl border border-green-400/20 bg-green-400/10 p-3">
+                          <div className="text-[9px] uppercase tracking-[0.25em] text-green-200">
+                            Margin
+                          </div>
+
+                          <div className="mt-2 text-lg font-black text-green-300">
+                            +
+                            {item.data?.margin}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </section>
+
+              {/* =====================================================
+              BEST STREAKS
+              ===================================================== */}
+
+              <section className="mb-6 mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+                {[
+                  {
+                    data: bestA,
+                    color: 'cyan'
+                  },
+                  {
+                    data: bestB,
+                    color: 'purple'
+                  }
+                ].map((item, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{
+                      opacity: 0,
+                      y: 20
+                    }}
+                    whileInView={{
+                      opacity: 1,
+                      y: 0
+                    }}
+                    viewport={{
+                      once: true
+                    }}
+                    transition={{
+                      duration: 0.35
+                    }}
+                    className="rounded-[32px] border border-white/10 bg-[#071120] p-6"
+                  >
+                    <div
+                      className={`mb-6 flex items-center gap-2 ${item.color === 'cyan'
+                        ? 'text-cyan-300'
+                        : 'text-purple-300'
+                        }`}
+                    >
+                      <Flame className="h-5 w-5" />
+
+                      <div className="text-[10px] font-black uppercase tracking-[0.35em]">
+                        Best Streak
+                      </div>
+                    </div>
+
+                    <div
+                      className="mt-4 leading-[0.9]"
+                      style={{
+                        fontFamily: bebas.style.fontFamily,
+                        fontSize: '54px'
+                      }}
+                    >
+                      {item.data?.team}
+                    </div>
+
+                    <div
+                      className={`mt-6 text-7xl font-black ${item.color === 'cyan'
+                        ? 'text-cyan-300'
+                        : 'text-purple-300'
+                        }`}
+                    >
+                      {item.data?.result}
+                      {item.data?.count}
+                    </div>
+
+                    {/* TIMELINE */}
+
+                    <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/5 pt-5">
+                      {/* START */}
+
+                      <div className="rounded-2xl bg-white/[0.03] p-4">
+                        <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                          Started
+                        </div>
+
+                        <div className="mt-2 text-sm font-bold">
+                          {item.data?.start}
+                        </div>
+                      </div>
+
+                      {/* END */}
+
+                      <div className="rounded-2xl bg-white/[0.03] p-4">
+                        <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                          Ended
+                        </div>
+
+                        <div className="mt-2 text-sm font-bold">
+                          {item.data?.end}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </section>
+
+              {/* =====================================================
+              TIMELINE
+              ===================================================== */}
+
+              <section className="mt-6 overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]">
+                {/* HEADER */}
+
+                <div className="border-b border-white/5 p-6 md:p-8">
+                  <div className="flex items-center gap-3">
+                    <Activity className="h-6 w-6 text-cyan-300" />
+
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.35em] text-cyan-300">
+                        Rivalry Timeline
+                      </div>
+
+                      <div
+                        className="mt-2"
+                        style={{
+                          ...titleFont,
+                          fontSize: 'clamp(42px,7vw,62px)',
+                          lineHeight: 0.9
+                        }}
+                      >
+                        Every Chapter
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* =====================================================
+                SEASON FILTERS
+                ===================================================== */}
+
+                <div className="px-5 pt-5 md:px-8">
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {seasons.map((season) => (
+                      <button
+                        key={season}
+                        onClick={() =>
+                          setSeasonFilter(
+                            season
+                          )
+                        }
+                        className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-black transition-all ${seasonFilter ===
+                          season
+                          ? 'bg-cyan-400 text-black'
+                          : 'bg-white/[0.03] text-slate-400'
+                          }`}
+                      >
+                        {season}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* =====================================================
+                TIMELINE LIST
+                ===================================================== */}
+
+                <div className="space-y-3 p-5 md:p-8">
+                  {filteredHistory.map(
+                    (g, i) => {
+                      const won =
+                        g.Result === 'W'
+
+                      const winner = won
+                        ? g.Team
+                        : g.Opponent
+
+                      const loser = won
+                        ? g.Opponent
+                        : g.Team
+
+                      const winnerScore =
+                        won
+                          ? parseNumber(
+                            g.PF
+                          )
+                          : parseNumber(
+                            g.PA
+                          )
+
+                      const loserScore =
+                        won
+                          ? parseNumber(
+                            g.PA
+                          )
+                          : parseNumber(
+                            g.PF
+                          )
+
+                      const winnerIsA =
+                        normalizeString(
+                          winner
+                        ) ===
+                        normalizeString(
+                          selected.teamA
+                        )
+
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={{
+                            opacity: 0,
+                            y: 20
+                          }}
+                          whileInView={{
+                            opacity: 1,
+                            y: 0
+                          }}
+                          viewport={{
+                            once: true
+                          }}
+                          transition={{
+                            duration: 0.35
+                          }}
+                          className="rounded-[28px] border border-white/5 bg-white/[0.03] p-5"
+                        >
+                          {/* TOP */}
+
+                          <div className="mb-3 flex items-center gap-3">
+                            <div
+                              className={`h-3 w-3 rounded-full ${winnerIsA
+                                ? 'bg-cyan-400'
+                                : 'bg-purple-400'
+                                }`}
+                            />
+
+                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                              {g.Season} ·
+                              Week {g.Week}
+                            </div>
+                          </div>
+                          {/* PLAYOFF BADGE */}
+
+                          {g.GameStage &&
+                            g.GameStage !==
+                            'Reg Season' && (
+                              <div className="mb-4 inline-flex rounded-full border border-yellow-400/20 bg-yellow-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-yellow-300">
+                                PLAYOFF
+                              </div>
+                            )}
+
+                          {/* RESULT */}
+                          <div className="text-xl font-black leading-tight">
+                            <span
+                              className={
+                                winnerIsA
+                                  ? 'text-cyan-300'
+                                  : 'text-purple-300'
+                              }
+                            >
+                              {winner}
+                            </span>
+
+                            <span className="mx-2 text-slate-600">
+                              def.
+                            </span>
+
+                            <span>
+                              {loser}
+                            </span>
+                          </div>
+
+                          {/* SCORE + MARGIN */}
+
+                          <div className="mt-5 flex items-end justify-between gap-4">
+                            {/* SCORE */}
+
+                            <div className="flex items-baseline gap-2">
+                              <div className="text-[62px] font-black leading-none">
+                                {winnerScore.toFixed(1)}
+                              </div>
+
+                              <div className="pb-1 text-2xl font-black text-slate-600">
+                                —
+                              </div>
+
+                              <div className="pb-1 text-[42px] font-black text-slate-500">
+                                {loserScore.toFixed(1)}
+                              </div>
+                            </div>
+
+                            {/* MARGIN */}
+
+                            <div className="rounded-2xl border border-white/5 bg-white/[0.03] px-4 py-3">
+                              <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">
+                                Margin
+                              </div>
+
+                              <div className="mt-1 text-lg font-black">
+                                +
+                                {Math.abs(
+                                  winnerScore - loserScore
+                                ).toFixed(1)}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )
+                    }
+                  )}
+                </div>
+              </section>
+            </>
+          ) : (
+            /* =====================================================
+            EMPTY STATE
+            ===================================================== */
+
+            <div className="flex min-h-[70vh] items-center justify-center rounded-[34px] border border-white/10 bg-[#071120]">
+              <div className="text-center">
+                <Swords className="mx-auto mb-6 h-14 w-14 text-slate-700" />
+
+                <div
+                  style={{
+                    fontFamily: bebas.style.fontFamily,
+                    fontSize: '64px'
+                  }}
+                >
+                  SELECT A RIVALRY
+                </div>
+
+                <p className="mt-2 text-slate-500">
+                  Explore the greatest
+                  battles in league history
+                </p>
               </div>
-            </section>
-          </>
-        )}
-      </div>
-    </section>
-  </main>
-
-
+            </div>
+          )}
+        </div>
+      </section>
+    </main>
   )
 }
