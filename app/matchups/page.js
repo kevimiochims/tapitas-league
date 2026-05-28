@@ -973,13 +973,13 @@ export default function MatchupsPage() {
                     <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-4">
                       📝 Game Recap
                     </div>
-                    <div className="text-slate-300 text-sm leading-relaxed">
+                    <div className="text-slate-300 text-sm leading-relaxed text-justify">
                       <ReactMarkdown
                         components={{
                           h1: ({ children }) => <h1 className="text-2xl font-black text-white mb-4 mt-6 leading-tight">{children}</h1>,
                           h2: ({ children }) => <h2 className="text-xl font-black text-white mb-3 mt-5 leading-tight">{children}</h2>,
                           h3: ({ children }) => <h3 className="text-lg font-black text-white mb-2 mt-4">{children}</h3>,
-                          p: ({ children }) => <p className="text-slate-300 mb-3 leading-relaxed">{children}</p>,
+                          p: ({ children }) => <p className="text-slate-300 mb-3 leading-relaxed text-justify">{children}</p>,
                           strong: ({ children }) => <strong className="text-white font-black">{children}</strong>,
                           em: ({ children }) => <em className="text-cyan-300 not-italic font-bold">{children}</em>,
                           ul: ({ children }) => <ul className="list-disc list-inside mb-3 text-slate-300 space-y-1">{children}</ul>,
