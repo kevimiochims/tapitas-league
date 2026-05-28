@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy,
-  Skull,
+  Flag,
   Flame,
   Swords,
   ChevronDown,
@@ -84,6 +84,32 @@ function getSeasonTheme(season, latestSeason) {
   }
 }
 
+function GameRow({ game }) {
+  return (
+    <div className="flex flex-col border-b border-white/5 py-[6px] last:border-0">
+      <div className="flex items-center gap-1">
+        <span
+          className={`text-[13px] font-black ${game.result === 'W'
+            ? 'text-emerald-400'
+            : 'text-red-400'
+            }`}
+        >
+          {game.result}
+        </span>
+
+        <span className="truncate text-[13px] text-slate-300">
+          &nbsp;vs {game.opp}
+        </span>
+      </div>
+
+      <span className="text-[11px] text-slate-500">
+        {game.score.toFixed(2)} –{' '}
+        {game.oppScore.toFixed(2)}
+      </span>
+    </div>
+  )
+}
+
 export default function HistoryPage() {
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
@@ -130,6 +156,7 @@ export default function HistoryPage() {
       const seasonGames = games.filter(
         g => String(g?.Season || '').trim() === season
       )
+
 
       const uniqueTeams = [
         ...new Set(
@@ -188,6 +215,76 @@ export default function HistoryPage() {
       const champion = finalsWinner
         ? String(finalsWinner?.Team || '').trim()
         : null
+
+      const championGames = seasonGames
+        .filter(
+          g =>
+            String(g?.Team || '').trim() ===
+            champion
+        )
+        .sort((a, b) => {
+          return (
+            parseFloat(a?.Week || 0) -
+            parseFloat(b?.Week || 0)
+          )
+        })
+
+      const regGames = championGames
+        .filter(g => {
+          const stage = String(
+            g?.GameStage || ''
+          ).trim()
+
+          return (
+            !stage ||
+            stage === 'Reg Season'
+          )
+        })
+        .map(g => ({
+          result:
+            String(g?.Result || '')
+              .trim()
+              .toUpperCase(),
+
+          opp: g?.Opponent,
+
+          score: parseNumber(g?.PF),
+
+          oppScore: parseNumber(g?.PA),
+        }))
+
+      const playoffGames =
+        championGames
+          .filter(g => {
+            const stage = String(
+              g?.GameStage || ''
+            ).trim()
+
+            return stage === 'Playoffs'
+          })
+          .map(g => ({
+            result:
+              String(g?.Result || '')
+                .trim()
+                .toUpperCase(),
+
+            opp: g?.Opponent,
+
+            score: parseNumber(g?.PF),
+
+            oppScore: parseNumber(g?.PA),
+          }))
+
+      const half = Math.ceil(
+        regGames.length / 2
+      )
+
+      const regCol1 =
+        regGames.slice(0, half)
+
+      const regCol2 =
+        regGames.slice(half)
+
 
       // UNICORN
       let unicorn = null
@@ -271,6 +368,10 @@ export default function HistoryPage() {
         biggestBlowout,
         recap,
         bestRecord,
+        regGames,
+        playoffGames,
+        regCol1,
+        regCol2,
       }
     })
   }, [games])
@@ -1061,6 +1162,74 @@ export default function HistoryPage() {
                                         </div>
                                       </div>
 
+                                    </div>
+                                  </div>
+
+                                  {/* =====================================================
+                                  GAME LOG
+                                  ===================================================== */}
+
+                                  <div className="mt-5 rounded-3xl border border-cyan-400/15 bg-cyan-400/5 p-5 md:col-span-2">
+                                    <div className="mb-5 flex items-center gap-2">
+                                      <Flag className="h-4 w-4 text-cyan-300" />
+
+                                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-300">
+                                        Championship Run
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                      {/* REG SEASON COL 1 */}
+
+                                      <div>
+                                        <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
+                                          Reg Season
+                                        </div>
+
+                                        {s.regCol1.map((g, i) => (
+                                          <GameRow
+                                            key={i}
+                                            game={g}
+                                          />
+                                        ))}
+                                      </div>
+
+                                      {/* REG SEASON COL 2 */}
+
+                                      <div>
+                                        <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] opacity-0">
+                                          &nbsp;
+                                        </div>
+
+                                        {s.regCol2.map((g, i) => (
+                                          <GameRow
+                                            key={i}
+                                            game={g}
+                                          />
+                                        ))}
+                                      </div>
+
+                                      {/* PLAYOFFS */}
+
+                                      <div>
+                                        <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-400">
+                                          Playoffs
+                                        </div>
+
+                                        {s.playoffGames.length > 0 ? (
+                                          s.playoffGames.map(
+                                            (g, i) => (
+                                              <GameRow
+                                                key={i}
+                                                game={g}
+                                              />
+                                            )
+                                          )
+                                        ) : (
+                                          <div className="text-[11px] text-slate-600">
+                                            Sem dados
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>

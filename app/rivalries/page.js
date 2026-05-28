@@ -381,12 +381,7 @@ export default function RivalriesPage() {
 
       if (!a || !b) return
 
-      const key = [
-        normalizeString(a),
-        normalizeString(b)
-      ]
-        .sort()
-        .join('|')
+      const key = `${normalizeString(a)}|${normalizeString(b)}`
 
       if (seen.has(key)) return
 
@@ -403,22 +398,14 @@ export default function RivalriesPage() {
         r?.['B Wins']
       )
 
-      if (
+      const swapped =
         teamFilterA !== 'ALL' &&
         b === teamFilterA
-      ) {
-        teamA = b
-        teamB = a
-
-          ;[aWins, bWins] = [
-            bWins,
-            aWins
-          ]
-      }
 
       result.push({
         teamA,
         teamB,
+
         aWins,
         bWins,
 
@@ -432,21 +419,37 @@ export default function RivalriesPage() {
           r?.['Current Streak'] || '—'
         ),
 
-        biggestA: String(
-          r?.['Biggest Win Team A'] || '—'
-        ),
+        biggestA: swapped
+          ? String(
+            r?.['Biggest Win Team B'] || '—'
+          )
+          : String(
+            r?.['Biggest Win Team A'] || '—'
+          ),
 
-        biggestB: String(
-          r?.['Biggest Win Team B'] || '—'
-        ),
+        biggestB: swapped
+          ? String(
+            r?.['Biggest Win Team A'] || '—'
+          )
+          : String(
+            r?.['Biggest Win Team B'] || '—'
+          ),
 
-        bestA: String(
-          r?.['Best Streak Team A'] || '—'
-        ),
+        bestA: swapped
+          ? String(
+            r?.['Best Streak Team B'] || '—'
+          )
+          : String(
+            r?.['Best Streak Team A'] || '—'
+          ),
 
-        bestB: String(
-          r?.['Best Streak Team B'] || '—'
-        ),
+        bestB: swapped
+          ? String(
+            r?.['Best Streak Team A'] || '—'
+          )
+          : String(
+            r?.['Best Streak Team B'] || '—'
+          ),
 
         heat: getRivalryHeat(
           r?.Games,
@@ -640,21 +643,37 @@ export default function RivalriesPage() {
     ? parseCurrentStreak(selected.streak)
     : null
 
-  const bestA = selected
+  const parsedBestA = selected
     ? parseBestStreak(selected.bestA)
     : null
 
-  const bestB = selected
+  const parsedBestB = selected
     ? parseBestStreak(selected.bestB)
     : null
 
-  const biggestA = selected
+  const bestA =
+    parsedBestA?.team ===
+      selected?.teamA
+      ? parsedBestA
+      : parsedBestB
+
+  const bestB =
+    parsedBestA?.team ===
+      selected?.teamA
+      ? parsedBestB
+      : parsedBestA
+
+  const parsedBiggestA = selected
     ? parseBiggestWin(selected.biggestA)
     : null
 
-  const biggestB = selected
+  const parsedBiggestB = selected
     ? parseBiggestWin(selected.biggestB)
     : null
+
+  const biggestA = parsedBiggestA
+
+  const biggestB = parsedBiggestB
 
   const titleFont = {
     fontFamily: bebas.style.fontFamily
@@ -1205,17 +1224,17 @@ RENDER
 
                       <div
                         className="
-            mt-2
+                          mt-2
 
-            overflow-hidden
-            text-ellipsis
-            whitespace-nowrap
+                          overflow-hidden
+                          text-ellipsis
+                          whitespace-nowrap
 
-            text-[11px] sm:text-base
+                          text-[11px] sm:text-base
 
-            font-black
-            leading-tight
-          "
+                          font-black
+                          leading-tight
+                        "
                       >
                         {currentStreak?.team}
                       </div>
@@ -1230,12 +1249,10 @@ RENDER
               <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
                 {[
                   {
-                    team: selected.teamA,
                     data: biggestA,
                     side: 'A'
                   },
                   {
-                    team: selected.teamB,
                     data: biggestB,
                     side: 'B'
                   }
@@ -1279,7 +1296,9 @@ RENDER
                           lineHeight: 0.9
                         }}
                       >
-                        {item.team}
+                        {item.side === 'A'
+                          ? selected.teamA
+                          : selected.teamB}
                       </div>
                     </div>
 
@@ -1293,7 +1312,10 @@ RENDER
                             : 'text-purple-300'
                             }`}
                         >
-                          {item.data?.scoreA}
+                          {Math.max(
+                            item.data?.scoreA || 0,
+                            item.data?.scoreB || 0
+                          )}
                         </div>
 
                         <div className="pb-3 text-4xl font-black text-slate-600">
@@ -1301,7 +1323,10 @@ RENDER
                         </div>
 
                         <div className="pb-3 text-4xl font-black text-slate-500">
-                          {item.data?.scoreB}
+                          {Math.min(
+                            item.data?.scoreA || 0,
+                            item.data?.scoreB || 0
+                          )}
                         </div>
                       </div>
 
