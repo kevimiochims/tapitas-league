@@ -1035,7 +1035,7 @@ export default function PowerRankingsPage() {
                       {/* EDITORIAL */}
                       {team.note && (
 
-                        <div className="mt-4 rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-4 mb-5">
+                        <div className="rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-4 mb-5">
 
                           <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
                             Power Take
