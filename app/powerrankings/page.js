@@ -101,6 +101,23 @@ export default function PowerRankingsPage() {
 
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
+  const historyRefs = useRef({})
+
+  useEffect(() => {
+
+    if (!expanded) return
+
+    const container =
+      historyRefs.current[expanded]
+
+    if (!container) return
+
+    container.scrollTo({
+      left: container.scrollWidth,
+      behavior: 'smooth',
+    })
+
+  }, [expanded])
 
   useEffect(() => {
 
@@ -1007,7 +1024,14 @@ export default function PowerRankingsPage() {
                         Ranking History
                       </div>
 
-                      <div className="flex items-end gap-2 overflow-x-auto scroll-hide">
+                      <div
+                        ref={(el) => {
+                          if (el) {
+                            historyRefs.current[team.team] = el
+                          }
+                        }}
+                        className="flex items-end gap-2 overflow-x-auto scroll-hide"
+                      >
 
                         {history.map((h, idx) => {
 
@@ -1038,12 +1062,12 @@ export default function PowerRankingsPage() {
 
                               <div
                                 className={`w-8 rounded-t-lg ${r <= 3
-                                    ? 'bg-gradient-to-t from-emerald-600 to-emerald-400'
-                                    : r <= 6
-                                      ? 'bg-gradient-to-t from-cyan-600 to-cyan-400'
-                                      : r <= 10
-                                        ? 'bg-gradient-to-t from-amber-600 to-amber-400'
-                                        : 'bg-gradient-to-t from-red-700 to-red-500'
+                                  ? 'bg-gradient-to-t from-emerald-600 to-emerald-400'
+                                  : r <= 6
+                                    ? 'bg-gradient-to-t from-cyan-600 to-cyan-400'
+                                    : r <= 10
+                                      ? 'bg-gradient-to-t from-amber-600 to-amber-400'
+                                      : 'bg-gradient-to-t from-red-700 to-red-500'
                                   } ${current
                                     ? 'ring-2 ring-white/50'
                                     : ''
