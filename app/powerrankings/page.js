@@ -912,8 +912,8 @@ export default function PowerRankingsPage() {
                             </div>
                           </div>
                           <div className="text-red-500 text-2xl font-black">
-  TESTE FORM
-</div>
+                            TESTE FORM
+                          </div>
 
                           {/* FORM */}
 
