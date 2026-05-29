@@ -102,6 +102,7 @@ export default function PowerRankingsPage() {
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
   const historyRefs = useRef({})
+  const formRefs = useRef({})
 
   useEffect(() => {
 
@@ -328,6 +329,24 @@ export default function PowerRankingsPage() {
   }, [games, notes, season, week])
 
   const totalTeams = rankings.length
+
+  useEffect(() => {
+
+    if (!rankings.length) return
+
+    requestAnimationFrame(() => {
+
+      Object.values(formRefs.current).forEach(el => {
+
+        if (!el) return
+
+        el.scrollLeft = el.scrollWidth
+
+      })
+
+    })
+
+  }, [rankings])
 
   function getSeasonResults(teamName) {
 
@@ -888,17 +907,18 @@ export default function PowerRankingsPage() {
                             </div>
                           </div>
 
-                          {/* FORM */}
-
                           <div
+                            ref={(el) => {
+                              if (el) {
+                                formRefs.current[team.team] = el
+                              }
+                            }}
                             className="mt-4 overflow-x-auto scroll-hide"
-                            dir="rtl"
                           >
 
                             <div className="flex items-center gap-1 min-w-max">
 
                               {seasonResults.map((r, idx) => (
-
                                 <div
                                   key={idx}
                                   title={`Week ${idx + 1}`}
