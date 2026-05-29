@@ -562,12 +562,31 @@ export default function PowerRankingsPage() {
 
   function getTeamHistory(teamName) {
 
+    const currentWeek =
+      parseNumber(week)
+
     return games
-      .filter(g =>
-        String(g?.Season || '').trim() === season &&
-        String(g?.Team || '').trim() === teamName &&
-        parseNumber(g?.['Power Ranking']) > 0
-      )
+      .filter(g => {
+
+        const sameSeason =
+          String(g?.Season || '').trim() === season
+
+        const sameTeam =
+          String(g?.Team || '').trim() === teamName
+
+        const validRank =
+          parseNumber(g?.['Power Ranking']) > 0
+
+        const gameWeek =
+          parseNumber(g?.Week)
+
+        return (
+          sameSeason &&
+          sameTeam &&
+          validRank &&
+          gameWeek <= currentWeek
+        )
+      })
       .sort((a, b) =>
         parseFloat(a?.Week || 0) -
         parseFloat(b?.Week || 0)
@@ -941,8 +960,8 @@ export default function PowerRankingsPage() {
                                   </span>
 
                                   <span className={`ml-2 font-black ${h2h.streak.startsWith('W')
-                                      ? 'text-emerald-400'
-                                      : 'text-red-400'
+                                    ? 'text-emerald-400'
+                                    : 'text-red-400'
                                     }`}>
                                     {h2h.streak}
                                   </span>
@@ -1018,9 +1037,16 @@ export default function PowerRankingsPage() {
                               </div>
 
                               <div
-                                className={`w-8 rounded-t-lg ${current
-                                  ? 'bg-gradient-to-t from-cyan-500 to-cyan-300'
-                                  : 'bg-white/10'
+                                className={`w-8 rounded-t-lg ${r <= 3
+                                    ? 'bg-gradient-to-t from-emerald-600 to-emerald-400'
+                                    : r <= 6
+                                      ? 'bg-gradient-to-t from-cyan-600 to-cyan-400'
+                                      : r <= 10
+                                        ? 'bg-gradient-to-t from-amber-600 to-amber-400'
+                                        : 'bg-gradient-to-t from-red-700 to-red-500'
+                                  } ${current
+                                    ? 'ring-2 ring-white/50'
+                                    : ''
                                   }`}
                                 style={{
                                   height: `${height}px`
