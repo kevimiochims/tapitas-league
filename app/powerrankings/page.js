@@ -90,7 +90,6 @@ function getTierColor(rank, total) {
 export default function PowerRankingsPage() {
 
   const [games, setGames] = useState([])
-  const [notes, setNotes] = useState([])
 
   const [loading, setLoading] = useState(true)
 
@@ -133,9 +132,6 @@ export default function PowerRankingsPage() {
       // com colunas:
       // Season | Week | Team | Note
 
-      const notesData = await safeFetch(
-        `${BASE_URL}/POWER_RANKING_NOTES`
-      )
 
       setGames(gameData)
       setNotes(notesData)
@@ -259,11 +255,6 @@ export default function PowerRankingsPage() {
 
     const mapped = filtered.map(g => {
 
-      const noteRow = notes.find(n =>
-        String(n?.Season || '').trim() === season &&
-        String(n?.Week || '').trim() === week &&
-        String(n?.Team || '').trim() === String(g?.Team || '').trim()
-      )
 
       return {
 
@@ -301,7 +292,7 @@ export default function PowerRankingsPage() {
 
         next: String(g?.Next || '').trim(),
 
-        note: String(noteRow?.Note || '').trim(),
+        note: String(g?.Note || '').trim(),
       }
     })
 
@@ -326,7 +317,7 @@ export default function PowerRankingsPage() {
         }
       })
 
-  }, [games, notes, season, week])
+  }, [games, season, week])
 
   const totalTeams = rankings.length
 
