@@ -916,9 +916,11 @@ export default function PowerRankingsPage() {
 
                           <div
                             ref={(el) => {
-                              if (el) {
-                                formRefs.current[team.team] = el
-                              }
+                              if (!el) return
+
+                              requestAnimationFrame(() => {
+                                el.scrollLeft = 99999
+                              })
                             }}
                             className="mt-4 overflow-x-auto scroll-hide"
                           >
