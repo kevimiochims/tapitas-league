@@ -122,26 +122,26 @@ export default function PowerRankingsPage() {
 
   useEffect(() => {
 
-  if (!expanded) return
+    if (!rankings.length) return
 
-  const container =
-    formRefs.current[expanded]
+    const timeout = setTimeout(() => {
 
-  if (!container) return
+      Object.values(formRefs.current).forEach(container => {
 
-  container.scrollLeft =
-    container.scrollWidth
+        if (!container) return
 
-  requestAnimationFrame(() => {
+        container.scrollTo({
+          left: container.scrollWidth,
+          behavior: 'smooth',
+        })
 
-    container.scrollTo({
-      left: container.scrollWidth,
-      behavior: 'smooth',
-    })
+      })
 
-  })
+    }, 100)
 
-}, [expanded])
+    return () => clearTimeout(timeout)
+
+  }, [rankings])
 
   useEffect(() => {
 
