@@ -102,7 +102,6 @@ export default function PowerRankingsPage() {
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
   const historyRefs = useRef({})
-  const formRefs = useRef({})
 
   useEffect(() => {
 
@@ -119,29 +118,6 @@ export default function PowerRankingsPage() {
     })
 
   }, [expanded])
-
-  useEffect(() => {
-
-    if (!rankings.length) return
-
-    const timeout = setTimeout(() => {
-
-      Object.values(formRefs.current).forEach(container => {
-
-        if (!container) return
-
-        container.scrollTo({
-          left: container.scrollWidth,
-          behavior: 'smooth',
-        })
-
-      })
-
-    }, 100)
-
-    return () => clearTimeout(timeout)
-
-  }, [rankings])
 
   useEffect(() => {
 
@@ -911,17 +887,15 @@ export default function PowerRankingsPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="text-red-500 text-2xl font-black">
-                            TESTE FORM
-                          </div>
 
                           {/* FORM */}
 
                           <div
-                            className="mt-4 overflow-x-auto border-2 border-red-500"
+                            className="mt-4 overflow-x-auto scroll-hide"
+                            dir="rtl"
                           >
-                            TESTE
-                            <div className="flex items-center gap-1 min-w-max border-2 border-green-500">
+
+                            <div className="flex items-center gap-1 min-w-max">
 
                               {seasonResults.map((r, idx) => (
 
