@@ -1,13 +1,14 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+
 import {
   TrendingUp,
   TrendingDown,
   Minus,
   ChevronRight,
-  Star
+  Star,
 } from 'lucide-react'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -41,6 +42,7 @@ async function safeFetch(url) {
 }
 
 function TrendIcon({ delta }) {
+
   if (delta > 0) {
     return (
       <div className="flex items-center gap-1 text-emerald-400">
@@ -70,12 +72,16 @@ function TrendIcon({ delta }) {
   )
 }
 
-function getTier(rank, total) {
+function getTierColor(rank, total) {
+
   const pct = rank / total
 
   if (rank === 1) return 'text-yellow-400'
+
   if (pct <= 0.25) return 'text-cyan-400'
+
   if (pct <= 0.5) return 'text-emerald-400'
+
   if (pct <= 0.75) return 'text-orange-400'
 
   return 'text-slate-400'
@@ -84,6 +90,8 @@ function getTier(rank, total) {
 export default function PowerRankingsPage() {
 
   const [games, setGames] = useState([])
+  const [notes, setNotes] = useState([])
+
   const [loading, setLoading] = useState(true)
 
   const [season, setSeason] = useState('')
@@ -98,13 +106,25 @@ export default function PowerRankingsPage() {
 
     async function load() {
 
-      const data = await safeFetch(`${BASE_URL}/GAME_FACTS_ALL`)
+      const gameData = await safeFetch(
+        `${BASE_URL}/GAME_FACTS_ALL`
+      )
 
-      setGames(data)
+      // OPCIONAL:
+      // criar uma aba POWER_RANKING_NOTES
+      // com colunas:
+      // Season | Week | Team | Note
+
+      const notesData = await safeFetch(
+        `${BASE_URL}/POWER_RANKING_NOTES`
+      )
+
+      setGames(gameData)
+      setNotes(notesData)
 
       const allSeasons = [
         ...new Set(
-          data
+          gameData
             .map(g => String(g?.Season || '').trim())
             .filter(Boolean)
         )
@@ -112,13 +132,14 @@ export default function PowerRankingsPage() {
 
       if (allSeasons.length > 0) {
 
-        const latestSeason = allSeasons[allSeasons.length - 1]
+        const latestSeason =
+          allSeasons[allSeasons.length - 1]
 
         setSeason(latestSeason)
 
         const ws = [
           ...new Set(
-            data
+            gameData
               .filter(g =>
                 String(g?.Season || '').trim() === latestSeason &&
                 parseNumber(g?.['Power Ranking']) > 0
@@ -174,9 +195,10 @@ export default function PowerRankingsPage() {
 
     if (!season || !seasonsRef.current) return
 
-    const activeBtn = seasonsRef.current.querySelector(
-      '[data-active="true"]'
-    )
+    const activeBtn =
+      seasonsRef.current.querySelector(
+        '[data-active="true"]'
+      )
 
     if (activeBtn) {
       activeBtn.scrollIntoView({
@@ -192,9 +214,10 @@ export default function PowerRankingsPage() {
 
     if (!week || !weeksRef.current) return
 
-    const activeBtn = weeksRef.current.querySelector(
-      '[data-active="true"]'
-    )
+    const activeBtn =
+      weeksRef.current.querySelector(
+        '[data-active="true"]'
+      )
 
     if (activeBtn) {
       activeBtn.scrollIntoView({
@@ -216,37 +239,53 @@ export default function PowerRankingsPage() {
       parseNumber(g?.['Power Ranking']) > 0
     )
 
-    const mapped = filtered.map(g => ({
-      team: String(g?.Team || '').trim(),
+    const mapped = filtered.map(g => {
 
-      owner: String(g?.Owner || '').trim(),
+      const noteRow = notes.find(n =>
+        String(n?.Season || '').trim() === season &&
+        String(n?.Week || '').trim() === week &&
+        String(n?.Team || '').trim() === String(g?.Team || '').trim()
+      )
 
-      rank: parseNumber(g?.['Power Ranking']),
+      return {
 
-      delta: parseNumber(g?.['PR Delta']),
+        team: String(g?.Team || '').trim(),
 
-      wins: parseNumber(g?.Wins),
+        owner: String(g?.Owner || '').trim(),
 
-      losses: parseNumber(g?.Losses),
+        rank: parseNumber(g?.['Power Ranking']),
 
-      ovw: parseNumber(g?.OVW),
+        delta: parseNumber(g?.['PR Delta']),
 
-      avgPF: parseNumber(g?.AVG_PF),
+        wins: parseNumber(g?.Wins),
 
-      streak: String(
-        g?.Streak_Total ||
-        g?.Streak ||
-        ''
-      ).trim(),
+        losses: parseNumber(g?.Losses),
 
-      opponent: String(g?.Opponent || '').trim(),
+        avgPF: parseNumber(g?.AVG_PF),
 
-      result: String(g?.Result || '').trim().toUpperCase(),
+        ovw: parseNumber(g?.OVW),
 
-      pf: parseNumber(g?.PF),
+        streak: String(
+          g?.Streak_Total ||
+          g?.Streak ||
+          ''
+        ).trim(),
 
-      pa: parseNumber(g?.PA),
-    }))
+        opponent: String(g?.Opponent || '').trim(),
+
+        result: String(g?.Result || '')
+          .trim()
+          .toUpperCase(),
+
+        pf: parseNumber(g?.PF),
+
+        pa: parseNumber(g?.PA),
+
+        next: String(g?.Next || '').trim(),
+
+        note: String(noteRow?.Note || '').trim(),
+      }
+    })
 
     return mapped
       .sort((a, b) => a.rank - b.rank)
@@ -265,26 +304,41 @@ export default function PowerRankingsPage() {
         return {
           ...team,
           avgRank,
-          ovwRank
+          ovwRank,
         }
       })
 
-  }, [games, season, week])
+  }, [games, notes, season, week])
 
   const totalTeams = rankings.length
 
-  function getRecentResults(teamName, limit = 5) {
+  function getSeasonResults(teamName) {
 
     return games
-      .filter(g =>
-        String(g?.Season || '').trim() === season &&
-        String(g?.Team || '').trim() === teamName
-      )
+      .filter(g => {
+
+        const sameSeason =
+          String(g?.Season || '').trim() === season
+
+        const sameTeam =
+          String(g?.Team || '').trim() === teamName
+
+        const gameWeek =
+          parseFloat(g?.Week || 0)
+
+        const currentWeek =
+          parseFloat(week || 0)
+
+        return (
+          sameSeason &&
+          sameTeam &&
+          gameWeek <= currentWeek
+        )
+      })
       .sort((a, b) =>
         parseFloat(a?.Week || 0) -
         parseFloat(b?.Week || 0)
       )
-      .slice(-limit)
       .map(g =>
         String(g?.Result || '')
           .trim()
@@ -294,103 +348,204 @@ export default function PowerRankingsPage() {
 
   function getNextOpponentData(teamName) {
 
-    const currentGame = games.find(g =>
-      String(g?.Season || '').trim() === season &&
-      String(g?.Week || '').trim() === week &&
-      String(g?.Team || '').trim() === teamName
-    )
+    const currentSeason = parseNumber(season)
+    const currentWeek = parseNumber(week)
 
-    if (!currentGame) return null
+    // procura qualquer jogo FUTURO do time
+    const futureGames = games
+      .filter(g => {
 
-    const nextOpponent = String(currentGame?.Next || '').trim()
+        const gameSeason =
+          parseNumber(g?.Season)
 
-    if (!nextOpponent) return null
+        const gameWeek =
+          parseNumber(g?.Week)
 
-    const opponentGame = games.find(g =>
-      String(g?.Season || '').trim() === season &&
-      String(g?.Week || '').trim() === week &&
-      String(g?.Team || '').trim() === nextOpponent
-    )
+        const team =
+          String(g?.Team || '').trim()
+
+        return (
+          team === teamName &&
+          gameSeason === currentSeason &&
+          gameWeek > currentWeek
+        )
+      })
+      .sort((a, b) =>
+        parseNumber(a?.Week) -
+        parseNumber(b?.Week)
+      )
+
+    if (futureGames.length === 0) {
+      return null
+    }
+
+    const nextGame = futureGames[0]
+
+    const opponent =
+      String(nextGame?.Opponent || '').trim()
+
+    if (!opponent) return null
+
+    // pega o record ATUAL do adversário
+    const opponentCurrent = games.find(g => {
+
+      return (
+        String(g?.Season || '').trim() === season &&
+        String(g?.Week || '').trim() === week &&
+        String(g?.Team || '').trim() === opponent
+      )
+    })
 
     return {
-      team: nextOpponent,
-      wins: parseNumber(opponentGame?.Wins),
-      losses: parseNumber(opponentGame?.Losses),
+      week: parseNumber(nextGame?.Week),
+      team: opponent,
+      wins: parseNumber(opponentCurrent?.Wins),
+      losses: parseNumber(opponentCurrent?.Losses),
+    }
+  }
+
+  function getAllTimeRecord(teamName) {
+
+    let wins = 0
+    let losses = 0
+
+    games.forEach(g => {
+
+      const team =
+        String(g?.Team || '').trim()
+
+      if (team !== teamName) return
+
+      const gameSeason =
+        parseNumber(g?.Season)
+
+      const gameWeek =
+        parseNumber(g?.Week)
+
+      const currentSeason =
+        parseNumber(season)
+
+      const currentWeek =
+        parseNumber(week)
+
+      const validGame =
+        gameSeason < currentSeason ||
+        (
+          gameSeason === currentSeason &&
+          gameWeek <= currentWeek
+        )
+
+      if (!validGame) return
+
+      const result =
+        String(g?.Result || '')
+          .trim()
+          .toUpperCase()
+
+      if (result === 'W') wins++
+      if (result === 'L') losses++
+    })
+
+    return {
+      wins,
+      losses,
     }
   }
 
   function getH2H(teamA, teamB) {
 
-    const allGames = games.filter(g => {
+    if (!teamA || !teamB) return null
 
-      const seasonNum = parseNumber(g?.Season)
-      const weekNum = parseNumber(g?.Week)
+    const relevantGames = games.filter(g => {
 
-      const currentSeason = parseNumber(season)
-      const currentWeek = parseNumber(week)
+      const t =
+        String(g?.Team || '').trim()
 
-      const isBefore =
-        seasonNum < currentSeason ||
+      const o =
+        String(g?.Opponent || '').trim()
+
+      const matchup =
         (
-          seasonNum === currentSeason &&
-          weekNum <= currentWeek
+          t === teamA &&
+          o === teamB
+        ) ||
+        (
+          t === teamB &&
+          o === teamA
         )
 
-      if (!isBefore) return false
+      if (!matchup) return false
 
-      const t = String(g?.Team || '').trim()
-      const o = String(g?.Opponent || '').trim()
+      const gameSeason =
+        parseNumber(g?.Season)
+
+      const gameWeek =
+        parseNumber(g?.Week)
+
+      const currentSeason =
+        parseNumber(season)
+
+      const currentWeek =
+        parseNumber(week)
 
       return (
-        (t === teamA && o === teamB) ||
-        (t === teamB && o === teamA)
+        gameSeason < currentSeason ||
+        (
+          gameSeason === currentSeason &&
+          gameWeek <= currentWeek
+        )
       )
     })
 
     let aWins = 0
     let bWins = 0
 
-    allGames.forEach(g => {
+    relevantGames.forEach(g => {
 
-      const t = String(g?.Team || '').trim()
-
-      const result = String(g?.Result || '')
-        .trim()
-        .toUpperCase()
+      const result =
+        String(g?.Result || '')
+          .trim()
+          .toUpperCase()
 
       if (result !== 'W') return
 
-      if (t === teamA) aWins++
-      if (t === teamB) bWins++
+      const winner =
+        String(g?.Team || '').trim()
+
+      if (winner === teamA) aWins++
+      if (winner === teamB) bWins++
     })
 
-    const ordered = allGames.sort((a, b) => {
+    const orderedGames =
+      relevantGames.sort((a, b) => {
 
-      const sa = parseNumber(a.Season)
-      const sb = parseNumber(b.Season)
+        const sa = parseNumber(a.Season)
+        const sb = parseNumber(b.Season)
 
-      if (sa !== sb) return sa - sb
+        if (sa !== sb) return sa - sb
 
-      return parseNumber(a.Week) - parseNumber(b.Week)
-    })
+        return parseNumber(a.Week) - parseNumber(b.Week)
+      })
 
-    let streakTeam = null
+    let streakWinner = null
     let streakCount = 0
 
-    ordered.forEach(g => {
+    orderedGames.forEach(g => {
 
-      const result = String(g?.Result || '')
-        .trim()
-        .toUpperCase()
+      const result =
+        String(g?.Result || '')
+          .trim()
+          .toUpperCase()
 
       if (result !== 'W') return
 
-      const winner = String(g?.Team || '').trim()
+      const winner =
+        String(g?.Team || '').trim()
 
-      if (winner === streakTeam) {
+      if (winner === streakWinner) {
         streakCount++
       } else {
-        streakTeam = winner
+        streakWinner = winner
         streakCount = 1
       }
     })
@@ -399,7 +554,7 @@ export default function PowerRankingsPage() {
       aWins,
       bWins,
       streak:
-        streakTeam === teamA
+        streakWinner === teamA
           ? `W${streakCount}`
           : `L${streakCount}`
     }
@@ -458,7 +613,9 @@ export default function PowerRankingsPage() {
 
       <section className="mx-auto max-w-[1680px] px-4 pb-20">
 
-        <div className="mb-6">
+        {/* SEASON */}
+
+        <div className="mb-5">
 
           <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
             Season
@@ -468,7 +625,9 @@ export default function PowerRankingsPage() {
             ref={seasonsRef}
             className="scroll-hide flex gap-2 overflow-x-auto"
           >
+
             {seasons.map(s => (
+
               <button
                 key={s}
                 data-active={season === s}
@@ -492,17 +651,19 @@ export default function PowerRankingsPage() {
                     setWeek(ws[ws.length - 1])
                   }
                 }}
-                className={`px-4 py-2 rounded-xl text-sm font-black border transition-all whitespace-nowrap ${
-                  season === s
-                    ? 'border-yellow-400/40 bg-yellow-400/10 text-yellow-300'
-                    : 'border-white/5 bg-white/[0.03] text-slate-400'
-                }`}
+                className={`px-4 py-2 rounded-xl border text-sm font-black whitespace-nowrap transition-all ${season === s
+                  ? 'bg-yellow-400/10 border-yellow-400/30 text-yellow-300'
+                  : 'border-white/5 bg-white/[0.03] text-slate-400'
+                  }`}
               >
                 {s}
               </button>
+
             ))}
           </div>
         </div>
+
+        {/* WEEK */}
 
         <div className="mb-8">
 
@@ -514,19 +675,21 @@ export default function PowerRankingsPage() {
             ref={weeksRef}
             className="scroll-hide flex gap-2 overflow-x-auto"
           >
+
             {weeks.map(w => (
+
               <button
                 key={w}
                 data-active={week === w}
                 onClick={() => setWeek(w)}
-                className={`h-10 w-10 rounded-xl text-sm font-black border transition-all flex-shrink-0 ${
-                  week === w
-                    ? 'border-yellow-400/40 bg-yellow-400/10 text-yellow-300'
-                    : 'border-white/5 bg-white/[0.03] text-slate-400'
-                }`}
+                className={`h-10 w-10 rounded-xl border text-sm font-black flex-shrink-0 transition-all ${week === w
+                  ? 'bg-yellow-400/10 border-yellow-400/30 text-yellow-300'
+                  : 'border-white/5 bg-white/[0.03] text-slate-400'
+                  }`}
               >
                 {w}
               </button>
+
             ))}
           </div>
         </div>
@@ -543,23 +706,31 @@ export default function PowerRankingsPage() {
 
             {rankings.map(team => {
 
-              const tierColor = getTier(
-                team.rank,
-                totalTeams
-              )
+              const tierColor =
+                getTierColor(
+                  team.rank,
+                  totalTeams
+                )
 
-              const expandedOpen = expanded === team.team
+              const expandedOpen =
+                expanded === team.team
 
-              const recentResults =
-                getRecentResults(team.team, 5)
+              const seasonResults =
+                getSeasonResults(team.team)
 
               const nextOpponent =
                 getNextOpponentData(team.team)
 
               const h2h =
                 nextOpponent
-                  ? getH2H(team.team, nextOpponent.team)
+                  ? getH2H(
+                    team.team,
+                    nextOpponent.team
+                  )
                   : null
+
+              const allTime =
+                getAllTimeRecord(team.team)
 
               const history =
                 getTeamHistory(team.team)
@@ -568,7 +739,7 @@ export default function PowerRankingsPage() {
 
                 <div
                   key={team.team}
-                  className="overflow-hidden rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]"
+                  className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]"
                 >
 
                   <button
@@ -582,199 +753,238 @@ export default function PowerRankingsPage() {
                     className="w-full text-left"
                   >
 
-                    <div className="flex gap-4 p-4 md:p-5">
+                    <div className="p-5">
 
-                      <div className="w-12 flex-shrink-0 text-center">
+                      {/* TOP */}
 
-                        <div
-                          className={`text-4xl font-black leading-none ${tierColor}`}
-                          style={{
-                            fontFamily:
-                              '"Bebas Neue", sans-serif'
-                          }}
-                        >
-                          {team.rank}
-                        </div>
+                      <div className="flex gap-4">
 
-                        <div className="mt-1">
-                          <TrendIcon delta={team.delta} />
-                        </div>
-                      </div>
+                        <div className="w-12 flex-shrink-0 text-center">
 
-                      <div className="flex-1 min-w-0">
-
-                        <div className="flex items-center gap-2 flex-wrap">
-
-                          <div className="text-xl font-black text-white uppercase">
-                            {team.team}
+                          <div
+                            className={`text-4xl font-black leading-none ${tierColor}`}
+                            style={{
+                              fontFamily:
+                                '"Bebas Neue", sans-serif'
+                            }}
+                          >
+                            {team.rank}
                           </div>
 
-                          {team.rank === 1 && (
-                            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                          <div className="mt-1 flex justify-center">
+                            <TrendIcon delta={team.delta} />
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+
+                          <div className="flex items-center gap-2 flex-wrap">
+
+                            <div className="text-xl font-black text-white uppercase">
+                              {team.team}
+                            </div>
+
+                            {team.rank === 1 && (
+                              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                            )}
+                          </div>
+
+                          <div className="text-sm font-semibold uppercase text-slate-400">
+                            {team.owner}
+                          </div>
+
+                          {/* STATS */}
+
+                          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+
+                            <div>
+                              <span className="text-slate-500">
+                                REC:
+                              </span>{' '}
+                              <span className="font-black text-white">
+                                {team.wins}-{team.losses}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-500">
+                                STRK:
+                              </span>{' '}
+                              <span className={`font-black ${team.streak.startsWith('W')
+                                ? 'text-emerald-400'
+                                : 'text-red-400'
+                                }`}>
+                                {team.streak}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-500">
+                                AVG:
+                              </span>{' '}
+                              <span className="font-black text-white">
+                                {team.avgPF.toFixed(1)}
+                              </span>{' '}
+                              <span className="text-slate-500">
+                                (#{team.avgRank})
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-500">
+                                OVW:
+                              </span>{' '}
+                              <span className="font-black text-white">
+                                {team.ovw.toFixed(0)}
+                              </span>{' '}
+                              <span className="text-slate-500">
+                                (#{team.ovwRank})
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-500">
+                                ALL:
+                              </span>{' '}
+                              <span className="font-black text-white">
+                                {allTime.wins}-{allTime.losses}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* FORM */}
+
+                          <div className="mt-4 overflow-x-auto scroll-hide">
+
+                            <div className="flex items-center gap-1 min-w-max">
+
+                              {seasonResults.map((r, idx) => (
+
+                                <div
+                                  key={idx}
+                                  title={`Week ${idx + 1}`}
+                                  className={`h-5 w-5 rounded-md flex items-center justify-center text-[9px] font-black border flex-shrink-0 ${r === 'W'
+                                    ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-400'
+                                    : 'border-red-400/30 bg-red-400/15 text-red-400'
+                                    }`}
+                                >
+                                  {r}
+                                </div>
+
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+
+                            {/* THIS WEEK */}
+
+                            <div className="rounded-2xl border border-white/5 bg-black/20 p-3">
+
+                              <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                This Week
+                              </div>
+
+                              <div className="text-sm font-black leading-tight">
+
+                                <span className={
+                                  team.result === 'W'
+                                    ? 'text-emerald-400'
+                                    : 'text-red-400'
+                                }>
+                                  {team.result}
+                                </span>
+
+                                <span className="ml-1 text-white uppercase">
+                                  vs {team.opponent}
+                                </span>
+
+                                <span className="ml-1 text-slate-400">
+                                  ({team.wins}-{team.losses})
+                                </span>
+                              </div>
+
+                              <div className="mt-2 text-sm font-semibold text-slate-400">
+                                {team.pf.toFixed(1)} - {team.pa.toFixed(1)}
+                              </div>
+                            </div>
+
+                            {/* NEXT WEEK */}
+
+                            {nextOpponent && h2h && (
+
+                              <div className="rounded-2xl border border-white/5 bg-black/20 p-3">
+
+                                <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                  Next Week
+                                </div>
+
+                                <div className="text-sm font-black leading-tight text-white uppercase">
+
+                                  <span>
+                                    vs {nextOpponent.team}
+                                  </span>
+
+                                  <span className="ml-1 text-slate-400">
+                                    ({nextOpponent.wins}-{nextOpponent.losses})
+                                  </span>
+                                </div>
+
+                                <div className="mt-2 text-sm font-semibold leading-tight">
+
+                                  <span className="text-slate-500">
+                                    H2H:
+                                  </span>
+
+                                  <span className="ml-1 text-white">
+                                    ({h2h.aWins}-{h2h.bWins})
+                                  </span>
+
+                                  <span className={`ml-2 font-black ${h2h.streak.startsWith('W')
+                                      ? 'text-emerald-400'
+                                      : 'text-red-400'
+                                    }`}>
+                                    {h2h.streak}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* EDITORIAL */}
+
+                          {team.note && (
+
+                            <div className="mt-4 rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-4">
+
+                              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
+                                Power Take
+                              </div>
+
+                              <p className="text-sm leading-relaxed text-slate-300">
+                                {team.note}
+                              </p>
+                            </div>
                           )}
                         </div>
 
-                        <div className="text-sm text-slate-400 font-semibold uppercase">
-                          {team.owner}
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-
-                          <div>
-                            <span className="text-slate-500">
-                              REC:
-                            </span>{' '}
-                            <span className="font-black text-white">
-                              {team.wins}-{team.losses}
-                            </span>
-                          </div>
-
-                          <div>
-                            <span className="text-slate-500">
-                              STRK:
-                            </span>{' '}
-                            <span className={`font-black ${
-                              team.streak.startsWith('W')
-                                ? 'text-emerald-400'
-                                : 'text-red-400'
-                            }`}>
-                              {team.streak}
-                            </span>
-                          </div>
-
-                          <div>
-                            <span className="text-slate-500">
-                              AVG:
-                            </span>{' '}
-                            <span className="font-black text-white">
-                              {team.avgPF.toFixed(1)}
-                            </span>{' '}
-                            <span className="text-slate-500">
-                              (#{
-                                team.avgRank
-                              })
-                            </span>
-                          </div>
-
-                          <div>
-                            <span className="text-slate-500">
-                              OVW:
-                            </span>{' '}
-                            <span className="font-black text-white">
-                              {team.ovw.toFixed(0)}
-                            </span>{' '}
-                            <span className="text-slate-500">
-                              (#{
-                                team.ovwRank
-                              })
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex items-center gap-1">
-
-                          {recentResults.map((r, idx) => (
-
-                            <div
-                              key={idx}
-                              className={`h-6 w-6 rounded-md flex items-center justify-center text-[10px] font-black border ${
-                                r === 'W'
-                                  ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-400'
-                                  : 'border-red-400/30 bg-red-400/15 text-red-400'
-                              }`}
-                            >
-                              {r}
-                            </div>
-
-                          ))}
-                        </div>
-
-                        {nextOpponent && (
-
-                          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-
-                            <div className="rounded-xl border border-white/5 bg-black/20 px-3 py-2">
-
-                              <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-black mb-1">
-                                Next
-                              </div>
-
-                              <div className="font-black text-white uppercase">
-                                {nextOpponent.team}
-                              </div>
-
-                              <div className="text-slate-400 text-xs">
-                                {nextOpponent.wins}-
-                                {nextOpponent.losses}
-                              </div>
-                            </div>
-
-                            {h2h && (
-
-                              <div className="rounded-xl border border-white/5 bg-black/20 px-3 py-2">
-
-                                <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-black mb-1">
-                                  H2H
-                                </div>
-
-                                <div className="font-black text-white">
-                                  {h2h.aWins}-
-                                  {h2h.bWins}
-                                </div>
-
-                                <div className={`text-xs font-black ${
-                                  h2h.streak.startsWith('W')
-                                    ? 'text-emerald-400'
-                                    : 'text-red-400'
-                                }`}>
-                                  {h2h.streak}
-                                </div>
-                              </div>
-
-                            )}
-
-                            <div className="rounded-xl border border-white/5 bg-black/20 px-3 py-2">
-
-                              <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-black mb-1">
-                                Last Game
-                              </div>
-
-                              <div className={`font-black ${
-                                team.result === 'W'
-                                  ? 'text-emerald-400'
-                                  : 'text-red-400'
-                              }`}>
-                                {team.result}
-                              </div>
-
-                              <div className="text-xs text-slate-400">
-                                vs {team.opponent}
-                              </div>
-
-                              <div className="text-xs text-slate-400">
-                                {team.pf.toFixed(1)}-
-                                {team.pa.toFixed(1)}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <ChevronRight
-                        className={`h-4 w-4 flex-shrink-0 text-slate-600 transition-transform ${
-                          expandedOpen
+                        <ChevronRight
+                          className={`h-4 w-4 flex-shrink-0 text-slate-600 transition-transform ${expandedOpen
                             ? 'rotate-90'
                             : ''
-                        }`}
-                      />
+                            }`}
+                        />
+                      </div>
                     </div>
                   </button>
 
+                  {/* HISTORY */}
+
                   {expandedOpen && (
 
-                    <div className="border-t border-white/5 px-4 pb-5 pt-5">
+                    <div className="border-t border-white/5 px-5 pb-5 pt-5">
 
-                      <div className="mb-4 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
+                      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
                         Ranking History
                       </div>
 
@@ -800,30 +1010,27 @@ export default function PowerRankingsPage() {
                               className="flex flex-col items-center gap-1 flex-shrink-0"
                             >
 
-                              <div className={`text-[10px] font-black ${
-                                current
-                                  ? 'text-white'
-                                  : 'text-slate-500'
-                              }`}>
+                              <div className={`text-[10px] font-black ${current
+                                ? 'text-white'
+                                : 'text-slate-500'
+                                }`}>
                                 {r}
                               </div>
 
                               <div
-                                className={`w-8 rounded-t-lg ${
-                                  current
-                                    ? 'bg-gradient-to-t from-cyan-500 to-cyan-300'
-                                    : 'bg-white/10'
-                                }`}
+                                className={`w-8 rounded-t-lg ${current
+                                  ? 'bg-gradient-to-t from-cyan-500 to-cyan-300'
+                                  : 'bg-white/10'
+                                  }`}
                                 style={{
                                   height: `${height}px`
                                 }}
                               />
 
-                              <div className={`text-[10px] font-bold ${
-                                current
-                                  ? 'text-white'
-                                  : 'text-slate-600'
-                              }`}>
+                              <div className={`text-[10px] font-bold ${current
+                                ? 'text-white'
+                                : 'text-slate-600'
+                                }`}>
                                 W{h?.Week}
                               </div>
                             </div>
