@@ -915,17 +915,11 @@ export default function PowerRankingsPage() {
                           {/* FORM */}
 
                           <div
-                            ref={(el) => {
-                              if (!el) return
-
-                              requestAnimationFrame(() => {
-                                el.scrollLeft = 99999
-                              })
-                            }}
                             className="mt-4 overflow-x-auto scroll-hide"
+                            dir="rtl"
                           >
 
-                            <div className="flex items-center gap-1 min-w-max">
+                            <div className="flex items-center gap-1 min-w-max" dir="ltr">
 
                               {seasonResults.map((r, idx) => (
 
