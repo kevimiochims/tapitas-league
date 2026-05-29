@@ -629,6 +629,27 @@ export default function PowerRankingsPage() {
       )
   }
 
+  function getOpponentRecord(opponentName) {
+
+    const opponentGame = games.find(g => {
+
+      return (
+        String(g?.Season || '').trim() === season &&
+        String(g?.Week || '').trim() === week &&
+        String(g?.Team || '').trim() === opponentName
+      )
+    })
+
+    if (!opponentGame) {
+      return null
+    }
+
+    return {
+      wins: parseNumber(opponentGame?.Wins),
+      losses: parseNumber(opponentGame?.Losses),
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#020617] text-white">
 
@@ -789,6 +810,9 @@ export default function PowerRankingsPage() {
 
               const history =
                 getTeamHistory(team.team)
+
+              const opponentRecord =
+                getOpponentRecord(team.opponent)
 
               return (
 
@@ -959,7 +983,10 @@ export default function PowerRankingsPage() {
                                 </span>
 
                                 <span className="ml-1 text-slate-400">
-                                  ({team.wins}-{team.losses})
+                                  {opponentRecord
+                                    ? `(${opponentRecord.wins}-${opponentRecord.losses})`
+                                    : ''
+                                  }
                                 </span>
                               </div>
 
