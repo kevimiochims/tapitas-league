@@ -102,6 +102,7 @@ export default function PowerRankingsPage() {
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
   const historyRefs = useRef({})
+  const formRefs = useRef({})
 
   useEffect(() => {
 
@@ -109,6 +110,22 @@ export default function PowerRankingsPage() {
 
     const container =
       historyRefs.current[expanded]
+
+    if (!container) return
+
+    container.scrollTo({
+      left: container.scrollWidth,
+      behavior: 'smooth',
+    })
+
+  }, [expanded])
+
+  useEffect(() => {
+
+    if (!expanded) return
+
+    const container =
+      formRefs.current[expanded]
 
     if (!container) return
 
@@ -890,7 +907,14 @@ export default function PowerRankingsPage() {
 
                           {/* FORM */}
 
-                          <div className="mt-4 overflow-x-auto scroll-hide">
+                          <div
+                            ref={(el) => {
+                              if (el) {
+                                formRefs.current[team.team] = el
+                              }
+                            }}
+                            className="mt-4 overflow-x-auto scroll-hide"
+                          >
 
                             <div className="flex items-center gap-1 min-w-max">
 
