@@ -920,15 +920,6 @@ export default function PowerRankingsPage() {
                                 (#{team.ovwRank})
                               </span>
                             </div>
-
-                            <div>
-                              <span className="text-slate-500">
-                                ALL:
-                              </span>{' '}
-                              <span className="font-black text-white">
-                                {allTime.wins}-{allTime.losses}
-                              </span>
-                            </div>
                           </div>
 
                           <div
