@@ -920,6 +920,7 @@ export default function PowerRankingsPage() {
                           <div
                             className="mt-4 overflow-x-auto border-2 border-red-500"
                           >
+                            TESTE
                             <div className="flex items-center gap-1 min-w-max border-2 border-green-500">
 
                               {seasonResults.map((r, idx) => (
