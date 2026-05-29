@@ -103,6 +103,8 @@ export default function PowerRankingsPage() {
   const historyRefs = useRef({})
   const formRefs = useRef({})
 
+
+
   useEffect(() => {
 
     if (!expanded) return
@@ -134,7 +136,6 @@ export default function PowerRankingsPage() {
 
 
       setGames(gameData)
-      setNotes(notesData)
 
       const allSeasons = [
         ...new Set(
@@ -201,7 +202,7 @@ export default function PowerRankingsPage() {
           .map(g => String(g?.Week || '').trim())
           .filter(Boolean)
       )
-    ].sort((a, b) => parseFloat(a) - parseFloat(b))
+    ].sort((a, b) => getWeekStart(a) - getWeekStart(b))
 
   }, [games, season])
 
@@ -339,6 +340,10 @@ export default function PowerRankingsPage() {
 
   }, [rankings])
 
+  function getWeekStart(w) {
+    return parseFloat(String(w || '').split('-')[0])
+  }
+
   function getSeasonResults(teamName) {
 
     return games
@@ -351,15 +356,12 @@ export default function PowerRankingsPage() {
           String(g?.Team || '').trim() === teamName
 
         const gameWeek =
-          parseFloat(g?.Week || 0)
-
-        const currentWeek =
-          parseFloat(week || 0)
+          getWeekStart(g?.Week)
 
         return (
           sameSeason &&
           sameTeam &&
-          gameWeek <= currentWeek
+          gameWeek <= getWeekStart(week)
         )
       })
       .sort((a, b) =>
@@ -385,8 +387,7 @@ export default function PowerRankingsPage() {
         const gameSeason =
           parseNumber(g?.Season)
 
-        const gameWeek =
-          parseNumber(g?.Week)
+        const gameWeek = getWeekStart(g?.Week)
 
         const team =
           String(g?.Team || '').trim()
@@ -394,7 +395,7 @@ export default function PowerRankingsPage() {
         return (
           team === teamName &&
           gameSeason === currentSeason &&
-          gameWeek > currentWeek
+          gameWeek > getWeekStart(week)
         )
       })
       .sort((a, b) =>
@@ -447,13 +448,13 @@ export default function PowerRankingsPage() {
         parseNumber(g?.Season)
 
       const gameWeek =
-        parseNumber(g?.Week)
+        getWeekStart(g?.Week)
+
+      const currentWeek =
+        getWeekStart(week)
 
       const currentSeason =
         parseNumber(season)
-
-      const currentWeek =
-        parseNumber(week)
 
       const validGame =
         gameSeason < currentSeason ||
@@ -507,13 +508,13 @@ export default function PowerRankingsPage() {
         parseNumber(g?.Season)
 
       const gameWeek =
-        parseNumber(g?.Week)
+        getWeekStart(g?.Week)
+
+      const currentWeek =
+        getWeekStart(week)
 
       const currentSeason =
         parseNumber(season)
-
-      const currentWeek =
-        parseNumber(week)
 
       return (
         gameSeason < currentSeason ||
@@ -589,9 +590,6 @@ export default function PowerRankingsPage() {
 
   function getTeamHistory(teamName) {
 
-    const currentWeek =
-      parseNumber(week)
-
     return games
       .filter(g => {
 
@@ -604,19 +602,19 @@ export default function PowerRankingsPage() {
         const validRank =
           parseNumber(g?.['Power Ranking']) > 0
 
-        const gameWeek =
-          parseNumber(g?.Week)
+        const gameWeek = getWeekStart(g?.Week)
+        const currentWeekStart = getWeekStart(week)
 
         return (
           sameSeason &&
           sameTeam &&
           validRank &&
-          gameWeek <= currentWeek
+          gameWeek <= currentWeekStart
         )
       })
       .sort((a, b) =>
-        parseFloat(a?.Week || 0) -
-        parseFloat(b?.Week || 0)
+        getWeekStart(a?.Week) -
+        getWeekStart(b?.Week)
       )
   }
 
@@ -939,101 +937,6 @@ export default function PowerRankingsPage() {
                               ))}
                             </div>
                           </div>
-
-                          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
-
-                            {/* THIS WEEK */}
-
-                            <div className="rounded-2xl border border-white/5 bg-black/20 p-3">
-
-                              <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                This Week
-                              </div>
-
-                              <div className="text-sm font-black leading-tight">
-
-                                <span className={
-                                  team.result === 'W'
-                                    ? 'text-emerald-400'
-                                    : 'text-red-400'
-                                }>
-                                  {team.result}
-                                </span>
-
-                                <span className="ml-1 text-white uppercase">
-                                  vs {team.opponent}
-                                </span>
-
-                                <span className="ml-1 text-slate-400">
-                                  {opponentRecord
-                                    ? `(${opponentRecord.wins}-${opponentRecord.losses})`
-                                    : ''
-                                  }
-                                </span>
-                              </div>
-
-                              <div className="mt-2 text-sm font-semibold text-slate-400">
-                                {team.pf.toFixed(1)} - {team.pa.toFixed(1)}
-                              </div>
-                            </div>
-
-                            {/* NEXT WEEK */}
-
-                            {nextOpponent && h2h && (
-
-                              <div className="rounded-2xl border border-white/5 bg-black/20 p-3">
-
-                                <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                  Next Week
-                                </div>
-
-                                <div className="text-sm font-black leading-tight text-white uppercase">
-
-                                  <span>
-                                    vs {nextOpponent.team}
-                                  </span>
-
-                                  <span className="ml-1 text-slate-400">
-                                    ({nextOpponent.wins}-{nextOpponent.losses})
-                                  </span>
-                                </div>
-
-                                <div className="mt-2 text-sm font-semibold leading-tight">
-
-                                  <span className="text-slate-500">
-                                    H2H:
-                                  </span>
-
-                                  <span className="ml-1 text-white">
-                                    ({h2h.aWins}-{h2h.bWins})
-                                  </span>
-
-                                  <span className={`ml-2 font-black ${h2h.streak.startsWith('W')
-                                    ? 'text-emerald-400'
-                                    : 'text-red-400'
-                                    }`}>
-                                    {h2h.streak}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* EDITORIAL */}
-
-                          {team.note && (
-
-                            <div className="mt-4 rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-4">
-
-                              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
-                                Power Take
-                              </div>
-
-                              <p className="text-sm leading-relaxed text-slate-300">
-                                {team.note}
-                              </p>
-                            </div>
-                          )}
                         </div>
 
                         <ChevronRight
@@ -1050,7 +953,99 @@ export default function PowerRankingsPage() {
 
                   {expandedOpen && (
 
-                    <div className="border-t border-white/5 px-5 pb-5 pt-5">
+                    <div className="border-t border-white/5 px-5 pb-10 pt-3">
+
+                      {/* THIS WEEK */}
+                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+
+                        <div className="rounded-2xl border border-white/5 bg-black/20 p-3">
+
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+                            This Week
+                          </div>
+
+                          <div className="text-sm font-black leading-tight">
+
+                            <span className={
+                              team.result === 'W'
+                                ? 'text-emerald-400'
+                                : 'text-red-400'
+                            }>
+                              {team.result}
+                            </span>
+
+                            <span className="ml-1 text-white uppercase">
+                              vs {team.opponent}
+                            </span>
+
+                            <span className="ml-1 text-slate-400">
+                              {opponentRecord
+                                ? `(${opponentRecord.wins}-${opponentRecord.losses})`
+                                : ''
+                              }
+                            </span>
+                          </div>
+
+                          <div className="mt-2 text-sm font-semibold text-slate-400">
+                            {team.pf.toFixed(1)} - {team.pa.toFixed(1)}
+                          </div>
+                        </div>
+
+                        {/* NEXT WEEK */}
+                        {nextOpponent && h2h && (
+
+                          <div className="rounded-2xl border border-white/5 bg-black/20 p-3">
+
+                            <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+                              Next Week
+                            </div>
+
+                            <div className="text-sm font-black leading-tight text-white uppercase">
+
+                              <span>
+                                vs {nextOpponent.team}
+                              </span>
+
+                              <span className="ml-1 text-slate-400">
+                                ({nextOpponent.wins}-{nextOpponent.losses})
+                              </span>
+                            </div>
+
+                            <div className="mt-2 text-sm font-semibold leading-tight">
+
+                              <span className="text-slate-500">
+                                H2H:
+                              </span>
+
+                              <span className="ml-1 text-white">
+                                ({h2h.aWins}-{h2h.bWins})
+                              </span>
+
+                              <span className={`ml-2 font-black ${h2h.streak.startsWith('W')
+                                ? 'text-emerald-400'
+                                : 'text-red-400'
+                                }`}>
+                                {h2h.streak}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* EDITORIAL */}
+                      {team.note && (
+
+                        <div className="mt-4 rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-4 mb-5">
+
+                          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
+                            Power Take
+                          </div>
+
+                          <p className="text-sm leading-relaxed text-slate-300">
+                            {team.note}
+                          </p>
+                        </div>
+                      )}
 
                       <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
                         Ranking History
