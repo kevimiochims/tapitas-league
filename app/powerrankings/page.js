@@ -122,19 +122,26 @@ export default function PowerRankingsPage() {
 
   useEffect(() => {
 
-    if (!expanded) return
+  if (!expanded) return
 
-    const container =
-      formRefs.current[expanded]
+  const container =
+    formRefs.current[expanded]
 
-    if (!container) return
+  if (!container) return
+
+  container.scrollLeft =
+    container.scrollWidth
+
+  requestAnimationFrame(() => {
 
     container.scrollTo({
       left: container.scrollWidth,
       behavior: 'smooth',
     })
 
-  }, [expanded])
+  })
+
+}, [expanded])
 
   useEffect(() => {
 
