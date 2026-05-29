@@ -915,11 +915,9 @@ export default function PowerRankingsPage() {
                           {/* FORM */}
 
                           <div
-                            className="mt-4 overflow-x-auto scroll-hide"
-                            dir="rtl"
-                          >
-
-                            <div className="flex items-center gap-1 min-w-max" dir="ltr">
+  className="mt-4 overflow-x-auto border-2 border-red-500"
+>
+  <div className="flex items-center gap-1 min-w-max border-2 border-green-500">
 
                               {seasonResults.map((r, idx) => (
 
