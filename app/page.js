@@ -1314,7 +1314,7 @@ export default function TapitasLeagueHomepage() {
               </div>
 
               {/* Conteúdo */}
-              <div className="relative z-10 flex flex-row items-stretch justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
+              <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
 
                 {/* Texto */}
                 <div className="flex-1 text-left">
@@ -1461,7 +1461,7 @@ export default function TapitasLeagueHomepage() {
               />
 
               {/* Conteúdo */}
-              <div className="relative z-10 flex flex-row items-stretch justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
+              <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
 
                 {/* Texto */}
                 <div className="flex-1 text-left">
@@ -1857,12 +1857,12 @@ export default function TapitasLeagueHomepage() {
               </div>
 
               {/* Conteúdo */}
-              <div className="relative z-10 flex flex-row items-stretch justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14 pb-10 md:pb-14">
+              <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14 pb-10 md:pb-14">
 
                 <div className="flex-1 text-left">
 
                   {/* Badge */}
-                  <div className="mb-18 md:mb-6 inline-flex max-w-full items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
+                  <div className="mb-6 inline-flex max-w-full items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
 
                     <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-cyan-300 flex-shrink-0" />
 
@@ -1880,7 +1880,7 @@ export default function TapitasLeagueHomepage() {
 
                   {/* Título */}
                   <h2
-                    className="mb-8 md:mb-6 leading-[0.9]"
+                    className="mb-2 leading-[0.9]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
                       fontSize: 'clamp(84px, 9vw, 140px)',
@@ -1927,7 +1927,7 @@ export default function TapitasLeagueHomepage() {
                   </h2>
 
                   {/* Texto */}
-                  <div className="mx-0 mb-8 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
+                  <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
 
                     <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight">
                       Every rise. Every fall. Every debate.
