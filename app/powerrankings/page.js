@@ -466,109 +466,75 @@ export default function PowerRankingsPage() {
 
   function getH2H(teamA, teamB) {
 
-    if (!teamA || !teamB) return null
+  if (!teamA || !teamB) return null
 
-    const relevantGames = games.filter(g => {
-
-    const t =
-      String(g?.Team || '').trim()
-
-    const o =
-      String(g?.Opponent || '').trim()
-
-    // pega apenas a perspectiva de teamA, não os dois lados
-    const matchup =
-      t === teamA &&
-      o === teamB
-
-    if (!matchup) return false
-
-    const gameSeason =
-      parseNumber(g?.Season)
-
-    const gameWeek =
-      getWeekStart(g?.Week)
-
-    const currentWeek =
-      getWeekStart(week)
-
-    const currentSeason =
-      parseNumber(season)
-
+  const gamesAsA = games.filter(g => {
+    const t = String(g?.Team || '').trim()
+    const o = String(g?.Opponent || '').trim()
+    if (!(t === teamA && o === teamB)) return false
+    const gameSeason = parseNumber(g?.Season)
+    const gameWeek = getWeekStart(g?.Week)
+    const currentSeason = parseNumber(season)
+    const currentWeek = getWeekStart(week)
     return (
       gameSeason < currentSeason ||
-      (
-        gameSeason === currentSeason &&
-        gameWeek <= currentWeek
-      )
+      (gameSeason === currentSeason && gameWeek <= currentWeek)
     )
   })
 
-    let aWins = 0
-    let bWins = 0
+  const gamesAsB = games.filter(g => {
+    const t = String(g?.Team || '').trim()
+    const o = String(g?.Opponent || '').trim()
+    if (!(t === teamB && o === teamA)) return false
+    const gameSeason = parseNumber(g?.Season)
+    const gameWeek = getWeekStart(g?.Week)
+    const currentSeason = parseNumber(season)
+    const currentWeek = getWeekStart(week)
+    return (
+      gameSeason < currentSeason ||
+      (gameSeason === currentSeason && gameWeek <= currentWeek)
+    )
+  })
 
-    relevantGames.forEach(g => {
+  const aWins = gamesAsA.filter(g =>
+    String(g?.Result || '').trim().toUpperCase() === 'W'
+  ).length
 
-      const result =
-        String(g?.Result || '')
-          .trim()
-          .toUpperCase()
+  const bWins = gamesAsB.filter(g =>
+    String(g?.Result || '').trim().toUpperCase() === 'W'
+  ).length
 
-      if (result !== 'W') return
+  const orderedGames = gamesAsA.sort((a, b) => {
+    const sa = parseNumber(a.Season)
+    const sb = parseNumber(b.Season)
+    if (sa !== sb) return sa - sb
+    return getWeekStart(a.Week) - getWeekStart(b.Week)
+  })
 
-      const winner =
-        String(g?.Team || '').trim()
+  let streakWinner = null
+  let streakCount = 0
 
-      if (winner === teamA) aWins++
-      if (winner === teamB) bWins++
-    })
+  orderedGames.forEach(g => {
+    const result = String(g?.Result || '').trim().toUpperCase()
+    const winner = result === 'W' ? teamA : teamB
 
-    const orderedGames =
-      relevantGames.sort((a, b) => {
-
-        const sa = parseNumber(a.Season)
-        const sb = parseNumber(b.Season)
-
-        if (sa !== sb) return sa - sb
-
-        return getWeekStart(a.Week) - getWeekStart(b.Week)
-      })
-
-    let streakWinner = null
-    let streakCount = 0
-
-    orderedGames.forEach(g => {
-
-      const result =
-        String(g?.Result || '')
-          .trim()
-          .toUpperCase()
-
-      const teamInRow =
-        String(g?.Team || '').trim()
-
-      const winner =
-        result === 'W'
-          ? teamInRow
-          : (teamInRow === teamA ? teamB : teamA)
-
-      if (winner === streakWinner) {
-        streakCount++
-      } else {
-        streakWinner = winner
-        streakCount = 1
-      }
-    })
-
-    return {
-      aWins,
-      bWins,
-      streak:
-        streakWinner === teamA
-          ? `W${streakCount}`
-          : `L${streakCount}`
+    if (winner === streakWinner) {
+      streakCount++
+    } else {
+      streakWinner = winner
+      streakCount = 1
     }
+  })
+
+  return {
+    aWins,
+    bWins,
+    streak:
+      streakWinner === teamA
+        ? `W${streakCount}`
+        : `L${streakCount}`
   }
+}
 
   function getTeamHistory(teamName) {
 
