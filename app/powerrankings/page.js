@@ -177,16 +177,15 @@ export default function PowerRankingsPage() {
   }, [])
 
   const seasons = useMemo(() => {
-
-    return [
-      ...new Set(
-        games
-          .map(g => String(g?.Season || '').trim())
-          .filter(Boolean)
-      )
-    ].sort((a, b) => Number(a) - Number(b))
-
-  }, [games])
+  return [
+    ...new Set(
+      games
+        .filter(g => parseNumber(g?.['Power Ranking']) > 0)
+        .map(g => String(g?.Season || '').trim())
+        .filter(Boolean)
+    )
+  ].sort((a, b) => Number(a) - Number(b))
+}, [games])
 
   const weeks = useMemo(() => {
 
