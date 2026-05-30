@@ -1178,7 +1178,7 @@ export default function TapitasLeagueHomepage() {
       />
 
       {/* ===== HERO ===== */}
-      <section className="relative z-10 mx-auto max-w-[1680px] px-3 sm:px-5 md:px-6 pb-10 md:pb-14 pt-4 md:pt-8">
+      <section className="relative z-10 mx-auto max-w-[16100px] px-3 sm:px-5 md:px-6 pb-6 md:pb-10 pt-1 md:pt-2">
         <div
           className="relative isolate overflow-hidden rounded-[28px] md:rounded-[38px] border border-white/10"
         >
@@ -1341,14 +1341,14 @@ export default function TapitasLeagueHomepage() {
                     className="mb-2 leading-[0.9]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: 'clamp(84px, 9vw, 120px)',
+                      fontSize: 'clamp(84px, 9vw, 100px)',
                       letterSpacing: '0.02em',
                     }}
                   >
                     <span
                       style={{
                         display: 'block',
-                        fontSize: 'clamp(58px, 9vw, 120px)',
+                        fontSize: 'clamp(58px, 9vw, 100px)',
                         background:
                           'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                         WebkitBackgroundClip: 'text',
@@ -1418,7 +1418,7 @@ export default function TapitasLeagueHomepage() {
 
                 {/* Logo */}
                 <div
-                  className="hidden [@media(min-width:480px)]:flex relative items-center justify-center min-w-[240px]"
+                  className="hidden [@media(min-width:4100px)]:flex relative items-center justify-center min-w-[240px]"
                   style={{
                     animation: 'heroFloat 5s ease-in-out infinite',
                   }}
@@ -1493,7 +1493,7 @@ export default function TapitasLeagueHomepage() {
                     className="mb-2 leading-[0.9]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: 'clamp(84px, 9vw, 120px)',
+                      fontSize: 'clamp(84px, 9vw, 100px)',
                       letterSpacing: '0.02em',
                     }}
                   >
@@ -1501,7 +1501,7 @@ export default function TapitasLeagueHomepage() {
                     <span
                       style={{
                         display: 'block',
-                        fontSize: 'clamp(58px, 9vw, 120px)',
+                        fontSize: 'clamp(58px, 9vw, 100px)',
                         background:
                           'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                         WebkitBackgroundClip: 'text',
@@ -1566,7 +1566,7 @@ export default function TapitasLeagueHomepage() {
 
                 {/* Área direita igual ao Hero */}
                 <div
-                  className="hidden [@media(min-width:480px)]:flex relative items-center justify-center min-w-[240px]"
+                  className="hidden [@media(min-width:4100px)]:flex relative items-center justify-center min-w-[240px]"
                   style={{
                     animation: 'heroFloat 5s ease-in-out infinite',
                   }}
@@ -1868,7 +1868,7 @@ export default function TapitasLeagueHomepage() {
                     className="mb-2 leading-[0.9]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: 'clamp(84px, 9vw, 120px)',
+                      fontSize: 'clamp(84px, 9vw, 100px)',
                       letterSpacing: '0.02em',
                     }}
                   >
@@ -1876,7 +1876,7 @@ export default function TapitasLeagueHomepage() {
                     <span
                       style={{
                         display: 'block',
-                        fontSize: 'clamp(58px, 9vw, 120px)',
+                        fontSize: 'clamp(58px, 9vw, 100px)',
                         background:
                           'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                         WebkitBackgroundClip: 'text',
@@ -1948,7 +1948,7 @@ export default function TapitasLeagueHomepage() {
 
 
         </div>
-        <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 gap-2">
+        <div className="mt-3 md:mt-4 flex justify-center gap-2">
           {[0, 1, 2].map((i) => (
             <button
               key={i}
@@ -1963,7 +1963,7 @@ export default function TapitasLeagueHomepage() {
       </section>
 
       {/* ===== Tudo entre o Hero e o Footer ===== */}
-      <section className="relative z-10 mx-auto max-w-[1680px] px-3 pb-12 pt-8">
+      <section className="relative z-10 mx-auto max-w-[16100px] px-3 pb-12 pt-8">
 
         {/* ===== 4 Cards com Estatisticas ===== */}
         <motion.div
@@ -2367,7 +2367,7 @@ export default function TapitasLeagueHomepage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-10 mx-auto max-w-[1680px] px-3 pb-8 pt-0">
+      <footer className="relative z-10 mx-auto max-w-[16100px] px-3 pb-8 pt-0">
         <div className="flex flex-col items-center gap-8 rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] px-8 py-16 text-center">
 
           {/* Frase */}
