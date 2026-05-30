@@ -1418,7 +1418,7 @@ export default function TapitasLeagueHomepage() {
 
                 {/* Logo */}
                 <div
-                  className="hidden [@media(min-width:4100px)]:flex relative items-center justify-center min-w-[240px]"
+                  className="hidden [@media(min-width:480px)]:flex relative items-center justify-center min-w-[240px]"
                   style={{
                     animation: 'heroFloat 5s ease-in-out infinite',
                   }}
