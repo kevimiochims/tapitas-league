@@ -10,6 +10,7 @@ import {
   Star,
 } from 'lucide-react'
 import Header from '../components/Header'
+import SummaryDrawer from '../components/SummaryDrawer'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -90,18 +91,16 @@ function getTierColor(rank, total) {
 export default function PowerRankingsPage() {
 
   const [games, setGames] = useState([])
-
   const [loading, setLoading] = useState(true)
-
   const [season, setSeason] = useState('')
   const [week, setWeek] = useState('')
-
   const [expanded, setExpanded] = useState(null)
-
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
   const historyRefs = useRef({})
   const formRefs = useRef({})
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [allSeasons, setAllSeasons] = useState([])
 
 
 
@@ -137,7 +136,7 @@ export default function PowerRankingsPage() {
 
       setGames(gameData)
 
-      const allSeasons = [
+      const allSeasonsArr = [
         ...new Set(
           gameData
             .filter(g => parseNumber(g?.['Power Ranking']) > 0)
@@ -146,12 +145,14 @@ export default function PowerRankingsPage() {
         )
       ].sort((a, b) => Number(a) - Number(b))
 
-      if (allSeasons.length > 0) {
+      if (allSeasonsArr.length > 0) {
 
         const latestSeason =
-          allSeasons[allSeasons.length - 1]
+          allSeasonsArr[allSeasonsArr.length - 1]
 
         setSeason(latestSeason)
+        setAllSeasons(allSeasonsArr.map(s => Number(s)))
+
 
         const ws = [
           ...new Set(
@@ -377,45 +378,45 @@ export default function PowerRankingsPage() {
 
   function getNextOpponentData(teamName) {
 
-  const currentSeason = parseNumber(season)
-  const currentWeekStart = getWeekStart(week)
+    const currentSeason = parseNumber(season)
+    const currentWeekStart = getWeekStart(week)
 
-  // busca todas as semanas futuras com jogos desse time, com ou sem Power Ranking
-  const futureGames = games
-    .filter(g => {
-      const t = String(g?.Team || '').trim()
-      const gameSeason = parseNumber(g?.Season)
-      const gameWeek = getWeekStart(g?.Week)
+    // busca todas as semanas futuras com jogos desse time, com ou sem Power Ranking
+    const futureGames = games
+      .filter(g => {
+        const t = String(g?.Team || '').trim()
+        const gameSeason = parseNumber(g?.Season)
+        const gameWeek = getWeekStart(g?.Week)
 
-      return (
-        t === teamName &&
-        gameSeason === currentSeason &&
-        gameWeek > currentWeekStart &&
-        String(g?.Opponent || '').trim() !== ''
-      )
-    })
-    .sort((a, b) => getWeekStart(a?.Week) - getWeekStart(b?.Week))
+        return (
+          t === teamName &&
+          gameSeason === currentSeason &&
+          gameWeek > currentWeekStart &&
+          String(g?.Opponent || '').trim() !== ''
+        )
+      })
+      .sort((a, b) => getWeekStart(a?.Week) - getWeekStart(b?.Week))
 
-  if (futureGames.length === 0) return null
+    if (futureGames.length === 0) return null
 
-  const nextGame = futureGames[0]
-  const opponent = String(nextGame?.Opponent || '').trim()
+    const nextGame = futureGames[0]
+    const opponent = String(nextGame?.Opponent || '').trim()
 
-  if (!opponent) return null
+    if (!opponent) return null
 
-  const opponentCurrent = games.find(g =>
-    String(g?.Season || '').trim() === season &&
-    String(g?.Week || '').trim() === week &&
-    String(g?.Team || '').trim() === opponent
-  )
+    const opponentCurrent = games.find(g =>
+      String(g?.Season || '').trim() === season &&
+      String(g?.Week || '').trim() === week &&
+      String(g?.Team || '').trim() === opponent
+    )
 
-  return {
-    week: nextGame?.Week,
-    team: opponent,
-    wins: parseNumber(opponentCurrent?.Wins),
-    losses: parseNumber(opponentCurrent?.Losses),
+    return {
+      week: nextGame?.Week,
+      team: opponent,
+      wins: parseNumber(opponentCurrent?.Wins),
+      losses: parseNumber(opponentCurrent?.Losses),
+    }
   }
-}
 
   function getAllTimeRecord(teamName) {
 
@@ -604,7 +605,7 @@ export default function PowerRankingsPage() {
         }
       `}</style>
 
-      <Header />
+      <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
       <section className="mx-auto max-w-[1680px] px-4 pb-20">
 
@@ -1052,6 +1053,12 @@ export default function PowerRankingsPage() {
           </div>
         )}
       </section>
+
+      <SummaryDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        allSeasons={allSeasons}
+      />
     </main>
   )
 }
