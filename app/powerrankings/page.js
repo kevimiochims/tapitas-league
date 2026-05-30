@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { useEffect, useMemo, useRef, useState } from 'react'
-
 import {
   TrendingUp,
   TrendingDown,
@@ -10,6 +9,7 @@ import {
   ChevronRight,
   Star,
 } from 'lucide-react'
+import Header from '../components/Header'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -604,26 +604,7 @@ export default function PowerRankingsPage() {
         }
       `}</style>
 
-      <header className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-
-        <a href="/" className="flex items-center gap-3">
-
-          <Image
-            src="/images/LogoFinalBlack.png"
-            alt="Tapitas League"
-            width={36}
-            height={36}
-            style={{ filter: 'invert(1)' }}
-          />
-
-          <span className="text-base font-black tracking-[-0.04em]">
-            Tapitas
-            <span className="text-cyan-400">
-              League
-            </span>
-          </span>
-        </a>
-      </header>
+      <Header />
 
       <section className="mx-auto max-w-[1680px] px-4 pb-20">
 

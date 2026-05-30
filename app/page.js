@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
+import Header from '../components/Header'
 
 
 const FALLBACK_TEAMS = [
@@ -200,8 +201,8 @@ const ChampionCard = memo(function ChampionCard({ champ, index, isOpen, onToggle
         ease: 'easeOut',
       }}
       className={`mb-4 break-inside-avoid relative overflow-hidden rounded-[28px] border transition-all duration-200 ${isOpen
-          ? 'border-cyan-400/30'
-          : 'border-white/5 hover:border-white/10'
+        ? 'border-cyan-400/30'
+        : 'border-white/5 hover:border-white/10'
         } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
       {/* Badge Reigning — sobreposto no canto superior direito */}
@@ -1132,40 +1133,17 @@ export default function TapitasLeagueHomepage() {
       }
     `}</style>
       {/* ===== HEADER ===== */}
-      <header className="relative z-20 mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-3">
-          <Image
-            src="/images/LogoFinalBlack.png"
-            alt="Tapitas League"
-            width={44}
-            height={44}
-            className="rounded-xl invert"
-          />
-          <span className="text-lg font-black tracking-[-0.04em] text-white">
-            Tapitas<span className="text-cyan-400">League</span>
-          </span>
-        </div>
-
-        <nav className="hidden items-center gap-1 md:flex">
-          {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map((item) => (
-            <a
-              key={item}
-              href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
-              className="rounded-xl px-4 py-2 text-sm font-bold text-slate-400 transition-all hover:bg-white/[0.06] hover:text-white"
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
-        >
-          Summary
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </header>
+      <Header
+        rightSlot={
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+          >
+            Summary
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        }
+      />
 
       {/* ===== HERO ===== */}
       <section className="relative z-10 mx-auto max-w-[1680px] px-3 sm:px-5 md:px-6 pb-0 md:pb-0 pt-4 md:pt-8">
@@ -1390,7 +1368,7 @@ export default function TapitasLeagueHomepage() {
                 </a>
 
                 <a
-                  href="/rivalries" 
+                  href="/rivalries"
                   className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
                 >
                   <Swords className="h-3 w-3 md:h-4 md:w-4" />

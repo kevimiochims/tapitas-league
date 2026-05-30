@@ -6,6 +6,7 @@ import { ChevronRight, ChevronLeft, Swords, Activity } from 'lucide-react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import { motion } from 'framer-motion'
+import Header from '../components/Header'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -329,29 +330,7 @@ export default function MatchupsPage() {
       `}</style>
 
       {/* Header */}
-      <header className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-        <a href="/" className="flex items-center gap-3">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={36} height={36} style={{ filter: 'invert(1)' }} className="opacity-80" />
-          <span className="text-base font-black tracking-[-0.04em]">
-            Tapitas<span className="text-cyan-400">League</span>
-          </span>
-        </a>
-        <nav className="hidden items-center gap-1 md:flex">
-          {['Home', 'Standings', 'Matchups', 'History', 'Rivalries'].map(item => {
-            const href = item === 'Home' ? '/' : `/${item.toLowerCase()}`
-            const isActive = item === 'Matchups'
-            return (
-              <a
-                key={item}
-                href={href}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${isActive ? 'bg-white/[0.06] text-white' : 'text-slate-400'}`}
-              >
-                {item}
-              </a>
-            )
-          })}
-        </nav>
-      </header>
+      <Header />
 
       <section className="px-3 py-4 md:px-6 mx-auto">
 
