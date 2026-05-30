@@ -994,7 +994,7 @@ export default function PowerRankingsPage() {
                         {/* NEXT WEEK */}
                         {nextOpponent && h2h && (
 
-                          <div className="mt-2rounded-2xl border border-white/5 bg-black/20 p-3 mb-5">
+                          <div className="mt-2 rounded-2xl border border-white/5 bg-black/20 p-3 mb-5">
 
                             <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
                               Next Week
