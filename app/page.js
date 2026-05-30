@@ -4,6 +4,7 @@ import Image from 'next/image'
 import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
   Swords, Stars, Activity, Radar, Target, Medal, Clock3, ScrollText,
+  TrendingUp, BarChart3,
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
@@ -597,7 +598,7 @@ export default function TapitasLeagueHomepage() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % 2);
+    setCurrentSlide((prev) => (prev + 1) % 3);
   };
 
   useEffect(() => {
@@ -1184,11 +1185,11 @@ export default function TapitasLeagueHomepage() {
           <div
             className="flex transition-transform duration-700 ease-in-out"
             style={{
-              width: '200%',
-              transform: `translateX(-${currentSlide * 50}%)`,
+              width: '300%',
+              transform: `translateX(-${currentSlide * 33.3333}%)`,
             }}
           >
-            <div className="relative w-1/2 shrink-0">
+            <div className="relative w-1/3 shrink-0">
 
               {/* Background */}
               <div className="absolute inset-0 overflow-hidden rounded-[28px] md:rounded-[38px] pointer-events-none">
@@ -1313,7 +1314,7 @@ export default function TapitasLeagueHomepage() {
               </div>
 
               {/* Conteúdo */}
-              <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
+              <div className="relative z-10 flex flex-row items-stretch justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
 
                 {/* Texto */}
                 <div className="flex-1 text-left">
@@ -1438,7 +1439,7 @@ export default function TapitasLeagueHomepage() {
               </div>
             </div>
             {/* SLIDE 2 */}
-            <div className="relative w-1/2 shrink-0">
+            <div className="relative w-1/3 shrink-0">
 
               {/* Imagem de fundo */}
               <div className="absolute inset-0">
@@ -1460,7 +1461,7 @@ export default function TapitasLeagueHomepage() {
               />
 
               {/* Conteúdo */}
-              <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
+              <div className="relative z-10 flex flex-row items-stretch justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
 
                 {/* Texto */}
                 <div className="flex-1 text-left">
@@ -1528,7 +1529,7 @@ export default function TapitasLeagueHomepage() {
                           WebkitTextFillColor: 'transparent',
                         }}
                       >
-                      
+
                       </span>
                     </span>
 
@@ -1603,12 +1604,374 @@ export default function TapitasLeagueHomepage() {
 
             </div>
 
+            {/* SLIDE 3 - POWER RANKINGS */}
+            <div className="relative w-1/3 shrink-0">
+
+              {/* Background */}
+              <div className="absolute inset-0 overflow-hidden rounded-[28px] md:rounded-[38px] pointer-events-none">
+
+                <svg
+                  className="
+                    absolute
+                    inset-y-0
+                    left-1/2
+                    -translate-x-[52%]
+                    h-full
+                    w-[105%]
+                    md:w-[135%]
+                    max-w-none
+                  "
+                  preserveAspectRatio="xMidYMid slice"
+                  viewBox="0 0 900 340"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+
+                  {/* Flecha principal */}
+                  <g
+                    opacity="0.70"
+                    style={{
+                      filter: 'drop-shadow(0 0 60px rgba(34,197,94,0.45))',
+                    }}
+                  >
+                    <path
+                      d="M500 300 L710 110 L750 150 L750 70 L670 70 L710 110 L500 300 Z"
+                      fill="#22c55e"
+                    />
+                  </g>
+
+                  {/* Flechas secundárias preenchidas */}
+                  <g
+                    opacity="0.50"
+                    fill="#22d3ee"
+                    style={{
+                      filter: 'drop-shadow(0 0 45px rgba(34,211,238,0.35))',
+                    }}
+                  >
+
+                    <path d="M410 250 L500 160 L535 195 L535 125 L465 125 L500 160 L410 250 Z" />
+
+                    <path d="M660 300 L730 230 L755 255 L755 205 L705 205 L730 230 L660 300 Z" />
+
+                  </g>
+
+                  {/* Flechas outline */}
+                  <g
+                    opacity="0.60"
+                    fill="none"
+                    stroke="#22d3ee"
+                    strokeWidth="5"
+                    style={{
+                      filter: 'drop-shadow(0 0 25px rgba(34,211,238,0.4))',
+                    }}
+                  >
+
+                    <path d="M570 240 L670 140" />
+
+                    <polyline
+                      points="625,140 670,140 670,185"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+
+                    <path d="M450 290 L540 200" />
+
+                    <polyline
+                      points="495,200 540,200 540,245"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+
+                  </g>
+
+                  {/* Flechas vermelhas */}
+                  <g
+                    opacity="0.40"
+                    fill="none"
+                    stroke="#ef4444"
+                    strokeWidth="5"
+                    style={{
+                      filter: 'drop-shadow(0 0 20px rgba(239,68,68,0.35))',
+                    }}
+                  >
+
+                    <path d="M430 80 L510 160" />
+
+                    <polyline
+                      points="465,160 510,160 510,115"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+
+                    <path d="M610 40 L690 120" />
+
+                    <polyline
+                      points="645,120 690,120 690,75"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+
+                  </g>
+
+                  {/* Grid ranking */}
+                  <g
+                    opacity="0.35"
+                    stroke="#22d3ee"
+                    strokeWidth="1.5"
+                  >
+
+                    {[40, 80, 120, 160, 200, 240, 280, 320].map((y) => (
+                      <line
+                        key={y}
+                        x1="300"
+                        y1={y}
+                        x2="860"
+                        y2={y}
+                      />
+                    ))}
+
+                  </g>
+
+                  {/* Linhas diagonais */}
+                  <g
+                    opacity="0.24"
+                    stroke="#22d3ee"
+                    strokeWidth="2"
+                  >
+
+                    <line x1="380" y1="0" x2="560" y2="340" />
+                    <line x1="500" y1="0" x2="680" y2="340" />
+                    <line x1="620" y1="0" x2="800" y2="340" />
+
+                  </g>
+
+                  {/* Número principal */}
+                  <text
+                    x="620"
+                    y="300"
+                    fontFamily="'Bebas Neue', sans-serif"
+                    fontSize="320"
+                    fill="#22d3ee"
+                    opacity="0.18"
+                  >
+                    #1
+                  </text>
+
+                  {/* Rankings secundários */}
+                  <g
+                    fontFamily="'Bebas Neue', sans-serif"
+                    fill="#22d3ee"
+                    opacity="0.28"
+                  >
+
+                    <text x="430" y="95" fontSize="80">02</text>
+
+                    <text x="540" y="195" fontSize="80">03</text>
+
+                    <text x="640" y="120" fontSize="80">05</text>
+
+                    <text x="740" y="325" fontSize="80">10</text>
+
+                  </g>
+
+                  {/* Analytics dots topo */}
+                  <g opacity="0.40" fill="#22d3ee">
+
+                    {[0, 1, 2, 3, 4].map((row) =>
+                      [0, 1, 2, 3, 4].map((col) => (
+                        <circle
+                          key={`top-${row}-${col}`}
+                          cx={790 + col * 14}
+                          cy={35 + row * 14}
+                          r="2.2"
+                        />
+                      ))
+                    )}
+
+                  </g>
+
+                  {/* Analytics dots inferior */}
+                  <g opacity="0.22" fill="#22d3ee">
+
+                    {[0, 1, 2, 3].map((row) =>
+                      [0, 1, 2, 3].map((col) => (
+                        <circle
+                          key={`bottom-${row}-${col}`}
+                          cx={350 + col * 14}
+                          cy={270 + row * 14}
+                          r="2"
+                        />
+                      ))
+                    )}
+
+                  </g>
+
+                  {/* Movimentações positivas */}
+                  <g
+                    fontFamily="'Bebas Neue', sans-serif"
+                    fill="#22c55e"
+                    opacity="0.65"
+                  >
+
+                    <text x="510" y="140" fontSize="34">
+                      ▲ +3
+                    </text>
+
+                    <text x="720" y="240" fontSize="34">
+                      ▲ +5
+                    </text>
+
+                    <text x="460" y="285" fontSize="30">
+                      ▲ +1
+                    </text>
+
+                  </g>
+
+                  {/* Movimentações negativas */}
+                  <g
+                    fontFamily="'Bebas Neue', sans-serif"
+                    fill="#ef4444"
+                    opacity="0.55"
+                  >
+
+                    <text x="520" y="175" fontSize="34">
+                      ▼ -2
+                    </text>
+
+                    <text x="400" y="305" fontSize="30">
+                      ▼ -1
+                    </text>
+
+                  </g>
+
+                </svg>
+
+                {/* Overlay */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)',
+                  }}
+                />
+              </div>
+
+              {/* Conteúdo */}
+              <div className="relative z-10 flex flex-row items-stretch justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14 pb-10 md:pb-14">
+
+                <div className="flex-1 text-left">
+
+                  {/* Badge */}
+                  <div className="mb-18 md:mb-6 inline-flex max-w-full items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
+
+                    <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-cyan-300 flex-shrink-0" />
+
+                    <span
+                      className="font-black uppercase text-cyan-300 whitespace-nowrap leading-none"
+                      style={{
+                        fontSize: 'clamp(8px, 0.9vw, 14px)',
+                        letterSpacing: 'clamp(0.02em, 0.12vw, 0.12em)',
+                      }}
+                    >
+                      POWER RANKINGS | WEEKLY MOVEMENT
+                    </span>
+
+                  </div>
+
+                  {/* Título */}
+                  <h2
+                    className="mb-8 md:mb-6 leading-[0.9]"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: 'clamp(84px, 9vw, 140px)',
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 'clamp(58px, 9vw, 140px)',
+                        background:
+                          'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      THE HOME OF
+                    </span>
+
+                    <span
+                      style={{
+                        display: 'block',
+                        background:
+                          'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
+                      }}
+                    >
+                      POWER{' '}
+                      <span
+                        style={{
+                          background:
+                            'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                        }}
+                      >
+                        RANKINGS
+                      </span>
+                    </span>
+
+                  </h2>
+
+                  {/* Texto */}
+                  <div className="mx-0 mb-8 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
+
+                    <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight">
+                      Every rise. Every fall. Every debate.
+                    </p>
+
+                    <p className="text-[14px] sm:text-[14px] md:text-base text-slate-500 leading-tight">
+                      Track weekly movement, strength of schedule and league trends.
+                    </p>
+
+                  </div>
+
+                  {/* Botões */}
+                  <div className="flex flex-row items-start gap-1.5 md:gap-3">
+
+                    <a
+                      href="/power-rankings"
+                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
+                    >
+                      <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                      Current Rankings
+                    </a>
+
+                    <a
+                      href="/power-rankings/history"
+                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
+                    >
+                      <BarChart3 className="h-3 w-3 md:h-4 md:w-4" />
+                      All-Time Rankings
+                    </a>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
 
 
         </div>
         <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 gap-2">
-          {[0, 1].map((i) => (
+          {[0, 1, 2].map((i) => (
             <button
               key={i}
               onClick={() => setCurrentSlide(i)}
