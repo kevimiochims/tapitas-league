@@ -1132,6 +1132,7 @@ export default function TapitasLeagueHomepage() {
         50%       { transform: translateY(-10px); }
       }
     `}</style>
+      
       {/* ===== HEADER ===== */}
       <Header
         rightSlot={
@@ -1144,6 +1145,17 @@ export default function TapitasLeagueHomepage() {
           </button>
         }
       />
+
+      {/* SUMMARY MOBILE */}
+      <div className="lg:hidden px-6 pb-4">
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="w-full inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+        >
+          Summary
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
 
       {/* ===== HERO ===== */}
       <section className="relative z-10 mx-auto max-w-[1680px] px-3 sm:px-5 md:px-6 pb-0 md:pb-0 pt-4 md:pt-8">
