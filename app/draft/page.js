@@ -156,6 +156,7 @@ export default function DraftPage() {
         // =====================
 
         const draftTotals = {}
+        const playerTotals = {}
 
         seasonPicks.forEach(pick => {
             if (!draftTotals[pick.team]) {
@@ -181,7 +182,16 @@ export default function DraftPage() {
                     ]
 
                 if (draftedTeam) {
+
                     draftTotals[draftedTeam] += pts
+
+                    const key = normalizePlayer(player)
+
+                    if (!playerTotals[key]) {
+                        playerTotals[key] = 0
+                    }
+
+                    playerTotals[key] += pts
                 }
             }
 
@@ -195,16 +205,67 @@ export default function DraftPage() {
                 const pts =
                     parseNumber(game[`B${i}_Pts`])
 
+
                 const draftedTeam =
                     draftedPlayers[
                     normalizePlayer(player)
                     ]
 
                 if (draftedTeam) {
+
                     draftTotals[draftedTeam] += pts
+
+                    const key = normalizePlayer(player)
+
+                    if (!playerTotals[key]) {
+                        playerTotals[key] = 0
+                    }
+
+                    playerTotals[key] += pts
                 }
             }
         })
+
+        const draftedPlayersStats =
+            seasonPicks.map(pick => {
+
+                const key =
+                    normalizePlayer(pick.player)
+
+                return {
+                    ...pick,
+                    fantasyPoints:
+                        playerTotals[key] || 0
+                }
+            })
+
+        const stealCandidates =
+            draftedPlayersStats.filter(
+                p => p.pick >= 25
+            )
+
+        const steal =
+            [...stealCandidates]
+                .sort(
+                    (a, b) =>
+                        b.fantasyPoints -
+                        a.fantasyPoints
+                )[0]
+
+
+        const bustCandidates =
+            draftedPlayersStats.filter(
+                p => p.pick <= 24
+            )
+
+        const bust =
+            [...bustCandidates]
+                .sort(
+                    (a, b) =>
+                        a.fantasyPoints -
+                        b.fantasyPoints
+                )[0]
+
 
         const sortedDraftTotals =
             Object.entries(draftTotals)
@@ -252,7 +313,9 @@ export default function DraftPage() {
             firstPick,
             lastPick,
             bestDrafter,
-            worstDrafter
+            worstDrafter,
+            steal,
+            bust
         }
 
     }, [gamesData, season, seasonPicks])
@@ -451,14 +514,14 @@ export default function DraftPage() {
                                     )}
                                 </div>
                                 <div className="rounded-[24px] border border-yellow-400/20 bg-yellow-400/5 p-5">
-                                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-yellow-400">⭐ 1st Overall</div>
-                                    <div className="text-lg font-black text-white leading-tight">{highlights.firstPick?.player}</div>
-                                    <div className="mt-1 text-xs text-slate-400">{highlights.firstPick?.team}</div>
+                                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-yellow-400">🔥 Steal of the Draft</div>
+                                    <div className="text-lg font-black text-white leading-tight">{highlights.steal?.player}</div>
+                                    <div className="mt-1 text-xs text-slate-400">{highlights.steal?.team}</div>
                                 </div>
                                 <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🎯 Last Pick</div>
-                                    <div className="text-lg font-black text-white leading-tight">{highlights.lastPick?.player}</div>
-                                    <div className="mt-1 text-xs text-slate-400">{highlights.lastPick?.team}</div>
+                                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💀 Biggest Bust</div>
+                                    <div className="text-lg font-black text-white leading-tight">{highlights.bust?.player}</div>
+                                    <div className="mt-1 text-xs text-slate-400">{highlights.bust?.team}</div>
                                 </div>
                             </motion.div>
                         )}
