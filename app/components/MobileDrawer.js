@@ -6,20 +6,29 @@ import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Menu, X } from 'lucide-react'
 import { NAV_LINKS } from '../config/navigation'
+import { useDrawer } from '../context/DrawerContext'
 
 export default function MobileDrawer() {
 
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const { leftSlot } = useDrawer()
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed top-5 right-5 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#020617]/80 backdrop-blur-sm lg:hidden"
-      >
-        <Menu className="h-5 w-5 text-white" />
-      </button>
+      {/* BOTÕES FIXOS */}
+      <div className="fixed top-5 right-5 z-50 flex items-center gap-2 lg:hidden">
+
+        {leftSlot && leftSlot}
+
+        <button
+          onClick={() => setOpen(true)}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#020617]/80 backdrop-blur-sm"
+        >
+          <Menu className="h-5 w-5 text-white" />
+        </button>
+
+      </div>
 
       {open && (
         <div
