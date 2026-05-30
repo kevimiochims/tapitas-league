@@ -17,6 +17,17 @@ function parseNumber(value) {
     return Number.isNaN(parsed) ? 0 : parsed
 }
 
+function normalizePlayer(name) {
+    const parts = String(name || '')
+        .replace(/\./g, '')
+        .trim()
+        .split(' ')
+
+    if (parts.length < 2) return ''
+
+    return `${parts[0][0].toUpperCase()}_${parts[parts.length - 1].toUpperCase()}`
+}
+
 async function safeFetch(url) {
     try {
         const res = await fetch(url)
@@ -115,31 +126,135 @@ export default function DraftPage() {
 
     // Destaques automáticos — só se tiver dados de pontuação
     const highlights = useMemo(() => {
-        const seasonGames = gamesData.filter(g =>
-            String(g?.Season || '').trim() === season &&
-            String(g?.GameStage || '').trim() === 'Reg Season'
-        )
-        if (seasonGames.length === 0) return null
 
-        const teamPF = {}
-        seasonGames.forEach(g => {
-            const team = String(g?.Team || '').trim()
-            const pf = parseNumber(g?.PF)
-            if (!teamPF[team]) teamPF[team] = 0
-            teamPF[team] += pf
+        const seasonGames = gamesData.filter(
+            g => String(g?.Season || '').trim() === season
+        )
+
+        if (
+            seasonGames.length === 0 ||
+            seasonPicks.length === 0
+        ) {
+            return null
+        }
+
+        // =====================
+        // MAPA DE DRAFTADOS
+        // =====================
+
+        const draftedPlayers = {}
+
+        seasonPicks.forEach(pick => {
+            draftedPlayers[
+                normalizePlayer(pick.player)
+            ] = pick.team
         })
 
-        const sortedTeams = Object.entries(teamPF).sort((a, b) => b[1] - a[1])
-        const bestTeam = sortedTeams[0]?.[0]
-        const worstTeam = sortedTeams[sortedTeams.length - 1]?.[0]
+        // =====================
+        // TOTAL DE PONTOS
+        // DOS JOGADORES DRAFTADOS
+        // =====================
 
-        const firstPick = seasonPicks.find(p => p.pick === 1)
-        const lastPick = seasonPicks[seasonPicks.length - 1]
+        const draftTotals = {}
 
-        const bestDrafter = seasonPicks.find(p => p.team === bestTeam && p.round === 1)
-        const worstDrafter = seasonPicks.find(p => p.team === worstTeam && p.round === 1)
+        seasonPicks.forEach(pick => {
+            if (!draftTotals[pick.team]) {
+                draftTotals[pick.team] = 0
+            }
+        })
 
-        return { bestTeam, worstTeam, firstPick, lastPick, bestDrafter, worstDrafter }
+        seasonGames.forEach(game => {
+
+            // STARTERS
+
+            for (let i = 1; i <= 13; i++) {
+
+                const player =
+                    game[`S${i}_Name`]
+
+                const pts =
+                    parseNumber(game[`S${i}_Pts`])
+
+                const draftedTeam =
+                    draftedPlayers[
+                    normalizePlayer(player)
+                    ]
+
+                if (draftedTeam) {
+                    draftTotals[draftedTeam] += pts
+                }
+            }
+
+            // BENCH
+
+            for (let i = 1; i <= 8; i++) {
+
+                const player =
+                    game[`B${i}_Name`]
+
+                const pts =
+                    parseNumber(game[`B${i}_Pts`])
+
+                const draftedTeam =
+                    draftedPlayers[
+                    normalizePlayer(player)
+                    ]
+
+                if (draftedTeam) {
+                    draftTotals[draftedTeam] += pts
+                }
+            }
+        })
+
+        const sortedDraftTotals =
+            Object.entries(draftTotals)
+                .sort((a, b) => b[1] - a[1])
+
+        const bestTeam =
+            sortedDraftTotals[0]?.[0]
+
+        const worstTeam =
+            sortedDraftTotals[
+            sortedDraftTotals.length - 1
+            ]?.[0]
+
+        const firstPick =
+            seasonPicks.find(
+                p => p.pick === 1
+            )
+
+        const lastPick =
+            seasonPicks[
+            seasonPicks.length - 1
+            ]
+
+        const bestDrafter =
+            bestTeam
+                ? {
+                    team: bestTeam,
+                    points:
+                        draftTotals[bestTeam]
+                }
+                : null
+
+        const worstDrafter =
+            worstTeam
+                ? {
+                    team: worstTeam,
+                    points:
+                        draftTotals[worstTeam]
+                }
+                : null
+        console.log('Draft Totals', draftTotals)
+        return {
+            bestTeam,
+            worstTeam,
+            firstPick,
+            lastPick,
+            bestDrafter,
+            worstDrafter
+        }
+
     }, [gamesData, season, seasonPicks])
 
     const notes = useMemo(() => {
@@ -234,8 +349,8 @@ export default function DraftPage() {
                                 key={s}
                                 onClick={() => setSeason(s)}
                                 className={`flex-shrink-0 rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${season === s
-                                        ? 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-300'
-                                        : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                                    ? 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-300'
+                                    : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                                     }`}
                             >
                                 {s}
@@ -313,16 +428,26 @@ export default function DraftPage() {
                             >
                                 <div className="rounded-[24px] border border-cyan-400/20 bg-cyan-400/5 p-5">
                                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Best Drafter</div>
-                                    <div className="text-lg font-black text-white leading-tight">{highlights.bestTeam}</div>
+                                    <div className="text-lg font-black text-white leading-tight">
+                                        {highlights.bestTeam}
+                                    </div>
+
                                     {highlights.bestDrafter && (
-                                        <div className="mt-1 text-xs text-slate-400">R1: {highlights.bestDrafter.player}</div>
+                                        <div className="mt-1 text-xs text-slate-400">
+                                            {highlights.bestDrafter.points.toFixed(1)} pts
+                                        </div>
                                     )}
                                 </div>
                                 <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Worst Drafter</div>
-                                    <div className="text-lg font-black text-white leading-tight">{highlights.worstTeam}</div>
+                                    <div className="text-lg font-black text-white leading-tight">
+                                        {highlights.worstTeam}
+                                    </div>
+
                                     {highlights.worstDrafter && (
-                                        <div className="mt-1 text-xs text-slate-400">R1: {highlights.worstDrafter.player}</div>
+                                        <div className="mt-1 text-xs text-slate-400">
+                                            {highlights.worstDrafter.points.toFixed(1)} pts
+                                        </div>
                                     )}
                                 </div>
                                 <div className="rounded-[24px] border border-yellow-400/20 bg-yellow-400/5 p-5">
@@ -349,8 +474,8 @@ export default function DraftPage() {
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
                                     className={`rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${activeTab === tab.key
-                                            ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
-                                            : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:text-white'
+                                        ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
+                                        : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:text-white'
                                         }`}
                                 >
                                     {tab.label}
