@@ -1479,7 +1479,7 @@ export default function TapitasLeagueHomepage() {
               <Radar className="h-5 w-5 text-cyan-300" />
             </div>
             <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-              Games Disputed
+              Games Played
             </div>
             <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.games}</div>
             <div className="truncate text-sm font-bold text-cyan-300">All-Time</div>

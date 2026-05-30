@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Header from '../components/Header'
+import SummaryDrawer from '../components/SummaryDrawer'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -165,12 +166,13 @@ export default function StandingsPage() {
   const [sortDir, setSortDir] = useState('desc')
   const [chartStat, setChartStat] = useState('Wins')
   const [chartScope, setChartScope] = useState('Reg Season')
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [allSeasons, setAllSeasons] = useState([])
 
   const TABS = ['Overall', 'Reg Season', 'Playoffs']
   const PER_PAGE = 10
 
   useEffect(() => {
-    console.log('useEffect executando!')
     async function load() {
       const [allTime, history] = await Promise.all([
         safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
@@ -178,8 +180,6 @@ export default function StandingsPage() {
       ])
       setAllTimeData(allTime)
       setHistoryData(history)
-      console.log('history[0]:', history[0])
-      console.log('history keys:', Object.keys(history[0] || {}))
       if (allTime.length > 0) {
         setChartTeam(String(allTime[0]?.Team || allTime[0]?.team || '').trim())
       }
@@ -203,6 +203,15 @@ export default function StandingsPage() {
     })
     return ['All-Time', ...Array.from(s).sort((a, b) => Number(b) - Number(a))]
   }, [historyData])
+
+  useEffect(() => {
+    const numericSeasons = seasons
+      .filter(s => s !== 'All-Time')
+      .map(s => Number(s))
+      .filter(s => !Number.isNaN(s))
+      .sort((a, b) => a - b)
+    setAllSeasons(numericSeasons)
+  }, [seasons])
 
   const allTeams = useMemo(() => {
     const t = new Set()
@@ -349,12 +358,13 @@ export default function StandingsPage() {
   }
 
   return (
+
     <main className="min-h-screen bg-[#020617] text-white">
 
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
       {/* Header */}
-      <Header />
+      <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
       <section className="mx-auto max-w-[1680px] px-3 pb-8 pt-4">
 
@@ -817,6 +827,12 @@ export default function StandingsPage() {
           </span>
         </div>
       </footer>
+
+      <SummaryDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        allSeasons={allSeasons}
+      />
 
     </main>
   )
