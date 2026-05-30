@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import Header from '../components/Header'
 import SummaryDrawer from '../components/SummaryDrawer'
+import { useDrawer } from '../context/DrawerContext'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -101,6 +102,7 @@ export default function PowerRankingsPage() {
   const formRefs = useRef({})
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [allSeasons, setAllSeasons] = useState([])
+  const { setLeftSlot } = useDrawer()
 
 
 
@@ -176,6 +178,19 @@ export default function PowerRankingsPage() {
 
     load()
 
+  }, [])
+
+  useEffect(() => {
+    setLeftSlot(
+      <button
+        onClick={() => setDrawerOpen(true)}
+        className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+      >
+        Summary
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    )
+    return () => setLeftSlot(null)
   }, [])
 
   const seasons = useMemo(() => {
