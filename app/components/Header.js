@@ -24,18 +24,17 @@ export default function Header({ rightSlot }) {
         </span>
       </a>
 
-      <nav className="hidden items-center gap-1 md:flex">
+      <nav className="hidden items-center gap-1 lg:flex">
         {NAV_LINKS.map(({ label, href }) => {
           const isActive = pathname === href
           return (
             <a
               key={href}
               href={href}
-              className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${
-                isActive
+              className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${isActive
                   ? 'bg-white/[0.06] text-white'
                   : 'text-slate-400'
-              }`}
+                }`}
             >
               {label}
             </a>
@@ -44,7 +43,7 @@ export default function Header({ rightSlot }) {
       </nav>
 
       {rightSlot && (
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           {rightSlot}
         </div>
       )}

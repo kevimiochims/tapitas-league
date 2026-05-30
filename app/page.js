@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import Header from '../components/Header'
+import Header from './components/Header'
 
 
 const FALLBACK_TEAMS = [
