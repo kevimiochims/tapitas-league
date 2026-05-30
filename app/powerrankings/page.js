@@ -377,44 +377,45 @@ export default function PowerRankingsPage() {
 
   function getNextOpponentData(teamName) {
 
-    const currentSeason = parseNumber(season)
+  const currentSeason = parseNumber(season)
+  const currentWeekStart = getWeekStart(week)
 
-    // pega o índice da semana atual na lista de weeks
-    const currentWeekIndex = weeks.indexOf(week)
+  // busca todas as semanas futuras com jogos desse time, com ou sem Power Ranking
+  const futureGames = games
+    .filter(g => {
+      const t = String(g?.Team || '').trim()
+      const gameSeason = parseNumber(g?.Season)
+      const gameWeek = getWeekStart(g?.Week)
 
-    // se não tem próxima semana, retorna null
-    if (currentWeekIndex === -1 || currentWeekIndex === weeks.length - 1) {
-      return null
-    }
+      return (
+        t === teamName &&
+        gameSeason === currentSeason &&
+        gameWeek > currentWeekStart &&
+        String(g?.Opponent || '').trim() !== ''
+      )
+    })
+    .sort((a, b) => getWeekStart(a?.Week) - getWeekStart(b?.Week))
 
-    const nextWeek = weeks[currentWeekIndex + 1]
+  if (futureGames.length === 0) return null
 
-    const nextGame = games.find(g =>
-      String(g?.Season || '').trim() === season &&
-      String(g?.Week || '').trim() === nextWeek &&
-      String(g?.Team || '').trim() === teamName
-    )
+  const nextGame = futureGames[0]
+  const opponent = String(nextGame?.Opponent || '').trim()
 
-    if (!nextGame) return null
+  if (!opponent) return null
 
-    const opponent =
-      String(nextGame?.Opponent || '').trim()
+  const opponentCurrent = games.find(g =>
+    String(g?.Season || '').trim() === season &&
+    String(g?.Week || '').trim() === week &&
+    String(g?.Team || '').trim() === opponent
+  )
 
-    if (!opponent) return null
-
-    const opponentCurrent = games.find(g =>
-      String(g?.Season || '').trim() === season &&
-      String(g?.Week || '').trim() === week &&
-      String(g?.Team || '').trim() === opponent
-    )
-
-    return {
-      week: nextWeek,
-      team: opponent,
-      wins: parseNumber(opponentCurrent?.Wins),
-      losses: parseNumber(opponentCurrent?.Losses),
-    }
+  return {
+    week: nextGame?.Week,
+    team: opponent,
+    wins: parseNumber(opponentCurrent?.Wins),
+    losses: parseNumber(opponentCurrent?.Losses),
   }
+}
 
   function getAllTimeRecord(teamName) {
 
