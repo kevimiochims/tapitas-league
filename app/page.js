@@ -1520,7 +1520,7 @@ export default function TapitasLeagueHomepage() {
                         filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
                       }}
                     >
-                      DRAFT{' '}
+                      DRAFT {' '}
                       <span
                         style={{
                           background:
@@ -1529,7 +1529,7 @@ export default function TapitasLeagueHomepage() {
                           WebkitTextFillColor: 'transparent',
                         }}
                       >
-
+                        DAY
                       </span>
                     </span>
 
@@ -1552,27 +1552,11 @@ export default function TapitasLeagueHomepage() {
                   <div className="flex flex-wrap gap-2 md:gap-3">
 
                     <a
-                      href="/draft/2025"
+                      href="/draft"
                       className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
                     >
                       <ScrollText className="h-3 w-3 md:h-4 md:w-4" />
-                      2025 Draft
-                    </a>
-
-                    <a
-                      href="/draft/2024"
-                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
-                    >
-                      <ScrollText className="h-3 w-3 md:h-4 md:w-4" />
-                      2024 Draft
-                    </a>
-
-                    <a
-                      href="/draft/2023"
-                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
-                    >
-                      <ScrollText className="h-3 w-3 md:h-4 md:w-4" />
-                      2023 Draft
+                      Draft History
                     </a>
 
                   </div>
@@ -1898,7 +1882,7 @@ export default function TapitasLeagueHomepage() {
                         WebkitTextFillColor: 'transparent',
                       }}
                     >
-                      THE HOME OF
+                      WEEKLY
                     </span>
 
                     <span
@@ -1911,8 +1895,10 @@ export default function TapitasLeagueHomepage() {
                         filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
                       }}
                     >
-                      POWER{' '}
-                      <span
+                      POWER{' '}               
+                    </span>
+
+                    <span
                         style={{
                           background:
                             'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
@@ -1922,7 +1908,6 @@ export default function TapitasLeagueHomepage() {
                       >
                         RANKINGS
                       </span>
-                    </span>
 
                   </h2>
 
