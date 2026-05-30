@@ -1928,19 +1928,11 @@ export default function TapitasLeagueHomepage() {
                   <div className="flex flex-row items-start gap-1.5 md:gap-3">
 
                     <a
-                      href="/power-rankings"
+                      href="/powerrankings"
                       className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
                     >
                       <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
                       Current Rankings
-                    </a>
-
-                    <a
-                      href="/power-rankings/history"
-                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
-                    >
-                      <BarChart3 className="h-3 w-3 md:h-4 md:w-4" />
-                      All-Time Rankings
                     </a>
 
                   </div>
