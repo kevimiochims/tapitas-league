@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
-  Swords, Stars, Activity, Radar, Target, Medal
+  Swords, Stars, Activity, Radar, Target, Medal, Clock3
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
@@ -594,6 +594,17 @@ export default function TapitasLeagueHomepage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [seasonSummary, setSeasonSummary] = useState(null)
   const [selectedSeason, setSelectedSeason] = useState('2025')
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % 2);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(nextSlide, 10000);
+
+    return () => clearTimeout(timer);
+  }, [currentSlide]);
 
   const [leagueStats, setLeagueStats] = useState({
     franchises: 0,
@@ -1169,257 +1180,428 @@ export default function TapitasLeagueHomepage() {
       <section className="relative z-10 mx-auto max-w-[1680px] px-3 sm:px-5 md:px-6 pb-0 md:pb-0 pt-4 md:pt-8">
         <div
           className="relative isolate overflow-hidden rounded-[28px] md:rounded-[38px] border border-white/10"
-          style={{
-            background: '#020617',
-          }}
         >
+          <div
+            className="flex transition-transform duration-700 ease-in-out"
+            style={{
+              width: '200%',
+              transform: `translateX(-${currentSlide * 50}%)`,
+            }}
+          >
+            <div className="relative w-1/2 shrink-0">
 
-          {/* Background */}
-          <div className="absolute inset-0 overflow-hidden rounded-[28px] md:rounded-[38px] pointer-events-none">
+              {/* Background */}
+              <div className="absolute inset-0 overflow-hidden rounded-[28px] md:rounded-[38px] pointer-events-none">
 
-            <svg
-              className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
-              preserveAspectRatio="xMidYMid slice"
-              viewBox="0 0 900 340"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-
-              {/* Listras diagonais */}
-              <g opacity="0.09">
-                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect
-                    key={i}
-                    x={x}
-                    y="-80"
-                    width={i % 2 === 0 ? 55 : 22}
-                    height="520"
-                    fill="#22d3ee"
-                    transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`}
-                  />
-                ))}
-              </g>
-
-              {/* Losangos */}
-              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
-                {[
-                  "M380 -30 L460 85 L380 200 L300 85 Z",
-                  "M460 85 L540 200 L460 315 L380 200 Z",
-                  "M540 -30 L620 85 L540 200 L460 85 Z",
-                  "M620 85 L700 200 L620 315 L540 200 Z",
-                  "M700 -30 L780 85 L700 200 L620 85 Z",
-                  "M780 85 L860 200 L780 315 L700 200 Z",
-                ].map((d, i) => (
-                  <path key={i} d={d} />
-                ))}
-              </g>
-
-              {/* Losangos preenchidos */}
-              <g opacity="0.08" fill="#22d3ee">
-                {[
-                  "M420 30 L440 58 L420 86 L400 58 Z",
-                  "M500 120 L520 148 L500 176 L480 148 Z",
-                  "M580 30 L600 58 L580 86 L560 58 Z",
-                  "M660 120 L680 148 L660 176 L640 148 Z",
-                  "M740 30 L760 58 L740 86 L720 58 Z",
-                ].map((d, i) => (
-                  <path key={i} d={d} />
-                ))}
-              </g>
-
-              {/* Chevrons */}
-              <g
-                opacity="0.07"
-                fill="none"
-                stroke="#22d3ee"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              >
-                {[520, 600, 680].map((x, i) => (
-                  <polyline
-                    key={i}
-                    points={`${x},0 ${x + 160},170 ${x},340`}
-                  />
-                ))}
-              </g>
-
-              {/* Triângulos */}
-              <g opacity="0.07" fill="#22d3ee">
-                <polygon points="900,0 900,140 760,0" />
-                <polygon points="900,340 900,200 760,340" />
-              </g>
-
-              {/* Círculos */}
-              <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
-                {[30, 50, 70].map((r) => (
-                  <circle key={r} cx="870" cy="60" r={r} />
-                ))}
-              </g>
-
-              {/* Grid pontos */}
-              <g opacity="0.09" fill="#22d3ee">
-                {[40, 60, 80, 100].map((y) =>
-                  [310, 330, 350].map((x) => (
-                    <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
-                  ))
-                )}
-              </g>
-
-              {/* Linhas */}
-              <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
-                {[56, 113, 226, 284].map((y) => (
-                  <line key={y} x1="0" y1={y} x2="900" y2={y} />
-                ))}
-              </g>
-
-              {/* Número fantasma */}
-              <text
-                x="820"
-                y="310"
-                fontFamily="'Bebas Neue', sans-serif"
-                fontSize="340"
-                fill="#22d3ee"
-                opacity="0.02"
-                textAnchor="middle"
-              >
-                12
-              </text>
-            </svg>
-
-            {/* Overlay */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)',
-              }}
-            />
-          </div>
-
-          {/* Conteúdo */}
-          <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
-
-            {/* Texto */}
-            <div className="flex-1 text-left">
-
-              {/* Badge */}
-              <div className="mb-6 inline-flex max-w-full items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
-
-                <Flame className="h-3 w-3 md:h-4 md:w-4 text-cyan-300 flex-shrink-0" />
-
-                <span
-                  className="font-black uppercase text-cyan-300 whitespace-nowrap leading-none"
-                  style={{
-                    fontSize: 'clamp(8px, 0.9vw, 14px)',
-                    letterSpacing: 'clamp(0.02em, 0.12vw, 0.12em)',
-                  }}
+                <svg
+                  className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
+                  preserveAspectRatio="xMidYMid slice"
+                  viewBox="0 0 900 340"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
                 >
-                  EST. 2014 | A LEAGUE. A HISTORY. A LEGACY.
-                </span>
 
+                  {/* Listras diagonais */}
+                  <g opacity="0.09">
+                    {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
+                      <rect
+                        key={i}
+                        x={x}
+                        y="-80"
+                        width={i % 2 === 0 ? 55 : 22}
+                        height="520"
+                        fill="#22d3ee"
+                        transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`}
+                      />
+                    ))}
+                  </g>
+
+                  {/* Losangos */}
+                  <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
+                    {[
+                      "M380 -30 L460 85 L380 200 L300 85 Z",
+                      "M460 85 L540 200 L460 315 L380 200 Z",
+                      "M540 -30 L620 85 L540 200 L460 85 Z",
+                      "M620 85 L700 200 L620 315 L540 200 Z",
+                      "M700 -30 L780 85 L700 200 L620 85 Z",
+                      "M780 85 L860 200 L780 315 L700 200 Z",
+                    ].map((d, i) => (
+                      <path key={i} d={d} />
+                    ))}
+                  </g>
+
+                  {/* Losangos preenchidos */}
+                  <g opacity="0.08" fill="#22d3ee">
+                    {[
+                      "M420 30 L440 58 L420 86 L400 58 Z",
+                      "M500 120 L520 148 L500 176 L480 148 Z",
+                      "M580 30 L600 58 L580 86 L560 58 Z",
+                      "M660 120 L680 148 L660 176 L640 148 Z",
+                      "M740 30 L760 58 L740 86 L720 58 Z",
+                    ].map((d, i) => (
+                      <path key={i} d={d} />
+                    ))}
+                  </g>
+
+                  {/* Chevrons */}
+                  <g
+                    opacity="0.07"
+                    fill="none"
+                    stroke="#22d3ee"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                  >
+                    {[520, 600, 680].map((x, i) => (
+                      <polyline
+                        key={i}
+                        points={`${x},0 ${x + 160},170 ${x},340`}
+                      />
+                    ))}
+                  </g>
+
+                  {/* Triângulos */}
+                  <g opacity="0.07" fill="#22d3ee">
+                    <polygon points="900,0 900,140 760,0" />
+                    <polygon points="900,340 900,200 760,340" />
+                  </g>
+
+                  {/* Círculos */}
+                  <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
+                    {[30, 50, 70].map((r) => (
+                      <circle key={r} cx="870" cy="60" r={r} />
+                    ))}
+                  </g>
+
+                  {/* Grid pontos */}
+                  <g opacity="0.09" fill="#22d3ee">
+                    {[40, 60, 80, 100].map((y) =>
+                      [310, 330, 350].map((x) => (
+                        <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
+                      ))
+                    )}
+                  </g>
+
+                  {/* Linhas */}
+                  <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
+                    {[56, 113, 226, 284].map((y) => (
+                      <line key={y} x1="0" y1={y} x2="900" y2={y} />
+                    ))}
+                  </g>
+
+                  {/* Número fantasma */}
+                  <text
+                    x="820"
+                    y="310"
+                    fontFamily="'Bebas Neue', sans-serif"
+                    fontSize="340"
+                    fill="#22d3ee"
+                    opacity="0.02"
+                    textAnchor="middle"
+                  >
+                    12
+                  </text>
+                </svg>
+
+                {/* Overlay */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)',
+                  }}
+                />
               </div>
 
-              {/* Título */}
-              <h1
-                className="mb-2 leading-[0.9]"
-                style={{
-                  fontFamily: '"Bebas Neue", sans-serif',
-                  fontSize: 'clamp(84px, 9vw, 140px)',
-                  letterSpacing: '0.02em',
-                }}
-              >
-                <span
-                  style={{
-                    display: 'block',
-                    fontSize: 'clamp(58px, 9vw, 140px)',
-                    background:
-                      'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  THE HOME OF
-                </span>
+              {/* Conteúdo */}
+              <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
 
-                <span
-                  style={{
-                    display: 'block',
-                    background:
-                      'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
-                  }}
-                >
-                  TAPITAS{' '}
-                  <span
+                {/* Texto */}
+                <div className="flex-1 text-left">
+
+                  {/* Badge */}
+                  <div className="mb-6 inline-flex max-w-full items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
+
+                    <Flame className="h-3 w-3 md:h-4 md:w-4 text-cyan-300 flex-shrink-0" />
+
+                    <span
+                      className="font-black uppercase text-cyan-300 whitespace-nowrap leading-none"
+                      style={{
+                        fontSize: 'clamp(8px, 0.9vw, 14px)',
+                        letterSpacing: 'clamp(0.02em, 0.12vw, 0.12em)',
+                      }}
+                    >
+                      EST. 2014 | A LEAGUE. A HISTORY. A LEGACY.
+                    </span>
+
+                  </div>
+
+                  {/* Título */}
+                  <h1
+                    className="mb-2 leading-[0.9]"
                     style={{
-                      background:
-                        'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: 'clamp(84px, 9vw, 140px)',
+                      letterSpacing: '0.02em',
                     }}
                   >
-                    HISTORY
-                  </span>
-                </span>
-              </h1>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 'clamp(58px, 9vw, 140px)',
+                        background:
+                          'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      THE HOME OF
+                    </span>
 
-              <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
+                    <span
+                      style={{
+                        display: 'block',
+                        background:
+                          'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
+                      }}
+                    >
+                      TAPITAS{' '}
+                      <span
+                        style={{
+                          background:
+                            'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                        }}
+                      >
+                        HISTORY
+                      </span>
+                    </span>
+                  </h1>
 
-                <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight whitespace-nowrap">
-                  All the stats. All the moments. All the rivalry.
-                </p>
+                  <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
 
-                <p className="text-[14px] sm:text-[14px] md:text-base text-slate-500 leading-tight">
-                  Explore the history that built the league.
-                </p>
+                    <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight whitespace-nowrap">
+                      All the stats. All the moments. All the rivalry.
+                    </p>
 
-              </div>
-              {/* Botões */}
-              <div className="flex flex-row items-start gap-1.5 md:gap-3">
+                    <p className="text-[14px] sm:text-[14px] md:text-base text-slate-500 leading-tight">
+                      Explore the history that built the league.
+                    </p>
 
-                <a
-                  href="/standings"
-                  className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
+                  </div>
+                  {/* Botões */}
+                  <div className="flex flex-row items-start gap-1.5 md:gap-3">
+
+                    <a
+                      href="/standings"
+                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
+                    >
+                      <Trophy className="h-3 w-3 md:h-4 md:w-4" />
+                      Standings
+                    </a>
+
+                    <a
+                      href="/rivalries"
+                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
+                    >
+                      <Swords className="h-3 w-3 md:h-4 md:w-4" />
+                      Rivalries
+                    </a>
+
+                  </div>
+                </div>
+
+                {/* Logo */}
+                <div
+                  className="hidden [@media(min-width:480px)]:flex relative items-center justify-center min-w-[240px]"
+                  style={{
+                    animation: 'heroFloat 5s ease-in-out infinite',
+                  }}
                 >
-                  <Trophy className="h-3 w-3 md:h-4 md:w-4" />
-                  Standings
-                </a>
-
-                <a
-                  href="/rivalries"
-                  className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-white transition-all hover:bg-white/[0.08] whitespace-nowrap"
-                >
-                  <Swords className="h-3 w-3 md:h-4 md:w-4" />
-                  Rivalries
-                </a>
+                  <Image
+                    src="/images/LogoFinalBlack.png"
+                    alt="Tapitas League Logo"
+                    width={600}
+                    height={600}
+                    priority
+                    style={{
+                      width: 'clamp(240px, 24vw, 600px)',
+                      height: 'auto',
+                      objectFit: 'contain',
+                    }}
+                  />
+                </div>
 
               </div>
             </div>
+            {/* SLIDE 2 */}
+            <div className="relative w-1/2 shrink-0">
 
-            {/* Logo */}
-            <div
-              className="hidden [@media(min-width:480px)]:flex relative items-center justify-center min-w-[240px]"
-              style={{
-                animation: 'heroFloat 5s ease-in-out infinite',
-              }}
-            >
-              <Image
-                src="/images/LogoFinalBlack.png"
-                alt="Tapitas League Logo"
-                width={600}
-                height={600}
-                priority
+              {/* Imagem de fundo */}
+              <div className="absolute inset-0">
+                <Image
+                  src="/images/draft.png"
+                  alt="Hero Background"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Overlay escuro */}
+              <div
+                className="absolute inset-0"
                 style={{
-                  width: 'clamp(240px, 24vw, 600px)',
-                  height: 'auto',
-                  objectFit: 'contain',
+                  background:
+                    'linear-gradient(105deg, rgba(2,6,23,0.72) 25%, rgba(2,6,23,0.40) 52%, rgba(2,6,23,0.00) 100%)',
                 }}
               />
+
+              {/* Conteúdo */}
+              <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
+
+                {/* Texto */}
+                <div className="flex-1 text-left">
+
+                  {/* Badge */}
+                  <div className="mb-6 inline-flex max-w-full items-center gap-1.5 rounded-xl md:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-[5px] md:px-4 md:py-2">
+
+                    <Clock3 className="h-3 w-3 md:h-4 md:w-4 text-cyan-300 flex-shrink-0" />
+
+                    <span
+                      className="font-black uppercase whitespace-nowrap leading-none"
+                      style={{
+                        fontSize: 'clamp(8px, 0.9vw, 14px)',
+                        letterSpacing: 'clamp(0.02em, 0.12vw, 0.12em)',
+                        background:
+                          'linear-gradient(160deg, #a5f3fc 0%, #67e8f9 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      YOUR TEAM IS NOW ON THE CLOCK
+                    </span>
+
+                  </div>
+
+                  {/* Título */}
+                  <h2
+                    className="mb-2 leading-[0.9]"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: 'clamp(84px, 9vw, 140px)',
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 'clamp(58px, 9vw, 140px)',
+                        background:
+                          'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      WELCOME TO
+                    </span>
+
+                    <span
+                      style={{
+                        display: 'block',
+                        background:
+                          'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
+                      }}
+                    >
+                      DRAFT{' '}
+                      <span
+                        style={{
+                          background:
+                            'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                        }}
+                      >
+                        DAY
+                      </span>
+                    </span>
+
+                  </h2>
+
+                  {/* Subtítulo */}
+                  <div className="mx-0 mb-5 md:mb-6 text-slate-300 flex flex-col gap-1 md:gap-1.5">
+
+                    <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight">
+                      Every dynasty started with a pick.
+                    </p>
+
+                    <p className="text-[14px] sm:text-[14px] md:text-base text-slate-400 leading-tight">
+                      And probably a beer or two.
+                    </p>
+
+                  </div>
+
+                  {/* Botões */}
+                  <div className="flex flex-row items-start gap-1.5 md:gap-3">
+
+                    <a
+                      href="/standings"
+                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
+                    >
+                      <Trophy className="h-3 w-3 md:h-4 md:w-4" />
+                      Draft History
+                    </a>
+
+                  </div>
+
+                </div>
+
+                {/* Área direita igual ao Hero */}
+                <div
+                  className="hidden [@media(min-width:480px)]:flex relative items-center justify-center min-w-[240px]"
+                  style={{
+                    animation: 'heroFloat 5s ease-in-out infinite',
+                  }}
+                >
+                  <Image
+                    src="/images/LogoFinalBlack.png"
+                    alt="Tapitas League Logo"
+                    width={600}
+                    height={600}
+                    style={{
+                      width: 'clamp(240px, 24vw, 600px)',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      opacity: 0,
+                    }}
+                  />
+                </div>
+
+              </div>
+
             </div>
 
           </div>
+
+
+        </div>
+        <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 gap-2">
+          {[0, 1].map((i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentSlide(i)}
+              className={`h-2 rounded-full transition-all ${currentSlide === i
+                ? 'w-8 bg-cyan-400'
+                : 'w-2 bg-white/40'
+                }`}
+            />
+          ))}
         </div>
       </section>
 
