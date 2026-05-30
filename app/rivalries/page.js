@@ -794,7 +794,7 @@ RENDER
               className="leading-[0.9] tracking-[-0.02em]"
               style={{
                 fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(54px, 8vw, 110px)',
+                fontSize: 'clamp(48px, 7vw, 96px)',
                 background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -1205,6 +1205,23 @@ RENDER
             </div>
           )}
         </div>
+        {/* FOOTER */}
+        <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
+          <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
+            <Image
+              src="/images/LogoFinalBlack.png"
+              alt="Tapitas League"
+              width={24}
+              height={24}
+              style={{ filter: 'invert(1)' }}
+              className="opacity-30"
+            />
+
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
+              Tapitas League · Est. 2014
+            </span>
+          </div>
+        </footer>
 
       </section>
     </main>

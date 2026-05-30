@@ -8,6 +8,19 @@ import { Menu, X } from 'lucide-react'
 import { NAV_LINKS } from '../config/navigation'
 import { useDrawer } from '../context/DrawerContext'
 
+const [showSummary, setShowSummary] = useState(true)
+
+useEffect(() => {
+  const handleScroll = () => {
+    setShowSummary(window.scrollY < 100)
+  }
+
+  window.addEventListener('scroll', handleScroll)
+
+  return () =>
+    window.removeEventListener('scroll', handleScroll)
+}, [])
+
 export default function MobileDrawer() {
 
   const [open, setOpen] = useState(false)
@@ -19,7 +32,7 @@ export default function MobileDrawer() {
       {/* BOTÕES FIXOS */}
       <div className="fixed top-5 right-5 z-50 flex items-center gap-2 lg:hidden">
 
-        {leftSlot && leftSlot}
+        {showSummary && leftSlot}
 
         <button
           onClick={() => setOpen(true)}

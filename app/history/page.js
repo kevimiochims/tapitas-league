@@ -532,7 +532,7 @@ export default function HistoryPage() {
               className="leading-[0.9] tracking-[-0.02em]"
               style={{
                 fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(54px, 8vw, 110px)',
+                fontSize: 'clamp(48px, 7vw, 96px)',
                 background:
                   'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
                 WebkitBackgroundClip: 'text',
@@ -1305,7 +1305,7 @@ export default function HistoryPage() {
           />
 
           <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
-            Tapitas League · History Archive
+            Tapitas League · Est. 2014
           </span>
         </div>
       </footer>
