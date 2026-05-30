@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
-  Swords, Stars, Activity, Radar, Target, Medal, Clock3
+  Swords, Stars, Activity, Radar, Target, Medal, Clock3, ScrollText,
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
@@ -1506,7 +1506,7 @@ export default function TapitasLeagueHomepage() {
                         WebkitTextFillColor: 'transparent',
                       }}
                     >
-                      WELCOME TO
+                      THE
                     </span>
 
                     <span
@@ -1548,14 +1548,30 @@ export default function TapitasLeagueHomepage() {
                   </div>
 
                   {/* Botões */}
-                  <div className="flex flex-row items-start gap-1.5 md:gap-3">
+                  <div className="flex flex-wrap gap-2 md:gap-3">
 
                     <a
-                      href="/standings"
+                      href="/draft/2025"
                       className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
                     >
-                      <Trophy className="h-3 w-3 md:h-4 md:w-4" />
-                      Draft History
+                      <ScrollText className="h-3 w-3 md:h-4 md:w-4" />
+                      2025 Draft
+                    </a>
+
+                    <a
+                      href="/draft/2024"
+                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
+                    >
+                      <ScrollText className="h-3 w-3 md:h-4 md:w-4" />
+                      2024 Draft
+                    </a>
+
+                    <a
+                      href="/draft/2023"
+                      className="inline-flex h-8 md:h-12 items-center gap-1 md:gap-2 rounded-lg md:rounded-2xl bg-cyan-400 px-2.5 md:px-6 text-[12px] md:text-sm font-bold text-[#020617] transition-all hover:bg-cyan-300 whitespace-nowrap"
+                    >
+                      <ScrollText className="h-3 w-3 md:h-4 md:w-4" />
+                      2023 Draft
                     </a>
 
                   </div>
