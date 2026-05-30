@@ -1177,7 +1177,7 @@ export default function TapitasLeagueHomepage() {
       />
 
       {/* ===== HERO ===== */}
-      <section className="relative z-10 mx-auto max-w-[1680px] px-3 sm:px-5 md:px-6 pb-0 md:pb-0 pt-4 md:pt-8">
+      <section className="relative z-10 mx-auto max-w-[1680px] px-3 sm:px-5 md:px-6 pb-10 md:pb-14 pt-4 md:pt-8">
         <div
           className="relative isolate overflow-hidden rounded-[28px] md:rounded-[38px] border border-white/10"
         >
@@ -1446,7 +1446,7 @@ export default function TapitasLeagueHomepage() {
                   src="/images/draft.png"
                   alt="Hero Background"
                   fill
-                  className="object-cover"
+                  className="object-cover object-[75%_center] md:object-center"
                 />
               </div>
 
