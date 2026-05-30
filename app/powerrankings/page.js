@@ -140,6 +140,7 @@ export default function PowerRankingsPage() {
       const allSeasons = [
         ...new Set(
           gameData
+            .filter(g => parseNumber(g?.['Power Ranking']) > 0)
             .map(g => String(g?.Season || '').trim())
             .filter(Boolean)
         )
@@ -177,15 +178,15 @@ export default function PowerRankingsPage() {
   }, [])
 
   const seasons = useMemo(() => {
-  return [
-    ...new Set(
-      games
-        .filter(g => parseNumber(g?.['Power Ranking']) > 0)
-        .map(g => String(g?.Season || '').trim())
-        .filter(Boolean)
-    )
-  ].sort((a, b) => Number(a) - Number(b))
-}, [games])
+    return [
+      ...new Set(
+        games
+          .filter(g => parseNumber(g?.['Power Ranking']) > 0)
+          .map(g => String(g?.Season || '').trim())
+          .filter(Boolean)
+      )
+    ].sort((a, b) => Number(a) - Number(b))
+  }, [games])
 
   const weeks = useMemo(() => {
 
@@ -465,75 +466,75 @@ export default function PowerRankingsPage() {
 
   function getH2H(teamA, teamB) {
 
-  if (!teamA || !teamB) return null
+    if (!teamA || !teamB) return null
 
-  const gamesAsA = games.filter(g => {
-    const t = String(g?.Team || '').trim()
-    const o = String(g?.Opponent || '').trim()
-    if (!(t === teamA && o === teamB)) return false
-    const gameSeason = parseNumber(g?.Season)
-    const gameWeek = getWeekStart(g?.Week)
-    const currentSeason = parseNumber(season)
-    const currentWeek = getWeekStart(week)
-    return (
-      gameSeason < currentSeason ||
-      (gameSeason === currentSeason && gameWeek <= currentWeek)
-    )
-  })
+    const gamesAsA = games.filter(g => {
+      const t = String(g?.Team || '').trim()
+      const o = String(g?.Opponent || '').trim()
+      if (!(t === teamA && o === teamB)) return false
+      const gameSeason = parseNumber(g?.Season)
+      const gameWeek = getWeekStart(g?.Week)
+      const currentSeason = parseNumber(season)
+      const currentWeek = getWeekStart(week)
+      return (
+        gameSeason < currentSeason ||
+        (gameSeason === currentSeason && gameWeek <= currentWeek)
+      )
+    })
 
-  const gamesAsB = games.filter(g => {
-    const t = String(g?.Team || '').trim()
-    const o = String(g?.Opponent || '').trim()
-    if (!(t === teamB && o === teamA)) return false
-    const gameSeason = parseNumber(g?.Season)
-    const gameWeek = getWeekStart(g?.Week)
-    const currentSeason = parseNumber(season)
-    const currentWeek = getWeekStart(week)
-    return (
-      gameSeason < currentSeason ||
-      (gameSeason === currentSeason && gameWeek <= currentWeek)
-    )
-  })
+    const gamesAsB = games.filter(g => {
+      const t = String(g?.Team || '').trim()
+      const o = String(g?.Opponent || '').trim()
+      if (!(t === teamB && o === teamA)) return false
+      const gameSeason = parseNumber(g?.Season)
+      const gameWeek = getWeekStart(g?.Week)
+      const currentSeason = parseNumber(season)
+      const currentWeek = getWeekStart(week)
+      return (
+        gameSeason < currentSeason ||
+        (gameSeason === currentSeason && gameWeek <= currentWeek)
+      )
+    })
 
-  const aWins = gamesAsA.filter(g =>
-    String(g?.Result || '').trim().toUpperCase() === 'W'
-  ).length
+    const aWins = gamesAsA.filter(g =>
+      String(g?.Result || '').trim().toUpperCase() === 'W'
+    ).length
 
-  const bWins = gamesAsB.filter(g =>
-    String(g?.Result || '').trim().toUpperCase() === 'W'
-  ).length
+    const bWins = gamesAsB.filter(g =>
+      String(g?.Result || '').trim().toUpperCase() === 'W'
+    ).length
 
-  const orderedGames = gamesAsA.sort((a, b) => {
-    const sa = parseNumber(a.Season)
-    const sb = parseNumber(b.Season)
-    if (sa !== sb) return sa - sb
-    return getWeekStart(a.Week) - getWeekStart(b.Week)
-  })
+    const orderedGames = gamesAsA.sort((a, b) => {
+      const sa = parseNumber(a.Season)
+      const sb = parseNumber(b.Season)
+      if (sa !== sb) return sa - sb
+      return getWeekStart(a.Week) - getWeekStart(b.Week)
+    })
 
-  let streakWinner = null
-  let streakCount = 0
+    let streakWinner = null
+    let streakCount = 0
 
-  orderedGames.forEach(g => {
-    const result = String(g?.Result || '').trim().toUpperCase()
-    const winner = result === 'W' ? teamA : teamB
+    orderedGames.forEach(g => {
+      const result = String(g?.Result || '').trim().toUpperCase()
+      const winner = result === 'W' ? teamA : teamB
 
-    if (winner === streakWinner) {
-      streakCount++
-    } else {
-      streakWinner = winner
-      streakCount = 1
+      if (winner === streakWinner) {
+        streakCount++
+      } else {
+        streakWinner = winner
+        streakCount = 1
+      }
+    })
+
+    return {
+      aWins,
+      bWins,
+      streak:
+        streakWinner === teamA
+          ? `W${streakCount}`
+          : `L${streakCount}`
     }
-  })
-
-  return {
-    aWins,
-    bWins,
-    streak:
-      streakWinner === teamA
-        ? `W${streakCount}`
-        : `L${streakCount}`
   }
-}
 
   function getTeamHistory(teamName) {
 
