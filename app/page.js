@@ -1341,14 +1341,14 @@ export default function TapitasLeagueHomepage() {
                     className="mb-2 leading-[0.9]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: 'clamp(84px, 9vw, 140px)',
+                      fontSize: 'clamp(84px, 9vw, 120px)',
                       letterSpacing: '0.02em',
                     }}
                   >
                     <span
                       style={{
                         display: 'block',
-                        fontSize: 'clamp(58px, 9vw, 140px)',
+                        fontSize: 'clamp(58px, 9vw, 120px)',
                         background:
                           'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                         WebkitBackgroundClip: 'text',
@@ -1369,7 +1369,9 @@ export default function TapitasLeagueHomepage() {
                       }}
                     >
                       TAPITAS{' '}
-                      <span
+                      
+                    </span>
+                    <span
                         style={{
                           background:
                             'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
@@ -1379,7 +1381,6 @@ export default function TapitasLeagueHomepage() {
                       >
                         HISTORY
                       </span>
-                    </span>
                   </h1>
 
                   <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
@@ -1492,7 +1493,7 @@ export default function TapitasLeagueHomepage() {
                     className="mb-2 leading-[0.9]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: 'clamp(84px, 9vw, 140px)',
+                      fontSize: 'clamp(84px, 9vw, 120px)',
                       letterSpacing: '0.02em',
                     }}
                   >
@@ -1500,7 +1501,7 @@ export default function TapitasLeagueHomepage() {
                     <span
                       style={{
                         display: 'block',
-                        fontSize: 'clamp(58px, 9vw, 140px)',
+                        fontSize: 'clamp(58px, 9vw, 120px)',
                         background:
                           'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                         WebkitBackgroundClip: 'text',
@@ -1520,8 +1521,9 @@ export default function TapitasLeagueHomepage() {
                         filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
                       }}
                     >
-                      DRAFT {' '}
-                      <span
+                      DRAFT
+                    </span>
+                    <span
                         style={{
                           background:
                             'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
@@ -1531,7 +1533,6 @@ export default function TapitasLeagueHomepage() {
                       >
                         DAY
                       </span>
-                    </span>
 
                   </h2>
 
@@ -1867,7 +1868,7 @@ export default function TapitasLeagueHomepage() {
                     className="mb-2 leading-[0.9]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: 'clamp(84px, 9vw, 140px)',
+                      fontSize: 'clamp(84px, 9vw, 120px)',
                       letterSpacing: '0.02em',
                     }}
                   >
@@ -1875,7 +1876,7 @@ export default function TapitasLeagueHomepage() {
                     <span
                       style={{
                         display: 'block',
-                        fontSize: 'clamp(58px, 9vw, 140px)',
+                        fontSize: 'clamp(58px, 9vw, 120px)',
                         background:
                           'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)',
                         WebkitBackgroundClip: 'text',
