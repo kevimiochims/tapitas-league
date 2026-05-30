@@ -377,60 +377,56 @@ export default function PowerRankingsPage() {
 
   function getNextOpponentData(teamName) {
 
-    const currentSeason = parseNumber(season)
-    const currentWeek = parseNumber(week)
+  const currentSeason = parseNumber(season)
 
-    // procura qualquer jogo FUTURO do time
-    const futureGames = games
-      .filter(g => {
+  const futureGames = games
+    .filter(g => {
 
-        const gameSeason =
-          parseNumber(g?.Season)
+      const gameSeason =
+        parseNumber(g?.Season)
 
-        const gameWeek = getWeekStart(g?.Week)
+      const gameWeek = getWeekStart(g?.Week)
 
-        const team =
-          String(g?.Team || '').trim()
-
-        return (
-          team === teamName &&
-          gameSeason === currentSeason &&
-          gameWeek > getWeekStart(week)
-        )
-      })
-      .sort((a, b) =>
-        parseNumber(a?.Week) -
-        parseNumber(b?.Week)
-      )
-
-    if (futureGames.length === 0) {
-      return null
-    }
-
-    const nextGame = futureGames[0]
-
-    const opponent =
-      String(nextGame?.Opponent || '').trim()
-
-    if (!opponent) return null
-
-    // pega o record ATUAL do adversário
-    const opponentCurrent = games.find(g => {
+      const team =
+        String(g?.Team || '').trim()
 
       return (
-        String(g?.Season || '').trim() === season &&
-        String(g?.Week || '').trim() === week &&
-        String(g?.Team || '').trim() === opponent
+        team === teamName &&
+        gameSeason === currentSeason &&
+        gameWeek > getWeekStart(week)
       )
     })
+    .sort((a, b) =>
+      getWeekStart(a?.Week) -
+      getWeekStart(b?.Week)
+    )
 
-    return {
-      week: parseNumber(nextGame?.Week),
-      team: opponent,
-      wins: parseNumber(opponentCurrent?.Wins),
-      losses: parseNumber(opponentCurrent?.Losses),
-    }
+  if (futureGames.length === 0) {
+    return null
   }
+
+  const nextGame = futureGames[0]
+
+  const opponent =
+    String(nextGame?.Opponent || '').trim()
+
+  if (!opponent) return null
+
+  const opponentCurrent = games.find(g => {
+    return (
+      String(g?.Season || '').trim() === season &&
+      String(g?.Week || '').trim() === week &&
+      String(g?.Team || '').trim() === opponent
+    )
+  })
+
+  return {
+    week: getWeekStart(nextGame?.Week),
+    team: opponent,
+    wins: parseNumber(opponentCurrent?.Wins),
+    losses: parseNumber(opponentCurrent?.Losses),
+  }
+}
 
   function getAllTimeRecord(teamName) {
 
