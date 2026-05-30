@@ -332,7 +332,7 @@ export default function MatchupsPage() {
       {/* Header */}
       <Header />
 
-      <section className="px-3 py-4 md:px-6 mx-auto">
+      <section className="px-3 md:px-6 mx-auto">
 
         {/* Hero */}
         <div className="relative mb-8 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">

@@ -706,7 +706,6 @@ export default function PowerRankingsPage() {
         </div>
 
         {/* SEASON */}
-
         <div className="mb-5">
 
           <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
