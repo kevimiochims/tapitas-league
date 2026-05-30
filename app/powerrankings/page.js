@@ -379,49 +379,37 @@ export default function PowerRankingsPage() {
 
   const currentSeason = parseNumber(season)
 
-  const futureGames = games
-    .filter(g => {
+  // pega o índice da semana atual na lista de weeks
+  const currentWeekIndex = weeks.indexOf(week)
 
-      const gameSeason =
-        parseNumber(g?.Season)
-
-      const gameWeek = getWeekStart(g?.Week)
-
-      const team =
-        String(g?.Team || '').trim()
-
-      return (
-        team === teamName &&
-        gameSeason === currentSeason &&
-        gameWeek > getWeekStart(week)
-      )
-    })
-    .sort((a, b) =>
-      getWeekStart(a?.Week) -
-      getWeekStart(b?.Week)
-    )
-
-  if (futureGames.length === 0) {
+  // se não tem próxima semana, retorna null
+  if (currentWeekIndex === -1 || currentWeekIndex === weeks.length - 1) {
     return null
   }
 
-  const nextGame = futureGames[0]
+  const nextWeek = weeks[currentWeekIndex + 1]
+
+  const nextGame = games.find(g =>
+    String(g?.Season || '').trim() === season &&
+    String(g?.Week || '').trim() === nextWeek &&
+    String(g?.Team || '').trim() === teamName
+  )
+
+  if (!nextGame) return null
 
   const opponent =
     String(nextGame?.Opponent || '').trim()
 
   if (!opponent) return null
 
-  const opponentCurrent = games.find(g => {
-    return (
-      String(g?.Season || '').trim() === season &&
-      String(g?.Week || '').trim() === week &&
-      String(g?.Team || '').trim() === opponent
-    )
-  })
+  const opponentCurrent = games.find(g =>
+    String(g?.Season || '').trim() === season &&
+    String(g?.Week || '').trim() === week &&
+    String(g?.Team || '').trim() === opponent
+  )
 
   return {
-    week: getWeekStart(nextGame?.Week),
+    week: nextWeek,
     team: opponent,
     wins: parseNumber(opponentCurrent?.Wins),
     losses: parseNumber(opponentCurrent?.Losses),
