@@ -5,8 +5,8 @@ export const NAV_LINKS = [
   { label: 'History',        href: '/history'       },
   { label: 'Rivalries',      href: '/rivalries'     },
   { label: 'Power Rankings', href: '/powerrankings' },
+  { label: 'Draft',          href: '/draft'         },
 ]
-
 
 //Futuramente, para adicionar Draft ou News, basta abrir app/config/navigation.js e adicionar uma linha:
 
