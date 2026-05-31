@@ -68,6 +68,7 @@ export default function DraftPage() {
     const [season, setSeason] = useState('')
     const [photoIdx, setPhotoIdx] = useState(0)
     const [activeTab, setActiveTab] = useState('board') // 'board' | 'scores' | 'notes'
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const photos = DRAFT_PHOTOS?.[season] || []
     const prevPhoto = () => setPhotoIdx(i => (i - 1 + photos.length) % photos.length)
     const nextPhoto = () => setPhotoIdx(i => (i + 1) % photos.length)
