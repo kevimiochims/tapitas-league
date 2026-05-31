@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import ReactMarkdown from 'react-markdown'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   TrendingUp,
@@ -779,8 +780,8 @@ export default function PowerRankingsPage() {
                 data-active={week === w}
                 onClick={() => setWeek(w)}
                 className={`flex-shrink-0 h-11 w-11 rounded-2xl text-sm font-black transition-all ${week === w
-                    ? 'bg-yellow-400/10 border border-yellow-400/25 text-yellow-300'
-                    : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                  ? 'bg-yellow-400/10 border border-yellow-400/25 text-yellow-300'
+                  : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                   }`}
               >
                 {w}
@@ -1071,10 +1072,75 @@ export default function PowerRankingsPage() {
                           <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
                             Power Take
                           </div>
+                          <ReactMarkdown
+                            components={{
+                              h1: ({ children }) => (
+                                <h1 className="text-2xl font-black text-white mb-4 mt-6 leading-tight">
+                                  {children}
+                                </h1>
+                              ),
 
-                          <p className="text-sm leading-relaxed text-slate-300">
+                              h2: ({ children }) => (
+                                <h2 className="text-xl font-black text-white mb-3 mt-5 leading-tight">
+                                  {children}
+                                </h2>
+                              ),
+
+                              h3: ({ children }) => (
+                                <h3 className="text-lg font-black text-white mb-2 mt-4">
+                                  {children}
+                                </h3>
+                              ),
+
+                              p: ({ children }) => (
+                                <p className="text-slate-300 mb-3 leading-relaxed text-justify">
+                                  {children}
+                                </p>
+                              ),
+
+                              strong: ({ children }) => (
+                                <strong className="text-white font-black">
+                                  {children}
+                                </strong>
+                              ),
+
+                              em: ({ children }) => (
+                                <em className="text-cyan-300 not-italic font-bold">
+                                  {children}
+                                </em>
+                              ),
+
+                              ul: ({ children }) => (
+                                <ul className="list-disc list-inside mb-3 text-slate-300 space-y-1">
+                                  {children}
+                                </ul>
+                              ),
+
+                              ol: ({ children }) => (
+                                <ol className="list-decimal list-inside mb-3 text-slate-300 space-y-1">
+                                  {children}
+                                </ol>
+                              ),
+
+                              li: ({ children }) => (
+                                <li className="text-slate-300">
+                                  {children}
+                                </li>
+                              ),
+
+                              hr: () => (
+                                <hr className="border-white/10 my-4" />
+                              ),
+
+                              blockquote: ({ children }) => (
+                                <blockquote className="border-l-2 border-cyan-400 pl-4 my-3 text-slate-400 italic">
+                                  {children}
+                                </blockquote>
+                              ),
+                            }}
+                          >
                             {team.note}
-                          </p>
+                          </ReactMarkdown>
                         </div>
                       )}
 
