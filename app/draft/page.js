@@ -69,6 +69,7 @@ export default function DraftPage() {
     const [photoIdx, setPhotoIdx] = useState(0)
     const [activeTab, setActiveTab] = useState('board') // 'board' | 'scores' | 'notes'
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [allSeasons, setAllSeasons] = useState([])
     const photos = DRAFT_PHOTOS?.[season] || []
     const prevPhoto = () => setPhotoIdx(i => (i - 1 + photos.length) % photos.length)
     const nextPhoto = () => setPhotoIdx(i => (i + 1) % photos.length)
@@ -124,6 +125,15 @@ export default function DraftPage() {
         }
         load()
     }, [])
+
+    useEffect(() => {
+    const numericSeasons = seasons
+      .filter(s => s !== 'All-Time')
+      .map(s => Number(s))
+      .filter(s => !Number.isNaN(s))
+      .sort((a, b) => a - b)
+    setAllSeasons(numericSeasons)
+  }, [seasons])
 
     const seasons = useMemo(() => {
         return [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
