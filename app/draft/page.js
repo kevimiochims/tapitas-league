@@ -403,7 +403,7 @@ export default function DraftPage() {
         .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-            <Header />
+            <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
             <section className="mx-auto max-w-[1680px] px-3 pb-20 pt-2 md:px-5">
 
