@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ChevronLeft, ChevronRight, Trophy, Users, Hash } from 'lucide-react'
 import Header from '../components/Header'
