@@ -126,6 +126,12 @@ export default function DraftPage() {
         load()
     }, [])
 
+
+    const seasons = useMemo(() => {
+        return [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
+            .sort((a, b) => Number(b) - Number(a))
+    }, [draftData])
+
     useEffect(() => {
     const numericSeasons = seasons
       .filter(s => s !== 'All-Time')
@@ -134,11 +140,6 @@ export default function DraftPage() {
       .sort((a, b) => a - b)
     setAllSeasons(numericSeasons)
   }, [seasons])
-
-    const seasons = useMemo(() => {
-        return [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
-            .sort((a, b) => Number(b) - Number(a))
-    }, [draftData])
 
     const seasonPicks = useMemo(() => {
         return draftData
