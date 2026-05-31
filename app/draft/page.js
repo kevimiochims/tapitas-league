@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ChevronLeft, ChevronRight, Trophy, Users, Hash } from 'lucide-react'
 import Header from '../components/Header'
+import SummaryDrawer from '../components/SummaryDrawer'
 import { DRAFT_PHOTOS } from '../config/draftPhotos'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -812,6 +813,11 @@ export default function DraftPage() {
                     </span>
                 </div>
             </footer>
+            <SummaryDrawer
+                    open={drawerOpen}
+                    onClose={() => setDrawerOpen(false)}
+                    allSeasons={allSeasons}
+                  />
         </main >
     )
 }
