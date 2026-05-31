@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ChevronLeft, ChevronRight, Trophy, Users, Hash } from 'lucide-react'
 import Header from '../components/Header'
 import SummaryDrawer from '../components/SummaryDrawer'
+import { useDrawer } from '../context/DrawerContext'
 import { DRAFT_PHOTOS } from '../config/draftPhotos'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -70,10 +71,24 @@ export default function DraftPage() {
     const [activeTab, setActiveTab] = useState('board') // 'board' | 'scores' | 'notes'
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [allSeasons, setAllSeasons] = useState([])
+    const { setLeftSlot } = useDrawer()
     const photos = DRAFT_PHOTOS?.[season] || []
     const prevPhoto = () => setPhotoIdx(i => (i - 1 + photos.length) % photos.length)
     const nextPhoto = () => setPhotoIdx(i => (i + 1) % photos.length)
     const photoTouchStartX = useRef(null);
+
+    useEffect(() => {
+        setLeftSlot(
+            <button
+                onClick={() => setDrawerOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+            >
+                Summary
+                <ChevronRight className="h-4 w-4" />
+            </button>
+        )
+        return () => setLeftSlot(null)
+    }, [])
 
     const handlePhotoTouchStart = (e) => {
         photoTouchStartX.current = e.touches[0].clientX;
@@ -133,13 +148,13 @@ export default function DraftPage() {
     }, [draftData])
 
     useEffect(() => {
-    const numericSeasons = seasons
-      .filter(s => s !== 'All-Time')
-      .map(s => Number(s))
-      .filter(s => !Number.isNaN(s))
-      .sort((a, b) => a - b)
-    setAllSeasons(numericSeasons)
-  }, [seasons])
+        const numericSeasons = seasons
+            .filter(s => s !== 'All-Time')
+            .map(s => Number(s))
+            .filter(s => !Number.isNaN(s))
+            .sort((a, b) => a - b)
+        setAllSeasons(numericSeasons)
+    }, [seasons])
 
     const seasonPicks = useMemo(() => {
         return draftData
@@ -375,7 +390,7 @@ export default function DraftPage() {
         return notesData.filter(n => String(n?.Season || '').trim() === season)
     }, [notesData, season])
 
-    
+
 
     useEffect(() => { setPhotoIdx(0) }, [season])
 
@@ -825,10 +840,10 @@ export default function DraftPage() {
                 </div>
             </footer>
             <SummaryDrawer
-                    open={drawerOpen}
-                    onClose={() => setDrawerOpen(false)}
-                    allSeasons={allSeasons}
-                  />
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                allSeasons={allSeasons}
+            />
         </main >
     )
 }
