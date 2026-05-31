@@ -94,6 +94,16 @@ export default function DraftPage() {
     };
 
     useEffect(() => {
+        if (photos.length <= 1) return;
+
+        const interval = setInterval(() => {
+            setPhotoIdx((prev) => (prev + 1) % photos.length);
+        }, 6000);
+
+        return () => clearInterval(interval);
+    }, [photos.length]);
+
+    useEffect(() => {
         async function load() {
             const [draft, notes, games] = await Promise.all([
                 safeFetch(`${BASE_URL}/DRAFT_BOARD`),
