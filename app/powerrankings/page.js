@@ -706,19 +706,22 @@ export default function PowerRankingsPage() {
         </div>
 
         {/* SEASON */}
-        <div className="mb-5">
+        <div className="mb-6 overflow-hidden rounded-2xl md:rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
-          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
-            Season
+          <div className="border-b border-white/5 px-6 py-4">
+            <div
+              className="font-black uppercase tracking-[0.3em] text-cyan-300"
+              style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+            >
+              Season
+            </div>
           </div>
 
           <div
             ref={seasonsRef}
-            className="scroll-hide flex gap-2 overflow-x-auto"
+            className="scroll-hide flex justify-start md:justify-center gap-2 overflow-x-auto px-6 py-4"
           >
-
             {seasons.map(s => (
-
               <button
                 key={s}
                 data-active={season === s}
@@ -742,47 +745,49 @@ export default function PowerRankingsPage() {
                     setWeek(ws[ws.length - 1])
                   }
                 }}
-                className={`px-4 py-2 rounded-xl border text-sm font-black whitespace-nowrap transition-all ${season === s
-                  ? 'bg-yellow-400/10 border-yellow-400/30 text-yellow-300'
-                  : 'border-white/5 bg-white/[0.03] text-slate-400'
+                className={`flex-shrink-0 rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${season === s
+                  ? 'bg-yellow-400/10 border border-yellow-400/25 text-yellow-300'
+                  : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                   }`}
               >
                 {s}
               </button>
-
             ))}
           </div>
+
         </div>
 
         {/* WEEK */}
+        <div className="mb-8 overflow-hidden rounded-2xl md:rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
-        <div className="mb-8">
-
-          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
-            Week
+          <div className="border-b border-white/5 px-6 py-4">
+            <div
+              className="font-black uppercase tracking-[0.3em] text-cyan-300"
+              style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+            >
+              Week
+            </div>
           </div>
 
           <div
             ref={weeksRef}
-            className="scroll-hide flex gap-2 overflow-x-auto"
+            className="scroll-hide flex justify-start md:justify-center gap-2 overflow-x-auto px-6 py-4"
           >
-
             {weeks.map(w => (
-
               <button
                 key={w}
                 data-active={week === w}
                 onClick={() => setWeek(w)}
-                className={`h-10 w-10 rounded-xl border text-sm font-black flex-shrink-0 transition-all ${week === w
-                  ? 'bg-yellow-400/10 border-yellow-400/30 text-yellow-300'
-                  : 'border-white/5 bg-white/[0.03] text-slate-400'
+                className={`flex-shrink-0 h-11 w-11 rounded-2xl text-sm font-black transition-all ${week === w
+                    ? 'bg-yellow-400/10 border border-yellow-400/25 text-yellow-300'
+                    : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                   }`}
               >
                 {w}
               </button>
-
             ))}
           </div>
+
         </div>
 
         {loading ? (

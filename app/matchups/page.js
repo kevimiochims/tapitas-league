@@ -540,7 +540,7 @@ export default function MatchupsPage() {
                       ref={isActive ? activeSeasonRef : null}
                       onClick={() => handleSeasonClick(s)}
                       className={`flex-shrink-0 rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${isActive
-                          ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
+                          ? 'bg-cyan-400/10 border border-cyan-400/25 text-yellow-300'
                           : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                         }`}
                     >
@@ -592,7 +592,7 @@ export default function MatchupsPage() {
                         ref={isActive ? activeWeekRef : null}
                         onClick={() => handleWeekClick(w)}
                         className={`flex-shrink-0 h-11 w-11 rounded-2xl text-sm font-black transition-all ${isActive
-                            ? 'bg-cyan-400/10 border border-cyan-400/25 text-cyan-300'
+                            ? 'bg-cyan-400/10 border border-cyan-400/25 text-yellow-300'
                             : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                           }`}
                       >

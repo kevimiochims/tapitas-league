@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import ReactMarkdown from 'react-markdown'
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ChevronLeft, ChevronRight, Trophy, Users, Hash } from 'lucide-react'
@@ -393,7 +394,7 @@ export default function DraftPage() {
                             </span>
                         </h1>
                         <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-slate-400 leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
-                            Every pick. Every gamble. Every franchise cornerstone.
+                            Every pick. Every gamble.
                             The complete draft history of the Tapitas League.
                         </p>
                     </div>
@@ -531,7 +532,7 @@ export default function DraftPage() {
                             {[
                                 { key: 'board', label: 'Draft Board' },
                                 { key: 'scores', label: 'All Picks' },
-                                { key: 'notes', label: 'GM Notes' },
+                                { key: 'notes', label: 'Draft Recap' },
                             ].map(tab => (
                                 <button
                                     key={tab.key}
@@ -653,38 +654,102 @@ export default function DraftPage() {
                             </motion.div>
                         )}
 
-                        {/* GM NOTES */}
+                        {/* DRAFT RECAP */}
                         {activeTab === 'notes' && (
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4 }}
-                                className="flex flex-col gap-4"
                             >
                                 {notes.length === 0 ? (
                                     <div className="flex items-center justify-center rounded-[38px] border border-white/10 bg-[#071120] py-20">
-                                        <div className="text-center text-slate-500 font-bold">Nenhuma nota para {season}</div>
+                                        <div className="text-center font-bold text-slate-500">
+                                            Nenhuma nota para {season}
+                                        </div>
                                     </div>
                                 ) : (
-                                    notes.map((note, i) => (
-                                        <motion.div
-                                            key={i}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.35, delay: i * 0.05 }}
-                                            className="rounded-[28px] border border-white/10 bg-[#071120] p-6"
-                                        >
-                                            <div className="mb-3 flex items-center gap-3">
-                                                <Sparkles className="h-4 w-4 text-cyan-300 flex-shrink-0" />
-                                                <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-300">
-                                                    {String(note?.Team || '').trim()}
-                                                </div>
+                                    <div className="rounded-[28px] border border-white/10 bg-[#071120] p-6 md:p-8">
+                                        <div className="mb-5 flex items-center gap-3">
+                                            <Sparkles className="h-5 w-5 text-cyan-300" />
+                                            <div className="text-sm font-black uppercase tracking-[0.25em] text-cyan-300">
+                                                Draft Recap
                                             </div>
-                                            <p className="text-sm leading-relaxed text-slate-300">
-                                                {String(note?.Note || '').trim()}
-                                            </p>
-                                        </motion.div>
-                                    ))
+                                        </div>
+
+                                        <article className="prose prose-invert max-w-none prose-headings:text-white prose-p:text-slate-300 prose-strong:text-white prose-li:text-slate-300">
+
+                                            <ReactMarkdown
+                                                components={{
+                                                    h1: ({ children }) => (
+                                                        <h1 className="text-2xl font-black text-white mb-4 mt-6 leading-tight">
+                                                            {children}
+                                                        </h1>
+                                                    ),
+
+                                                    h2: ({ children }) => (
+                                                        <h2 className="text-xl font-black text-white mb-3 mt-5 leading-tight">
+                                                            {children}
+                                                        </h2>
+                                                    ),
+
+                                                    h3: ({ children }) => (
+                                                        <h3 className="text-lg font-black text-white mb-2 mt-4">
+                                                            {children}
+                                                        </h3>
+                                                    ),
+
+                                                    p: ({ children }) => (
+                                                        <p className="text-slate-300 mb-3 leading-relaxed text-justify">
+                                                            {children}
+                                                        </p>
+                                                    ),
+
+                                                    strong: ({ children }) => (
+                                                        <strong className="text-white font-black">
+                                                            {children}
+                                                        </strong>
+                                                    ),
+
+                                                    em: ({ children }) => (
+                                                        <em className="text-cyan-300 not-italic font-bold">
+                                                            {children}
+                                                        </em>
+                                                    ),
+
+                                                    ul: ({ children }) => (
+                                                        <ul className="list-disc list-inside mb-3 text-slate-300 space-y-1">
+                                                            {children}
+                                                        </ul>
+                                                    ),
+
+                                                    ol: ({ children }) => (
+                                                        <ol className="list-decimal list-inside mb-3 text-slate-300 space-y-1">
+                                                            {children}
+                                                        </ol>
+                                                    ),
+
+                                                    li: ({ children }) => (
+                                                        <li className="text-slate-300">
+                                                            {children}
+                                                        </li>
+                                                    ),
+
+                                                    hr: () => (
+                                                        <hr className="border-white/10 my-4" />
+                                                    ),
+
+                                                    blockquote: ({ children }) => (
+                                                        <blockquote className="border-l-2 border-cyan-400 pl-4 my-3 text-slate-400 italic">
+                                                            {children}
+                                                        </blockquote>
+                                                    ),
+                                                }}
+                                            >
+                                                {String(notes[0]?.Note || '').trim()}
+                                            </ReactMarkdown>
+
+                                        </article>
+                                    </div>
                                 )}
                             </motion.div>
                         )}
@@ -693,22 +758,22 @@ export default function DraftPage() {
                 )}
             </section>
             {/* FOOTER */}
-                  <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
-                    <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
-                      <Image
+            <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
+                <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
+                    <Image
                         src="/images/LogoFinalBlack.png"
                         alt="Tapitas League"
                         width={24}
                         height={24}
                         style={{ filter: 'invert(1)' }}
                         className="opacity-30"
-                      />
-            
-                      <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
+                    />
+
+                    <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
                         Tapitas League · Est. 2014
-                      </span>
-                    </div>
-                  </footer>
+                    </span>
+                </div>
+            </footer>
         </main>
     )
 }
