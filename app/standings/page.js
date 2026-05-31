@@ -382,10 +382,10 @@ export default function StandingsPage() {
       {/* Header */}
       <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
-      <section className="mx-auto max-w-[1680px] px-6 pb-8">
+      <section className="mx-auto max-w-[1680px] px-4 pb-8">
 
         {/* Hero */}
-        <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
+        <div className="relative mb-8 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
 
           {/* Background */}
           <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-[38px]">
