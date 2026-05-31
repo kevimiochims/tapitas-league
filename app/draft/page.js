@@ -68,6 +68,31 @@ export default function DraftPage() {
     const [photoIdx, setPhotoIdx] = useState(0)
     const [activeTab, setActiveTab] = useState('board') // 'board' | 'scores' | 'notes'
 
+    const photoTouchStartX = useRef(null);
+
+    const handlePhotoTouchStart = (e) => {
+        photoTouchStartX.current = e.touches[0].clientX;
+    };
+
+    const handlePhotoTouchEnd = (e) => {
+        if (!photoTouchStartX.current) return;
+
+        const touchEndX = e.changedTouches[0].clientX;
+        const diff = photoTouchStartX.current - touchEndX;
+
+        const threshold = 75;
+
+        if (diff > threshold) {
+            nextPhoto();
+        }
+
+        if (diff < -threshold) {
+            prevPhoto();
+        }
+
+        photoTouchStartX.current = null;
+    };
+
     useEffect(() => {
         async function load() {
             const [draft, notes, games] = await Promise.all([
@@ -436,49 +461,52 @@ export default function DraftPage() {
                                         Draft Day — {season}
                                     </div>
                                 </div>
-                                <div className="relative">
-                                    <div className="relative aspect-video w-full overflow-hidden">
-                                        <AnimatePresence mode="wait">
-                                            <motion.div
-                                                key={photoIdx}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.4 }}
-                                                className="absolute inset-0"
-                                            >
-                                                <Image
-                                                    src={`/images/draft/${season}/${photos[photoIdx].file}`}
-                                                    alt={photos[photoIdx].caption || ''}
-                                                    fill
-                                                    className="object-cover"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                                {photos[photoIdx].caption && (
-                                                    <div className="absolute bottom-4 left-6 right-6 text-sm font-bold text-white/80">
-                                                        {photos[photoIdx].caption}
-                                                    </div>
-                                                )}
-                                            </motion.div>
-                                        </AnimatePresence>
-                                    </div>
-
-                                    {photos.length > 1 && (
-                                        <>
-                                            <button onClick={prevPhoto} className="absolute left-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm text-white transition-all hover:bg-black/70">
-                                                <ChevronLeft className="h-5 w-5" />
-                                            </button>
-                                            <button onClick={nextPhoto} className="absolute right-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm text-white transition-all hover:bg-black/70">
-                                                <ChevronRight className="h-5 w-5" />
-                                            </button>
-                                            <div className="absolute bottom-4 right-6 flex gap-1.5">
-                                                {photos.map((_, i) => (
-                                                    <button key={i} onClick={() => setPhotoIdx(i)} className={`h-1.5 rounded-full transition-all ${i === photoIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
+                                <div
+                                    className="relative aspect-video w-full overflow-hidden"
+                                    onTouchStart={handlePhotoTouchStart}
+                                    onTouchEnd={handlePhotoTouchEnd}
+                                    style={{ touchAction: 'pan-y' }}
+                                >
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={photoIdx}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.4 }}
+                                            className="absolute inset-0"
+                                        >
+                                            <Image
+                                                src={`/images/draft/${season}/${photos[photoIdx].file}`}
+                                                alt={photos[photoIdx].caption || ''}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                            {photos[photoIdx].caption && (
+                                                <div className="absolute bottom-4 left-6 right-6 text-sm font-bold text-white/80">
+                                                    {photos[photoIdx].caption}
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    </AnimatePresence>
                                 </div>
+
+                                {photos.length > 1 && (
+                                    <>
+                                        <button onClick={prevPhoto} className="absolute left-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm text-white transition-all hover:bg-black/70">
+                                            <ChevronLeft className="h-5 w-5" />
+                                        </button>
+                                        <button onClick={nextPhoto} className="absolute right-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm text-white transition-all hover:bg-black/70">
+                                            <ChevronRight className="h-5 w-5" />
+                                        </button>
+                                        <div className="absolute bottom-4 right-6 flex gap-1.5">
+                                            {photos.map((_, i) => (
+                                                <button key={i} onClick={() => setPhotoIdx(i)} className={`h-1.5 rounded-full transition-all ${i === photoIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
 
@@ -774,6 +802,6 @@ export default function DraftPage() {
                     </span>
                 </div>
             </footer>
-        </main>
+        </main >
     )
 }
