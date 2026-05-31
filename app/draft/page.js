@@ -68,7 +68,9 @@ export default function DraftPage() {
     const [season, setSeason] = useState('')
     const [photoIdx, setPhotoIdx] = useState(0)
     const [activeTab, setActiveTab] = useState('board') // 'board' | 'scores' | 'notes'
-
+    const photos = DRAFT_PHOTOS?.[season] || []
+    const prevPhoto = () => setPhotoIdx(i => (i - 1 + photos.length) % photos.length)
+    const nextPhoto = () => setPhotoIdx(i => (i + 1) % photos.length)
     const photoTouchStartX = useRef(null);
 
     const handlePhotoTouchStart = (e) => {
@@ -361,10 +363,7 @@ export default function DraftPage() {
         return notesData.filter(n => String(n?.Season || '').trim() === season)
     }, [notesData, season])
 
-    const photos = DRAFT_PHOTOS?.[season] || []
-
-    const prevPhoto = () => setPhotoIdx(i => (i - 1 + photos.length) % photos.length)
-    const nextPhoto = () => setPhotoIdx(i => (i + 1) % photos.length)
+    
 
     useEffect(() => { setPhotoIdx(0) }, [season])
 
