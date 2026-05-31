@@ -597,6 +597,36 @@ export default function TapitasLeagueHomepage() {
   const [selectedSeason, setSelectedSeason] = useState('2025')
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  const touchStartX = useRef(null);
+  const totalSlides = 3;
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchStartX.current) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+
+    const threshold = 50; // distância mínima do swipe
+
+    if (diff > threshold) {
+      // swipe para esquerda -> próximo slide
+      setCurrentSlide((prev) => (prev + 1) % totalSlides);
+    }
+
+    if (diff < -threshold) {
+      // swipe para direita -> slide anterior
+      setCurrentSlide(
+        (prev) => (prev - 1 + totalSlides) % totalSlides
+      );
+    }
+
+    touchStartX.current = null;
+  };
+
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % 3);
   };
@@ -1181,6 +1211,8 @@ export default function TapitasLeagueHomepage() {
       <section className="relative z-10 mx-auto max-w-[16100px] px-3 sm:px-5 md:px-6 pb-6 md:pb-10 pt-1 md:pt-2">
         <div
           className="relative isolate overflow-hidden rounded-[28px] md:rounded-[38px] border border-white/10"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <div
             className="flex transition-transform duration-700 ease-in-out"
@@ -1189,6 +1221,7 @@ export default function TapitasLeagueHomepage() {
               transform: `translateX(-${currentSlide * 33.3333}%)`,
             }}
           >
+            {/* SLIDE 1 - CAPA */}
             <div className="relative w-1/3 shrink-0">
 
               {/* Background */}
@@ -1369,18 +1402,18 @@ export default function TapitasLeagueHomepage() {
                       }}
                     >
                       TAPITAS{' '}
-                      
+
                     </span>
                     <span
-                        style={{
-                          background:
-                            'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                        }}
-                      >
-                        HISTORY
-                      </span>
+                      style={{
+                        background:
+                          'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      HISTORY
+                    </span>
                   </h1>
 
                   <div className="mx-0 mb-5 md:mb-6 text-slate-400 flex flex-col gap-1 md:gap-1.5">
@@ -1431,7 +1464,7 @@ export default function TapitasLeagueHomepage() {
 
               </div>
             </div>
-            {/* SLIDE 2 */}
+            {/* SLIDE 2 - DRAFT*/}
             <div className="relative w-1/3 shrink-0">
 
               {/* Imagem de fundo */}
@@ -1516,15 +1549,15 @@ export default function TapitasLeagueHomepage() {
                       DRAFT
                     </span>
                     <span
-                        style={{
-                          background:
-                            'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                        }}
-                      >
-                        DAY
-                      </span>
+                      style={{
+                        background:
+                          'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      DAY
+                    </span>
 
                   </h2>
 
@@ -1888,19 +1921,19 @@ export default function TapitasLeagueHomepage() {
                         filter: 'drop-shadow(0 0 18px rgba(34,211,238,0.3))',
                       }}
                     >
-                      POWER{' '}               
+                      POWER{' '}
                     </span>
 
                     <span
-                        style={{
-                          background:
-                            'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                        }}
-                      >
-                        RANKINGS
-                      </span>
+                      style={{
+                        background:
+                          'linear-gradient(160deg, #e2e8f0 0%, #64748b 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      RANKINGS
+                    </span>
 
                   </h2>
 
