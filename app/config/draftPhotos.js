@@ -1,6 +1,6 @@
 export const DRAFT_PHOTOS = {
   2025: [
-    { file: 'foto1.png', caption: 'Os GMs reunidos ao final do Draft' },
+    { file: 'foto1.jpg', caption: 'Os GMs reunidos ao final do Draft' },
     { file: 'foto2.jpg', caption: 'Preparativos' },
     { file: 'foto3.jpg', caption: 'Campeão e Unicornio' },
     { file: 'foto4.jpg', caption: 'O cobiçado troféu' },
