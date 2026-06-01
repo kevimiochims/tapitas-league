@@ -73,22 +73,17 @@ export default function DraftPage() {
     const [allSeasons, setAllSeasons] = useState([])
     const { setLeftSlot } = useDrawer()
     const photos = DRAFT_PHOTOS?.[season] || []
-    const prevPhoto = () => setPhotoIdx(i => (i - 1 + photos.length) % photos.length)
-    const nextPhoto = () => setPhotoIdx(i => (i + 1) % photos.length)
     const photoTouchStartX = useRef(null);
+    const [photoTimerKey, setPhotoTimerKey] = useState(0);
+    const prevPhoto = () => {
+        setPhotoIdx(i => (i - 1 + photos.length) % photos.length);
+        setPhotoTimerKey(k => k + 1);
+    };
 
-    useEffect(() => {
-        setLeftSlot(
-            <button
-                onClick={() => setDrawerOpen(true)}
-                className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
-            >
-                Summary
-                <ChevronRight className="h-4 w-4" />
-            </button>
-        )
-        return () => setLeftSlot(null)
-    }, [])
+    const nextPhoto = () => {
+        setPhotoIdx(i => (i + 1) % photos.length);
+        setPhotoTimerKey(k => k + 1);
+    };
 
     const handlePhotoTouchStart = (e) => {
         photoTouchStartX.current = e.touches[0].clientX;
@@ -114,14 +109,30 @@ export default function DraftPage() {
     };
 
     useEffect(() => {
+        setLeftSlot(
+            <button
+                onClick={() => setDrawerOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+            >
+                Summary
+                <ChevronRight className="h-4 w-4" />
+            </button>
+        )
+        return () => setLeftSlot(null)
+    }, [])
+
+    useEffect(() => {
         if (photos.length <= 1) return;
 
-        const interval = setInterval(() => {
+        const timeout = setTimeout(() => {
             setPhotoIdx((prev) => (prev + 1) % photos.length);
-        }, 6000);
+        }, 10000);
 
-        return () => clearInterval(interval);
-    }, [photos.length]);
+        return () => clearTimeout(timeout);
+    }, [photoIdx, photos.length, photoTimerKey]);
+
+
+    useEffect(() => { setPhotoIdx(0) }, [season])
 
     useEffect(() => {
         async function load() {
@@ -140,7 +151,6 @@ export default function DraftPage() {
         }
         load()
     }, [])
-
 
     const seasons = useMemo(() => {
         return [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
@@ -392,7 +402,7 @@ export default function DraftPage() {
 
 
 
-    useEffect(() => { setPhotoIdx(0) }, [season])
+
 
     return (
         <main className="min-h-screen bg-[#020617] text-white">
@@ -539,7 +549,10 @@ export default function DraftPage() {
                                                 </button>
                                                 <div className="absolute bottom-4 right-6 flex gap-1.5">
                                                     {photos.map((_, i) => (
-                                                        <button key={i} onClick={() => setPhotoIdx(i)} className={`h-1.5 rounded-full transition-all ${i === photoIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
+                                                        <button key={i} onClick={() => {
+                                                            setPhotoIdx(i);
+                                                            setPhotoTimerKey(k => k + 1);
+                                                        }} className={`h-1.5 rounded-full transition-all ${i === photoIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
                                                     ))}
                                                 </div>
                                             </>
