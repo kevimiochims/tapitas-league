@@ -10,6 +10,7 @@ import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 import { DRAFT_PHOTOS } from '../config/draftPhotos'
 
+
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 

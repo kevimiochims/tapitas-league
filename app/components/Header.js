@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { NAV_LINKS } from '../config/navigation'
 import { ChevronRight } from 'lucide-react'
 
-const SUMMARY_PAGES = ['/', '/standings', '/powerrankings']
+const SUMMARY_PAGES = ['/', '/standings', '/powerrankings', '/draft']
 
 export default function Header({ rightSlot, onSummaryOpen }) {
 
