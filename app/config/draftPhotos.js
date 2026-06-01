@@ -24,7 +24,7 @@ export const DRAFT_PHOTOS = {
     { file: 'foto2.jpg', caption: 'Inicio da Premiação' },
     { file: 'foto3.jpg', caption: 'Campeão 2014 e 2021' },
     { file: 'foto4.jpg', caption: 'Campeão 2015 e 2022' },
-    { file: 'foto5.png', caption: 'Campeão 2016' },
+    { file: 'foto5.jpg', caption: 'Campeão 2016' },
     { file: 'foto6.jpg', caption: 'Unicórnio' },
     { file: 'foto7.jpg', caption: 'Hora das escolhas' },
     { file: 'foto8.jpg', caption: 'Início do churras' },

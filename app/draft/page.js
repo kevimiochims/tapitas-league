@@ -492,7 +492,7 @@ export default function DraftPage() {
 
                         {/* FOTOS */}
                         {photos.length > 0 && (
-                            <div className="overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[#071120]">
+                            <div className="relativeoverflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[#071120]">
                                 <div className="border-b border-white/5 px-6 py-4">
                                     <div className="font-black uppercase tracking-[0.3em] text-cyan-300" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
                                         Draft Day — {season}
