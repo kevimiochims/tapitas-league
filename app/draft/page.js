@@ -498,35 +498,37 @@ export default function DraftPage() {
                                         Draft Day — {season}
                                     </div>
                                 </div>
-                                <div
-                                    className="relative aspect-video w-full overflow-hidden"
-                                    onTouchStart={handlePhotoTouchStart}
-                                    onTouchEnd={handlePhotoTouchEnd}
-                                    style={{ touchAction: 'pan-y' }}
-                                >
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={photoIdx}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.4 }}
-                                            className="absolute inset-0"
-                                        >
-                                            <Image
-                                                src={`/images/draft/${season}/${photos[photoIdx].file}`}
-                                                alt={photos[photoIdx].caption || ''}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                            {photos[photoIdx].caption && (
-                                                <div className="absolute bottom-4 left-6 right-6 text-sm font-bold text-white/80">
-                                                    {photos[photoIdx].caption}
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    </AnimatePresence>
+                                <div className="relative">
+                                    <div
+                                        className="relative aspect-video w-full overflow-hidden"
+                                        onTouchStart={handlePhotoTouchStart}
+                                        onTouchEnd={handlePhotoTouchEnd}
+                                        style={{ touchAction: 'pan-y' }}
+                                    >
+                                        <AnimatePresence mode="wait">
+                                            <motion.div
+                                                key={photoIdx}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.4 }}
+                                                className="absolute inset-0"
+                                            >
+                                                <Image
+                                                    src={`/images/draft/${season}/${photos[photoIdx].file}`}
+                                                    alt={photos[photoIdx].caption || ''}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                                {photos[photoIdx].caption && (
+                                                    <div className="absolute bottom-4 left-6 right-6 text-sm font-bold text-white/80">
+                                                        {photos[photoIdx].caption}
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        </AnimatePresence>
+                                    </div>
                                 </div>
 
                                 {photos.length > 1 && (
