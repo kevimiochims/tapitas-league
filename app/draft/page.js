@@ -492,7 +492,7 @@ export default function DraftPage() {
 
                         {/* FOTOS */}
                         {photos.length > 0 && (
-                            <div className="relativeoverflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[#071120]">
+                            <div className="relative overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[#071120]">
                                 <div className="border-b border-white/5 px-6 py-4">
                                     <div className="font-black uppercase tracking-[0.3em] text-cyan-300" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
                                         Draft Day — {season}
@@ -528,24 +528,25 @@ export default function DraftPage() {
                                                 )}
                                             </motion.div>
                                         </AnimatePresence>
+
+                                        {photos.length > 1 && (
+                                            <>
+                                                <button onClick={prevPhoto} className="absolute left-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm text-white transition-all hover:bg-black/70">
+                                                    <ChevronLeft className="h-5 w-5" />
+                                                </button>
+                                                <button onClick={nextPhoto} className="absolute right-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm text-white transition-all hover:bg-black/70">
+                                                    <ChevronRight className="h-5 w-5" />
+                                                </button>
+                                                <div className="absolute bottom-4 right-6 flex gap-1.5">
+                                                    {photos.map((_, i) => (
+                                                        <button key={i} onClick={() => setPhotoIdx(i)} className={`h-1.5 rounded-full transition-all ${i === photoIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
 
-                                {photos.length > 1 && (
-                                    <>
-                                        <button onClick={prevPhoto} className="absolute left-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm text-white transition-all hover:bg-black/70">
-                                            <ChevronLeft className="h-5 w-5" />
-                                        </button>
-                                        <button onClick={nextPhoto} className="absolute right-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm text-white transition-all hover:bg-black/70">
-                                            <ChevronRight className="h-5 w-5" />
-                                        </button>
-                                        <div className="absolute bottom-4 right-6 flex gap-1.5">
-                                            {photos.map((_, i) => (
-                                                <button key={i} onClick={() => setPhotoIdx(i)} className={`h-1.5 rounded-full transition-all ${i === photoIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
                             </div>
                         )}
 
