@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import Header from '../components/Header'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
