@@ -491,13 +491,35 @@ export default function RecordsPage() {
       if (sA && vA > 0) allStreaks.push({ team: a, opponent: b, streak: sA, val: vA })
       if (sB && vB > 0) allStreaks.push({ team: b, opponent: a, streak: sB, val: vB })
     })
-    console.log('allStreaks:', allStreaks.slice(0, 3))
+    const extractStreakParts = (streakStr) => {
+      // "Ocupa e Resiste W7 (2014 W16-17 → 2022 W6)"
+      // valor: "W7", período: "(2014 W16-17 → 2022 W6)"
+      const match = String(streakStr || '').match(/([WL]\d+)\s*(\(.*\))/)
+      return {
+        value: match ? match[1] : streakStr,
+        period: match ? match[2] : '',
+      }
+    }
+    
     allStreaks.sort((a, b) => b.val - a.val)
     const topSV = allStreaks[0]?.val || 0
+
     const bestH2HStreak = {
-      value: allStreaks[0]?.streak || '—',
-      teams: allStreaks.filter(s => s.val === topSV).map(s => `vs ${s.opponent}`),
-      top5: allStreaks.slice(0, 5).map(s => ({ label: s.team, sub: `vs ${s.opponent}`, value: s.streak }))
+      value: extractStreakParts(allStreaks[0]?.streak).value,
+      teams: allStreaks
+        .filter(s => s.val === topSV)
+        .map(s => {
+          const { period } = extractStreakParts(s.streak)
+          return `${s.team} vs ${s.opponent} ${period}`
+        }),
+      top5: allStreaks.slice(0, 5).map(s => {
+        const { value, period } = extractStreakParts(s.streak)
+        return {
+          label: `${s.team} ${period}`,
+          sub: `vs ${s.opponent}`,
+          value,
+        }
+      })
     }
 
     // Most balanced
