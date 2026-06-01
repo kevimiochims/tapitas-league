@@ -4,7 +4,8 @@ import Image from 'next/image'
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Flame, Swords, Activity, Star, Zap, Shield, Target, TrendingUp, TrendingDown } from 'lucide-react'
 import Header from '../components/Header'
-import MobileDrawer from '../components/MobileDrawer'
+import SummaryDrawer from '../components/SummaryDrawer'
+import { useDrawer } from '../context/DrawerContext'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -87,6 +88,31 @@ export default function RecordsPage() {
   const [h2h, setH2h] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('franchise')
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [allSeasons, setAllSeasons] = useState([])
+  const { setLeftSlot } = useDrawer()
+
+  useEffect(() => {
+    setLeftSlot(
+      <button
+        onClick={() => setDrawerOpen(true)}
+        className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+      >
+        Summary
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    )
+    return () => setLeftSlot(null)
+  }, [])
+
+  useEffect(() => {
+    const numericSeasons = seasons
+      .filter(s => s !== 'All-Time')
+      .map(s => Number(s))
+      .filter(s => !Number.isNaN(s))
+      .sort((a, b) => a - b)
+    setAllSeasons(numericSeasons)
+  }, [seasons])
 
   useEffect(() => {
     async function load() {
@@ -104,6 +130,7 @@ export default function RecordsPage() {
     }
     load()
   }, [])
+
 
   // ── FRANCHISE RECORDS ──────────────────────────────────────────────
   const franchiseRecords = useMemo(() => {
@@ -380,7 +407,7 @@ export default function RecordsPage() {
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
       `}</style>
 
-      <Header />
+      <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
       <section className="px-3 md:px-6 pb-20">
 
@@ -441,8 +468,8 @@ export default function RecordsPage() {
             {TABS.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
                 className={`flex flex-shrink-0 items-center gap-2 border-b-2 px-6 py-4 text-sm font-black transition-all ${tab === t.key
-                    ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-500 hover:text-slate-300'
+                  ? 'border-cyan-400 text-cyan-300'
+                  : 'border-transparent text-slate-500 hover:text-slate-300'
                   }`}
               >
                 <t.Icon className="h-4 w-4" />
@@ -598,6 +625,11 @@ export default function RecordsPage() {
           <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Tapitas League · Est. 2014</span>
         </div>
       </footer>
+      <SummaryDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        allSeasons={allSeasons}
+      />
     </main>
   )
 }

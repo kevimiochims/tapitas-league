@@ -76,6 +76,7 @@ export default function DraftPage() {
     const photos = DRAFT_PHOTOS?.[season] || []
     const photoTouchStartX = useRef(null);
     const [photoTimerKey, setPhotoTimerKey] = useState(0);
+    
     const prevPhoto = () => {
         setPhotoIdx(i => (i - 1 + photos.length) % photos.length);
         setPhotoTimerKey(k => k + 1);
