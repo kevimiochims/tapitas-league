@@ -106,15 +106,6 @@ export default function RecordsPage() {
   }, [])
 
   useEffect(() => {
-    const numericSeasons = seasons
-      .filter(s => s !== 'All-Time')
-      .map(s => Number(s))
-      .filter(s => !Number.isNaN(s))
-      .sort((a, b) => a - b)
-    setAllSeasons(numericSeasons)
-  }, [seasons])
-
-  useEffect(() => {
     async function load() {
       const [at, hi, ga, h2hData] = await Promise.all([
         safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
