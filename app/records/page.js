@@ -485,9 +485,11 @@ export default function RecordsPage() {
       const sB = String(r?.['Best Streak Team B'] || '').trim()
       const vA = parseStreakVal(sA)
       const vB = parseStreakVal(sB)
+      console.log('Row:', a, 'vs', b, '| sA:', sA, 'vA:', vA, '| sB:', sB, 'vB:', vB)
       if (sA && vA > 0) allStreaks.push({ team: a, opponent: b, streak: sA, val: vA })
       if (sB && vB > 0) allStreaks.push({ team: b, opponent: a, streak: sB, val: vB })
     })
+    console.log('allStreaks:', allStreaks.slice(0, 3))
     allStreaks.sort((a, b) => b.val - a.val)
     const topSV = allStreaks[0]?.val || 0
     const bestH2HStreak = {
