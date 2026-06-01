@@ -463,7 +463,9 @@ export default function RecordsPage() {
     })
 
     const parseStreakVal = val => {
-      const m = String(val || '').match(/^[WL](\d+)/)
+      // Formato: "Team Name W7 (2014 Week 11 → ...)" ou "Team Name W3 (...)"
+      // Pega o número que vem após o último W ou L antes do parêntese
+      const m = String(val || '').match(/[WL](\d+)\s*\(/)
       return m ? parseInt(m[1]) : 0
     }
 
