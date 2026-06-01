@@ -732,7 +732,7 @@ RENDER
       {/* HEADER */}
       <Header />
 
-      <section className="mx-auto max-w-[1800px] md:px-4">
+      <section className="px-3 md:px-6 pb-20">
         {/* HERO */}
         <div className="relative mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
           <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl md:rounded-[38px]">

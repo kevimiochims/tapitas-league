@@ -382,13 +382,13 @@ export default function StandingsPage() {
       {/* Header */}
       <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
-      <section className="mx-auto max-w-[1680px] px-4 pb-8">
+      <section className="px-3 md:px-6 pb-20">
 
         {/* Hero */}
-        <div className="relative mb-8 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
+        <div className="relative mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
 
           {/* Background */}
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-[38px]">
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl md:rounded-[38px]">
 
             <svg
               className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"

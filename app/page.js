@@ -1184,7 +1184,7 @@ export default function TapitasLeagueHomepage() {
   }, [drawerOpen, selectedSeason])
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white">
+    <main className="min-h-screen bg-[#020617] text-white overflow-hidden">
       <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 
@@ -1208,9 +1208,9 @@ export default function TapitasLeagueHomepage() {
       />
 
       {/* ===== HERO ===== */}
-      <section className="relative z-10 mx-auto max-w-[16100px] px-3 sm:px-5 md:px-6 pb-6 md:pb-10 pt-1 md:pt-2">
+      <section className="relative z-10 px-3 md:px-6 pb-20">
         <div
-          className="relative isolate overflow-hidden rounded-[28px] md:rounded-[38px] border border-white/10"
+          className="relative isolate mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
