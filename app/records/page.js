@@ -1,8 +1,9 @@
 'use client'
-
-import Image from 'next/image'
+import Header from '../components/Header'
+import SummaryDrawer from '../components/SummaryDrawer'
+import { useDrawer } from '../context/DrawerContext'
 import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Flame, Swords, Activity, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trophy, Flame, Swords, Activity, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -133,6 +134,9 @@ export default function RecordsPage() {
   const [h2h, setH2h] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('franchise')
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const { setLeftSlot } = useDrawer()
+  const [allSeasons, setAllSeasons] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -144,11 +148,35 @@ export default function RecordsPage() {
       ])
       setAllTime(at)
       setHistory(hi)
+      const seasons = [
+        ...new Set(
+          hi
+            .map(r => Number(r?.Season))
+            .filter(Boolean)
+        )
+      ].sort((a, b) => a - b)
+
+      setAllSeasons(seasons)
       setGames(ga)
       setH2h(h2hData)
       setLoading(false)
     }
     load()
+  }, [])
+
+  //DRAWER
+  useEffect(() => {
+    setLeftSlot(
+      <button
+        onClick={() => setDrawerOpen(true)}
+        className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+      >
+        Summary
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    )
+
+    return () => setLeftSlot(null)
   }, [])
 
   // ── FRANCHISE ──────────────────────────────────────────────────────
@@ -500,7 +528,7 @@ export default function RecordsPage() {
         period: match ? match[2] : '',
       }
     }
-    
+
     allStreaks.sort((a, b) => b.val - a.val)
     const topSV = allStreaks[0]?.val || 0
 
@@ -654,29 +682,13 @@ export default function RecordsPage() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
       {/* Header */}
-      <header className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-        <a href="/" className="flex items-center gap-3">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={36} height={36} style={{ filter: 'invert(1)' }} className="opacity-80" />
-          <span className="text-base font-black tracking-[-0.04em]">Tapitas<span className="text-cyan-400">League</span></span>
-        </a>
-        <nav className="hidden items-center gap-1 md:flex">
-          {['Home', 'Standings', 'Matchups', 'Records', 'Rivalries'].map(item => {
-            const href = item === 'Home' ? '/' : `/${item.toLowerCase()}`
-            const isActive = item === 'Records'
-            return (
-              <a key={item} href={href}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${isActive ? 'bg-white/[0.06] text-white' : 'text-slate-400'}`}
-              >{item}</a>
-            )
-          })}
-        </nav>
-      </header>
+      <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
-      <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+      <section className="px-3 md:px-6 pb-20">
 
         {/* Hero */}
-        <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10" style={{ background: '#020617', minHeight: '280px' }}>
-          <div className="absolute inset-0 overflow-hidden rounded-[38px]">
+        <div className="relative mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10">
+          <div className="absolute inset-0 overflow-hidden rounded-2xl md:rounded-[38px]">
             <svg width="100%" height="100%" viewBox="0 0 900 280" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <g opacity="0.09">
                 {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
@@ -707,7 +719,7 @@ export default function RecordsPage() {
             </svg>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.9) 48%, rgba(2,6,23,0.15) 100%)' }} />
           </div>
-          <div className="relative z-10 p-10 md:p-14">
+          <div className="relative z-10 p-6 sm:p-8 md:p-10">
             <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
               <Trophy className="h-4 w-4 text-cyan-300" />
               <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">Hall of Records</span>
@@ -895,9 +907,14 @@ export default function RecordsPage() {
           </div>
         )}
       </section>
+      <SummaryDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        allSeasons={allSeasons}
+      />
 
       {/* Footer */}
-      <footer className="mx-auto max-w-[1680px] px-6 pb-12">
+      <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
         <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
           <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-30" />
           <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Tapitas League · Est. 2014</span>
