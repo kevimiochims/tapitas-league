@@ -211,11 +211,13 @@ export default function NewsArticle() {
                     >
                         {images.map((img, index) => (
                             <SwiperSlide key={index}>
-                                <img
-                                    src={img}
-                                    alt=""
-                                    className="w-full h-auto"
-                                />
+                                <div className="flex h-full items-center justify-center">
+                                    <img
+                                        src={img}
+                                        alt=""
+                                        className="w-full h-auto"
+                                    />
+                                </div>
                             </SwiperSlide>
                         ))}
                     </Swiper>
