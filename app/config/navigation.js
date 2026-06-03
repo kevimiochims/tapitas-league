@@ -3,7 +3,7 @@ export const NAV_LINKS = [
   { label: 'Draft',          href: '/draft'         },
   { label: 'History',        href: '/history'       },
   { label: 'Matchups',       href: '/matchups'      },
-  { label: 'Memes',          href: '/memes'     },
+  { label: 'News',          href: '/news'     },
   { label: 'Power Rankings', href: '/powerrankings' },
   { label: 'Records',        href: '/records' },
   { label: 'Rivalries',      href: '/rivalries'     },
