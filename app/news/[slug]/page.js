@@ -210,14 +210,15 @@ export default function NewsArticle() {
                         className="rounded-[32px] overflow-hidden"
                     >
                         {images.map((img, index) => (
-                            <SwiperSlide key={index}>
-                                <div className="flex h-full items-center justify-center">
-                                    <img
-                                        src={img}
-                                        alt=""
-                                        className="w-full h-auto"
-                                    />
-                                </div>
+                            <SwiperSlide
+                                key={index}
+                                className="flex items-center justify-center"
+                            >
+                                <img
+                                    src={img}
+                                    alt=""
+                                    className="w-full h-auto"
+                                />
                             </SwiperSlide>
                         ))}
                     </Swiper>
