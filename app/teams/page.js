@@ -131,11 +131,11 @@ export default function TeamsPage() {
       <main className="min-h-screen bg-[#020617] text-white">
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
-        <Header>
-          <button onClick={() => setSelected(null)}
+        <Header
+          rightSlot={<button onClick={() => setSelected(null)}
             className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-slate-400 hover:text-white transition-all">
             ← All Teams
-          </button>
+          </button>}>
         </Header>
 
         <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
