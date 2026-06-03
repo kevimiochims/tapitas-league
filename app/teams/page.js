@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight } from 'lucide-react'
+const { setLeftSlot } = useDrawer()
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -12,14 +13,12 @@ const TEAM_IMAGES = {
   'i am megatron':   '/images/megatron.png',
   'moneyball':       '/images/moneyball.png',
   'ocupa e resiste': '/images/ocupa.jpg',
-  'oldbra dy':       '/images/oldbrady.png',
-  'oldbra dy':       '/images/oldbrady.png',
   'oldbrady':        '/images/oldbrady.png',
   'patrolao squad':  '/images/patrolao.png',
   'pequers verde':   '/images/pequers.png',
-  'peytao da massa': '/images/peytao.jpg',
+  'peytao da massa': '/images/peytao.png',
   'rincao settlers': '/images/rincao.png',
-  'h-lera do mahl':  '/images/hlera.jpg',
+  'h-lera do mahl':  '/images/hlera.png',
 }
 
 function getTeamImage(name) {
