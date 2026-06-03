@@ -119,7 +119,6 @@ export default function NewsPage() {
                   {featured.imageUrl && (
                     <div className="relative h-56 w-full flex-shrink-0 overflow-hidden md:h-auto md:w-80">
                       <img src={featured.imageUrl.split('|')[0]} alt={featured.title} className="h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#080f1e] hidden md:block" />
                     </div>
                   )}
                   <div className="flex flex-1 flex-col justify-center p-8">
