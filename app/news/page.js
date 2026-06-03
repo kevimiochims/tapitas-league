@@ -159,7 +159,7 @@ export default function NewsPage() {
                     >
                       {post.imageUrl && (
                         <div className="h-44 w-full overflow-hidden">
-                          <img src={post.imageUrl} alt={post.title} className="h-full w-full object-cover transition-transform hover:scale-105" />
+                          <img src={post.imageUrl.split('|')[0]} alt={post.title} className="h-full w-full object-cover transition-transform hover:scale-105" />
                         </div>
                       )}
                       <div className="p-5">
