@@ -133,11 +133,12 @@ export default function TeamsPage() {
 
         <Header/>
 
-        <button onClick={() => setSelected(null)}
+        
+        <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+          <button onClick={() => setSelected(null)}
             className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-slate-400 hover:text-white transition-all">
             ← All Teams
           </button>
-        <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
 
           {/* Team Hero */}
           <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]" style={{ minHeight: '260px' }}>
