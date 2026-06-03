@@ -46,7 +46,7 @@ export default function Header({ rightSlot, onSummaryOpen }) {
         })}
       </nav>
 
-      <div className="items-center gap-3">
+      <div className="hidden lg:flex items-center gap-3">
         {showSummary && onSummaryOpen && (
           <button
             onClick={onSummaryOpen}
@@ -57,7 +57,7 @@ export default function Header({ rightSlot, onSummaryOpen }) {
           </button>
         )}
 
-        {rightSlot}
+        {rightSlot && rightSlot}
       </div>
 
     </header>
