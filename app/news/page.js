@@ -5,10 +5,6 @@ import { useEffect, useState } from 'react'
 import { Newspaper, Laugh, FileText, ChevronRight, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
-import SummaryDrawer from '../components/SummaryDrawer'
-import { useDrawer } from '../context/DrawerContext'
-
-const router = useRouter()
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
 
@@ -31,12 +27,8 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('Todos')
   const [page, setPage] = useState(1)
+  const router = useRouter()
   const PER_PAGE = 9
-
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const { setLeftSlot } = useDrawer()
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [summaryOpen, setSummaryOpen] = useState(false)
 
   useEffect(() => {
     fetch(SCRIPT_URL)
@@ -60,7 +52,7 @@ export default function NewsPage() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
       {/* Header */}
-      <Header onSummaryOpen={() => setDrawerOpen(true)} />
+      <Header/>
 
       <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
 
@@ -211,13 +203,6 @@ export default function NewsPage() {
           <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Tapitas League · Est. 2014</span>
         </div>
       </footer>
-
-
-      <SummaryDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        allSeasons={allSeasons}
-      />
     </main>
   )
 }
