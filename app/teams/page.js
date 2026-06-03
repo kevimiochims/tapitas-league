@@ -131,11 +131,7 @@ export default function TeamsPage() {
       <main className="min-h-screen bg-[#020617] text-white">
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
-        <Header className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-          <a href="/" className="flex items-center gap-3">
-            <img src="/images/LogoFinalBlack.png" alt="Tapitas League" width={36} height={36} style={{ filter: 'invert(1)', opacity: 0.8 }} />
-            <span className="text-base font-black tracking-[-0.04em]">Tapitas<span className="text-cyan-400">League</span></span>
-          </a>
+        <Header>
           <button onClick={() => setSelected(null)}
             className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-slate-400 hover:text-white transition-all">
             ← All Teams
@@ -350,11 +346,7 @@ export default function TeamsPage() {
     <main className="min-h-screen bg-[#020617] text-white">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
-      <header className="mx-auto flex max-w-[1680px] items-center justify-between px-6 py-5">
-        <a href="/" className="flex items-center gap-3">
-          <img src="/images/LogoFinalBlack.png" alt="Tapitas League" width={36} height={36} style={{ filter: 'invert(1)', opacity: 0.8 }} />
-          <span className="text-base font-black tracking-[-0.04em]">Tapitas<span className="text-cyan-400">League</span></span>
-        </a>
+      <Header> 
         <nav className="hidden items-center gap-1 md:flex">
           {['Home', 'Standings', 'Teams', 'Records', 'Rivalries'].map(item => {
             const href = item === 'Home' ? '/' : `/${item.toLowerCase()}`
@@ -365,7 +357,7 @@ export default function TeamsPage() {
             )
           })}
         </nav>
-      </header>
+      </Header>
 
       <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
 
