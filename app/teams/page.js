@@ -8,7 +8,7 @@ const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
 const TEAM_IMAGES = {
-  'howmuch':         '/images/howmuch.jpg',
+  'howmuch':         '/images/howmuch.png',
   'i am megatron':   '/images/megatron.png',
   'moneyball':       '/images/moneyball.png',
   'ocupa e resiste': '/images/ocupa.png',
