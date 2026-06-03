@@ -12,7 +12,7 @@ const TEAM_IMAGES = {
   'howmuch':         '/images/howmuch.jpg',
   'i am megatron':   '/images/megatron.png',
   'moneyball':       '/images/moneyball.png',
-  'ocupa e resiste': '/images/ocupa.jpg',
+  'ocupa e resiste': '/images/ocupa.png',
   'oldbrady':        '/images/oldbrady.png',
   'patrolao squad':  '/images/patrolao.png',
   'pequers verde':   '/images/pequers.png',
