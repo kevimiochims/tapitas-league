@@ -57,7 +57,7 @@ export default function Header({ rightSlot, onSummaryOpen }) {
           </button>
         )}
 
-        {rightSlot && rightSlot}
+        {rightSlot}
       </div>
 
     </header>
