@@ -170,7 +170,7 @@ export default function TeamsPage() {
             <div className="relative z-10 flex items-center gap-8 p-10 md:p-14">
               <TeamAvatar name={selected.team} size="xl" />
               <div className="flex-1">
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 mb-3 flex flex-wrap gap-2">
                   {titles.length > 0 && (
                     <div className="inline-flex items-center gap-1.5 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 px-3 py-1.5">
                       <Trophy className="h-3.5 w-3.5 text-yellow-400" />
