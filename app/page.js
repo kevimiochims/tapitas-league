@@ -2428,7 +2428,6 @@ export default function TapitasLeagueHomepage() {
                   return getVal(b) - getVal(a)
                 })
                 const leader = sorted[0]
-
                 const leaders = sorted.filter(
                   t => t.titles === leader.titles
                 )
@@ -2454,7 +2453,6 @@ export default function TapitasLeagueHomepage() {
                       <div className="text-[9px] font-black uppercase tracking-wider opacity-70">{label}</div>
                       <div className="truncate text-xs font-black">
                         {leaders
-                          .slice(0, 2)
                           .map(t => getShortTeamName(t.team))
                           .join(' • ')}
                       </div>
