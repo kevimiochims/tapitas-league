@@ -147,6 +147,17 @@ function normalizeTeam(team, index) {
   }
 }
 
+function getShortTeamName(team) {
+  const name = normalizeString(team)
+
+  if (name === 'i am megatron') return 'Megatron'
+  if (name === 'ocupa e resiste') return 'Ocupa'
+  if (name === 'peytao da massa') return 'Peytao'
+  if (name === 'h-lera do mahl') return 'H-Lera'
+
+  return team
+}
+
 async function safeSheetFetch(url) {
   try {
     const response = await fetch(url)
@@ -2436,7 +2447,7 @@ export default function TapitasLeagueHomepage() {
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="text-[9px] font-black uppercase tracking-wider opacity-70">{label}</div>
-                      <div className="truncate text-xs font-black">{leader?.team?.split(' ')[0] || '—'}</div>
+                      <div className="truncate text-xs font-black">{getShortTeamName(leader?.team) || '—'}</div>
                     </div>
                     <span className="flex-shrink-0 text-lg font-black leading-none">{val ?? '—'}</span>
                   </a>
