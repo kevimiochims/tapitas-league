@@ -432,23 +432,16 @@ function ChampionsWallInline({ champions }) {
 }
 
 const TEAM_AVATARS = {
-  'peytão da massa': '/images/peytao.jpg',
-  'peytao da massa': '/images/peytao.jpg',
-  'moneyball fc': '/images/Moneyball.png',
-  'old brady bunch': '/images/oldbrady.png',
+  'howmuch': '/images/howmuch.png',
   'i am megatron': '/images/megatron.png',
-  'ocupa meu slot': '/images/ocupa.jpg',
-  'ocupa e resiste': '/images/ocupa.jpg',
-  'green bay pequers': '/images/pequers.png',
-  'pequers verde': '/images/pequers.png',
-  'patrolão': '/images/patrolao.png',
-  'patrolao': '/images/patrolao.png',
+  'moneyball': '/images/moneyball.png',
+  'ocupa e resiste': '/images/ocupa.png',
+  'oldbrady': '/images/oldbrady.png',
   'patrolao squad': '/images/patrolao.png',
-  'how much is the fish': '/images/howmuch.jpg',
-  'settlers of rincão': '/images/rincao.png',
-  'settlers of rincao': '/images/rincao.png',
+  'pequers verde': '/images/pequers.png',
+  'peytao da massa': '/images/peytao.png',
   'rincao settlers': '/images/rincao.png',
-  'h-lera do mahl': '/images/HLera.jpg',
+  'h-lera do mahl': '/images/hlera.png',
 }
 
 function getTeamAvatar(name) {
