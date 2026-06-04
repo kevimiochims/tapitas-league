@@ -1326,7 +1326,7 @@ export default function TapitasLeagueHomepage() {
       />
 
       {/* ===== HERO ===== */}
-      <section className="relative z-10 px-3 md:px-6 pb-20">
+      <section className="relative z-10 px-3 md:px-6 pb-5">
         <div
           className="relative isolate mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10"
           onTouchStart={handleTouchStart}
