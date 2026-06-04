@@ -5,7 +5,7 @@ import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
   Swords, Stars, Activity, Radar, Target, Medal, Clock3, ScrollText,
   TrendingUp, Landmark, Newspaper, Laugh, FileText, BarChart2,
-  Users, BookOpen, Zap, TrendingDown, Minus, Hash,
+  Users, BookOpen, Zap, TrendingDown, Minus,
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
@@ -369,23 +369,16 @@ function ChampionsWall({ champions }) {
 }
 
 const TEAM_AVATARS = {
-  'peytão da massa': '/images/peytao.jpg',
-  'peytao da massa': '/images/peytao.jpg',
-  'moneyball fc': '/images/Moneyball.png',
-  'old brady bunch': '/images/oldbrady.png',
+  'howmuch': '/images/howmuch.png',
   'i am megatron': '/images/megatron.png',
-  'ocupa meu slot': '/images/ocupa.jpg',
-  'ocupa e resiste': '/images/ocupa.jpg',
-  'green bay pequers': '/images/pequers.png',
-  'pequers verde': '/images/pequers.png',
-  'patrolão': '/images/patrolao.png',
-  'patrolao': '/images/patrolao.png',
+  'moneyball': '/images/moneyball.png',
+  'ocupa e resiste': '/images/ocupa.png',
+  'oldbrady': '/images/oldbrady.png',
   'patrolao squad': '/images/patrolao.png',
-  'how much is the fish': '/images/howmuch.jpg',
-  'settlers of rincão': '/images/rincao.png',
-  'settlers of rincao': '/images/rincao.png',
+  'pequers verde': '/images/pequers.png',
+  'peytao da massa': '/images/peytao.png',
   'rincao settlers': '/images/rincao.png',
-  'h-lera do mahl': '/images/HLera.jpg',
+  'h-lera do mahl': '/images/hlera.png',
 }
 
 function getTeamAvatar(name) {
@@ -584,61 +577,33 @@ function buildStreakMap(gamesJson, teamsJson) {
   return result
 }
 
-// ── NEW CONSTANTS ─────────────────────────────────────────────────────────────
-
+// ===== NEWS CONSTANTS =====
 const NEWS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
-const SHEET_ID_HOME = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-const BASE_URL_HOME = `https://opensheet.elk.sh/${SHEET_ID_HOME}`
 
 const CATEGORY_STYLE = {
-  'Meme':    { color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10', icon: Laugh },
-  'Recap':   { color: 'text-cyan-400',   border: 'border-cyan-400/20',   bg: 'bg-cyan-400/10',   icon: FileText },
-  'Notícia': { color: 'text-emerald-400',border: 'border-emerald-400/20',bg: 'bg-emerald-400/10',icon: Newspaper },
+  'Meme': { color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10', icon: Laugh },
+  'Recap': { color: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/10', icon: FileText },
+  'Notícia': { color: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/10', icon: Newspaper },
 }
 
 function formatDate(dateStr) {
-  try { return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) }
-  catch { return dateStr }
+  try {
+    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  } catch { return dateStr }
 }
 
-// Short display name for Records card — first meaningful word, not "I" or "The"
-function shortTeamName(name) {
-  if (!name) return '—'
-  const skip = new Set(['i', 'the', 'a', 'an', 'os', 'as', 'o', 'a'])
-  const words = name.split(' ').filter(Boolean)
-  const first = words.find(w => !skip.has(w.toLowerCase())) || words[0]
-  return first || name
-}
-
-// Returns top N teams for a key, handling ties
-function topNTeams(arr, getter, n = 3) {
-  const sorted = [...arr].sort((a, b) => getter(b) - getter(a))
-  if (!sorted.length) return []
-  const topVal = getter(sorted[0])
-  const tied = sorted.filter(t => getter(t) === topVal)
-  return tied.slice(0, n)
-}
-
+// ===== QUICK NAV CONFIG =====
 const QUICK_NAV = [
-  { label: 'Standings',       href: '/standings',     icon: BarChart2,   color: 'text-cyan-400',   border: 'border-cyan-400/20',   bg: 'bg-cyan-400/10'   },
-  { label: 'Matchups',        href: '/matchups',      icon: Swords,      color: 'text-orange-400', border: 'border-orange-400/20', bg: 'bg-orange-400/10' },
-  { label: 'Power Rankings',  href: '/powerrankings', icon: TrendingUp,  color: 'text-emerald-400',border: 'border-emerald-400/20',bg: 'bg-emerald-400/10'},
-  { label: 'Records',         href: '/records',       icon: Zap,         color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10' },
-  { label: 'Rivalries',       href: '/rivalries',     icon: Stars,       color: 'text-red-400',    border: 'border-red-400/20',    bg: 'bg-red-400/10'    },
-  { label: 'Teams',           href: '/teams',         icon: Users,       color: 'text-purple-400', border: 'border-purple-400/20', bg: 'bg-purple-400/10' },
-  { label: 'Draft',           href: '/draft',         icon: ScrollText,  color: 'text-pink-400',   border: 'border-pink-400/20',   bg: 'bg-pink-400/10'   },
-  { label: 'History',         href: '/history',       icon: BookOpen,    color: 'text-slate-400',  border: 'border-white/15',      bg: 'bg-white/[0.04]'  },
-  { label: 'News',            href: '/news',          icon: Newspaper,   color: 'text-sky-400',    border: 'border-sky-400/20',    bg: 'bg-sky-400/10'    },
+  { label: 'Standings', href: '/standings', icon: BarChart2, color: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/10' },
+  { label: 'Matchups', href: '/matchups', icon: Swords, color: 'text-orange-400', border: 'border-orange-400/20', bg: 'bg-orange-400/10' },
+  { label: 'Power Rankings', href: '/powerrankings', icon: TrendingUp, color: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/10' },
+  { label: 'Records', href: '/records', icon: Zap, color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10' },
+  { label: 'Rivalries', href: '/rivalries', icon: Stars, color: 'text-red-400', border: 'border-red-400/20', bg: 'bg-red-400/10' },
+  { label: 'Teams', href: '/teams', icon: Users, color: 'text-purple-400', border: 'border-purple-400/20', bg: 'bg-purple-400/10' },
+  { label: 'Draft', href: '/draft', icon: ScrollText, color: 'text-pink-400', border: 'border-pink-400/20', bg: 'bg-pink-400/10' },
+  { label: 'History', href: '/history', icon: BookOpen, color: 'text-slate-400', border: 'border-white/15', bg: 'bg-white/[0.04]' },
+  { label: 'News', href: '/news', icon: Newspaper, color: 'text-sky-400', border: 'border-sky-400/20', bg: 'bg-sky-400/10' },
 ]
-
-const POS_COLORS = {
-  QB:  'text-red-400 border-red-400/25 bg-red-400/10',
-  RB:  'text-emerald-400 border-emerald-400/25 bg-emerald-400/10',
-  WR:  'text-cyan-400 border-cyan-400/25 bg-cyan-400/10',
-  TE:  'text-orange-400 border-orange-400/25 bg-orange-400/10',
-  K:   'text-slate-400 border-slate-400/25 bg-slate-400/10',
-  DEF: 'text-purple-400 border-purple-400/25 bg-purple-400/10',
-}
 
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
@@ -653,6 +618,15 @@ export default function TapitasLeagueHomepage() {
   const [seasonSummary, setSeasonSummary] = useState(null)
   const [selectedSeason, setSelectedSeason] = useState('2025')
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // ===== NEW: News, Power Rankings preview, Current Standings =====
+  const [newsPosts, setNewsPosts] = useState([])
+  const [newsLoading, setNewsLoading] = useState(true)
+  const [prData, setPrData] = useState([]) // power rankings preview
+  const [prLoading, setPrLoading] = useState(true)
+  const [currentStandings, setCurrentStandings] = useState([])
+  const [currentSeason, setCurrentSeason] = useState('')
+
 
   const touchStartX = useRef(null);
   const totalSlides = 3;
@@ -950,6 +924,93 @@ export default function TapitasLeagueHomepage() {
     return () => {
       mounted = false
     }
+  }, [])
+
+  // ===== NEW: Load recent news posts =====
+  useEffect(() => {
+    fetch(NEWS_SCRIPT_URL)
+      .then(r => r.json())
+      .then(data => {
+        const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date))
+        setNewsPosts(sorted.slice(0, 4))
+      })
+      .catch(() => setNewsPosts([]))
+      .finally(() => setNewsLoading(false))
+  }, [])
+
+  // ===== NEW: Load power rankings + current season standings =====
+  useEffect(() => {
+    let mounted = true
+    async function loadPR() {
+      try {
+        const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
+        const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+        const [gameData, historyData] = await Promise.all([
+          safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
+          safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+        ])
+        if (!mounted) return
+
+        // Find latest season with power ranking data
+        const allSeasonsWithPR = [...new Set(
+          gameData
+            .filter(g => parseNumber(g?.['Power Ranking']) > 0)
+            .map(g => String(g?.Season || '').trim())
+            .filter(Boolean)
+        )].sort((a, b) => Number(a) - Number(b))
+
+        if (allSeasonsWithPR.length > 0) {
+          const latestSeason = allSeasonsWithPR[allSeasonsWithPR.length - 1]
+          const seasonGames = gameData.filter(g =>
+            String(g?.Season || '').trim() === latestSeason &&
+            parseNumber(g?.['Power Ranking']) > 0
+          )
+          const weeks = [...new Set(seasonGames.map(g => String(g?.Week || '').trim()).filter(Boolean))]
+            .sort((a, b) => parseFloat(a) - parseFloat(b))
+          const latestWeek = weeks[weeks.length - 1]
+
+          const currentWeekGames = seasonGames
+            .filter(g => String(g?.Week || '').trim() === latestWeek)
+            .sort((a, b) => parseNumber(a?.['Power Ranking']) - parseNumber(b?.['Power Ranking']))
+
+          // Calculate previous week for delta
+          const prevWeek = weeks[weeks.length - 2]
+          const prevGames = prevWeek
+            ? seasonGames.filter(g => String(g?.Week || '').trim() === prevWeek)
+            : []
+
+          const prRows = currentWeekGames.slice(0, 6).map(g => {
+            const team = String(g?.Team || '').trim()
+            const rank = parseNumber(g?.['Power Ranking'])
+            const prev = prevGames.find(p => String(p?.Team || '').trim() === team)
+            const prevRank = prev ? parseNumber(prev?.['Power Ranking']) : rank
+            return { team, rank, delta: prevRank - rank }
+          })
+          if (mounted) {
+            setPrData(prRows)
+            setCurrentSeason(latestSeason)
+          }
+
+          // Current season standings from history
+          const seasonRows = historyData
+            .filter(r => String(r?.Season || '').trim() === latestSeason)
+            .map(r => ({
+              team: String(r?.Team || r?.team || '').trim(),
+              w: parseNumber(r?.RS_W || 0),
+              l: parseNumber(r?.RS_L || 0),
+              pf: parseNumber(r?.RS_PF || 0),
+              pos: parseNumber(r?.Standing || r?.Pos || 0),
+              champion: String(r?.Champion || '').toUpperCase() === 'TRUE',
+            }))
+            .sort((a, b) => b.w - a.w || a.l - b.l || b.pf - a.pf)
+
+          if (mounted) setCurrentStandings(seasonRows)
+        }
+      } catch (e) { console.error(e) }
+      finally { if (mounted) setPrLoading(false) }
+    }
+    loadPR()
+    return () => { mounted = false }
   }, [])
 
   const standings = useMemo(() => {
@@ -1265,7 +1326,7 @@ export default function TapitasLeagueHomepage() {
       />
 
       {/* ===== HERO ===== */}
-      <section className="relative z-10 px-3 md:px-6 pb-20">
+      <section className="relative z-10 px-3 md:px-6 pb-10">
         <div
           className="relative isolate mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10"
           onTouchStart={handleTouchStart}
@@ -2045,75 +2106,343 @@ export default function TapitasLeagueHomepage() {
       </section>
 
       {/* ===== Tudo entre o Hero e o Footer ===== */}
-      <section className="relative z-10 mx-auto max-w-[16100px] px-3 pb-12 pt-8">
+      <section className="relative z-10 mx-auto max-w-[16100px] px-3 pb-12">
 
-        {/* ===== 4 Cards com Estatisticas ===== */}
+        {/* ===== LEAGUE STATS — compact strip ===== */}
         <motion.div
-          initial={{
-            opacity: 0,
-            y: 50,
-            filter: 'blur(10px)',
-          }}
-          whileInView={{
-            opacity: 1,
-            y: 0,
-            filter: 'blur(0px)',
-          }}
-          viewport={{
-            once: false,
-            amount: 0.15,
-          }}
-          transition={{
-            duration: 0.8,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          className="mb-6 grid grid-cols-2 gap-5 lg:grid-cols-4">
-          {/* Franchises */}
-          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Shield className="h-5 w-5 text-cyan-300" />
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
+        >
+          {[
+            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'Current', color: 'cyan' },
+            { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple' },
+            { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-Time', color: 'emerald' },
+            { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, color: 'orange' },
+          ].map(({ icon: Icon, label, value, sub, color }) => {
+            const colors = {
+              cyan: { icon: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300', val: 'text-cyan-300', border: 'border-cyan-400/10 hover:border-cyan-400/20' },
+              purple: { icon: 'border-purple-400/20 bg-purple-400/10 text-purple-300', val: 'text-purple-300', border: 'border-purple-400/10 hover:border-purple-400/20' },
+              emerald: { icon: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300', val: 'text-emerald-300', border: 'border-emerald-400/10 hover:border-emerald-400/20' },
+              orange: { icon: 'border-orange-400/20 bg-orange-400/10 text-orange-300', val: 'text-orange-300', border: 'border-orange-400/10 hover:border-orange-400/20' },
+            }
+            const c = colors[color]
+            return (
+              <div key={label} className={`flex items-center gap-4 rounded-[24px] border ${c.border} bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-5 py-4 transition-all`}>
+                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border ${c.icon}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
+                  <div className={`text-2xl font-black leading-none ${c.val}`}>{value}</div>
+                  <div className="mt-0.5 truncate text-[10px] font-bold text-slate-600">{sub}</div>
+                </div>
+              </div>
+            )
+          })}
+        </motion.div>
+
+        {/* ===== QUICK NAV ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="mt-5 mb-5"
+        >
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+            {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
+              <a
+                key={label}
+                href={href}
+                className={`group flex flex-col items-center gap-1.5 rounded-[18px] border ${border} ${bg} px-2 py-3 text-center transition-all hover:scale-[1.05] hover:brightness-125`}
+              >
+                <Icon className={`h-4 w-4 ${color}`} />
+                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>{label}</span>
+              </a>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* ===== POWER RANKINGS + STANDINGS ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: false, amount: 0.08 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-4 flex flex-col gap-4 xl:flex-row"
+        >
+          {/* Power Rankings Preview */}
+          <div className="w-full overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-1">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
+                  <TrendingUp className="h-4 w-4 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Power Rankings</div>
+                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
+                </div>
+              </div>
+              <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                Ver tudo <ChevronRight className="h-3 w-3" />
+              </a>
             </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Franchises</div>
-            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.franchises}</div>
-            <div className="truncate text-sm font-bold text-cyan-300">Current</div>
+            <div className="p-3 space-y-1.5">
+              {prLoading ? (
+                <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div>
+              ) : prData.length === 0 ? (
+                <div className="py-8 text-center text-xs font-bold text-slate-700">Sem dados</div>
+              ) : prData.map((row, i) => {
+                const avatar = getTeamAvatar(row.team)
+                const teamSlug = row.team.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+                return (
+                  <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
+                    className="flex items-center gap-3 rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10"
+                  >
+                    <span className="w-6 flex-shrink-0 text-center font-black leading-none"
+                      style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: i === 0 ? '#facc15' : i <= 1 ? '#22d3ee' : i <= 3 ? '#34d399' : '#475569' }}>
+                      {row.rank}
+                    </span>
+                    {avatar ? (
+                      <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <div className="h-7 w-7 flex-shrink-0 rounded-xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[10px] font-black text-cyan-400">
+                        {row.team.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
+                    <span className={`flex items-center gap-0.5 text-xs font-black ${row.delta > 0 ? 'text-emerald-400' : row.delta < 0 ? 'text-red-400' : 'text-slate-600'}`}>
+                      {row.delta > 0 ? <TrendingUp className="h-3 w-3" /> : row.delta < 0 ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                      {row.delta !== 0 ? Math.abs(row.delta) : ''}
+                    </span>
+                  </a>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Seasons — com scroll */}
-          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Calendar className="h-5 w-5 text-cyan-300" />
+          {/* Current Season Standings */}
+          <div className="w-full overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-1">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                  <BarChart2 className="h-4 w-4 text-cyan-400" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
+                  <div className="text-xs text-slate-500">{currentSeason ? `Temporada ${currentSeason}` : 'Carregando...'}</div>
+                </div>
+              </div>
+              <a href="/standings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                Ver tudo <ChevronRight className="h-3 w-3" />
+              </a>
             </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Seasons</div>
-            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.seasons}</div>
-            <div
-              className="overflow-x-auto whitespace-nowrap pb-1 text-sm font-bold text-cyan-300"
-              style={{ scrollbarWidth: 'none' }}
-            >
-              {buildSeasonRanges(leagueStats.allSeasons)}
+            <div className="p-3 space-y-1.5">
+              {currentStandings.length === 0 ? (
+                <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div>
+              ) : currentStandings.slice(0, 6).map((row, i) => {
+                const avatar = getTeamAvatar(row.team)
+                return (
+                  <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
+                    className="flex items-center gap-3 rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10"
+                  >
+                    <span className="w-6 flex-shrink-0 text-center font-black leading-none"
+                      style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: i === 0 ? '#facc15' : i <= 3 ? '#22d3ee' : '#475569' }}>
+                      {i + 1}
+                    </span>
+                    {avatar ? (
+                      <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <div className="h-7 w-7 flex-shrink-0 rounded-xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[10px] font-black text-cyan-400">
+                        {row.team.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-xs font-black text-emerald-400">{row.w}W</span>
+                      <span className="text-xs text-slate-700">·</span>
+                      <span className="text-xs font-black text-red-400">{row.l}L</span>
+                      <span className="text-xs text-slate-700">·</span>
+                      <span className="w-14 text-right text-[10px] font-bold text-slate-500">{Math.round(row.pf)} pts</span>
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ===== NEWS PREVIEW ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: false, amount: 0.08 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-4 overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]"
+        >
+          <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
+                <Newspaper className="h-4 w-4 text-yellow-400" />
+              </div>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">Portal da Liga</div>
+                <div className="text-xs text-slate-500">Memes, recaps e notícias</div>
+              </div>
+            </div>
+            <a href="/news" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+              Ver tudo <ChevronRight className="h-3 w-3" />
+            </a>
+          </div>
+          {newsLoading ? (
+            <div className="py-10 text-center text-xs font-bold text-slate-700">Carregando...</div>
+          ) : newsPosts.length === 0 ? (
+            <div className="py-10 text-center text-xs font-bold text-slate-700">Nenhum post ainda.</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-4">
+              {newsPosts.map((post, i) => {
+                const s = CATEGORY_STYLE[post.category]
+                const Icon = s?.icon || Newspaper
+                return (
+                  <a key={post.id || i} href={`/news/${post.slug}`}
+                    className="group overflow-hidden rounded-[20px] border border-white/5 bg-white/[0.02] transition-all hover:border-white/12 hover:bg-white/[0.04]"
+                  >
+                    {post.imageUrl && (
+                      <div className="h-32 w-full overflow-hidden">
+                        <img src={post.imageUrl.split('|')[0]} alt={post.title}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      </div>
+                    )}
+                    <div className="p-3">
+                      {post.category && s && (
+                        <div className={`mb-1.5 inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${s.color} ${s.border} ${s.bg}`}>
+                          <Icon className="h-2.5 w-2.5" />{post.category}
+                        </div>
+                      )}
+                      <h3 className="text-xs font-black leading-tight text-white line-clamp-2 group-hover:text-cyan-300 transition-colors">{post.title}</h3>
+                      <div className="mt-1 text-[10px] font-bold text-slate-600">{formatDate(post.date)}</div>
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
+          )}
+        </motion.div>
+
+        {/* ===== DRAFT + RECORDS CARDS ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: false, amount: 0.08 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
+        >
+          {/* DRAFT CARD */}
+          <div className="relative overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
+            {/* bg image */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#020617] via-[#020617]/90 to-transparent" />
+            <div className="relative z-10 p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-400/10">
+                    <ScrollText className="h-4 w-4 text-pink-400" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-pink-400">Draft History</div>
+                    <div className="text-xs text-slate-500">Every pick ever made</div>
+                  </div>
+                </div>
+                <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                  Abrir <ChevronRight className="h-3 w-3" />
+                </a>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Seasons', value: leagueStats.seasons || '—', icon: Calendar, color: 'text-pink-400' },
+                  { label: 'Franchises', value: leagueStats.franchises || '—', icon: Users, color: 'text-pink-300' },
+                  { label: 'Draft Rounds', value: '15', icon: Target, color: 'text-pink-200' },
+                ].map(({ label, value, icon: Icon, color }) => (
+                  <div key={label} className="rounded-[16px] border border-white/5 bg-white/[0.03] p-3 text-center">
+                    <Icon className={`h-4 w-4 mx-auto mb-1 ${color}`} />
+                    <div className={`text-xl font-black leading-none ${color}`}>{value}</div>
+                    <div className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600">{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 rounded-[16px] border border-pink-400/10 bg-pink-400/[0.04] px-4 py-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-pink-400/70">Your team is on the clock</div>
+                <div className="mt-0.5 text-xs text-slate-500">Explore cada rodada, cada escolha — desde 2014.</div>
+              </div>
             </div>
           </div>
 
-
-          {/* Games */}
-          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Radar className="h-5 w-5 text-cyan-300" />
+          {/* RECORDS CARD */}
+          <div className="overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
+                  <Zap className="h-4 w-4 text-yellow-400" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">Records</div>
+                  <div className="text-xs text-slate-500">Liga histórica</div>
+                </div>
+              </div>
+              <a href="/records" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                Abrir <ChevronRight className="h-3 w-3" />
+              </a>
             </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-              Games Played
+            <div className="p-3 grid grid-cols-2 gap-2">
+              {[
+                { emoji: '🏆', label: 'Most Titles', key: 'titles', color: 'yellow' },
+                { emoji: '📈', label: 'Most Wins', key: 'wins', color: 'emerald' },
+                { emoji: '🔥', label: 'Top Points', key: 'pf', color: 'orange' },
+                { emoji: '🎯', label: 'Best Win%', key: 'winPct', color: 'cyan' },
+                { emoji: '🏅', label: 'Playoff Apps', key: 'playoffApps', color: 'purple' },
+                { emoji: '⚔️', label: 'Finals Apps', key: 'finals', color: 'red' },
+              ].map(({ emoji, label, key, color }) => {
+                const sorted = [...standings].sort((a, b) => {
+                  const getVal = (t) => {
+                    if (key === 'titles') return t.titles
+                    if (key === 'wins') return t.wins
+                    if (key === 'pf') return t.pf
+                    if (key === 'winPct') return t.winPct
+                    if (key === 'playoffApps') return t.playoffApps
+                    if (key === 'finals') return t.finals
+                    return 0
+                  }
+                  return getVal(b) - getVal(a)
+                })
+                const leader = sorted[0]
+                const val = key === 'titles' ? leader?.titles
+                  : key === 'wins' ? leader?.wins
+                  : key === 'pf' ? Math.round(leader?.pf || 0)
+                  : key === 'winPct' ? `${leader?.winPct}%`
+                  : key === 'playoffApps' ? leader?.playoffApps
+                  : leader?.finals
+                const avatar = leader ? getTeamAvatar(leader.team) : null
+                const colors = { yellow: 'text-yellow-400 border-yellow-400/20 bg-yellow-400/[0.06]', emerald: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/[0.06]', orange: 'text-orange-400 border-orange-400/20 bg-orange-400/[0.06]', cyan: 'text-cyan-400 border-cyan-400/20 bg-cyan-400/[0.06]', purple: 'text-purple-400 border-purple-400/20 bg-purple-400/[0.06]', red: 'text-red-400 border-red-400/20 bg-red-400/[0.06]' }
+                return (
+                  <a key={label} href={`/records`}
+                    className={`flex items-center gap-2 rounded-[16px] border px-3 py-2.5 transition-all hover:brightness-125 ${colors[color]}`}
+                  >
+                    {avatar ? (
+                      <img src={avatar} alt={leader?.team} className="h-7 w-7 rounded-xl object-cover flex-shrink-0" />
+                    ) : (
+                      <span className="text-base">{emoji}</span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[9px] font-black uppercase tracking-wider opacity-70">{label}</div>
+                      <div className="truncate text-xs font-black">{leader?.team?.split(' ')[0] || '—'}</div>
+                    </div>
+                    <span className="flex-shrink-0 text-lg font-black leading-none">{val ?? '—'}</span>
+                  </a>
+                )
+              })}
             </div>
-            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.games}</div>
-            <div className="truncate text-sm font-bold text-cyan-300">All-Time</div>
-          </div>
-
-          {/* Highest Score */}
-          <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.95))] p-6">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <Flame className="h-5 w-5 text-cyan-300" />
-            </div>
-            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Highest Score</div>
-            <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.highestScore}</div>
-            <div className="truncate text-sm font-bold text-cyan-300">{leagueStats.highestScoreTeam}</div>
           </div>
         </motion.div>
 
@@ -2122,327 +2451,171 @@ export default function TapitasLeagueHomepage() {
           <ChampionsWall champions={championsData} />
         )}
 
-        {/* RIVALRY SPOTLIGHT e Franchise Leaders*/}
-        <div className="flex flex-col gap-8 xl:flex-row">
-
+        {/* ===== RIVALRY SPOTLIGHT + FRANCHISE LEADERS ===== */}
+        <div className="flex flex-col gap-4 xl:flex-row">
 
           {/* RIVALRY SPOTLIGHT */}
-          <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[1.15]">
+          <div className="w-full overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-[1.15]">
             <motion.div
-              initial={{
-                opacity: 0,
-                y: 50,
-                filter: 'blur(10px)',
-              }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-                filter: 'blur(0px)',
-              }}
-              viewport={{
-                once: false,
-                amount: 0.15,
-              }}
-              transition={{
-                duration: 0.8,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
-
-              {/* Header */}
-              <div className="mb-8 flex items-center justify-between gap-4">
+              initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
+              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="flex h-full flex-col p-5 sm:p-6"
+            >
+              <div className="mb-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                    <Swords className="h-5 w-5 text-cyan-300" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
+                    <Swords className="h-4 w-4 text-red-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
-                      Rivalry Spotlight
-                    </div>
-                    <div className="text-base text-slate-400">
-                      The league's fiercest matchup.
-                    </div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
+                    <div className="text-xs text-slate-500">The league's fiercest matchup.</div>
                   </div>
                 </div>
+                <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                  All Rivalries <ChevronRight className="h-3 w-3" />
+                </a>
               </div>
 
-              {/* Seletores */}
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                <TeamSelect
-                  value={selectedTeamA}
-                  onChange={(val) => {
-                    setSelectedTeamA(val)
-                    setSelectedTeamB('')
-                  }}
-                  options={allTeams}
-                  placeholder="Select a team..."
-                />
-
-                <div className="flex-shrink-0 text-center text-lg font-black text-cyan-400">
-                  vs
-                </div>
-
-                <TeamSelect
-                  value={selectedTeamB}
-                  onChange={setSelectedTeamB}
-                  options={teamsForB}
-                  placeholder="Select opponent..."
-                  disabled={!selectedTeamA}
-                />
+              <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Select a team..." />
+                <div className="flex-shrink-0 text-center text-sm font-black text-red-400">vs</div>
+                <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Select opponent..." disabled={!selectedTeamA} />
               </div>
 
-              {/* Estado vazio */}
-              {!selectedRivalry && (
-                <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[26px] border border-white/5 bg-white/[0.02] py-12 text-center">
-                  <Swords className="h-8 w-8 text-slate-600" />
-                  <p className="text-sm font-bold text-slate-600">
-                    Select two teams to see their rivalry stats
-                  </p>
+              {!selectedRivalry ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-[20px] border border-white/5 bg-white/[0.02] py-10 text-center">
+                  <Swords className="h-7 w-7 text-slate-700" />
+                  <p className="text-xs font-bold text-slate-600">Selecione dois times para ver o histórico</p>
                 </div>
-              )}
-
-              {/* Stats do confronto */}
-              {selectedRivalry && (
-                <div className="grid grid-cols-2 gap-4">
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     [Target, 'Record', selectedRivalry.record],
                     [Trophy, 'Playoffs', selectedRivalry.playoffRecord],
                     [Activity, 'Avg Margin', `${selectedRivalry.avgMargin} ppg`],
-                    [Stars, `Last Game${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
+                    [Stars, `Último Jogo${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
                     [Radar, 'Current Streak', selectedRivalry.streak],
                     [Flame, 'Rivalry Heat', selectedRivalry.heat],
                   ].map(([Icon, label, value]) => (
-                    <div
-                      key={label}
-                      className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] p-4 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/30 hover:bg-white/[0.06]"
-                    >
-                      {/* Efeito de Brilho Metálico Refletivo */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
-
-                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 transition-colors group-hover:border-cyan-400/40">
-                        <Icon className="h-3.5 w-3.5 text-cyan-300" />
+                    <div key={label} className="group relative overflow-hidden rounded-[20px] border border-white/8 bg-white/[0.03] p-3 transition-all hover:border-white/15 hover:bg-white/[0.05]">
+                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
+                        <Icon className="h-3.5 w-3.5 text-red-300" />
                       </div>
-                      <div className="mb-2 text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-slate-500 sm:text-[10px] lg:text-[11px]"
-                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                      >
-                        {label}
-                      </div>
-                      <div
-                        className="font-black leading-none text-white transition-colors group-hover:text-cyan-300"
-                        style={{ fontSize: 'clamp(14px, 3.5vw, 30px)', wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                      >
-                        {value}
-                      </div>
+                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</div>
+                      <div className="font-black leading-none text-white" style={{ fontSize: 'clamp(13px, 3vw, 22px)' }}>{value}</div>
                     </div>
                   ))}
                 </div>
               )}
-
             </motion.div>
           </div>
 
           {/* FRANCHISE LEADERS */}
-          <div className="w-full overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-[0.85]">
+          <div className="w-full overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-[0.85]">
             <motion.div
-              initial={{
-                opacity: 0,
-                y: 50,
-                filter: 'blur(10px)',
-              }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-                filter: 'blur(0px)',
-              }}
-              viewport={{
-                once: false,
-                amount: 0.15,
-              }}
-              transition={{
-                duration: 0.8,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="flex h-full flex-col p-5 sm:p-7 xl:p-8">
-
-              {/* Header */}
-              <div className="mb-8 flex items-center justify-between gap-4">
+              initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
+              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="flex h-full flex-col p-5 sm:p-6"
+            >
+              <div className="mb-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                    <Medal className="h-5 w-5 text-cyan-300" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                    <Medal className="h-4 w-4 text-cyan-300" />
                   </div>
                   <div>
-                    <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">
-                      Franchise Leaders
-                    </div>
-                    <div className="text-base text-slate-400">
-                      League Rankings
-                    </div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">Franchise Leaders</div>
+                    <div className="text-xs text-slate-500">League Rankings</div>
                   </div>
                 </div>
-
-                {/* Setas de paginação */}
                 {standings.length > 5 && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
-                      disabled={standingsPage === 0}
-                      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setStandingsPage((p) => Math.max(0, p - 1))} disabled={standingsPage === 0}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20">
+                      <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
-                    <span className="text-xs font-black text-slate-500">
-                      {standingsPage + 1}/{Math.ceil(standings.length / 5)}
-                    </span>
-                    <button
-                      onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
-                      disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
-                      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      <ChevronRight className="h-4 w-4" />
+                    <span className="text-[10px] font-black text-slate-600">{standingsPage + 1}/{Math.ceil(standings.length / 5)}</span>
+                    <button onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))} disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20">
+                      <ChevronRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Seletores */}
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                <TeamSelect
-                  value={sortCategory}
-                  onChange={(val) => setSortCategory(val)}
-                  options={SORT_OPTIONS.map((o) => o.label)}
-                  placeholder="Category..."
-                />
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+                <TeamSelect value={sortCategory} onChange={setSortCategory} options={SORT_OPTIONS.map((o) => o.label)} placeholder="Category..." />
                 {SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.length > 1 && (
-                  <TeamSelect
-                    value={sortSub}
-                    onChange={(val) => setSortSub(val)}
-                    options={
-                      SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []
-                    }
-                    placeholder="Type..."
-                  />
+                  <TeamSelect value={sortSub} onChange={setSortSub}
+                    options={SORT_OPTIONS.find((o) => o.label === sortCategory)?.subs.map((s) => s.label) ?? []}
+                    placeholder="Type..." />
                 )}
               </div>
 
-              {/* Lista */}
-              <div className="space-y-4">
-                {standings
-                  .slice(standingsPage * 5, standingsPage * 5 + 5)
-                  .map((team, index) => {
-                    const globalIndex = standingsPage * 5 + index
-                    const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
-                    const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
+              <div className="space-y-2">
+                {standings.slice(standingsPage * 5, standingsPage * 5 + 5).map((team, index) => {
+                  const globalIndex = standingsPage * 5 + index
+                  const cat = SORT_OPTIONS.find((o) => o.label === sortCategory)
+                  const sub = cat?.subs.find((s) => s.label === sortSub) ?? cat?.subs[0]
+                  const keyMap = {
+                    'W': (t) => t.wins, 'RS_W': (t) => t.rsW, 'PO_W': (t) => t.poW,
+                    'L': (t) => t.losses, 'RS_L': (t) => t.rsL, 'PO_L': (t) => t.poL,
+                    'W%': (t) => `${t.winPct}%`, 'RS_W%': (t) => `${t.rsWinPct}%`, 'PO_W%': (t) => `${t.poWinPct}%`,
+                    'PF': (t) => Math.round(t.pf), 'RS_PF': (t) => Math.round(t.rsPF), 'PO_PF': (t) => Math.round(t.poPF),
+                    'W Streak RS': (t) => t.wStreakRS, 'W Streak Total': (t) => t.wStreakTotal,
+                    'L Streak RS': (t) => t.lStreakRS, 'L Streak Total': (t) => t.lStreakTotal,
+                    'Playoff Apps': (t) => t.playoffApps, 'Finals': (t) => t.finals, 'Titles': (t) => t.titles,
+                  }
+                  const shortLabelMap = {
+                    'W': 'Wins', 'RS_W': 'Wins', 'PO_W': 'Wins', 'L': 'Losses', 'RS_L': 'Losses', 'PO_L': 'Losses',
+                    'W%': 'Win %', 'RS_W%': 'Win %', 'PO_W%': 'Win %',
+                    'PF': 'Points', 'RS_PF': 'Points', 'PO_PF': 'Points',
+                    'W Streak RS': 'Win Streak', 'W Streak Total': 'Win Streak',
+                    'L Streak RS': 'Loss Streak', 'L Streak Total': 'Loss Streak',
+                    'Playoff Apps': 'Playoffs', 'Finals': 'Finals', 'Titles': 'Titles',
+                  }
+                  const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
+                  const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
+                  const avatar = getTeamAvatar(team.team)
 
-                    const keyMap = {
-                      'W': (t) => t.wins,
-                      'RS_W': (t) => t.rsW,
-                      'PO_W': (t) => t.poW,
-                      'L': (t) => t.losses,
-                      'RS_L': (t) => t.rsL,
-                      'PO_L': (t) => t.poL,
-                      'W%': (t) => `${t.winPct}%`,
-                      'RS_W%': (t) => `${t.rsWinPct}%`,
-                      'PO_W%': (t) => `${t.poWinPct}%`,
-                      'PF': (t) => Math.round(t.pf),
-                      'RS_PF': (t) => Math.round(t.rsPF),
-                      'PO_PF': (t) => Math.round(t.poPF),
-                      'W Streak RS': (t) => t.wStreakRS,
-                      'W Streak Total': (t) => t.wStreakTotal,
-                      'L Streak RS': (t) => t.lStreakRS,
-                      'L Streak Total': (t) => t.lStreakTotal,
-                      'Playoff Apps': (t) => t.playoffApps,
-                      'Finals': (t) => t.finals,
-                      'Titles': (t) => t.titles,
-                    }
-
-                    const shortLabelMap = {
-                      'W': 'Wins',
-                      'RS_W': 'Wins',
-                      'PO_W': 'Wins',
-                      'L': 'Losses',
-                      'RS_L': 'Losses',
-                      'PO_L': 'Losses',
-                      'W%': 'Win %',
-                      'RS_W%': 'Win %',
-                      'PO_W%': 'Win %',
-                      'PF': 'Points',
-                      'RS_PF': 'Points',
-                      'PO_PF': 'Points',
-                      'W Streak RS': 'Win Streak',
-                      'W Streak Total': 'Win Streak',
-                      'L Streak RS': 'Loss Streak',
-                      'L Streak Total': 'Loss Streak',
-                      'Playoff Apps': 'Playoffs',
-                      'Finals': 'Finals',
-                      'Titles': 'Titles',
-                    }
-
-                    const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
-                    const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
-
-                    return (
-                      <div
-                        key={`${team.team}-${globalIndex}`}
-                        className="group relative overflow-hidden grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[28px] border border-white/5 bg-white/[0.03] px-4 py-4 sm:px-6 sm:py-5 transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 hover:bg-white/[0.05]"
-                      >
-                        {/* Efeito de Brilho Metálico Refletivo */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-transparent opacity-0 transition-transform duration-700 group-hover:translate-x-full group-hover:opacity-100 pointer-events-none" />
-
-                        <div className="relative z-10 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 font-black text-cyan-300 sm:h-14 sm:w-14 transition-colors group-hover:border-cyan-400/40"
-                          style={{ fontSize: 'clamp(14px, 3vw, 22px)' }}
-                        >
-                          {globalIndex + 1}
-                        </div>
-
-                        <div className="relative z-10 min-w-0">
-                          <div
-                            className="mb-1 truncate font-black text-white transition-colors group-hover:text-cyan-300"
-                            style={{ fontSize: 'clamp(14px, 3.5vw, 24px)' }}
-                          >
-                            {team.team}
-                          </div>
-
-                          {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' ||
-                            sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') ? (() => {
-                              const keyLookup = {
-                                'W Streak RS': 'streakRS',
-                                'W Streak Total': 'streakTotal',
-                                'L Streak RS': 'lStreakRS',
-                                'L Streak Total': 'lStreakTotal',
-                              }
-                              const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
-                              if (!streakInfo) return null
-                              return (
-                                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
-                                  W{streakInfo.startWeek}, {streakInfo.startSeason}
-                                  <span className="mx-1 text-slate-600">→</span>
-                                  W{streakInfo.endWeek}, {streakInfo.endSeason}
-                                  {streakInfo.active && <span className="ml-1 text-cyan-400">(active)</span>}
-                                </div>
-                              )
-                            })() : (
-                            <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-sm">
-                              {team.wins}W • {team.losses}L • {Math.round(team.pf)} Pts
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="relative z-10 flex-shrink-0 text-right">
-                          <div
-                            className="mb-1 font-black leading-none text-cyan-300"
-                            style={{ fontSize: 'clamp(22px, 5vw, 40px)' }}
-                          >
-                            {displayValue}
-                          </div>
-                          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:text-xs">
-                            {shortLabel}
-                          </div>
-                        </div>
+                  return (
+                    <a key={`${team.team}-${globalIndex}`} href={`/teams?team=${encodeURIComponent(team.team)}`}
+                      className="group relative overflow-hidden flex items-center gap-3 rounded-[20px] border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all hover:border-white/12 hover:bg-white/[0.05]"
+                    >
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 font-black text-cyan-300"
+                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px' }}>
+                        {globalIndex + 1}
                       </div>
-                    )
-                  })}
+                      {avatar ? (
+                        <img src={avatar} alt={team.team} className="h-9 w-9 flex-shrink-0 rounded-xl object-cover" />
+                      ) : null}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-black text-white group-hover:text-cyan-300 transition-colors">{team.team}</div>
+                        {(sub?.key === 'W Streak RS' || sub?.key === 'W Streak Total' || sub?.key === 'L Streak RS' || sub?.key === 'L Streak Total') ? (() => {
+                          const keyLookup = { 'W Streak RS': 'streakRS', 'W Streak Total': 'streakTotal', 'L Streak RS': 'lStreakRS', 'L Streak Total': 'lStreakTotal' }
+                          const streakInfo = streakMap[team.team]?.[keyLookup[sub.key]]
+                          if (!streakInfo) return null
+                          return (
+                            <div className="text-[10px] font-bold text-slate-600">
+                              W{streakInfo.startWeek}, {streakInfo.startSeason} → W{streakInfo.endWeek}, {streakInfo.endSeason}
+                              {streakInfo.active && <span className="ml-1 text-cyan-400">(active)</span>}
+                            </div>
+                          )
+                        })() : (
+                          <div className="text-[10px] font-bold text-slate-600">{team.wins}W · {team.losses}L · {Math.round(team.pf)} pts</div>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        <div className="font-black leading-none text-cyan-300" style={{ fontSize: 'clamp(18px, 4vw, 32px)' }}>{displayValue}</div>
+                        <div className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">{shortLabel}</div>
+                      </div>
+                    </a>
+                  )
+                })}
               </div>
-
             </motion.div>
           </div>
         </div>
