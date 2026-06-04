@@ -2480,10 +2480,18 @@ export default function TapitasLeagueHomepage() {
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="text-[9px] font-black uppercase tracking-wider opacity-70">{label}</div>
-                      <div className="truncate text-xs font-black">
-                        {tiedLeaders
-                          .map(t => getShortTeamName(t.team))
-                          .join(' • ')}
+                      <div className="text-xs font-black leading-tight">
+                        {hasTie ? (
+                          <>
+                            {tiedLeaders.slice(0, 2).map((t, i) => (
+                              <div key={t.team}>
+                                {getShortTeamName(t.team)}
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          getShortTeamName(leader?.team)
+                        )}
                       </div>
                     </div>
                     <span className="flex-shrink-0 text-lg font-black leading-none">{val ?? '—'}</span>
