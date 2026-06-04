@@ -4,8 +4,7 @@ import Image from 'next/image'
 import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
   Swords, Stars, Activity, Radar, Target, Medal, Clock3, ScrollText,
-  TrendingUp, Landmark, Newspaper, Laugh, FileText, BarChart2,
-  Users, BookOpen, Zap, TrendingDown, Minus,
+  TrendingUp, Landmark,
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
@@ -584,34 +583,6 @@ function buildStreakMap(gamesJson, teamsJson) {
   return result
 }
 
-// ===== NEWS CONSTANTS =====
-const NEWS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
-
-const CATEGORY_STYLE = {
-  'Meme': { color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10', icon: Laugh },
-  'Recap': { color: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/10', icon: FileText },
-  'Notícia': { color: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/10', icon: Newspaper },
-}
-
-function formatDate(dateStr) {
-  try {
-    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
-  } catch { return dateStr }
-}
-
-// ===== QUICK NAV CONFIG =====
-const QUICK_NAV = [
-  { label: 'Standings', href: '/standings', icon: BarChart2, color: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/10' },
-  { label: 'Matchups', href: '/matchups', icon: Swords, color: 'text-orange-400', border: 'border-orange-400/20', bg: 'bg-orange-400/10' },
-  { label: 'Power Rankings', href: '/powerrankings', icon: TrendingUp, color: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/10' },
-  { label: 'Records', href: '/records', icon: Zap, color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10' },
-  { label: 'Rivalries', href: '/rivalries', icon: Stars, color: 'text-red-400', border: 'border-red-400/20', bg: 'bg-red-400/10' },
-  { label: 'Teams', href: '/teams', icon: Users, color: 'text-purple-400', border: 'border-purple-400/20', bg: 'bg-purple-400/10' },
-  { label: 'Draft', href: '/draft', icon: ScrollText, color: 'text-pink-400', border: 'border-pink-400/20', bg: 'bg-pink-400/10' },
-  { label: 'History', href: '/history', icon: BookOpen, color: 'text-slate-400', border: 'border-white/15', bg: 'bg-white/[0.04]' },
-  { label: 'News', href: '/news', icon: Newspaper, color: 'text-sky-400', border: 'border-sky-400/20', bg: 'bg-sky-400/10' },
-]
-
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
@@ -625,15 +596,6 @@ export default function TapitasLeagueHomepage() {
   const [seasonSummary, setSeasonSummary] = useState(null)
   const [selectedSeason, setSelectedSeason] = useState('2025')
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  // ===== NEW: News, Power Rankings preview, Current Standings =====
-  const [newsPosts, setNewsPosts] = useState([])
-  const [newsLoading, setNewsLoading] = useState(true)
-  const [prData, setPrData] = useState([]) // power rankings preview
-  const [prLoading, setPrLoading] = useState(true)
-  const [currentStandings, setCurrentStandings] = useState([])
-  const [currentSeason, setCurrentSeason] = useState('')
-
 
   const touchStartX = useRef(null);
   const totalSlides = 3;
@@ -931,93 +893,6 @@ export default function TapitasLeagueHomepage() {
     return () => {
       mounted = false
     }
-  }, [])
-
-  // ===== NEW: Load recent news posts =====
-  useEffect(() => {
-    fetch(NEWS_SCRIPT_URL)
-      .then(r => r.json())
-      .then(data => {
-        const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date))
-        setNewsPosts(sorted.slice(0, 4))
-      })
-      .catch(() => setNewsPosts([]))
-      .finally(() => setNewsLoading(false))
-  }, [])
-
-  // ===== NEW: Load power rankings + current season standings =====
-  useEffect(() => {
-    let mounted = true
-    async function loadPR() {
-      try {
-        const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-        const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
-        const [gameData, historyData] = await Promise.all([
-          safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-          safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
-        ])
-        if (!mounted) return
-
-        // Find latest season with power ranking data
-        const allSeasonsWithPR = [...new Set(
-          gameData
-            .filter(g => parseNumber(g?.['Power Ranking']) > 0)
-            .map(g => String(g?.Season || '').trim())
-            .filter(Boolean)
-        )].sort((a, b) => Number(a) - Number(b))
-
-        if (allSeasonsWithPR.length > 0) {
-          const latestSeason = allSeasonsWithPR[allSeasonsWithPR.length - 1]
-          const seasonGames = gameData.filter(g =>
-            String(g?.Season || '').trim() === latestSeason &&
-            parseNumber(g?.['Power Ranking']) > 0
-          )
-          const weeks = [...new Set(seasonGames.map(g => String(g?.Week || '').trim()).filter(Boolean))]
-            .sort((a, b) => parseFloat(a) - parseFloat(b))
-          const latestWeek = weeks[weeks.length - 1]
-
-          const currentWeekGames = seasonGames
-            .filter(g => String(g?.Week || '').trim() === latestWeek)
-            .sort((a, b) => parseNumber(a?.['Power Ranking']) - parseNumber(b?.['Power Ranking']))
-
-          // Calculate previous week for delta
-          const prevWeek = weeks[weeks.length - 2]
-          const prevGames = prevWeek
-            ? seasonGames.filter(g => String(g?.Week || '').trim() === prevWeek)
-            : []
-
-          const prRows = currentWeekGames.slice(0, 6).map(g => {
-            const team = String(g?.Team || '').trim()
-            const rank = parseNumber(g?.['Power Ranking'])
-            const prev = prevGames.find(p => String(p?.Team || '').trim() === team)
-            const prevRank = prev ? parseNumber(prev?.['Power Ranking']) : rank
-            return { team, rank, delta: prevRank - rank }
-          })
-          if (mounted) {
-            setPrData(prRows)
-            setCurrentSeason(latestSeason)
-          }
-
-          // Current season standings from history
-          const seasonRows = historyData
-            .filter(r => String(r?.Season || '').trim() === latestSeason)
-            .map(r => ({
-              team: String(r?.Team || r?.team || '').trim(),
-              w: parseNumber(r?.RS_W || 0),
-              l: parseNumber(r?.RS_L || 0),
-              pf: parseNumber(r?.RS_PF || 0),
-              pos: parseNumber(r?.Standing || r?.Pos || 0),
-              champion: String(r?.Champion || '').toUpperCase() === 'TRUE',
-            }))
-            .sort((a, b) => b.w - a.w || a.l - b.l || b.pf - a.pf)
-
-          if (mounted) setCurrentStandings(seasonRows)
-        }
-      } catch (e) { console.error(e) }
-      finally { if (mounted) setPrLoading(false) }
-    }
-    loadPR()
-    return () => { mounted = false }
   }, [])
 
   const standings = useMemo(() => {
@@ -2183,193 +2058,6 @@ export default function TapitasLeagueHomepage() {
             <div className="mb-3 text-4xl font-black lg:text-5xl">{leagueStats.highestScore}</div>
             <div className="truncate text-sm font-bold text-cyan-300">{leagueStats.highestScoreTeam}</div>
           </div>
-        </motion.div>
-
-        {/* ===== QUICK NAV ===== */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="mb-6 mt-2"
-        >
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
-            {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
-              <a
-                key={label}
-                href={href}
-                className={`group flex flex-col items-center gap-2 rounded-[20px] border ${border} ${bg} px-3 py-4 text-center transition-all hover:scale-[1.04] hover:brightness-110`}
-              >
-                <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${border} bg-black/20`}>
-                  <Icon className={`h-4 w-4 ${color}`} />
-                </div>
-                <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${color}`}>{label}</span>
-              </a>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* ===== POWER RANKINGS PREVIEW + CURRENT STANDINGS ===== */}
-        <motion.div
-          initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
-          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.1 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-6 flex flex-col gap-4 xl:flex-row"
-        >
-          {/* Power Rankings Preview */}
-          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-1">
-            <div className="flex items-center justify-between border-b border-white/5 px-6 py-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10">
-                  <TrendingUp className="h-5 w-5 text-emerald-400" />
-                </div>
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.25em] text-emerald-400">Power Rankings</div>
-                  <div className="text-sm text-slate-400">{currentSeason ? `Season ${currentSeason}` : 'Últimos dados'}</div>
-                </div>
-              </div>
-              <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-slate-400 transition-all hover:text-white hover:bg-white/[0.08]">
-                Ver tudo <ChevronRight className="h-3 w-3" />
-              </a>
-            </div>
-            <div className="p-4 space-y-2">
-              {prLoading ? (
-                <div className="py-10 text-center text-xs font-bold text-slate-600">Carregando...</div>
-              ) : prData.length === 0 ? (
-                <div className="py-10 text-center text-xs font-bold text-slate-600">Sem dados disponíveis</div>
-              ) : prData.map((row, i) => (
-                <div key={row.team} className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all hover:bg-white/[0.04]">
-                  <span
-                    className="w-7 flex-shrink-0 font-black leading-none"
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '22px',
-                      color: i === 0 ? '#facc15' : i <= 2 ? '#22d3ee' : i <= 4 ? '#34d399' : '#64748b',
-                    }}
-                  >
-                    {row.rank}
-                  </span>
-                  <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
-                  <span className={`flex items-center gap-1 text-xs font-black ${row.delta > 0 ? 'text-emerald-400' : row.delta < 0 ? 'text-red-400' : 'text-slate-500'}`}>
-                    {row.delta > 0 ? <TrendingUp className="h-3 w-3" /> : row.delta < 0 ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
-                    {row.delta !== 0 ? Math.abs(row.delta) : '—'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Current Season Standings Preview */}
-          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] xl:flex-1">
-            <div className="flex items-center justify-between border-b border-white/5 px-6 py-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                  <BarChart2 className="h-5 w-5 text-cyan-400" />
-                </div>
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
-                  <div className="text-sm text-slate-400">{currentSeason ? `Temporada ${currentSeason}` : 'Temporada atual'}</div>
-                </div>
-              </div>
-              <a href="/standings" className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-slate-400 transition-all hover:text-white hover:bg-white/[0.08]">
-                Ver tudo <ChevronRight className="h-3 w-3" />
-              </a>
-            </div>
-            <div className="p-4">
-              {currentStandings.length === 0 ? (
-                <div className="py-10 text-center text-xs font-bold text-slate-600">Carregando...</div>
-              ) : (
-                <div className="space-y-2">
-                  {currentStandings.slice(0, 6).map((row, i) => (
-                    <div key={row.team} className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all hover:bg-white/[0.04]">
-                      <span
-                        className="w-6 flex-shrink-0 text-center font-black leading-none"
-                        style={{
-                          fontFamily: '"Bebas Neue", sans-serif',
-                          fontSize: '20px',
-                          color: i === 0 ? '#facc15' : i <= 3 ? '#22d3ee' : '#475569',
-                        }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
-                      <span className="flex-shrink-0 text-xs font-black text-slate-400">
-                        <span className="text-emerald-400">{row.w}</span>
-                        <span className="text-slate-600">–</span>
-                        <span className="text-red-400">{row.l}</span>
-                      </span>
-                      <span className="w-16 flex-shrink-0 text-right text-[10px] font-bold text-slate-500">{Math.round(row.pf)} pts</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ===== NEWS PREVIEW ===== */}
-        <motion.div
-          initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
-          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.1 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-6 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]"
-        >
-          <div className="flex items-center justify-between border-b border-white/5 px-6 py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-yellow-400/20 bg-yellow-400/10">
-                <Newspaper className="h-5 w-5 text-yellow-400" />
-              </div>
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">Portal da Liga</div>
-                <div className="text-sm text-slate-400">Memes, recaps e notícias</div>
-              </div>
-            </div>
-            <a href="/news" className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-slate-400 transition-all hover:text-white hover:bg-white/[0.08]">
-              Ver tudo <ChevronRight className="h-3 w-3" />
-            </a>
-          </div>
-          {newsLoading ? (
-            <div className="py-12 text-center text-xs font-bold text-slate-600">Carregando...</div>
-          ) : newsPosts.length === 0 ? (
-            <div className="py-12 text-center text-xs font-bold text-slate-600">Nenhum post ainda.</div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
-              {newsPosts.map((post, i) => {
-                const s = CATEGORY_STYLE[post.category]
-                const Icon = s?.icon || Newspaper
-                return (
-                  <a
-                    key={post.id || i}
-                    href={`/news/${post.slug}`}
-                    className="group overflow-hidden rounded-[22px] border border-white/5 bg-white/[0.02] transition-all hover:border-white/15 hover:bg-white/[0.04]"
-                  >
-                    {post.imageUrl && (
-                      <div className="h-36 w-full overflow-hidden">
-                        <img
-                          src={post.imageUrl.split('|')[0]}
-                          alt={post.title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                    )}
-                    <div className="p-4">
-                      {post.category && s && (
-                        <div className={`mb-2 inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${s.color} ${s.border} ${s.bg}`}>
-                          <Icon className="h-2.5 w-2.5" />{post.category}
-                        </div>
-                      )}
-                      <h3 className="mb-1 text-sm font-black leading-tight text-white line-clamp-2 group-hover:text-cyan-300 transition-colors">
-                        {post.title}
-                      </h3>
-                      <div className="text-[10px] font-bold text-slate-600">{formatDate(post.date)}</div>
-                    </div>
-                  </a>
-                )
-              })}
-            </div>
-          )}
         </motion.div>
 
         {/* ===== CHAMPIONS WALL ===== */}
