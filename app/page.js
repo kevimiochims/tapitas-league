@@ -2543,27 +2543,103 @@ export default function TapitasLeagueHomepage() {
               {!selectedRivalry ? (
                 <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-[20px] border border-white/5 bg-white/[0.02] py-10 text-center">
                   <Swords className="h-7 w-7 text-slate-700" />
-                  <p className="text-xs font-bold text-slate-600">Selecione dois times para ver o histórico</p>
+                  <p className="text-xs font-bold text-slate-600">
+                    Selecione dois times para ver o histórico
+                  </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    [Target, 'Record', selectedRivalry.record],
-                    [Trophy, 'Playoffs', selectedRivalry.playoffRecord],
-                    [Activity, 'Avg Margin', `${selectedRivalry.avgMargin} ppg`],
-                    [Stars, `Último Jogo${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
-                    [Radar, 'Current Streak', selectedRivalry.streak],
-                    [Flame, 'Rivalry Heat', selectedRivalry.heat],
-                  ].map(([Icon, label, value]) => (
-                    <div key={label} className="group relative overflow-hidden rounded-[20px] border border-white/8 bg-white/[0.03] p-3 transition-all hover:border-white/15 hover:bg-white/[0.05]">
-                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
-                        <Icon className="h-3.5 w-3.5 text-red-300" />
+                <>
+                  {/* HERO */}
+                  <div className="mb-5 rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                    <div className="flex items-center justify-center gap-4">
+
+                      <div className="flex flex-col items-center">
+                        <img
+                          src={getTeamAvatar(selectedTeamA)}
+                          alt=""
+                          className="h-16 w-16 rounded-2xl object-cover border border-white/10"
+                        />
+                        <div className="mt-2 text-xs font-black text-center">
+                          {getShortTeamName(selectedTeamA)}
+                        </div>
                       </div>
-                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</div>
-                      <div className="font-black leading-none text-white" style={{ fontSize: 'clamp(13px, 3vw, 22px)' }}>{value}</div>
+
+                      <div className="flex flex-col items-center">
+                        <div className="text-red-400 font-black text-xs uppercase tracking-widest">
+                          VS
+                        </div>
+
+                        <div
+                          className="font-black text-white leading-none mt-1"
+                          style={{ fontSize: 'clamp(28px,5vw,48px)' }}
+                        >
+                          {selectedRivalry.record}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-center">
+                        <img
+                          src={getTeamAvatar(selectedTeamB)}
+                          alt=""
+                          className="h-16 w-16 rounded-2xl object-cover border border-white/10"
+                        />
+                        <div className="mt-2 text-xs font-black text-center">
+                          {getShortTeamName(selectedTeamB)}
+                        </div>
+                      </div>
+
                     </div>
-                  ))}
-                </div>
+
+                    {/* Heat */}
+                    <div className="mt-5">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          Rivalry Heat
+                        </span>
+
+                        <span className="text-sm font-black text-red-300">
+                          {selectedRivalry.heat}
+                        </span>
+                      </div>
+
+                      <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500"
+                          style={{
+                            width: `${Math.min(selectedRivalry.heat, 100)}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STATS */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      [Trophy, 'Playoffs', selectedRivalry.playoffRecord],
+                      [Activity, 'Avg Margin', `${selectedRivalry.avgMargin} ppg`],
+                      [Stars, 'Last Meeting', selectedRivalry.lastMeeting.score],
+                      [Radar, 'Current Streak', selectedRivalry.streak],
+                    ].map(([Icon, label, value]) => (
+                      <div
+                        key={label}
+                        className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3"
+                      >
+                        <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
+                          <Icon className="h-3.5 w-3.5 text-red-300" />
+                        </div>
+
+                        <div className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">
+                          {label}
+                        </div>
+
+                        <div className="mt-1 text-lg font-black text-white">
+                          {value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </motion.div>
           </div>
