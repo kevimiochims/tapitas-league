@@ -456,7 +456,6 @@ export default function TeamsPage() {
                       <div className="absolute right-4 top-4 text-lg">🏆</div>
                     )}
                     <div className="absolute right-4 top-4 flex gap-1 text-lg">
-                      {titles >= 1 && '🏆'.repeat(Math.min(titles, 3))}
                       {unicornCount >= 1 && '🦄'.repeat(Math.min(unicornCount, 3))}
                     </div>
                     <div className="flex items-center gap-3 mb-4">
