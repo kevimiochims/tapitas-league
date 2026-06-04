@@ -2146,9 +2146,9 @@ export default function TapitasLeagueHomepage() {
                   <Icon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="mb-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
+                  <div className="mb-0.5 text-sm font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
                   <div className={`text-2xl font-black leading-none ${c.val}`}>{value}</div>
-                  <div className="mt-0.5 truncate text-[10px] font-bold text-slate-600">{sub}</div>
+                  <div className="mt-0.5 truncate text-base font-bold text-slate-600">{sub}</div>
                 </div>
               </div>
             )
@@ -2193,8 +2193,8 @@ export default function TapitasLeagueHomepage() {
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Power Rankings</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
+                  <div className="text-sm font-black uppercase tracking-[0.25em] text-emerald-400">Power Rankings</div>
+                  <div className="text-base text-slate-400">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
                 </div>
               </div>
               <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2243,8 +2243,8 @@ export default function TapitasLeagueHomepage() {
                   <BarChart2 className="h-4 w-4 text-cyan-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Temporada ${currentSeason}` : 'Carregando...'}</div>
+                  <div className="text-sm font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
+                  <div className="text-base text-slate-400">{currentSeason ? `Temporada ${currentSeason}` : 'Carregando...'}</div>
                 </div>
               </div>
               <a href="/standings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2300,8 +2300,8 @@ export default function TapitasLeagueHomepage() {
                 <Newspaper className="h-4 w-4 text-yellow-400" />
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">Portal da Liga</div>
-                <div className="text-xs text-slate-500">Memes, recaps e notícias</div>
+                <div className="text-sm font-black uppercase tracking-[0.3em] text-yellow-400">Portal da Liga</div>
+                <div className="text-base text-slate-400">Memes, recaps e notícias</div>
               </div>
             </div>
             <a href="/news" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2398,8 +2398,8 @@ export default function TapitasLeagueHomepage() {
                   <Zap className="h-4 w-4 text-yellow-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">Records</div>
-                  <div className="text-xs text-slate-500">Liga histórica</div>
+                  <div className="text-sm font-black uppercase tracking-[0.3em] text-yellow-400">Records</div>
+                  <div className="text-base text-slate-400">Liga histórica</div>
                 </div>
               </div>
               <a href="/records" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
