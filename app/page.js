@@ -369,23 +369,23 @@ function ChampionsWall({ champions }) {
 }
 
 const TEAM_AVATARS = {
-  'peytão da massa': '/images/peytao.jpg',
-  'peytao da massa': '/images/peytao.jpg',
-  'moneyball fc': '/images/Moneyball.png',
+  'peytão da massa': '/images/peytao.png',
+  'peytao da massa': '/images/peytao.png',
+  'moneyball fc': '/images/moneyball.png',
   'old brady bunch': '/images/oldbrady.png',
   'i am megatron': '/images/megatron.png',
-  'ocupa meu slot': '/images/ocupa.jpg',
-  'ocupa e resiste': '/images/ocupa.jpg',
+  'ocupa meu slot': '/images/ocupa.png',
+  'ocupa e resiste': '/images/ocupa.png',
   'green bay pequers': '/images/pequers.png',
   'pequers verde': '/images/pequers.png',
   'patrolão': '/images/patrolao.png',
   'patrolao': '/images/patrolao.png',
   'patrolao squad': '/images/patrolao.png',
-  'how much is the fish': '/images/howmuch.jpg',
+  'how much is the fish': '/images/howmuch.png',
   'settlers of rincão': '/images/rincao.png',
   'settlers of rincao': '/images/rincao.png',
   'rincao settlers': '/images/rincao.png',
-  'h-lera do mahl': '/images/HLera.jpg',
+  'h-lera do mahl': '/images/hLera.png',
 }
 
 function getTeamAvatar(name) {
@@ -2113,7 +2113,7 @@ export default function TapitasLeagueHomepage() {
       </section>
 
       {/* ===== Tudo entre o Hero e o Footer ===== */}
-      <section className="relative z-10 mx-auto max-w-[16100px] px-3 pb-12 pt-3">
+      <section className="relative z-10 mx-auto max-w-[16100px] px-3 pb-12">
 
         {/* ===== LEAGUE STATS — compact strip ===== */}
         <motion.div
@@ -2157,7 +2157,7 @@ export default function TapitasLeagueHomepage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="mb-5"
+          className="mt-5 mb-5"
         >
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
@@ -2350,9 +2350,6 @@ export default function TapitasLeagueHomepage() {
           {/* DRAFT CARD */}
           <div className="relative overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
             {/* bg image */}
-            <div className="absolute inset-0 opacity-10">
-              <img src="/images/draft.png" alt="" className="h-full w-full object-cover object-center" />
-            </div>
             <div className="absolute inset-0 bg-gradient-to-r from-[#020617] via-[#020617]/90 to-transparent" />
             <div className="relative z-10 p-5">
               <div className="mb-4 flex items-center justify-between">
