@@ -2366,7 +2366,7 @@ export default function TapitasLeagueHomepage() {
                     <div className="text-base text-slate-400">Every pick ever made</div>
                   </div>
                 </div>
-                <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-sm font-black uppercase tracking-wider text-slate-400 transition-all hover:text-white">
                   Abrir <ChevronRight className="h-3 w-3" />
                 </a>
               </div>
@@ -2402,7 +2402,7 @@ export default function TapitasLeagueHomepage() {
                   <div className="text-base text-slate-400">Liga histórica</div>
                 </div>
               </div>
-              <a href="/records" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+              <a href="/records" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-sm font-black uppercase tracking-wider text-slate-400 transition-all hover:text-white">
                 Abrir <ChevronRight className="h-3 w-3" />
               </a>
             </div>
@@ -2525,11 +2525,11 @@ export default function TapitasLeagueHomepage() {
                     <Swords className="h-4 w-4 text-red-400" />
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
-                    <div className="text-xs text-slate-500">The league's fiercest matchup.</div>
+                    <div className="text-sm font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
+                    <div className="text-base text-slate-400">The league's fiercest matchup.</div>
                   </div>
                 </div>
-                <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-sm font-black uppercase tracking-wider text-slate-400 transition-all hover:text-white">
                   All Rivalries <ChevronRight className="h-3 w-3" />
                 </a>
               </div>
@@ -2583,8 +2583,8 @@ export default function TapitasLeagueHomepage() {
                     <Medal className="h-4 w-4 text-cyan-300" />
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">Franchise Leaders</div>
-                    <div className="text-xs text-slate-500">League Rankings</div>
+                    <div className="text-sm font-black uppercase tracking-[0.25em] text-cyan-300">Franchise Leaders</div>
+                    <div className="text-base text-slate-400">League Rankings</div>
                   </div>
                 </div>
                 {standings.length > 5 && (
@@ -2593,7 +2593,7 @@ export default function TapitasLeagueHomepage() {
                       className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20">
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
-                    <span className="text-[10px] font-black text-slate-600">{standingsPage + 1}/{Math.ceil(standings.length / 5)}</span>
+                    <span className="text-sm font-black text-slate-600">{standingsPage + 1}/{Math.ceil(standings.length / 5)}</span>
                     <button onClick={() => setStandingsPage((p) => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))} disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
                       className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20">
                       <ChevronRight className="h-3.5 w-3.5" />
