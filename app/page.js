@@ -2428,12 +2428,17 @@ export default function TapitasLeagueHomepage() {
                   return getVal(b) - getVal(a)
                 })
                 const leader = sorted[0]
+
+                const leaders = sorted.filter(
+                  t => t.titles === leader.titles
+                )
+
                 const val = key === 'titles' ? leader?.titles
                   : key === 'wins' ? leader?.wins
-                  : key === 'pf' ? Math.round(leader?.pf || 0)
-                  : key === 'winPct' ? `${leader?.winPct}%`
-                  : key === 'playoffApps' ? leader?.playoffApps
-                  : leader?.finals
+                    : key === 'pf' ? Math.round(leader?.pf || 0)
+                      : key === 'winPct' ? `${leader?.winPct}%`
+                        : key === 'playoffApps' ? leader?.playoffApps
+                          : leader?.finals
                 const avatar = leader ? getTeamAvatar(leader.team) : null
                 const colors = { yellow: 'text-yellow-400 border-yellow-400/20 bg-yellow-400/[0.06]', emerald: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/[0.06]', orange: 'text-orange-400 border-orange-400/20 bg-orange-400/[0.06]', cyan: 'text-cyan-400 border-cyan-400/20 bg-cyan-400/[0.06]', purple: 'text-purple-400 border-purple-400/20 bg-purple-400/[0.06]', red: 'text-red-400 border-red-400/20 bg-red-400/[0.06]' }
                 return (
@@ -2447,7 +2452,12 @@ export default function TapitasLeagueHomepage() {
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="text-[9px] font-black uppercase tracking-wider opacity-70">{label}</div>
-                      <div className="truncate text-xs font-black">{getShortTeamName(leader?.team) || '—'}</div>
+                      <div className="truncate text-xs font-black">
+                        {leaders
+                          .slice(0, 2)
+                          .map(t => getShortTeamName(t.team))
+                          .join(' • ')}
+                      </div>
                     </div>
                     <span className="flex-shrink-0 text-lg font-black leading-none">{val ?? '—'}</span>
                   </a>
