@@ -170,22 +170,27 @@ export default function TeamsPage() {
             <div className="relative z-10 flex items-center gap-8 p-10 md:p-14">
               <TeamAvatar name={selected.team} size="xl" />
               <div className="flex-1">
-                {titles.length > 0 && (
-                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 px-3 py-1.5">
-                    <Trophy className="h-3.5 w-3.5 text-yellow-400" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">
-                      {titles.length}x Champion — {titles.map(t => t.Season).join(', ')}
-                    </span>
-                  </div>
-                )}
-                {unicorns.length > 0 && (
-                  <div className="mb-3 ml-2 inline-flex items-center gap-1.5 rounded-2xl border border-pink-400/20 bg-pink-400/10 px-3 py-1.5">
-                    <span>🦄</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-pink-300">
-                      {unicorns.length}x Unicorn — {unicorns.map(u => u.Season).join(', ')}
-                    </span>
-                  </div>
-                )}
+                <div className="mt-4 flex flex-wrap gap-3">
+
+                  {titles.length > 0 && (
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 px-4 py-2">
+                      <Trophy className="h-4 w-4 text-yellow-400" />
+                      <span className="text-sm font-black tracking-wide text-yellow-400">
+                        {titles.length}X CHAMPION — {titles.map(t => t.Season).join(', ')}
+                      </span>
+                    </div>
+                  )}
+
+                  {unicorns.length > 0 && (
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-pink-400/20 bg-pink-400/10 px-4 py-2">
+                      <span>🦄</span>
+                      <span className="text-sm font-black tracking-wide text-pink-300">
+                        {unicorns.length}X UNICORN — {unicorns.map(u => u.Season).join(', ')}
+                      </span>
+                    </div>
+                  )}
+
+                </div>
                 <h1 className="mb-2 leading-none font-black text-white"
                   style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px, 6vw, 80px)' }}>
                   {selected.team}
