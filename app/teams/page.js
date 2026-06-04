@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight } from 'lucide-react'
+import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull } from 'lucide-react'
 import Header from '../components/Header'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -212,9 +212,9 @@ export default function TeamsPage() {
               [Activity, 'Playoff Apps', parseNumber(selected['Playoff Apps']), 'appearances', 'cyan'],
               [TrendingUp, 'Playoff Wins', parseNumber(selected.PO_W), `${poWinPct} rate`, 'emerald'],
               [Target, 'RS Wins', parseNumber(selected.RS_W), `${parseNumber(selected.RS_L)} losses`, 'cyan'],
-              [Activity, 'RS Losses', Math.round(parseNumber(selected.RS_L)).toLocaleString(), 'reg season', 'slate'],
+              [TrendingDown, 'RS Losses', parseNumber(selected.RS_L), 'regular season', 'red']
               [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), 'all-time', 'orange'],  
-              [Trophy, 'Unicorns', unicorns.length, unicorns.length ? unicorns.map(u => u.Season).join(', ') : 'never', 'purple']
+              [Skull, 'Unicorns', unicorns.length, unicorns.length ? unicorns.map(u => u.Season).join(', ') : 'never', 'purple']
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
                 gold: 'border-yellow-400/20 bg-yellow-400/5 text-yellow-400',
@@ -223,6 +223,8 @@ export default function TeamsPage() {
                 emerald: 'border-emerald-400/20 bg-emerald-400/5 text-emerald-400',
                 orange: 'border-orange-400/20 bg-orange-400/5 text-orange-400',
                 slate: 'border-white/10 bg-white/[0.03] text-slate-300',
+                red: 'border-red-400/20 bg-red-400/5 text-red-400',
+                pink: 'border-pink-400/20 bg-pink-400/5 text-pink-300',
               }
               return (
                 <div key={label} className={`rounded-[20px] border p-4 ${colors[accent]}`}>
