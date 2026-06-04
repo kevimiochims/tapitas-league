@@ -2197,7 +2197,7 @@ export default function TapitasLeagueHomepage() {
                   <div className="text-base text-slate-400">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
                 </div>
               </div>
-              <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+              <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-sm font-black uppercase tracking-wider text-slate-400 transition-all hover:text-white">
                 Ver tudo <ChevronRight className="h-3 w-3" />
               </a>
             </div>
@@ -2247,7 +2247,7 @@ export default function TapitasLeagueHomepage() {
                   <div className="text-base text-slate-400">{currentSeason ? `Temporada ${currentSeason}` : 'Carregando...'}</div>
                 </div>
               </div>
-              <a href="/standings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+              <a href="/standings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-sm font-black uppercase tracking-wider text-slate-400 transition-all hover:text-white">
                 Ver tudo <ChevronRight className="h-3 w-3" />
               </a>
             </div>
@@ -2304,7 +2304,7 @@ export default function TapitasLeagueHomepage() {
                 <div className="text-base text-slate-400">Memes, recaps e notícias</div>
               </div>
             </div>
-            <a href="/news" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+            <a href="/news" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-sm font-black uppercase tracking-wider text-slate-400 transition-all hover:text-white">
               Ver tudo <ChevronRight className="h-3 w-3" />
             </a>
           </div>
@@ -2525,7 +2525,7 @@ export default function TapitasLeagueHomepage() {
                     <Swords className="h-4 w-4 text-red-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
+                    <div className="text-sm font-black uppercase tracking-[0.3em] text-red-400">Rivalry Spotlight</div>
                     <div className="text-base text-slate-400">The league's fiercest matchup.</div>
                   </div>
                 </div>
@@ -2583,7 +2583,7 @@ export default function TapitasLeagueHomepage() {
                     <Medal className="h-4 w-4 text-cyan-300" />
                   </div>
                   <div>
-                    <div className="text-sm font-black uppercase tracking-[0.25em] text-cyan-300">Franchise Leaders</div>
+                    <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Franchise Leaders</div>
                     <div className="text-base text-slate-400">League Rankings</div>
                   </div>
                 </div>
