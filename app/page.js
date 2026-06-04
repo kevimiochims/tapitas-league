@@ -2435,20 +2435,46 @@ export default function TapitasLeagueHomepage() {
                   t => getVal(t) === getVal(leader)
                 )
 
+                const hasTie = tiedLeaders.length > 1
+
+                const avatars = tiedLeaders
+                  .slice(0, 2)
+                  .map(t => getTeamAvatar(t.team))
+                  .filter(Boolean)
+
+                const avatar = leader ? getTeamAvatar(leader.team) : null
+
                 const val = key === 'titles' ? leader?.titles
                   : key === 'wins' ? leader?.wins
                     : key === 'pf' ? Math.round(leader?.pf || 0)
                       : key === 'winPct' ? `${leader?.winPct}%`
                         : key === 'playoffApps' ? leader?.playoffApps
                           : leader?.finals
-                const avatar = leader ? getTeamAvatar(leader.team) : null
                 const colors = { yellow: 'text-yellow-400 border-yellow-400/20 bg-yellow-400/[0.06]', emerald: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/[0.06]', orange: 'text-orange-400 border-orange-400/20 bg-orange-400/[0.06]', cyan: 'text-cyan-400 border-cyan-400/20 bg-cyan-400/[0.06]', purple: 'text-purple-400 border-purple-400/20 bg-purple-400/[0.06]', red: 'text-red-400 border-red-400/20 bg-red-400/[0.06]' }
                 return (
                   <a key={label} href={`/records`}
                     className={`flex items-center gap-2 rounded-[16px] border px-3 py-2.5 transition-all hover:brightness-125 ${colors[color]}`}
                   >
-                    {avatar ? (
-                      <img src={avatar} alt={leader?.team} className="h-7 w-7 rounded-xl object-cover flex-shrink-0" />
+                    {hasTie ? (
+                      <div className="relative h-7 w-9 flex-shrink-0">
+                        <img
+                          src={avatars[0]}
+                          alt=""
+                          className="absolute left-0 top-0 h-7 w-7 rounded-xl object-cover border border-white/20"
+                        />
+
+                        <img
+                          src={avatars[1]}
+                          alt=""
+                          className="absolute left-5 top-0 h-7 w-7 rounded-xl object-cover border border-white/20"
+                        />
+                      </div>
+                    ) : avatar ? (
+                      <img
+                        src={avatar}
+                        alt={leader?.team}
+                        className="h-7 w-7 rounded-xl object-cover flex-shrink-0"
+                      />
                     ) : (
                       <span className="text-base">{emoji}</span>
                     )}
