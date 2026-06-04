@@ -2415,21 +2415,24 @@ export default function TapitasLeagueHomepage() {
                 { emoji: '🏅', label: 'Playoff Apps', key: 'playoffApps', color: 'purple' },
                 { emoji: '⚔️', label: 'Finals Apps', key: 'finals', color: 'red' },
               ].map(({ emoji, label, key, color }) => {
-                const sorted = [...standings].sort((a, b) => {
-                  const getVal = (t) => {
-                    if (key === 'titles') return t.titles
-                    if (key === 'wins') return t.wins
-                    if (key === 'pf') return t.pf
-                    if (key === 'winPct') return t.winPct
-                    if (key === 'playoffApps') return t.playoffApps
-                    if (key === 'finals') return t.finals
-                    return 0
-                  }
-                  return getVal(b) - getVal(a)
-                })
+                const getVal = (t) => {
+                  if (key === 'titles') return t.titles
+                  if (key === 'wins') return t.wins
+                  if (key === 'pf') return t.pf
+                  if (key === 'winPct') return t.winPct
+                  if (key === 'playoffApps') return t.playoffApps
+                  if (key === 'finals') return t.finals
+                  return 0
+                }
+
+                const sorted = [...standings].sort(
+                  (a, b) => getVal(b) - getVal(a)
+                )
+
                 const leader = sorted[0]
-                const leaders = sorted.filter(
-                  t => t.titles === leader.titles
+
+                const tiedLeaders = sorted.filter(
+                  t => getVal(t) === getVal(leader)
                 )
 
                 const val = key === 'titles' ? leader?.titles
@@ -2452,7 +2455,7 @@ export default function TapitasLeagueHomepage() {
                     <div className="min-w-0 flex-1">
                       <div className="text-[9px] font-black uppercase tracking-wider opacity-70">{label}</div>
                       <div className="truncate text-xs font-black">
-                        {leaders
+                        {tiedLeaders
                           .map(t => getShortTeamName(t.team))
                           .join(' • ')}
                       </div>
