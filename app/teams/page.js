@@ -8,16 +8,16 @@ const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
 const TEAM_IMAGES = {
-  'howmuch':         '/images/howmuch.png',
-  'i am megatron':   '/images/megatron.png',
-  'moneyball':       '/images/moneyball.png',
+  'howmuch': '/images/howmuch.png',
+  'i am megatron': '/images/megatron.png',
+  'moneyball': '/images/moneyball.png',
   'ocupa e resiste': '/images/ocupa.png',
-  'oldbrady':        '/images/oldbrady.png',
-  'patrolao squad':  '/images/patrolao.png',
-  'pequers verde':   '/images/pequers.png',
+  'oldbrady': '/images/oldbrady.png',
+  'patrolao squad': '/images/patrolao.png',
+  'pequers verde': '/images/pequers.png',
   'peytao da massa': '/images/peytao.png',
   'rincao settlers': '/images/rincao.png',
-  'h-lera do mahl':  '/images/hlera.png',
+  'h-lera do mahl': '/images/hlera.png',
 }
 
 function getTeamImage(name) {
@@ -65,10 +65,10 @@ function TeamAvatar({ name, size = 'md' }) {
 }
 
 export default function TeamsPage() {
-  const [allTime,  setAllTime]  = useState([])
-  const [history,  setHistory]  = useState([])
-  const [h2hData,  setH2hData]  = useState([])
-  const [loading,  setLoading]  = useState(true)
+  const [allTime, setAllTime] = useState([])
+  const [history, setHistory] = useState([])
+  const [h2hData, setH2hData] = useState([])
+  const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
@@ -110,10 +110,10 @@ export default function TeamsPage() {
       const isA = String(r?.['Team A'] || '').trim() === teamName
       return {
         opponent: isA ? String(r?.['Team B'] || '').trim() : String(r?.['Team A'] || '').trim(),
-        wins:     isA ? parseNumber(r?.['A Wins']) : parseNumber(r?.['B Wins']),
-        losses:   isA ? parseNumber(r?.['B Wins']) : parseNumber(r?.['A Wins']),
-        games:    parseNumber(r?.Games),
-        streak:   String(r?.['Current Streak'] || ''),
+        wins: isA ? parseNumber(r?.['A Wins']) : parseNumber(r?.['B Wins']),
+        losses: isA ? parseNumber(r?.['B Wins']) : parseNumber(r?.['A Wins']),
+        games: parseNumber(r?.Games),
+        streak: String(r?.['Current Streak'] || ''),
       }
     }).sort((a, b) => b.games - a.games)
   }
@@ -122,6 +122,17 @@ export default function TeamsPage() {
     const teamH = getTeamHistory(selected.team)
     const teamH2H = getTeamH2H(selected.team)
     const titles = teamH.filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE')
+    const unicorns = teamH.filter(r => {
+      const seasonRows = history.filter(
+        h => String(h.Season) === String(r.Season)
+      )
+
+      const maxStanding = Math.max(
+        ...seasonRows.map(s => Number(s.Standing) || 0)
+      )
+
+      return Number(r.Standing) === maxStanding
+    })
     const bestSeason = [...teamH].sort((a, b) => parseNumber(b.RS_W) - parseNumber(a.RS_W))[0]
     const worstSeason = [...teamH].sort((a, b) => parseNumber(a.RS_W) - parseNumber(b.RS_W))[0]
     const winPct = String(selected?.['W%'] || '').trim()
@@ -131,9 +142,9 @@ export default function TeamsPage() {
       <main className="min-h-screen bg-[#020617] text-white">
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
-        <Header/>
+        <Header />
 
-        
+
         <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
           <button onClick={() => setSelected(null)}
             className="mb-8 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-slate-400 hover:text-white transition-all">
@@ -145,12 +156,12 @@ export default function TeamsPage() {
             <div className="absolute inset-0 overflow-hidden">
               <svg width="100%" height="100%" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <g opacity="0.08">
-                  {[400,475,550,625,700,775].map((x,i)=>(
-                    <rect key={i} x={x} y="-60" width={i%2===0?50:20} height="400" fill="#22d3ee" transform={`rotate(-18 ${x+25} 130)`}/>
+                  {[400, 475, 550, 625, 700, 775].map((x, i) => (
+                    <rect key={i} x={x} y="-60" width={i % 2 === 0 ? 50 : 20} height="400" fill="#22d3ee" transform={`rotate(-18 ${x + 25} 130)`} />
                   ))}
                 </g>
                 <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
-                  {[25,45,65].map(r=><circle key={r} cx="850" cy="50" r={r}/>)}
+                  {[25, 45, 65].map(r => <circle key={r} cx="850" cy="50" r={r} />)}
                 </g>
               </svg>
               <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #08111f 30%, rgba(8,17,31,0.8) 55%, rgba(8,17,31,0.2) 100%)' }} />
@@ -164,6 +175,14 @@ export default function TeamsPage() {
                     <Trophy className="h-3.5 w-3.5 text-yellow-400" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">
                       {titles.length}x Champion — {titles.map(t => t.Season).join(', ')}
+                    </span>
+                  </div>
+                )}
+                {unicorns.length > 0 && (
+                  <div className="mb-3 ml-2 inline-flex items-center gap-1.5 rounded-2xl border border-pink-400/20 bg-pink-400/10 px-3 py-1.5">
+                    <span>🦄</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-pink-300">
+                      {unicorns.length}x Unicorn — {unicorns.map(u => u.Season).join(', ')}
                     </span>
                   </div>
                 )}
@@ -185,22 +204,22 @@ export default function TeamsPage() {
           {/* Stats Grid */}
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              [Trophy,       'Titles',          parseNumber(selected.Titles),                         'championships',    'gold'],
-              [Star,         'Finals Apps',      parseNumber(selected.Finals),                         'tapitas bowl',     'purple'],
-              [Activity,     'Playoff Apps',     parseNumber(selected['Playoff Apps']),                'appearances',      'cyan'],
-              [TrendingUp,   'Playoff Wins',     parseNumber(selected.PO_W),                           `${poWinPct} rate`, 'emerald'],
-              [Target,       'RS Wins',          parseNumber(selected.RS_W),                           `${parseNumber(selected.RS_L)} losses`, 'cyan'],
-              [Flame,        'Total Points',     Math.round(parseNumber(selected.PF)).toLocaleString(),'all-time',         'orange'],
-              [Activity,     'RS Points',        Math.round(parseNumber(selected.RS_PF)).toLocaleString(), 'reg season',  'slate'],
-              [Trophy,       'PO Points',        Math.round(parseNumber(selected.PO_PF)).toLocaleString(), 'playoffs',    'slate'],
+              [Trophy, 'Titles', parseNumber(selected.Titles), 'championships', 'gold'],
+              [Star, 'Finals Apps', parseNumber(selected.Finals), 'tapitas bowl', 'purple'],
+              [Activity, 'Playoff Apps', parseNumber(selected['Playoff Apps']), 'appearances', 'cyan'],
+              [TrendingUp, 'Playoff Wins', parseNumber(selected.PO_W), `${poWinPct} rate`, 'emerald'],
+              [Target, 'RS Wins', parseNumber(selected.RS_W), `${parseNumber(selected.RS_L)} losses`, 'cyan'],
+              [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), 'all-time', 'orange'],
+              [Activity, 'RS Points', Math.round(parseNumber(selected.RS_PF)).toLocaleString(), 'reg season', 'slate'],
+              [Trophy, 'PO Points', Math.round(parseNumber(selected.PO_PF)).toLocaleString(), 'playoffs', 'slate'],
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
-                gold:    'border-yellow-400/20 bg-yellow-400/5 text-yellow-400',
-                purple:  'border-purple-400/20 bg-purple-400/5 text-purple-400',
-                cyan:    'border-cyan-400/20 bg-cyan-400/5 text-cyan-400',
+                gold: 'border-yellow-400/20 bg-yellow-400/5 text-yellow-400',
+                purple: 'border-purple-400/20 bg-purple-400/5 text-purple-400',
+                cyan: 'border-cyan-400/20 bg-cyan-400/5 text-cyan-400',
                 emerald: 'border-emerald-400/20 bg-emerald-400/5 text-emerald-400',
-                orange:  'border-orange-400/20 bg-orange-400/5 text-orange-400',
-                slate:   'border-white/10 bg-white/[0.03] text-slate-300',
+                orange: 'border-orange-400/20 bg-orange-400/5 text-orange-400',
+                slate: 'border-white/10 bg-white/[0.03] text-slate-300',
               }
               return (
                 <div key={label} className={`rounded-[20px] border p-4 ${colors[accent]}`}>
@@ -234,16 +253,25 @@ export default function TeamsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/5">
-                      {['Season','RS','Overall','PF','Playoffs','Result'].map(h => (
+                      {['Season', 'RS', 'Overall', 'PF', 'Playoffs', 'Result'].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {teamH.map((r, i) => {
-                      const isChamp = String(r?.Champion||'').toUpperCase() === 'TRUE'
-                      const isFinal = String(r?.Reached_Final||'').toUpperCase() === 'TRUE'
-                      const isPlayoff = String(r?.Made_Playoffs||'').toUpperCase() === 'TRUE'
+                      const isChamp = String(r?.Champion || '').toUpperCase() === 'TRUE'
+                      const isFinal = String(r?.Reached_Final || '').toUpperCase() === 'TRUE'
+                      const isPlayoff = String(r?.Made_Playoffs || '').toUpperCase() === 'TRUE'
+                      const seasonRows = history.filter(
+                        h => String(h.Season) === String(r.Season)
+                      )
+
+                      const maxStanding = Math.max(
+                        ...seasonRows.map(s => Number(s.Standing) || 0)
+                      )
+
+                      const isUnicorn = Number(r.Standing) === maxStanding
                       return (
                         <tr key={i} className={`border-b border-white/[0.03] transition-colors hover:bg-white/[0.02] ${isChamp ? 'bg-yellow-400/[0.03]' : ''}`}>
                           <td className="px-4 py-3 text-sm font-black text-white">{r.Season}</td>
@@ -252,9 +280,10 @@ export default function TeamsPage() {
                           <td className="px-4 py-3 text-sm text-slate-400">{Math.round(parseNumber(r.RS_PF))}</td>
                           <td className="px-4 py-3">
                             {isChamp ? <span className="text-[9px] font-black text-yellow-400 border border-yellow-400/20 bg-yellow-400/10 rounded-lg px-2 py-0.5">🏆 Champion</span>
-                            : isFinal ? <span className="text-[9px] font-black text-purple-400 border border-purple-400/20 bg-purple-400/10 rounded-lg px-2 py-0.5">Final</span>
-                            : isPlayoff ? <span className="text-[9px] font-black text-cyan-400 border border-cyan-400/20 bg-cyan-400/10 rounded-lg px-2 py-0.5">Playoffs</span>
-                            : <span className="text-[9px] text-slate-600">—</span>}
+                              : isUnicorn ? <span className="text-[9px] font-black text-pink-400 border border-pink-400/20 bg-pink-400/10 rounded-lg px-2 py-0.5">🦄 Unicorn</span>
+                                : isFinal ? <span className="text-[9px] font-black text-purple-400 border border-purple-400/20 bg-purple-400/10 rounded-lg px-2 py-0.5">Final</span>
+                                  : isPlayoff ? <span className="text-[9px] font-black text-cyan-400 border border-cyan-400/20 bg-cyan-400/10 rounded-lg px-2 py-0.5">Playoffs</span>
+                                    : <span className="text-[9px] text-slate-600">—</span>}
                           </td>
                           <td className="px-4 py-3">
                             {parseNumber(r.Standing) > 0 && (
@@ -346,7 +375,7 @@ export default function TeamsPage() {
     <main className="min-h-screen bg-[#020617] text-white">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
-      <Header> 
+      <Header>
         <nav className="hidden items-center gap-1 md:flex">
           {['Home', 'Standings', 'Teams', 'Records', 'Rivalries'].map(item => {
             const href = item === 'Home' ? '/' : `/${item.toLowerCase()}`
@@ -366,16 +395,16 @@ export default function TeamsPage() {
           <div className="absolute inset-0 overflow-hidden rounded-[38px]">
             <svg width="100%" height="100%" viewBox="0 0 900 240" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <g opacity="0.09">
-                {[280,355,400,475,520,595,640,715,760,835].map((x,i)=>(
-                  <rect key={i} x={x} y="-60" width={i%2===0?55:22} height="380" fill="#22d3ee" transform={`rotate(-18 ${x+(i%2===0?27:11)} 120)`}/>
+                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
+                  <rect key={i} x={x} y="-60" width={i % 2 === 0 ? 55 : 22} height="380" fill="#22d3ee" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 120)`} />
                 ))}
               </g>
               <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
-                {["M380 -20 L460 80 L380 180 L300 80 Z","M540 -20 L620 80 L540 180 L460 80 Z","M700 -20 L780 80 L700 180 L620 80 Z","M860 -20 L940 80 L860 180 L780 80 Z"].map((d,i)=><path key={i} d={d}/>)}
+                {["M380 -20 L460 80 L380 180 L300 80 Z", "M540 -20 L620 80 L540 180 L460 80 Z", "M700 -20 L780 80 L700 180 L620 80 Z", "M860 -20 L940 80 L860 180 L780 80 Z"].map((d, i) => <path key={i} d={d} />)}
               </g>
               <g opacity="0.07" fill="#22d3ee">
-                <polygon points="900,0 900,110 790,0"/>
-                <polygon points="900,240 900,130 790,240"/>
+                <polygon points="900,0 900,110 790,0" />
+                <polygon points="900,240 900,130 790,240" />
               </g>
               <text x="820" y="230" fontFamily="'Bebas Neue',sans-serif" fontSize="240" fill="#22d3ee" opacity="0.025" textAnchor="middle">TMS</text>
             </svg>
@@ -400,22 +429,36 @@ export default function TeamsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {teams.map((team, i) => {
               const teamHistory = getTeamHistory(team.team)
-              const titles = teamHistory.filter(r => String(r?.Champion||'').toUpperCase() === 'TRUE').length
+              const titles = teamHistory.filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE').length
               const currentSeason = teamHistory[0]
               const winPct = String(team?.['W%'] || '').trim()
               const isChampion = titles > 0
+              const unicornCount = teamHistory.filter(r => {
+                const seasonRows = history.filter(
+                  h => String(h.Season) === String(r.Season)
+                )
+
+                const maxStanding = Math.max(
+                  ...seasonRows.map(s => Number(s.Standing) || 0)
+                )
+
+                return Number(r.Standing) === maxStanding
+              }).length
 
               return (
                 <button key={i} onClick={() => setSelected(team)}
-                  className={`overflow-hidden rounded-[28px] border text-left transition-all hover:scale-[1.02] ${
-                    isChampion ? 'border-yellow-400/20 hover:border-yellow-400/40' : 'border-white/5 hover:border-white/15'
-                  } bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]`}
+                  className={`overflow-hidden rounded-[28px] border text-left transition-all hover:scale-[1.02] ${isChampion ? 'border-yellow-400/20 hover:border-yellow-400/40' : 'border-white/5 hover:border-white/15'
+                    } bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]`}
                 >
                   {/* Card Header */}
                   <div className="relative p-5 pb-4">
                     {isChampion && (
                       <div className="absolute right-4 top-4 text-lg">🏆</div>
                     )}
+                    <div className="absolute right-4 top-4 flex gap-1 text-lg">
+                      {titles >= 1 && '🏆'.repeat(Math.min(titles, 3))}
+                      {unicornCount >= 1 && '🦄'.repeat(Math.min(unicornCount, 3))}
+                    </div>
                     <div className="flex items-center gap-3 mb-4">
                       <TeamAvatar name={team.team} size="md" />
                       <div className="min-w-0">
@@ -441,9 +484,9 @@ export default function TeamsPage() {
                     {/* Stats row */}
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       {[
-                        ['Titles',   titles || '—'],
-                        ['Finals',   parseNumber(team.Finals) || '—'],
-                        ['PO Apps',  parseNumber(team['Playoff Apps']) || '—'],
+                        ['Titles', titles || '—'],
+                        ['Finals', parseNumber(team.Finals) || '—'],
+                        ['PO Apps', parseNumber(team['Playoff Apps']) || '—'],
                       ].map(([label, value]) => (
                         <div key={label} className="rounded-xl border border-white/5 bg-white/[0.03] p-2 text-center">
                           <div className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-600">{label}</div>
@@ -460,8 +503,8 @@ export default function TeamsPage() {
                         </span>
                         <span className="text-xs font-black text-slate-400">
                           {parseNumber(currentSeason.RS_W)}–{parseNumber(currentSeason.RS_L)}
-                          {String(currentSeason?.Champion||'').toUpperCase() === 'TRUE' && ' 🏆'}
-                          {String(currentSeason?.Reached_Final||'').toUpperCase() === 'TRUE' && String(currentSeason?.Champion||'').toUpperCase() !== 'TRUE' && ' 🥈'}
+                          {String(currentSeason?.Champion || '').toUpperCase() === 'TRUE' && ' 🏆'}
+                          {String(currentSeason?.Reached_Final || '').toUpperCase() === 'TRUE' && String(currentSeason?.Champion || '').toUpperCase() !== 'TRUE' && ' 🥈'}
                         </span>
                       </div>
                     )}
