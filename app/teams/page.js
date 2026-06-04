@@ -215,8 +215,7 @@ export default function TeamsPage() {
               [TrendingUp, 'Playoff Wins', parseNumber(selected.PO_W), `${poWinPct} rate`, 'emerald'],
               [Target, 'RS Wins', parseNumber(selected.RS_W), `${parseNumber(selected.RS_L)} losses`, 'cyan'],
               [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), 'all-time', 'orange'],
-              [Activity, 'RS Points', Math.round(parseNumber(selected.RS_PF)).toLocaleString(), 'reg season', 'slate'],
-              [Trophy, 'PO Points', Math.round(parseNumber(selected.PO_PF)).toLocaleString(), 'playoffs', 'slate'],
+              [Trophy, 'Unicorns', unicorns.length, unicorns.length ? unicorns.map(u => u.Season).join(', ') : 'never', 'purple']
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
                 gold: 'border-yellow-400/20 bg-yellow-400/5 text-yellow-400',
