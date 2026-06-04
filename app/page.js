@@ -2456,7 +2456,7 @@ export default function TapitasLeagueHomepage() {
                     className={`flex items-center gap-2 rounded-[16px] border px-3 py-2.5 transition-all hover:brightness-125 ${colors[color]}`}
                   >
                     {hasTie ? (
-                      <div className="relative h-7 w-9 flex-shrink-0">
+                      <div className="relative h-7 w-12 flex-shrink-0">
                         <img
                           src={avatars[0]}
                           alt=""
