@@ -214,7 +214,7 @@ export default function TeamsPage() {
               [Target, 'RS Wins', parseNumber(selected.RS_W), `${parseNumber(selected.RS_L)} losses`, 'cyan'],
               [TrendingDown, 'RS Losses', parseNumber(selected.RS_L), 'regular season', 'red']
               [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), 'all-time', 'orange'],  
-              [Skull, 'Unicorns', unicorns.length, unicorns.length ? unicorns.map(u => u.Season).join(', ') : 'never', 'purple']
+              [Skull, 'Unicorns', unicorns.length, unicorns.length ? unicorns.map(u => u.Season).join(', ') : 'never', 'pink']
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
                 gold: 'border-yellow-400/20 bg-yellow-400/5 text-yellow-400',
