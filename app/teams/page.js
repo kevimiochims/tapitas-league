@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull } from 'lucide-react'
 import Header from '../components/Header'
 
@@ -70,6 +71,7 @@ export default function TeamsPage() {
   const [h2hData, setH2hData] = useState([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     async function load() {
@@ -82,6 +84,15 @@ export default function TeamsPage() {
       setHistory(hi)
       setH2hData(h2h)
       setLoading(false)
+
+      // Auto-select team from ?team= URL param
+      const teamParam = searchParams?.get('team')
+      if (teamParam) {
+        const match = at.find(r =>
+          String(r?.Team || '').trim().toLowerCase() === teamParam.toLowerCase()
+        )
+        if (match) setSelected({ ...match, team: String(match.Team || '').trim() })
+      }
     }
     load()
   }, [])

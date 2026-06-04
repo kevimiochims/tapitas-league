@@ -432,23 +432,16 @@ function ChampionsWallInline({ champions }) {
 }
 
 const TEAM_AVATARS = {
-  'peytão da massa': '/images/peytao.jpg',
-  'peytao da massa': '/images/peytao.jpg',
-  'moneyball fc': '/images/Moneyball.png',
-  'old brady bunch': '/images/oldbrady.png',
+  'howmuch': '/images/howmuch.png',
   'i am megatron': '/images/megatron.png',
-  'ocupa meu slot': '/images/ocupa.jpg',
-  'ocupa e resiste': '/images/ocupa.jpg',
-  'green bay pequers': '/images/pequers.png',
-  'pequers verde': '/images/pequers.png',
-  'patrolão': '/images/patrolao.png',
-  'patrolao': '/images/patrolao.png',
+  'moneyball': '/images/moneyball.png',
+  'ocupa e resiste': '/images/ocupa.png',
+  'oldbrady': '/images/oldbrady.png',
   'patrolao squad': '/images/patrolao.png',
-  'how much is the fish': '/images/howmuch.jpg',
-  'settlers of rincão': '/images/rincao.png',
-  'settlers of rincao': '/images/rincao.png',
+  'pequers verde': '/images/pequers.png',
+  'peytao da massa': '/images/peytao.png',
   'rincao settlers': '/images/rincao.png',
-  'h-lera do mahl': '/images/HLera.jpg',
+  'h-lera do mahl': '/images/hlera.png',
 }
 
 function getTeamAvatar(name) {
@@ -667,10 +660,9 @@ function formatDate(dateStr) {
 // Short display name for Records card — first meaningful word, not "I" or "The"
 function shortTeamName(name) {
   if (!name) return '—'
-  // Skip articles AND single-letter words (like "I")
-  const skip = new Set(['i', 'the', 'a', 'an', 'os', 'as', 'o', 'de', 'do', 'da'])
+  const skip = new Set(['i', 'the', 'a', 'an', 'os', 'as', 'o', 'a'])
   const words = name.split(' ').filter(Boolean)
-  const first = words.find(w => w.length > 1 && !skip.has(w.toLowerCase())) || words[0]
+  const first = words.find(w => !skip.has(w.toLowerCase())) || words[0]
   return first || name
 }
 
@@ -1137,7 +1129,7 @@ export default function TapitasLeagueHomepage() {
             }))
             .filter(r => r.player && r.player !== '')
             .sort((a, b) => a.pick - b.pick)
-          if (mounted) { setDraftPicks(picks.slice(0, 10)); setDraftSeason(lastDraftSeason) }
+          if (mounted) { setDraftPicks(picks.slice(0, 20)); setDraftSeason(lastDraftSeason) }
         }
       } catch (e) { console.error(e) }
       finally { if (mounted) setPrLoading(false) }
@@ -2458,7 +2450,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-pink-400">Last Draft</div>
-                  <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} · First 10 picks` : 'Carregando...'}</div>
+                  <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} · First 20 picks` : 'Carregando...'}</div>
                 </div>
               </div>
               <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2647,7 +2639,6 @@ export default function TapitasLeagueHomepage() {
             className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-[1.15]"
           >
             <div className="flex h-full flex-col p-5">
-              {/* Header */}
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
@@ -2655,7 +2646,7 @@ export default function TapitasLeagueHomepage() {
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
-                    <div className="text-xs text-slate-500">Head-to-head de todos os tempos</div>
+                    <div className="text-xs text-slate-500">The league's fiercest matchup.</div>
                   </div>
                 </div>
                 <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2663,88 +2654,35 @@ export default function TapitasLeagueHomepage() {
                 </a>
               </div>
 
-              {/* Team selectors */}
-              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-xs font-black text-red-400">vs</div>
-                <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Select a team..." />
+                <div className="flex-shrink-0 text-center text-sm font-black text-red-400">vs</div>
+                <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Select opponent..." disabled={!selectedTeamA} />
               </div>
 
               {!selectedRivalry ? (
-                /* Empty state */
-                <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-white/10 py-10 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.03]">
-                    <Swords className="h-5 w-5 text-slate-700" />
-                  </div>
-                  <p className="text-xs font-bold text-slate-600">Selecione dois times para ver o confronto</p>
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-[18px] border border-white/5 bg-white/[0.02] py-10 text-center">
+                  <Swords className="h-7 w-7 text-slate-700" />
+                  <p className="text-xs font-bold text-slate-600">Selecione dois times para ver o histórico</p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {/* VS Hero strip */}
-                  <div className="relative overflow-hidden rounded-[18px] border border-white/8 bg-[linear-gradient(135deg,rgba(239,68,68,0.06),rgba(2,6,23,0.8),rgba(239,68,68,0.06))] p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      {/* Team A */}
-                      <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-2">
-                        {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
-                          ? <img src={av} alt={selectedRivalry.teamA} className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10 transition-all group-hover:ring-red-400/40" />
-                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
-                        })()}
-                        <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
-                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
-                          {selectedRivalry.record.split('-')[0]}
-                        </span>
-                      </a>
-
-                      {/* Center divider */}
-                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Record</div>
-                        <div className="h-px w-8 bg-white/10" />
-                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">All-Time</div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {[
+                    [Target,   'Record',         selectedRivalry.record],
+                    [Trophy,   'Playoffs',        selectedRivalry.playoffRecord],
+                    [Activity, 'Avg Margin',      `${selectedRivalry.avgMargin} ppg`],
+                    [Stars,    `Último Jogo${selectedRivalry.lastMeeting.meta ? ` (${selectedRivalry.lastMeeting.meta})` : ''}`, selectedRivalry.lastMeeting.score],
+                    [Radar,    'Current Streak',  selectedRivalry.streak],
+                    [Flame,    'Rivalry Heat',    selectedRivalry.heat],
+                  ].map(([Icon, label, value]) => (
+                    <div key={label} className="flex flex-col gap-2 rounded-[18px] border border-white/8 bg-white/[0.03] p-3 transition-all hover:bg-white/[0.05]">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
+                        <Icon className="h-3.5 w-3.5 text-red-300" />
                       </div>
-
-                      {/* Team B */}
-                      <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-2">
-                        {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
-                          ? <img src={av} alt={selectedRivalry.teamB} className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10 transition-all group-hover:ring-red-400/40" />
-                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
-                        })()}
-                        <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
-                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
-                          {selectedRivalry.record.split('-')[1]}
-                        </span>
-                      </a>
+                      <div className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</div>
+                      <div className="font-black leading-none text-white" style={{ fontSize: 'clamp(13px, 2.5vw, 22px)' }}>{value}</div>
                     </div>
-
-                    {/* Heat badge */}
-                    <div className="mt-3 flex justify-center">
-                      <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[10px] font-black uppercase tracking-wider
-                        ${selectedRivalry.heat === 'Legendary' ? 'border-yellow-400/30 bg-yellow-400/10 text-yellow-400'
-                        : selectedRivalry.heat === 'Elite' ? 'border-orange-400/30 bg-orange-400/10 text-orange-400'
-                        : selectedRivalry.heat === 'High' ? 'border-red-400/30 bg-red-400/10 text-red-400'
-                        : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
-                        <Flame className="h-3 w-3" />
-                        {selectedRivalry.heat} Rivalry
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {[
-                      { icon: Trophy,   label: 'Playoffs',      value: selectedRivalry.playoffRecord },
-                      { icon: Activity, label: 'Avg Margin',    value: `${selectedRivalry.avgMargin} pts` },
-                      { icon: Stars,    label: 'Last Game',     value: selectedRivalry.lastMeeting.score },
-                      { icon: Radar,    label: 'Streak',        value: selectedRivalry.streak },
-                    ].map(({ icon: Icon, label, value }) => (
-                      <div key={label} className="flex flex-col gap-1.5 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Icon className="h-3 w-3 text-red-400/70" />
-                          <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</span>
-                        </div>
-                        <div className="text-sm font-black leading-tight text-white">{value}</div>
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
