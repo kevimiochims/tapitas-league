@@ -2362,8 +2362,8 @@ export default function TapitasLeagueHomepage() {
                     <ScrollText className="h-4 w-4 text-pink-400" />
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-pink-400">Draft History</div>
-                    <div className="text-xs text-slate-500">Every pick ever made</div>
+                    <div className="text-sm font-black uppercase tracking-[0.3em] text-pink-400">Draft History</div>
+                    <div className="text-base text-slate-400">Every pick ever made</div>
                   </div>
                 </div>
                 <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
