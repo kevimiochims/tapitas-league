@@ -2447,7 +2447,7 @@ export default function TapitasLeagueHomepage() {
                 const val = key === 'titles' ? leader?.titles
                   : key === 'wins' ? leader?.wins
                     : key === 'pf' ? Math.round(leader?.pf || 0)
-                      : key === 'winPct' ? `${leader?.winPct}%`
+                      : key === 'winPct' ? `${Math.round(leader?.winPct || 0)}%`
                         : key === 'playoffApps' ? leader?.playoffApps
                           : leader?.finals
                 const colors = { yellow: 'text-yellow-400 border-yellow-400/20 bg-yellow-400/[0.06]', emerald: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/[0.06]', orange: 'text-orange-400 border-orange-400/20 bg-orange-400/[0.06]', cyan: 'text-cyan-400 border-cyan-400/20 bg-cyan-400/[0.06]', purple: 'text-purple-400 border-purple-400/20 bg-purple-400/[0.06]', red: 'text-red-400 border-red-400/20 bg-red-400/[0.06]' }
