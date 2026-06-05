@@ -2680,7 +2680,7 @@ export default function TapitasLeagueHomepage() {
                       <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-2">
                         {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
                           ? <img src={av} alt={selectedRivalry.teamA} className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10 transition-all group-hover:ring-red-400/40" />
-                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-[10px] font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
+                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-lg font-black">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamA}</span>
                         <span className="text-lg font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
@@ -2699,7 +2699,7 @@ export default function TapitasLeagueHomepage() {
                       <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-2">
                         {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
                           ? <img src={av} alt={selectedRivalry.teamB} className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10 transition-all group-hover:ring-red-400/40" />
-                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-[10px] font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
+                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-lg font-black">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamB}</span>
                         <span className="text-lg font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
