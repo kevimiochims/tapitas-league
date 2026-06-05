@@ -2683,7 +2683,7 @@ export default function TapitasLeagueHomepage() {
                           : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-[10px] font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamA}</span>
-                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
+                        <span className="text-lg font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
                           {selectedRivalry.record.split('-')[0]}
                         </span>
                       </a>
@@ -2702,7 +2702,7 @@ export default function TapitasLeagueHomepage() {
                           : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-[10px] font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamB}</span>
-                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
+                        <span className="text-lg font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
                           {selectedRivalry.record.split('-')[1]}
                         </span>
                       </a>
@@ -2734,7 +2734,7 @@ export default function TapitasLeagueHomepage() {
                           <Icon className="h-3 w-3 text-red-400/70" />
                           <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</span>
                         </div>
-                        <div className="text-2xl font-black leading-tight text-white">{value}</div>
+                        <div className="text-xl font-black leading-tight text-white">{value}</div>
                       </div>
                     ))}
                   </div>
