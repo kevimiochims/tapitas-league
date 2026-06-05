@@ -2528,7 +2528,7 @@ export default function TapitasLeagueHomepage() {
                           const av = getTeamAvatar(t.team)
                           return (
                             <a key={t.team} href={`/teams?team=${encodeURIComponent(t.team)}`}
-                              className="flex items-center gap-1 rounded-lg border border-white/8 bg-white/[0.03] px-2 py-1 transition-all hover:bg-white/[0.06]">
+                              className="flex items-center gap-1 rounded-lg bg-white/[0.03] px-2 py-1 transition-all hover:bg-white/[0.06]">
                               {av
                                 ? <img src={av} alt={t.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" />
                                 : null
