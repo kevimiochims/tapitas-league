@@ -277,7 +277,7 @@ export default function TeamsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/5">
-                      {['Season', 'RS', 'Overall', 'PF', 'Playoffs', 'Result'].map(h => (
+                      {['Season', 'Reg Season', 'Overall', 'PF', 'Playoffs', 'Result'].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">{h}</th>
                       ))}
                     </tr>
@@ -303,8 +303,8 @@ export default function TeamsPage() {
                           <td className="px-4 py-3 text-sm text-slate-400">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
                           <td className="px-4 py-3 text-sm text-slate-400">{Math.round(parseNumber(r.RS_PF))}</td>
                           <td className="px-4 py-3">
-                            {isChamp ? <span className="text-[9px] font-black text-yellow-400 border border-yellow-400/20 bg-yellow-400/10 rounded-lg px-2 py-0.5">🏆 Champion</span>
-                              : isUnicorn ? <span className="text-[9px] font-black text-pink-400 border border-pink-400/20 bg-pink-400/10 rounded-lg px-2 py-0.5">🦄 Unicorn</span>
+                            {isChamp ? <span className="text-[9px] font-black text-yellow-400 border border-yellow-400/20 bg-yellow-400/10 rounded-lg px-2 py-0.5">🏆Champion</span>
+                              : isUnicorn ? <span className="text-[9px] font-black text-pink-400 border border-pink-400/20 bg-pink-400/10 rounded-lg px-2 py-0.5">🦄Unicorn</span>
                                 : isFinal ? <span className="text-[9px] font-black text-purple-400 border border-purple-400/20 bg-purple-400/10 rounded-lg px-2 py-0.5">Final</span>
                                   : isPlayoff ? <span className="text-[9px] font-black text-cyan-400 border border-cyan-400/20 bg-cyan-400/10 rounded-lg px-2 py-0.5">Playoffs</span>
                                     : <span className="text-[9px] text-slate-600">—</span>}
