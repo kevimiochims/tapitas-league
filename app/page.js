@@ -2789,7 +2789,7 @@ export default function TapitasLeagueHomepage() {
                   const keyMap = {
                     'W': t=>t.wins,'RS_W': t=>t.rsW,'PO_W': t=>t.poW,
                     'L': t=>t.losses,'RS_L': t=>t.rsL,'PO_L': t=>t.poL,
-                    'W%': t=>`${t.winPct}%`,'RS_W%': t=>`${t.rsWinPct}%`,'PO_W%': t=>`${t.poWinPct}%`,
+                    'W%': t=>`${Math.round(t.winPct)}%`,'RS_W%': t=>`${Math.round(t.rsWinPct)}%`,'PO_W%': t=>`${Math.round(t.poWinPct)}%`,
                     'PF': t=>Math.round(t.pf),'RS_PF': t=>Math.round(t.rsPF),'PO_PF': t=>Math.round(t.poPF),
                     'W Streak RS': t=>t.wStreakRS,'W Streak Total': t=>t.wStreakTotal,
                     'L Streak RS': t=>t.lStreakRS,'L Streak Total': t=>t.lStreakTotal,
@@ -2799,9 +2799,9 @@ export default function TapitasLeagueHomepage() {
                     'W':'Wins','RS_W':'Wins','PO_W':'Wins','L':'Losses','RS_L':'Losses','PO_L':'Losses',
                     'W%':'Win %','RS_W%':'Win %','PO_W%':'Win %',
                     'PF':'Points','RS_PF':'Points','PO_PF':'Points',
-                    'W Streak RS':'Win Streak','W Streak Total':'Win Streak',
-                    'L Streak RS':'Loss Streak','L Streak Total':'Loss Streak',
-                    'Playoff Apps':'Playoffs','Finals':'Finals','Titles':'Titles',
+                    'W Streak RS':'Games','W Streak Total':'Games',
+                    'L Streak RS':'Games','L Streak Total':'Games',
+                    'Playoff Apps':'Apps','Finals':'Finals','Titles':'Titles',
                   }
                   const displayValue = sub ? keyMap[sub.key]?.(team)??'—' : team.wins
                   const shortLabel   = sub ? shortLabelMap[sub.key]??sortCategory : sortCategory
