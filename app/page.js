@@ -2682,7 +2682,7 @@ export default function TapitasLeagueHomepage() {
                           ? <img src={av} alt={selectedRivalry.teamA} className="h-12 w-12 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
                           : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
                         })()}
-                        <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamA}</span>
+                        <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
                         <span className="text-lg font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
                           {selectedRivalry.record.split('-')[0]}
                         </span>
@@ -2701,7 +2701,7 @@ export default function TapitasLeagueHomepage() {
                           ? <img src={av} alt={selectedRivalry.teamB} className="h-12 w-12 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
                           : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
                         })()}
-                        <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamB}</span>
+                        <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
                         <span className="text-lg font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
                           {selectedRivalry.record.split('-')[1]}
                         </span>
