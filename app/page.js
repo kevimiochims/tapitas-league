@@ -2657,7 +2657,7 @@ export default function TapitasLeagueHomepage() {
               </div>
 
               {/* Team selectors */}
-              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm">
                 <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-xs font-black text-red-400">vs</div>
                 <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
