@@ -2679,7 +2679,7 @@ export default function TapitasLeagueHomepage() {
                       {/* Team A */}
                       <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-2">
                         {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
-                          ? <img src={av} alt={selectedRivalry.teamA} className="h-12 w-12 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
+                          ? <img src={av} alt={selectedRivalry.teamA} className="h-16 w-16 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
                           : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
@@ -2698,7 +2698,7 @@ export default function TapitasLeagueHomepage() {
                       {/* Team B */}
                       <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-2">
                         {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
-                          ? <img src={av} alt={selectedRivalry.teamB} className="h-12 w-12 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
+                          ? <img src={av} alt={selectedRivalry.teamB} className="h-16 w-16 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
                           : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
