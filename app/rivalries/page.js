@@ -223,8 +223,10 @@ function parseBiggestWin(value) {
     /\(\+?(\d+(?:\.\d+)?)\)/
   )
 
+  const seasonMatch = text.match(/\b(20\d{2})\b/)
+
   const weekMatch = text.match(
-    /(\d{4}\sW[\d/-]+)/
+    /(?:Week|W)\s*([\d/-]+)/i
   )
 
   return {
@@ -242,11 +244,12 @@ function parseBiggestWin(value) {
       ? marginMatch[1]
       : '0',
 
-    game: weekMatch
-      ? weekMatch[1].replace(
-        /W(\d+)/,
-        'Week $1'
-      )
+    season: seasonMatch
+      ? seasonMatch[1]
+      : '',
+
+    week: weekMatch
+      ? weekMatch[1]
       : ''
   }
 }
@@ -1034,11 +1037,11 @@ RENDER
                       <div className="mt-6 grid grid-cols-3 gap-3 border-t border-white/5 pt-5">
                         <div className="rounded-2xl bg-white/[0.03] p-3">
                           <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">Season</div>
-                          <div className="mt-2 text-lg font-black">{item.data?.game?.split(' ')[0]}</div>
+                          <div className="mt-2 text-lg font-black">{item.data?.season}</div>
                         </div>
                         <div className="rounded-2xl bg-white/[0.03] p-3">
                           <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">Week</div>
-                          <div className="mt-2 text-lg font-black">{item.data?.game?.match(/Week\s[\d/-]+/)?.[0]}</div>
+                          <div className="mt-2 text-lg font-black">{item.data?.week}</div>
                         </div>
                         <div className="rounded-2xl border border-green-400/20 bg-green-400/10 p-3">
                           <div className="text-[9px] uppercase tracking-[0.25em] text-green-200">Margin</div>
