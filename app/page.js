@@ -2658,9 +2658,9 @@ export default function TapitasLeagueHomepage() {
 
               {/* Team selectors */}
               <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-xs">
-                <TeamSelect value={shortTeamName(selectedTeamA)} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
+                <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-xs font-black text-red-400">vs</div>
-                <TeamSelect value={shortTeamName(selectedTeamB)} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
+                <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
               </div>
 
               {!selectedRivalry ? (
@@ -2683,7 +2683,7 @@ export default function TapitasLeagueHomepage() {
                           : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
-                        <span className="text-lg font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
+                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
                           {selectedRivalry.record.split('-')[0]}
                         </span>
                       </a>
@@ -2702,7 +2702,7 @@ export default function TapitasLeagueHomepage() {
                           : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
-                        <span className="text-lg font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
+                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
                           {selectedRivalry.record.split('-')[1]}
                         </span>
                       </a>
