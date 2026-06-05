@@ -2680,7 +2680,7 @@ export default function TapitasLeagueHomepage() {
                       <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-2">
                         {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
                           ? <img src={av} alt={selectedRivalry.teamA} className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10 transition-all group-hover:ring-red-400/40" />
-                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
+                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-[10px] font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamA}</span>
                         <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
@@ -2699,7 +2699,7 @@ export default function TapitasLeagueHomepage() {
                       <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-2">
                         {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
                           ? <img src={av} alt={selectedRivalry.teamB} className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10 transition-all group-hover:ring-red-400/40" />
-                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
+                          : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-[10px] font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
                         })()}
                         <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamB}</span>
                         <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
@@ -2732,9 +2732,9 @@ export default function TapitasLeagueHomepage() {
                       <div key={label} className="flex flex-col gap-1.5 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
                         <div className="flex items-center gap-1.5">
                           <Icon className="h-3 w-3 text-red-400/70" />
-                          <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</span>
                         </div>
-                        <div className="text-sm font-black leading-tight text-white">{value}</div>
+                        <div className="text-2xl font-black leading-tight text-white">{value}</div>
                       </div>
                     ))}
                   </div>
@@ -2815,7 +2815,7 @@ export default function TapitasLeagueHomepage() {
                       </div>
                       {avatar && <img src={avatar} alt={team.team} className="h-8 w-8 flex-shrink-0 rounded-xl object-cover" />}
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-black text-white group-hover:text-cyan-300 transition-colors">{team.team}</div>
+                        <div className="truncate text-xl font-black text-white group-hover:text-cyan-300 transition-colors">{team.team}</div>
                         {(sub?.key==='W Streak RS'||sub?.key==='W Streak Total'||sub?.key==='L Streak RS'||sub?.key==='L Streak Total') ? (() => {
                           const kl={'W Streak RS':'streakRS','W Streak Total':'streakTotal','L Streak RS':'lStreakRS','L Streak Total':'lStreakTotal'}
                           const si = streakMap[team.team]?.[kl[sub.key]]
@@ -2826,8 +2826,8 @@ export default function TapitasLeagueHomepage() {
                         )}
                       </div>
                       <div className="flex-shrink-0 text-right">
-                        <div className="font-black leading-none text-cyan-300" style={{ fontSize: 'clamp(18px,4vw,32px)' }}>{displayValue}</div>
-                        <div className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">{shortLabel}</div>
+                        <div className="font-black leading-none text-cyan-300" style={{ fontSize: 'clamp(24px,4vw,36px)' }}>{displayValue}</div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-600">{shortLabel}</div>
                       </div>
                     </a>
                   )
