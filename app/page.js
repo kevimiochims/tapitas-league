@@ -661,9 +661,9 @@ function formatDate(dateStr) {
 function shortTeamName(name) {
   if (!name) return '—'
   // Skip articles AND single-letter words (like "I")
-  const skip = new Set(['i', 'the', 'a', 'an', 'os', 'as', 'o', 'de', 'do', 'da'])
+  const skip = new Set(['i', 'the', 'a', 'an', 'am', 'os', 'as', 'o', 'de', 'do', 'da'])
   const words = name.split(' ').filter(Boolean)
-  const first = words.find(w => w.length > 1 && !skip.has(w.toLowerCase())) || words[0]
+  const first = words.find(w => w.length > 2 && !skip.has(w.toLowerCase())) || words[0]
   return first || name
 }
 
@@ -2245,7 +2245,7 @@ export default function TapitasLeagueHomepage() {
           {[
             { icon: Shield,   label: 'Franchises',   value: leagueStats.franchises, sub: 'All-time',                             color: 'cyan'    },
             { icon: Calendar, label: 'Seasons',       value: leagueStats.seasons,    sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple'  },
-            { icon: Radar,    label: 'Games Played',  value: leagueStats.games,      sub: 'All-time regular + playoffs',          color: 'emerald' },
+            { icon: Radar,    label: 'Games Played',  value: leagueStats.games,      sub: 'All-time',          color: 'emerald' },
             { icon: Flame,    label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam,         color: 'orange'  },
           ].map(({ icon: Icon, label, value, sub, color }) => {
             const c = {
@@ -2344,7 +2344,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Temporada ${currentSeason}` : 'Carregando...'}</div>
+                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason}` : 'Carregando...'}</div>
                 </div>
               </div>
               <a href="/standings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2395,8 +2395,8 @@ export default function TapitasLeagueHomepage() {
                 <Newspaper className="h-4 w-4 text-yellow-400" />
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">Portal da Liga</div>
-                <div className="text-xs text-slate-500">Memes, recaps e notícias</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">Newsletter</div>
+                <div className="text-xs text-slate-500">Memes, recaps and news</div>
               </div>
             </div>
             <a href="/news" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2500,7 +2500,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">All-Time Records</div>
-                  <div className="text-xs text-slate-500">Liga histórica</div>
+                  <div className="text-xs text-slate-500">Best of the best</div>
                 </div>
               </div>
               <a href="/records" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2533,7 +2533,7 @@ export default function TapitasLeagueHomepage() {
                                 ? <img src={av} alt={t.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" />
                                 : null
                               }
-                              <span className="text-[10px] font-black text-white truncate max-w-[80px]">{shortTeamName(t.team)}</span>
+                              <span className="text-[10px] font-black text-white truncate max-w-[80px]">{t.team}</span>
                             </a>
                           )
                         })}
@@ -2581,7 +2581,7 @@ export default function TapitasLeagueHomepage() {
                         ? <img src={avA} alt={m.team} className="h-10 w-10 rounded-xl object-cover" />
                         : <div className="h-10 w-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-[10px] font-black text-slate-400">{m.team.slice(0,2).toUpperCase()}</div>
                       }
-                      <span className="text-[10px] font-black text-white text-center leading-tight line-clamp-1 group-hover:text-cyan-300 transition-colors">{shortTeamName(m.team)}</span>
+                      <span className="text-[10px] font-black text-white text-center leading-tight line-clamp-1 group-hover:text-cyan-300 transition-colors">{m.team}</span>
                       <span className={`text-base font-black leading-none ${winA ? 'text-emerald-400' : 'text-slate-500'}`}>{m.score.toFixed(1)}</span>
                     </a>
                     {/* vs */}
@@ -2598,7 +2598,7 @@ export default function TapitasLeagueHomepage() {
                         ? <img src={avB} alt={m.opp} className="h-10 w-10 rounded-xl object-cover" />
                         : <div className="h-10 w-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-[10px] font-black text-slate-400">{m.opp.slice(0,2).toUpperCase()}</div>
                       }
-                      <span className="text-[10px] font-black text-white text-center leading-tight line-clamp-1 group-hover:text-cyan-300 transition-colors">{shortTeamName(m.opp)}</span>
+                      <span className="text-[10px] font-black text-white text-center leading-tight line-clamp-1 group-hover:text-cyan-300 transition-colors">{m.opp}</span>
                       <span className={`text-base font-black leading-none ${!winA ? 'text-emerald-400' : 'text-slate-500'}`}>{m.oppScore.toFixed(1)}</span>
                     </a>
                   </div>
@@ -2648,11 +2648,11 @@ export default function TapitasLeagueHomepage() {
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
-                    <div className="text-xs text-slate-500">Head-to-head de todos os tempos</div>
+                    <div className="text-xs text-slate-500">All-time H2H</div>
                   </div>
                 </div>
                 <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
-                  All Rivalries <ChevronRight className="h-3 w-3" />
+                  VER TUDO <ChevronRight className="h-3 w-3" />
                 </a>
               </div>
 
@@ -2682,7 +2682,7 @@ export default function TapitasLeagueHomepage() {
                           ? <img src={av} alt={selectedRivalry.teamA} className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10 transition-all group-hover:ring-red-400/40" />
                           : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
                         })()}
-                        <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
+                        <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamA}</span>
                         <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
                           {selectedRivalry.record.split('-')[0]}
                         </span>
@@ -2701,7 +2701,7 @@ export default function TapitasLeagueHomepage() {
                           ? <img src={av} alt={selectedRivalry.teamB} className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10 transition-all group-hover:ring-red-400/40" />
                           : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
                         })()}
-                        <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
+                        <span className="text-center text-[10px] font-black leading-tight text-white group-hover:text-red-300 transition-colors">{selectedRivalry.teamB}</span>
                         <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
                           {selectedRivalry.record.split('-')[1]}
                         </span>
