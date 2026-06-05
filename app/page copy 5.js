@@ -405,7 +405,7 @@ function ChampionsWallInline({ champions }) {
             </button>
             {isOpen && (
               <div className="border-t border-white/5 px-4 pb-4 pt-3">
-                <div className="mb-2 text-xs text-slate-400">{champ.wins}–{champ.losses} overall · {champ.playoffWins}–{champ.playoffLosses} playoffs · {Math.round(champ.pf)} pts</div>
+                <div className="mb-2 text-[10px] text-slate-400">{champ.wins}–{champ.losses} overall · {champ.playoffWins}–{champ.playoffLosses} playoffs · {Math.round(champ.pf)} pts</div>
                 <div className="grid grid-cols-3 gap-2">
                   {[regCol1, regCol2, champ.playoffGames].map((games, ci) => (
                     <div key={ci}>
@@ -695,38 +695,6 @@ const POS_COLORS = {
   TE:  'text-orange-400 border-orange-400/25 bg-orange-400/10',
   K:   'text-slate-400 border-slate-400/25 bg-slate-400/10',
   DEF: 'text-purple-400 border-purple-400/25 bg-purple-400/10',
-}
-
-function parseBiggestWin(value) {
-  if (!value || value === '—') return null
-  const text = String(value)
-  const scoreMatch = text.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
-  const marginMatch = text.match(/\(\+?(\d+(?:\.\d+)?)\)/)
-  const weekMatch = text.match(/(\d{4}\sW[\d/-]+)/)
-  return {
-    raw: text,
-    scoreA: scoreMatch ? scoreMatch[1] : '0',
-    scoreB: scoreMatch ? scoreMatch[2] : '0',
-    margin: marginMatch ? marginMatch[1] : '0',
-    game: weekMatch ? weekMatch[1].replace(/W(\d+)/, 'W$1') : '',
-  }
-}
-
-function parseBestStreak(value) {
-  if (!value || value === '—') return null
-  const text = String(value).trim()
-  const firstMatch = text.match(/^(.*?)\s([WL])([\d/-]+)/)
-  const rangeMatch = text.match(/\((.*?)\)/)
-  if (!firstMatch) return { raw: text }
-  let start = '', end = ''
-  if (rangeMatch) {
-    const parts = rangeMatch[1].split(/\s*(?:→|=>|⇒)\s*/)
-    if (parts.length >= 2) {
-      start = parts[0].trim().replace(/W\s*([\d/-]+)/i, 'W$1')
-      end = parts[1].trim().replace(/W\s*([\d/-]+)/i, 'W$1')
-    }
-  }
-  return { raw: text, team: firstMatch[1].trim(), result: firstMatch[2], count: firstMatch[3], start, end }
 }
 
 export default function TapitasLeagueHomepage() {
@@ -1329,8 +1297,6 @@ export default function TapitasLeagueHomepage() {
     return {
       teamA: selectedTeamA,
       teamB: selectedTeamB,
-      winsA,
-      winsB,
       record: `${winsA}-${winsB}`,
       playoffRecord: `${poWinsA}-${poWinsB}`,
       avgMargin,
@@ -1342,10 +1308,6 @@ export default function TapitasLeagueHomepage() {
           ? `W${weekMatch ? weekMatch[1] : '?'} • ${yearMatch ? yearMatch[1] : ''}`
           : '',
       },
-      biggestA: String(row['Biggest Win Team A'] || row['biggest_win_a'] || '—'),
-      biggestB: String(row['Biggest Win Team B'] || row['biggest_win_b'] || '—'),
-      bestStreakA: String(row['Best Streak Team A'] || row['best_streak_a'] || '—'),
-      bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || '—'),
     }
   }, [h2hData, selectedTeamA, selectedTeamB])
 
@@ -2318,7 +2280,7 @@ export default function TapitasLeagueHomepage() {
               <a key={label} href={href}
                 className={`group flex flex-col items-center gap-1.5 rounded-[18px] border ${border} ${bg} px-2 py-3 text-center transition-all hover:scale-[1.05] hover:brightness-125`}>
                 <Icon className={`h-4 w-4 ${color}`} />
-                <span className={`text-[10px] font-black uppercase tracking-[0.12em] ${color}`}>{label}</span>
+                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>{label}</span>
               </a>
             ))}
           </div>
@@ -2464,8 +2426,8 @@ export default function TapitasLeagueHomepage() {
                               <Icon className="h-2.5 w-2.5" />{post.category}
                             </div>
                           )}
-                          <h3 className="text-sm font-black leading-tight text-white line-clamp-2 group-hover:text-cyan-300 transition-colors">{post.title}</h3>
-                          <div className="mt-1 text-xs font-bold text-slate-600">{formatDate(post.date)}</div>
+                          <h3 className="text-xs font-black leading-tight text-white line-clamp-2 group-hover:text-cyan-300 transition-colors">{post.title}</h3>
+                          <div className="mt-1 text-[10px] font-bold text-slate-600">{formatDate(post.date)}</div>
                         </div>
                       </a>
                     )
@@ -2506,13 +2468,13 @@ export default function TapitasLeagueHomepage() {
                     return (
                       <div key={i}>
                         {isFirstRoundEnd && (
-                          <div className="px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 bg-white/[0.01]">
+                          <div className="px-4 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 bg-white/[0.01]">
                             Round {pick.round}
                           </div>
                         )}
                         <a href={`/teams?team=${encodeURIComponent(pick.team)}`}
                           className="flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-white/[0.03]">
-                          <span className="w-5 flex-shrink-0 text-center text-xs font-black text-slate-600">
+                          <span className="w-5 flex-shrink-0 text-center text-[11px] font-black text-slate-600">
                             {pick.pick}
                           </span>
                           {avatar
@@ -2560,7 +2522,7 @@ export default function TapitasLeagueHomepage() {
                   <div key={label} className="flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/[0.02]">
                     <span className="text-base flex-shrink-0">{emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 mb-1">{label}</div>
+                      <div className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500 mb-1">{label}</div>
                       <div className="flex flex-wrap gap-1">
                         {leaders.map(t => {
                           const av = getTeamAvatar(t.team)
@@ -2571,7 +2533,7 @@ export default function TapitasLeagueHomepage() {
                                 ? <img src={av} alt={t.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" />
                                 : null
                               }
-                              <span className="text-xs font-black text-white truncate max-w-[80px]">{t.team}</span>
+                              <span className="text-[10px] font-black text-white truncate max-w-[80px]">{t.team}</span>
                             </a>
                           )
                         })}
@@ -2619,15 +2581,15 @@ export default function TapitasLeagueHomepage() {
                         ? <img src={avA} alt={m.team} className="h-10 w-10 rounded-xl object-cover" />
                         : <div className="h-10 w-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-[10px] font-black text-slate-400">{m.team.slice(0,2).toUpperCase()}</div>
                       }
-                      <span className="text-xs font-black text-white text-center leading-tight line-clamp-1 group-hover:text-cyan-300 transition-colors">{m.team}</span>
+                      <span className="text-[10px] font-black text-white text-center leading-tight line-clamp-1 group-hover:text-cyan-300 transition-colors">{m.team}</span>
                       <span className={`text-base font-black leading-none ${winA ? 'text-emerald-400' : 'text-slate-500'}`}>{m.score.toFixed(1)}</span>
                     </a>
                     {/* vs */}
                     <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                      <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-600">vs</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">vs</span>
                       {winA
                         ? <span className="text-[9px] font-black text-emerald-400">W</span>
-                        : <span className="text-[10px] font-black text-red-400">L</span>
+                        : <span className="text-[9px] font-black text-red-400">L</span>
                       }
                     </div>
                     {/* Team B */}
@@ -2636,7 +2598,7 @@ export default function TapitasLeagueHomepage() {
                         ? <img src={avB} alt={m.opp} className="h-10 w-10 rounded-xl object-cover" />
                         : <div className="h-10 w-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-[10px] font-black text-slate-400">{m.opp.slice(0,2).toUpperCase()}</div>
                       }
-                      <span className="text-xs font-black text-white text-center leading-tight line-clamp-1 group-hover:text-cyan-300 transition-colors">{m.opp}</span>
+                      <span className="text-[10px] font-black text-white text-center leading-tight line-clamp-1 group-hover:text-cyan-300 transition-colors">{m.opp}</span>
                       <span className={`text-base font-black leading-none ${!winA ? 'text-emerald-400' : 'text-slate-500'}`}>{m.oppScore.toFixed(1)}</span>
                     </a>
                   </div>
@@ -2685,186 +2647,99 @@ export default function TapitasLeagueHomepage() {
                     <Swords className="h-4 w-4 text-red-400" />
                   </div>
                   <div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
                     <div className="text-xs text-slate-500">All-time H2H</div>
                   </div>
                 </div>
-                <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
                   VER TUDO <ChevronRight className="h-3 w-3" />
                 </a>
               </div>
 
               {/* Team selectors */}
-              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-xs">
                 <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-xs font-black text-red-400">vs</div>
                 <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
               </div>
 
               {!selectedRivalry ? (
+                /* Empty state */
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-white/10 py-10 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.03]">
                     <Swords className="h-5 w-5 text-slate-700" />
                   </div>
-                  <p className="text-sm font-bold text-slate-600">Selecione dois times para ver o confronto</p>
+                  <p className="text-xs font-bold text-slate-600">Selecione dois times para ver o confronto</p>
                 </div>
-              ) : (() => {
-                const bigA = parseBiggestWin(selectedRivalry.biggestA)
-                const bigB = parseBiggestWin(selectedRivalry.biggestB)
-                const strA = parseBestStreak(selectedRivalry.bestStreakA)
-                const strB = parseBestStreak(selectedRivalry.bestStreakB)
-                const wA = selectedRivalry.winsA
-                const wB = selectedRivalry.winsB
-                const aLeads = wA > wB, bLeads = wB > wA
-                return (
-                  <div className="flex flex-col gap-3">
-                    {/* VS Hero strip */}
-                    <div className="relative overflow-hidden rounded-[18px] border border-white/8 bg-[linear-gradient(135deg,rgba(239,68,68,0.06),rgba(2,6,23,0.8),rgba(239,68,68,0.06))] p-4">
-                      <div className="flex items-center justify-between gap-4">
-                        {/* Team A */}
-                        <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-2">
-                          {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
-                            ? <img src={av} alt={selectedRivalry.teamA} className="h-16 w-16 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/40" />
-                            : <div className="h-14 w-14 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-base font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
-                          })()}
-                          <span className="text-center text-sm font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
-                          <span className="text-4xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: aLeads ? '#4ade80' : bLeads ? '#f87171' : '#e2e8f0' }}>
-                            {wA}
-                          </span>
-                        </a>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {/* VS Hero strip */}
+                  <div className="relative overflow-hidden rounded-[18px] border border-white/8 bg-[linear-gradient(135deg,rgba(239,68,68,0.06),rgba(2,6,23,0.8),rgba(239,68,68,0.06))] p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Team A */}
+                      <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-2">
+                        {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
+                          ? <img src={av} alt={selectedRivalry.teamA} className="h-16 w-16 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
+                          : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
+                        })()}
+                        <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
+                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
+                          {selectedRivalry.record.split('-')[0]}
+                        </span>
+                      </a>
 
-                        {/* Center */}
-                        <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Record</div>
-                          <div className="h-px w-8 bg-white/10" />
-                          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">All-Time</div>
-                        </div>
-
-                        {/* Team B */}
-                        <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-2">
-                          {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
-                            ? <img src={av} alt={selectedRivalry.teamB} className="h-16 w-16 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/40" />
-                            : <div className="h-14 w-14 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-base font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
-                          })()}
-                          <span className="text-center text-sm font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
-                          <span className="text-4xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: bLeads ? '#4ade80' : aLeads ? '#f87171' : '#e2e8f0' }}>
-                            {wB}
-                          </span>
-                        </a>
+                      {/* Center divider */}
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Record</div>
+                        <div className="h-px w-8 bg-white/10" />
+                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">All-Time</div>
                       </div>
 
-                      {/* Heat badge */}
-                      <div className="mt-3 flex justify-center">
-                        <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[11px] font-black uppercase tracking-wider
-                          ${selectedRivalry.heat === 'Legendary' ? 'border-yellow-400/30 bg-yellow-400/10 text-yellow-400'
-                          : selectedRivalry.heat === 'Elite' ? 'border-orange-400/30 bg-orange-400/10 text-orange-400'
-                          : selectedRivalry.heat === 'High' ? 'border-red-400/30 bg-red-400/10 text-red-400'
-                          : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
-                          <Flame className="h-3 w-3" />
-                          {selectedRivalry.heat} Rivalry
-                        </div>
-                      </div>
+                      {/* Team B */}
+                      <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-2">
+                        {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
+                          ? <img src={av} alt={selectedRivalry.teamB} className="h-16 w-16 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
+                          : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
+                        })()}
+                        <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
+                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
+                          {selectedRivalry.record.split('-')[1]}
+                        </span>
+                      </a>
                     </div>
 
-                    {/* Stats grid — 2 cols, each col has Team A vs Team B info */}
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-
-                      {/* Playoffs + Avg Margin */}
-                      <div className="flex flex-col gap-2">
-                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Trophy className="h-3 w-3 text-red-400/70" />
-                            <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Playoffs</span>
-                          </div>
-                          <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
-                        </div>
-                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Activity className="h-3 w-3 text-red-400/70" />
-                            <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Avg Margin</span>
-                          </div>
-                          <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
-                        </div>
+                    {/* Heat badge */}
+                    <div className="mt-3 flex justify-center">
+                      <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[10px] font-black uppercase tracking-wider
+                        ${selectedRivalry.heat === 'Legendary' ? 'border-yellow-400/30 bg-yellow-400/10 text-yellow-400'
+                        : selectedRivalry.heat === 'Elite' ? 'border-orange-400/30 bg-orange-400/10 text-orange-400'
+                        : selectedRivalry.heat === 'High' ? 'border-red-400/30 bg-red-400/10 text-red-400'
+                        : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
+                        <Flame className="h-3 w-3" />
+                        {selectedRivalry.heat} Rivalry
                       </div>
-
-                      {/* Last Game + Current Streak */}
-                      <div className="flex flex-col gap-2">
-                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Stars className="h-3 w-3 text-red-400/70" />
-                            <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}</span>
-                          </div>
-                          <span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span>
-                        </div>
-                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Radar className="h-3 w-3 text-red-400/70" />
-                            <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Current Streak</span>
-                          </div>
-                          <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
-                        </div>
-                      </div>
-
-                      {/* Biggest Win A */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Flame className="h-3 w-3 text-red-400/70" />
-                          <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamA)}</span>
-                        </div>
-                        {bigA ? (
-                          <>
-                            <span className="text-base font-black text-white">{bigA.scoreA} – {bigA.scoreB} <span className="text-emerald-400">(+{bigA.margin})</span></span>
-                            {bigA.game && <span className="text-xs text-slate-500">{bigA.game}</span>}
-                          </>
-                        ) : <span className="text-sm text-slate-600">—</span>}
-                      </div>
-
-                      {/* Biggest Win B */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Flame className="h-3 w-3 text-red-400/70" />
-                          <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamB)}</span>
-                        </div>
-                        {bigB ? (
-                          <>
-                            <span className="text-base font-black text-white">{bigB.scoreA} – {bigB.scoreB} <span className="text-emerald-400">(+{bigB.margin})</span></span>
-                            {bigB.game && <span className="text-xs text-slate-500">{bigB.game}</span>}
-                          </>
-                        ) : <span className="text-sm text-slate-600">—</span>}
-                      </div>
-
-                      {/* Best Streak A */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <TrendingUp className="h-3 w-3 text-red-400/70" />
-                          <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamA)}</span>
-                        </div>
-                        {strA ? (
-                          <>
-                            <span className="text-base font-black text-white">{strA.result}{strA.count}</span>
-                            {strA.start && strA.end && <span className="text-xs text-slate-500">{strA.start} → {strA.end}</span>}
-                          </>
-                        ) : <span className="text-sm text-slate-600">—</span>}
-                      </div>
-
-                      {/* Best Streak B */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <TrendingUp className="h-3 w-3 text-red-400/70" />
-                          <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamB)}</span>
-                        </div>
-                        {strB ? (
-                          <>
-                            <span className="text-base font-black text-white">{strB.result}{strB.count}</span>
-                            {strB.start && strB.end && <span className="text-xs text-slate-500">{strB.start} → {strB.end}</span>}
-                          </>
-                        ) : <span className="text-sm text-slate-600">—</span>}
-                      </div>
-
                     </div>
                   </div>
-                )
-              })()}
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[
+                      { icon: Trophy,   label: 'Playoffs',      value: selectedRivalry.playoffRecord },
+                      { icon: Activity, label: 'Avg Margin',    value: `${selectedRivalry.avgMargin} pts` },
+                      { icon: Stars,    label: 'Last Game',     value: selectedRivalry.lastMeeting.score },
+                      { icon: Radar,    label: 'Streak',        value: selectedRivalry.streak },
+                    ].map(({ icon: Icon, label, value }) => (
+                      <div key={label} className="flex flex-col gap-1.5 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
+                        <div className="flex items-center gap-1.5">
+                          <Icon className="h-3 w-3 text-red-400/70" />
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</span>
+                        </div>
+                        <div className="text-xl font-black leading-tight text-white">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
 
