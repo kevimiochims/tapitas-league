@@ -74,7 +74,7 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
       <button
         onClick={() => !disabled && setOpen((p) => !p)}
         disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition-all duration-300 ${disabled
+        className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-[12px] font-bold transition-all duration-300 ${disabled
           ? 'cursor-not-allowed border-white/5 bg-white/[0.01] text-slate-600'
           : open
             ? 'border-cyan-400 bg-cyan-950/30 text-white shadow-[0_0_15px_rgba(34,211,238,0.15)]'
@@ -100,7 +100,7 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
                   onChange(opt)
                   setOpen(false)
                 }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all duration-200 hover:bg-white/[0.06] ${opt === value ? 'text-cyan-300 bg-cyan-500/[0.03]' : 'text-slate-300'
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-[12px] font-bold transition-all duration-200 hover:bg-white/[0.06] ${opt === value ? 'text-cyan-300 bg-cyan-500/[0.03]' : 'text-slate-300'
                   }`}
               >
                 {opt === value && (
