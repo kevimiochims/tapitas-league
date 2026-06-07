@@ -521,9 +521,9 @@ export default function RecordsPage() {
       }
     }
 
-    // Most games over 200 pts (single weeks only — all stages: reg, playoffs, consolation)
+    // Most games over 200 pts (single weeks only, reg season dedup)
     const over200 = {}
-    noDouble.forEach(g => {
+    regNoDb.forEach(g => {
       if (parseNumber(g?.PF) >= 200) {
         const team = String(g?.Team || '').trim()
         over200[team] = (over200[team] || 0) + 1
@@ -966,7 +966,7 @@ export default function RecordsPage() {
                   <RecordCard label="All-Time" value={gameRecords.highNoDouble?.value} sub={gameRecords.highNoDouble?.teams} sub2={gameRecords.highNoDouble?.sub2} accent="gold" icon={Flame} top5={gameRecords.highNoDouble?.top5} />
                   <RecordCard label="Reg Season" value={gameRecords.highRegNoDb?.value} sub={gameRecords.highRegNoDb?.teams} sub2={gameRecords.highRegNoDb?.sub2} accent="cyan" icon={Flame} top5={gameRecords.highRegNoDb?.top5} />
                   <RecordCard label="Playoffs" value={gameRecords.highPONoDb?.value} sub={gameRecords.highPONoDb?.teams} sub2={gameRecords.highPONoDb?.sub2} accent="purple" icon={Flame} top5={gameRecords.highPONoDb?.top5} />
-                  <RecordCard label="Most Games Over 200 pts" value={gameRecords.most200?.value} sub={gameRecords.most200?.teams} sub2="Single weeks only · all stages" accent="orange" icon={Zap} top5={gameRecords.most200?.top5} />
+                  <RecordCard label="Most Games Over 200 pts" value={gameRecords.most200?.value} sub={gameRecords.most200?.teams} sub2="Reg season · single weeks only" accent="orange" icon={Zap} top5={gameRecords.most200?.top5} />
                 </RecordSection>
                 <RecordSection title="Lowest Scores">
                   <RecordCard label="Lowest Score (inc. doubles)" value={gameRecords.lowAll?.value} sub={gameRecords.lowAll?.teams} sub2={gameRecords.lowAll?.sub2} accent="red" icon={TrendingDown} top5={gameRecords.lowAll?.top5} />
