@@ -4,7 +4,7 @@ import Header from '../components/Header'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Flame, Swords, Activity, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react'
+import { Trophy, Flame, Swords, Activity, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -126,6 +126,7 @@ const TABS = [
   { key: 'seasons', label: 'Seasons', Icon: Star },
   { key: 'rivalry', label: 'Rivalries', Icon: Swords },
   { key: 'glory', label: 'Glory', Icon: Trophy },
+  { key: 'shame', label: 'Shame', Icon: Skull },
 ]
 
 export default function RecordsPage() {
@@ -206,14 +207,38 @@ export default function RecordsPage() {
       top5: sortedByWP.slice(0, 5).map(r => ({ label: String(r.Team || '').trim(), value: String(r['W%'] || '') }))
     }
 
-    // 10W seasons
+    // 10W seasons — track which years
     const tenWSeasons = {}, tenWTotal = {}
+    const tenWSeasonsYears = {}, tenWTotalYears = {}
     history.forEach(r => {
       const team = String(r?.Team || '').trim()
-      if (parseNumber(r?.RS_W) >= 10) tenWSeasons[team] = (tenWSeasons[team] || 0) + 1
-      if (parseNumber(r?.W) >= 10) tenWTotal[team] = (tenWTotal[team] || 0) + 1
+      const season = String(r?.Season || '').trim()
+      if (parseNumber(r?.RS_W) >= 10) {
+        tenWSeasons[team] = (tenWSeasons[team] || 0) + 1
+        if (!tenWSeasonsYears[team]) tenWSeasonsYears[team] = []
+        tenWSeasonsYears[team].push(season)
+      }
+      if (parseNumber(r?.W) >= 10) {
+        tenWTotal[team] = (tenWTotal[team] || 0) + 1
+        if (!tenWTotalYears[team]) tenWTotalYears[team] = []
+        tenWTotalYears[team].push(season)
+      }
     })
-    const mkObj = obj => {
+    const mkObj = (obj, yearsObj) => {
+      const sorted = Object.entries(obj).sort((a, b) => b[1] - a[1])
+      const topVal = sorted[0]?.[1] || 0
+      return {
+        value: topVal,
+        teams: sorted.filter(e => e[1] === topVal).map(e => e[0]),
+        top5: sorted.slice(0, 5).map(([team, count]) => ({
+          label: team,
+          sub: (yearsObj[team] || []).sort().join(', '),
+          value: count
+        }))
+      }
+    }
+
+    const mkPR = obj => {
       const sorted = Object.entries(obj).sort((a, b) => b[1] - a[1])
       const topVal = sorted[0]?.[1] || 0
       return { value: topVal, teams: sorted.filter(e => e[1] === topVal).map(e => e[0]), top5: sorted.slice(0, 5).map(([l, v]) => ({ label: l, value: v })) }
@@ -230,20 +255,57 @@ export default function RecordsPage() {
       if (season >= 2023) pr1from23[team] = (pr1from23[team] || 0) + 1
     })
 
+    // Playoff finals years per team
+    const finalsYearsMap = {}
+    history.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE').forEach(r => {
+      const t = String(r?.Team || '').trim()
+      const s = String(r?.Season || '').trim()
+      if (!finalsYearsMap[t]) finalsYearsMap[t] = []
+      finalsYearsMap[t].push(s)
+    })
+
+    const mostPoAppsRaw = topN(allTime, 'Playoff Apps')
+    const mostFinalsRaw = topN(allTime, 'Finals')
+
+    // Enrich finals top5 with years
+    const mostFinalsEnriched = {
+      ...mostFinalsRaw,
+      top5: mostFinalsRaw.top5.map(item => ({
+        ...item,
+        sub: (finalsYearsMap[item.label] || []).sort().join(', ')
+      }))
+    }
+
+    // Enrich playoff apps top5 with years (from history)
+    const poAppsYearsMap = {}
+    history.filter(r => parseNumber(r?.PO_W) + parseNumber(r?.PO_L) > 0).forEach(r => {
+      const t = String(r?.Team || '').trim()
+      const s = String(r?.Season || '').trim()
+      if (!poAppsYearsMap[t]) poAppsYearsMap[t] = []
+      poAppsYearsMap[t].push(s)
+    })
+    const mostPoAppsEnriched = {
+      ...mostPoAppsRaw,
+      top5: mostPoAppsRaw.top5.map(item => ({
+        ...item,
+        sub: (poAppsYearsMap[item.label] || []).sort().join(', ')
+      }))
+    }
+
     return {
       mostWins: topN(allTime, 'W'),
       mostLosses: topN(allTime, 'L'),
       bestWinPct,
       mostPF: topN(allTime, 'PF', 5, false, v => Math.round(v).toLocaleString()),
-      mostPoApps: topN(allTime, 'Playoff Apps'),
-      mostFinals: topN(allTime, 'Finals'),
+      mostPoApps: mostPoAppsEnriched,
+      mostFinals: mostFinalsEnriched,
       mostTitles: topN(allTime, 'Titles'),
       mostPoW: topN(allTime, 'PO_W'),
-      topTenRS: mkObj(tenWSeasons),
-      topTenTot: mkObj(tenWTotal),
-      pr1All: mkObj(pr1All),
-      pr1from21: mkObj(pr1from21),
-      pr1from23: mkObj(pr1from23),
+      topTenRS: mkObj(tenWSeasons, tenWSeasonsYears),
+      topTenTot: mkObj(tenWTotal, tenWTotalYears),
+      pr1All: mkPR(pr1All),
+      pr1from21: mkPR(pr1from21),
+      pr1from23: mkPR(pr1from23),
     }
   }, [allTime, history, games])
 
@@ -253,13 +315,78 @@ export default function RecordsPage() {
 
     const parseStrVal = val => parseNumber(String(val || '0').replace(/[WL]/i, ''))
 
-    const mkStreakTop = key => {
+    // Find the most recent season in the dataset for active detection
+    const maxSeason = Math.max(...games.map(g => parseNumber(g?.Season || 0)).filter(Boolean))
+
+    // Build chronological game list per team (all stages)
+    const byTeam = {}
+    games.forEach(g => {
+      const team = String(g?.Team || '').trim()
+      if (!team) return
+      const season = parseNumber(g?.Season || 0)
+      const rawWeek = String(g?.Week || '').trim()
+      const weekNum = parseFloat(rawWeek.replace(/[^0-9.]/g, '')) || 0
+      const streak = parseNumber(g?.Streak || 0)
+      const streakRS = parseNumber(g?.Streak_RS || g?.Streak || 0)
+      if (!byTeam[team]) byTeam[team] = []
+      byTeam[team].push({ season, weekNum, rawWeek, streak, streakRS })
+    })
+
+    // For a given team + streak column, find when the best streak started and ended
+    const findStreakRange = (teamGames, getStreak, bestVal) => {
+      const sorted = [...teamGames].sort((a, b) =>
+        a.season !== b.season ? a.season - b.season : a.weekNum - b.weekNum
+      )
+      // Find peak index (first time value reaches bestVal)
+      let peakIdx = sorted.findIndex(g => Math.abs(getStreak(g)) === bestVal)
+      if (peakIdx === -1) return null
+      // Walk back to find start (where streak becomes 1 or -1)
+      const sign = getStreak(sorted[peakIdx]) > 0 ? 1 : -1
+      let startIdx = peakIdx
+      for (let i = peakIdx; i >= 0; i--) {
+        if (getStreak(sorted[i]) === sign) { startIdx = i; break }
+      }
+      const start = sorted[startIdx]
+      const end = sorted[peakIdx]
+      // Active: last game of team is in maxSeason and streak is still going
+      const last = sorted[sorted.length - 1]
+      const isActive = last.season === maxSeason && Math.abs(getStreak(last)) >= bestVal
+      const fmtWeek = (g) => `Week ${g.rawWeek}, ${g.season}`
+      return { start: fmtWeek(start), end: fmtWeek(end), active: isActive }
+    }
+
+    const mkStreakTop = (key, useRS = false) => {
       const sorted = [...allTime].sort((a, b) => parseStrVal(b[key]) - parseStrVal(a[key]))
       const topVal = parseStrVal(sorted[0]?.[key])
+
+      const enriched = sorted.slice(0, 5).map(r => {
+        const team = String(r.Team || '').trim()
+        const val = String(r[key] || '')
+        const teamGames = byTeam[team] || []
+        const getStreak = useRS
+          ? (g => g.streakRS)
+          : (g => g.streak)
+        const range = findStreakRange(teamGames, getStreak, parseStrVal(r[key]))
+        const rangeSub = range
+          ? `${range.start} → ${range.end}${range.active ? ' · Active' : ''}`
+          : ''
+        return { label: team, value: val, sub: rangeSub, active: range?.active }
+      })
+
+      const topTeams = sorted.filter(r => parseStrVal(r[key]) === topVal)
+      const topSubs = topTeams.map(r => {
+        const team = String(r.Team || '').trim()
+        const teamGames = byTeam[team] || []
+        const range = findStreakRange(teamGames, useRS ? (g => g.streakRS) : (g => g.streak), topVal)
+        return range
+          ? `${team}${range.active ? ' 🔥 Active' : ''} · ${range.start} → ${range.end}`
+          : team
+      })
+
       return {
         value: String(sorted[0]?.[key] || '—'),
-        teams: sorted.filter(r => parseStrVal(r[key]) === topVal).map(r => String(r.Team || '').trim()),
-        top5: sorted.slice(0, 5).map(r => ({ label: String(r.Team || '').trim(), value: String(r[key] || '') }))
+        teams: topSubs,
+        top5: enriched,
       }
     }
 
@@ -272,6 +399,7 @@ export default function RecordsPage() {
       if (!byTeamSeason[key]) byTeamSeason[key] = []
       byTeamSeason[key].push({
         week: parseFloat(String(g?.Week || '0').replace(/[^0-9.]/g, '')) || 0,
+        rawWeek: String(g?.Week || '').trim(),
         result: String(g?.Result || '').trim().toUpperCase(),
         team, season,
       })
@@ -302,19 +430,19 @@ export default function RecordsPage() {
     const bestSeasonW = {
       value: seasonWList[0]?.display || '—',
       teams: seasonWList.filter(r => r.val === topWVal).map(r => `${r.team} (${r.season})`),
-      top5: seasonWList.slice(0, 5).map(r => ({ label: r.team, sub: r.season, value: r.display }))
+      top5: seasonWList.slice(0, 5).map(r => ({ label: r.team, sub: String(r.season), value: r.display }))
     }
     const bestSeasonL = {
       value: seasonLList[0]?.display || '—',
       teams: seasonLList.filter(r => r.val === topLVal).map(r => `${r.team} (${r.season})`),
-      top5: seasonLList.slice(0, 5).map(r => ({ label: r.team, sub: r.season, value: r.display }))
+      top5: seasonLList.slice(0, 5).map(r => ({ label: r.team, sub: String(r.season), value: r.display }))
     }
 
     return {
-      bestWTotal: mkStreakTop('W Streak Total'),
-      bestWRS: mkStreakTop('W Streak RS'),
-      bestLTotal: mkStreakTop('L Streak Total'),
-      bestLRS: mkStreakTop('L Streak RS'),
+      bestWTotal: mkStreakTop('W Streak Total', false),
+      bestWRS: mkStreakTop('W Streak RS', true),
+      bestLTotal: mkStreakTop('L Streak Total', false),
+      bestLRS: mkStreakTop('L Streak RS', true),
       bestSeasonW,
       bestSeasonL,
     }
@@ -349,8 +477,8 @@ export default function RecordsPage() {
       return {
         value: topVal.toFixed(2),
         teams: sorted.filter(g => parseNumber(g.PF) === topVal).map(g => String(g.Team || '').trim()),
-        sub2: sorted[0] ? `vs ${String(sorted[0].Opponent || '').trim()} · W${sorted[0].Week} ${sorted[0].Season}` : '',
-        top5: sorted.slice(0, 5).map(g => ({ label: String(g.Team || '').trim(), sub: `vs ${String(g.Opponent || '').trim()} · W${g.Week} ${g.Season}`, value: parseNumber(g.PF).toFixed(2) }))
+        sub2: sorted[0] ? `vs ${String(sorted[0].Opponent || '').trim()} · Week ${sorted[0].Week} ${sorted[0].Season}` : '',
+        top5: sorted.slice(0, 5).map(g => ({ label: String(g.Team || '').trim(), sub: `vs ${String(g.Opponent || '').trim()} · Week ${g.Week} ${g.Season}`, value: parseNumber(g.PF).toFixed(2) }))
       }
     }
 
@@ -360,8 +488,8 @@ export default function RecordsPage() {
       return {
         value: topVal.toFixed(2),
         teams: sorted.filter(g => parseNumber(g.PF) === topVal).map(g => String(g.Team || '').trim()),
-        sub2: sorted[0] ? `vs ${String(sorted[0].Opponent || '').trim()} · W${sorted[0].Week} ${sorted[0].Season}` : '',
-        top5: sorted.slice(0, 5).map(g => ({ label: String(g.Team || '').trim(), sub: `vs ${String(g.Opponent || '').trim()} · W${g.Week} ${g.Season}`, value: parseNumber(g.PF).toFixed(2) }))
+        sub2: sorted[0] ? `vs ${String(sorted[0].Opponent || '').trim()} · Week ${sorted[0].Week} ${sorted[0].Season}` : '',
+        top5: sorted.slice(0, 5).map(g => ({ label: String(g.Team || '').trim(), sub: `vs ${String(g.Opponent || '').trim()} · Week ${g.Week} ${g.Season}`, value: parseNumber(g.PF).toFixed(2) }))
       }
     }
 
@@ -374,8 +502,8 @@ export default function RecordsPage() {
       return {
         value: topVal.toFixed(2),
         teams: sorted.filter(g => Math.abs(g.margin - topVal) < 0.001).map(g => `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`),
-        sub2: sorted[0] ? `W${sorted[0].Week} ${sorted[0].Season}` : '',
-        top5: sorted.slice(0, 5).map(g => ({ label: `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`, sub: `W${g.Week} ${g.Season}`, value: g.margin.toFixed(2) }))
+        sub2: sorted[0] ? `Week ${sorted[0].Week} ${sorted[0].Season}` : '',
+        top5: sorted.slice(0, 5).map(g => ({ label: `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`, sub: `Week ${g.Week} ${g.Season}`, value: g.margin.toFixed(2) }))
       }
     }
 
@@ -388,9 +516,25 @@ export default function RecordsPage() {
       return {
         value: topVal.toFixed(2),
         teams: sorted.filter(g => Math.abs(g.margin - topVal) < 0.001).map(g => `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`),
-        sub2: sorted[0] ? `W${sorted[0].Week} ${sorted[0].Season}` : '',
-        top5: sorted.slice(0, 5).map(g => ({ label: `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`, sub: `W${g.Week} ${g.Season}`, value: g.margin.toFixed(2) }))
+        sub2: sorted[0] ? `Week ${sorted[0].Week} ${sorted[0].Season}` : '',
+        top5: sorted.slice(0, 5).map(g => ({ label: `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`, sub: `Week ${g.Week} ${g.Season}`, value: g.margin.toFixed(2) }))
       }
+    }
+
+    // Most games over 200 pts (single weeks only, reg season dedup)
+    const over200 = {}
+    regNoDb.forEach(g => {
+      if (parseNumber(g?.PF) >= 200) {
+        const team = String(g?.Team || '').trim()
+        over200[team] = (over200[team] || 0) + 1
+      }
+    })
+    const over200Sorted = Object.entries(over200).sort((a, b) => b[1] - a[1])
+    const topOver200 = over200Sorted[0]?.[1] || 0
+    const most200 = {
+      value: topOver200,
+      teams: over200Sorted.filter(e => e[1] === topOver200).map(e => e[0]),
+      top5: over200Sorted.slice(0, 5).map(([team, cnt]) => ({ label: team, value: cnt }))
     }
 
     return {
@@ -406,6 +550,7 @@ export default function RecordsPage() {
       closestNoDouble: mkClosest(noDouble),
       biggestAll: mkBiggest(allDedup),
       biggestNoDouble: mkBiggest(noDouble),
+      most200,
     }
   }, [games])
 
@@ -530,6 +675,7 @@ export default function RecordsPage() {
       }
     }
 
+    // Best H2H streak — label shows only "TeamA vs TeamB", period in sub
     allStreaks.sort((a, b) => b.val - a.val)
     const topSV = allStreaks[0]?.val || 0
 
@@ -537,15 +683,12 @@ export default function RecordsPage() {
       value: extractStreakParts(allStreaks[0]?.streak).value,
       teams: allStreaks
         .filter(s => s.val === topSV)
-        .map(s => {
-          const { period } = extractStreakParts(s.streak)
-          return `${s.team} vs ${s.opponent} ${period}`
-        }),
+        .map(s => `${s.team} vs ${s.opponent}`),
       top5: allStreaks.slice(0, 5).map(s => {
         const { value, period } = extractStreakParts(s.streak)
         return {
-          label: `${s.team} ${period}`,
-          sub: `vs ${s.opponent}`,
+          label: `${s.team} vs ${s.opponent}`,
+          sub: period,
           value,
         }
       })
@@ -562,15 +705,12 @@ export default function RecordsPage() {
       }))
       .sort((a, b) => {
         if (a.diff !== b.diff) return a.diff - b.diff
-        // Desempate: mais jogos = mais equilibrado
         return parseNumber(b.Games) - parseNumber(a.Games)
       })
 
     const topRec = `${balSorted[0]?.recA}–${balSorted[0]?.recB}`
-
     const mostBalanced = {
       value: topRec,
-      // Só mostra no sub os que têm exatamente o mesmo record (ex: ambos 4-4)
       teams: balSorted
         .filter(r => r.recA === balSorted[0].recA && r.recB === balSorted[0].recB)
         .map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
@@ -580,24 +720,40 @@ export default function RecordsPage() {
       }))
     }
 
-    // Highest avg margin
-    const hmSorted = [...dedup].sort((a, b) => parseMarginVal(b['Avg Margin']) - parseMarginVal(a['Avg Margin']))
-    const topHM = parseMarginVal(hmSorted[0]?.['Avg Margin'])
-    const highestMargin = {
-      value: `${String(hmSorted[0]?.['Avg Margin'] || '').trim()} pts`,
-      teams: hmSorted.filter(r => Math.abs(parseMarginVal(r['Avg Margin']) - topHM) < 0.01).map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
-      top5: hmSorted.slice(0, 5).map(r => ({ label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`, value: `${String(r['Avg Margin'] || '').trim()} pts` }))
+    // Highest avg margin — ensure dominant team is listed first, margin always positive
+    const normalizeMargin = r => {
+      const rawMargin = parseFloat(String(r['Avg Margin'] || '0').replace(',', '.')) || 0
+      const absMargin = Math.abs(rawMargin)
+      const aWins = parseNumber(r['A Wins'])
+      const bWins = parseNumber(r['B Wins'])
+      // Dominant team is whoever has more wins
+      const teamA = String(r['Team A'] || '').trim()
+      const teamB = String(r['Team B'] || '').trim()
+      const dominant = aWins >= bWins ? teamA : teamB
+      const other = aWins >= bWins ? teamB : teamA
+      return { dominant, other, margin: absMargin }
     }
 
-    // Lowest avg margin — sorted ascending
+    const hmSorted = [...dedup]
+      .map(r => ({ ...r, _norm: normalizeMargin(r) }))
+      .sort((a, b) => b._norm.margin - a._norm.margin)
+    const topHM = hmSorted[0]?._norm.margin || 0
+    const highestMargin = {
+      value: `${topHM.toFixed(2)} pts`,
+      teams: hmSorted.filter(r => Math.abs(r._norm.margin - topHM) < 0.01).map(r => `${r._norm.dominant} vs ${r._norm.other}`),
+      top5: hmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts` }))
+    }
+
+    // Lowest avg margin — same normalization, ascending
     const lmSorted = [...dedup]
-      .filter(r => parseMarginVal(r['Avg Margin']) > 0)
-      .sort((a, b) => parseMarginVal(a['Avg Margin']) - parseMarginVal(b['Avg Margin']))
-    const topLM = parseMarginVal(lmSorted[0]?.['Avg Margin'])
+      .map(r => ({ ...r, _norm: normalizeMargin(r) }))
+      .filter(r => r._norm.margin > 0)
+      .sort((a, b) => a._norm.margin - b._norm.margin)
+    const topLM = lmSorted[0]?._norm.margin || 0
     const lowestMargin = {
-      value: `${String(lmSorted[0]?.['Avg Margin'] || '').trim()} pts`,
-      teams: lmSorted.filter(r => Math.abs(parseMarginVal(r['Avg Margin']) - topLM) < 0.01).map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
-      top5: lmSorted.slice(0, 5).map(r => ({ label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`, value: `${String(r['Avg Margin'] || '').trim()} pts` }))
+      value: `${topLM.toFixed(2)} pts`,
+      teams: lmSorted.filter(r => Math.abs(r._norm.margin - topLM) < 0.01).map(r => `${r._norm.dominant} vs ${r._norm.other}`),
+      top5: lmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts` }))
     }
 
     return { mostGames, bestH2HStreak, mostBalanced, highestMargin, lowestMargin }
@@ -810,6 +966,7 @@ export default function RecordsPage() {
                   <RecordCard label="All-Time" value={gameRecords.highNoDouble?.value} sub={gameRecords.highNoDouble?.teams} sub2={gameRecords.highNoDouble?.sub2} accent="gold" icon={Flame} top5={gameRecords.highNoDouble?.top5} />
                   <RecordCard label="Reg Season" value={gameRecords.highRegNoDb?.value} sub={gameRecords.highRegNoDb?.teams} sub2={gameRecords.highRegNoDb?.sub2} accent="cyan" icon={Flame} top5={gameRecords.highRegNoDb?.top5} />
                   <RecordCard label="Playoffs" value={gameRecords.highPONoDb?.value} sub={gameRecords.highPONoDb?.teams} sub2={gameRecords.highPONoDb?.sub2} accent="purple" icon={Flame} top5={gameRecords.highPONoDb?.top5} />
+                  <RecordCard label="Most Games Over 200 pts" value={gameRecords.most200?.value} sub={gameRecords.most200?.teams} sub2="Reg season · single weeks only" accent="orange" icon={Zap} top5={gameRecords.most200?.top5} />
                 </RecordSection>
                 <RecordSection title="Lowest Scores">
                   <RecordCard label="Lowest Score (inc. doubles)" value={gameRecords.lowAll?.value} sub={gameRecords.lowAll?.teams} sub2={gameRecords.lowAll?.sub2} accent="red" icon={TrendingDown} top5={gameRecords.lowAll?.top5} />
@@ -879,7 +1036,6 @@ export default function RecordsPage() {
                 <RecordSection title="Championship Leaders">
                   <RecordCard label="Most Titles" value={gloryRecords.mostTitles?.value} sub={gloryRecords.mostTitles?.teams} accent="gold" icon={Trophy} top5={gloryRecords.mostTitles?.top5} />
                   <RecordCard label="Most Finals Apps" value={gloryRecords.mostFinals?.value} sub={gloryRecords.mostFinals?.teams} accent="purple" icon={Star} top5={gloryRecords.mostFinals?.top5} />
-                  <RecordCard label="Most Unicorn Years 🦄" value={gloryRecords.mostUnicorn?.value} sub={gloryRecords.mostUnicorn?.teams} accent="slate" icon={TrendingDown} top5={gloryRecords.mostUnicorn?.top5} />
                 </RecordSection>
 
                 <div className="mb-4 text-xs font-black uppercase tracking-[0.3em] text-slate-500">Hall of Champions</div>
@@ -892,6 +1048,15 @@ export default function RecordsPage() {
                     </div>
                   ))}
                 </div>
+              </>
+            )}
+
+            {/* SHAME */}
+            {tab === 'shame' && (
+              <>
+                <RecordSection title="Unicorn Leaders">
+                  <RecordCard label="Most Unicorn Years 🦄" value={gloryRecords.mostUnicorn?.value} sub={gloryRecords.mostUnicorn?.teams} accent="slate" icon={Skull} top5={gloryRecords.mostUnicorn?.top5} />
+                </RecordSection>
 
                 <div className="mb-4 text-xs font-black uppercase tracking-[0.3em] text-slate-500">Hall of Unicorns 🦄</div>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
