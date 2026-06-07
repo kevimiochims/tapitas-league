@@ -521,16 +521,11 @@ export default function RecordsPage() {
       }
     }
 
-    // Most games over 200 pts — deduplicate per team+season+week (not matchup)
-    // so both sides of a game are counted independently
+    // Most games over 200 pts (single weeks only — all stages: reg, playoffs, consolation)
     const over200 = {}
-    const over200Seen = new Set()
-    games.filter(g => !isDoubleWeek(g)).forEach(g => {
-      const team = String(g?.Team || '').trim()
-      const key = `${team}|${String(g?.Season || '')}|${String(g?.Week || '')}`
-      if (over200Seen.has(key)) return
-      over200Seen.add(key)
+    noDouble.forEach(g => {
       if (parseNumber(g?.PF) >= 200) {
+        const team = String(g?.Team || '').trim()
         over200[team] = (over200[team] || 0) + 1
       }
     })
