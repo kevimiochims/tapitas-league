@@ -697,36 +697,6 @@ const POS_COLORS = {
   DEF: 'text-purple-400 border-purple-400/25 bg-purple-400/10',
 }
 
-function parseBiggestWin(value) {
-  if (!value || String(value) === '—') return null
-  const text = String(value)
-  const scoreMatch = text.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)/)
-  const marginMatch = text.match(/\(\+?(\d+(?:\.\d+)?)\)/)
-  const weekMatch = text.match(/Week\s*([\d][\d\-\/]*)/i)
-  const yearMatch = text.match(/(20\d{2})/)
-  return {
-    scoreA: scoreMatch ? scoreMatch[1] : '0',
-    scoreB: scoreMatch ? scoreMatch[2] : '0',
-    margin: marginMatch ? marginMatch[1] : null,
-    label: [weekMatch ? `Week ${weekMatch[1]}` : '', yearMatch ? yearMatch[1] : ''].filter(Boolean).join(' · '),
-  }
-}
-
-function parseBestStreak(value) {
-  if (!value || String(value) === '—') return null
-  const text = String(value).trim()
-  const countMatch = text.match(/([WL])(\d+)/i)
-  const rangeMatch = text.match(/\(([^)]+)\)/)
-  if (!countMatch) return { raw: text }
-  let start = '', end = ''
-  if (rangeMatch) {
-    const parts = rangeMatch[1].split(/\s*(?:→|->|⇒)\s*/)
-    if (parts.length >= 2) { start = parts[0].trim(); end = parts[1].trim() }
-    else { start = rangeMatch[1].trim() }
-  }
-  return { result: countMatch[1].toUpperCase(), count: countMatch[2], start, end }
-}
-
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
@@ -748,6 +718,7 @@ export default function TapitasLeagueHomepage() {
   const [prLoading, setPrLoading]         = useState(true)
   const [currentStandings, setCurrentStandings] = useState([])
   const [currentSeason, setCurrentSeason] = useState('')
+  const [currentWeekLabel, setCurrentWeekLabel] = useState('')
   const [draftPicks, setDraftPicks]       = useState([])   // last draft picks
   const [draftSeason, setDraftSeason]     = useState('')
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
@@ -864,9 +835,9 @@ export default function TapitasLeagueHomepage() {
             wins: parseNumber(row?.Wins || row?.wins || row?.W || 0),
             losses: parseNumber(row?.Losses || row?.losses || row?.L || 0),
             pf: parseNumber(row?.PF || row?.Points || row?.points_for || 0),
-            playoffWins: parseNumber(row?.PO_W || row?.PlayoffWins || row?.playoff_wins || row?.POW || 0),
-            playoffLosses: parseNumber(row?.PO_L || row?.PlayoffLosses || row?.playoff_losses || row?.POL || 0),
-            playoffPF: parseNumber(row?.PO_PF || row?.PlayoffPF || row?.playoff_pf || row?.POPF || 0),
+            playoffWins: parseNumber(row?.PlayoffWins || row?.playoff_wins || row?.POW || 0),
+            playoffLosses: parseNumber(row?.PlayoffLosses || row?.playoff_losses || row?.POL || 0),
+            playoffPF: parseNumber(row?.PlayoffPF || row?.playoff_pf || row?.POPF || 0),
           }))
           .sort((a, b) => Number(b.season) - Number(a.season))
 
@@ -1105,18 +1076,37 @@ export default function TapitasLeagueHomepage() {
           })
           if (mounted) { setPrData(prRows); setCurrentSeason(latestSeason) }
 
-          // ── Current standings ─────────────────────────────────────────────
-          const seasonRows = historyData
-            .filter(r => String(r?.Season || '').trim() === latestSeason)
-            .map(r => ({
-              team: String(r?.Team || r?.team || '').trim(),
-              w: parseNumber(r?.RS_W || 0),
-              l: parseNumber(r?.RS_L || 0),
-              pf: parseNumber(r?.RS_PF || 0),
-              champion: String(r?.Champion || '').toUpperCase() === 'TRUE',
-            }))
+          // ── Current standings (week-by-week from game data) ──────────────────
+          const rsGamesAll = gameData.filter(g =>
+            String(g?.Season || '').trim() === latestSeason &&
+            String(g?.gameStage || g?.GameStage || '').trim() === 'Reg Season'
+          )
+          // Latest reg-season week that has data
+          const rsWeeksSorted = [...new Set(
+            rsGamesAll.map(g => String(g?.Week || '').trim()).filter(Boolean)
+          )].sort((a, b) => parseFloat(a) - parseFloat(b))
+          const latestRSWeek = parseFloat(rsWeeksSorted[rsWeeksSorted.length - 1] || '0')
+
+          // Accumulate W/L/PF per team up to (and including) that week
+          const teamStatsMap = {}
+          rsGamesAll.forEach(g => {
+            const weekNum = parseFloat(String(g?.Week || '').replace(/[^0-9.]/g, '')) || 0
+            if (weekNum > latestRSWeek) return
+            const team = String(g?.Team || '').trim()
+            if (!team) return
+            if (!teamStatsMap[team]) teamStatsMap[team] = { team, w: 0, l: 0, pf: 0 }
+            const pf = parseNumber(g?.Score || g?.PF || 0)
+            const pa = parseNumber(g?.OpponentScore || g?.PA || 0)
+            teamStatsMap[team].pf += pf
+            if (pf > pa) teamStatsMap[team].w += 1
+            else if (pa > pf) teamStatsMap[team].l += 1
+          })
+          const seasonRows = Object.values(teamStatsMap)
             .sort((a, b) => b.w - a.w || a.l - b.l || b.pf - a.pf)
-          if (mounted) setCurrentStandings(seasonRows)
+          if (mounted) {
+            setCurrentStandings(seasonRows)
+            setCurrentWeekLabel(rsWeeksSorted[rsWeeksSorted.length - 1] || '')
+          }
 
           // ── Recent matchups (last week of latest season) ──────────────────
           const regGames = gameData.filter(g =>
@@ -1266,8 +1256,7 @@ export default function TapitasLeagueHomepage() {
 
     const lastMatch = String(row['Last Match'] || row['last match'] || '')
     const scoreMatch = lastMatch.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
-    // Match "Week 15-16", "Week 5", "W15" etc.
-    const weekMatch = lastMatch.match(/Week\s*([\d][\d\-\/]*)/i) || lastMatch.match(/\bW(\d[\d\-\/]*)\b/i)
+    const weekMatch = lastMatch.match(/W(\d+)/i)
     const yearMatch = lastMatch.match(/(20\d{2})/)
 
     const winsA = parseNumber(
@@ -1328,8 +1317,6 @@ export default function TapitasLeagueHomepage() {
     return {
       teamA: selectedTeamA,
       teamB: selectedTeamB,
-      winsA,
-      winsB,
       record: `${winsA}-${winsB}`,
       playoffRecord: `${poWinsA}-${poWinsB}`,
       avgMargin,
@@ -1337,14 +1324,10 @@ export default function TapitasLeagueHomepage() {
       streak: `${streakTeam} ${streakVal}`,
       lastMeeting: {
         score: scoreMatch ? `${scoreMatch[1]} vs ${scoreMatch[2]}` : '-- vs --',
-        meta: (weekMatch || yearMatch)
-          ? `${weekMatch ? `Week ${weekMatch[1]}` : ''} ${yearMatch ? `· ${yearMatch[1]}` : ''}`.trim()
+        meta: weekMatch || yearMatch
+          ? `W${weekMatch ? weekMatch[1] : '?'} • ${yearMatch ? yearMatch[1] : ''}`
           : '',
       },
-      biggestA: String(row['Biggest Win Team A'] || row['biggest_win_a'] || '—'),
-      biggestB: String(row['Biggest Win Team B'] || row['biggest_win_b'] || '—'),
-      bestStreakA: String(row['Best Streak Team A'] || row['best_streak_a'] || '—'),
-      bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || '—'),
     }
   }, [h2hData, selectedTeamA, selectedTeamB])
 
@@ -2381,7 +2364,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason}` : 'Carregando...'}</div>
+                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason}${currentWeekLabel ? ` · Through Week ${currentWeekLabel}` : ''}` : 'Carregando...'}</div>
                 </div>
               </div>
               <a href="/standings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2454,7 +2437,7 @@ export default function TapitasLeagueHomepage() {
                         {post.imageUrl && (
                           <div className="h-32 w-full overflow-hidden">
                             <img src={post.imageUrl.split('|')[0]} alt={post.title}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                              className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105" />
                           </div>
                         )}
                         <div className="p-3">
@@ -2518,7 +2501,7 @@ export default function TapitasLeagueHomepage() {
                             ? <img src={avatar} alt={pick.team} className="h-6 w-6 flex-shrink-0 rounded-lg object-cover" />
                             : <div className="h-6 w-6 flex-shrink-0 rounded-lg bg-pink-400/10 border border-pink-400/20 flex items-center justify-center text-[8px] font-black text-pink-400">{pick.team.slice(0,2).toUpperCase()}</div>
                           }
-                          <span className="flex-1 truncate text-xs font-black text-white">{pick.player}</span>
+                          <span className="flex-1 truncate text-sm font-black text-white">{pick.player}</span>
                           <span className={`flex-shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-black ${posColor}`}>{pick.position}</span>
                         </a>
                       </div>
@@ -2570,7 +2553,7 @@ export default function TapitasLeagueHomepage() {
                                 ? <img src={av} alt={t.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" />
                                 : null
                               }
-                              <span className="text-[10px] font-black text-white truncate max-w-[80px]">{shortTeamName(t.team)}</span>
+                              <span className="text-xs font-black text-white truncate max-w-[80px]">{shortTeamName(t.team)}</span>
                             </a>
                           )
                         })}
@@ -2677,6 +2660,7 @@ export default function TapitasLeagueHomepage() {
             className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-[1.15]"
           >
             <div className="flex h-full flex-col p-5">
+              {/* Header */}
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
@@ -2692,140 +2676,90 @@ export default function TapitasLeagueHomepage() {
                 </a>
               </div>
 
-              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              {/* Team selectors */}
+              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-xs">
                 <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-xs font-black text-red-400">vs</div>
                 <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
               </div>
 
               {!selectedRivalry ? (
+                /* Empty state */
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-white/10 py-10 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.03]">
                     <Swords className="h-5 w-5 text-slate-700" />
                   </div>
                   <p className="text-xs font-bold text-slate-600">Selecione dois times para ver o confronto</p>
                 </div>
-              ) : (() => {
-                const bigA = parseBiggestWin(selectedRivalry.biggestA)
-                const bigB = parseBiggestWin(selectedRivalry.biggestB)
-                const strA = parseBestStreak(selectedRivalry.bestStreakA)
-                const strB = parseBestStreak(selectedRivalry.bestStreakB)
-                const wA = selectedRivalry.winsA
-                const wB = selectedRivalry.winsB
-                const aLeads = wA > wB, bLeads = wB > wA
-                return (
-                  <div className="flex flex-col gap-3">
-                    {/* VS strip */}
-                    <div className="overflow-hidden rounded-[18px] border border-white/8 bg-[linear-gradient(135deg,rgba(239,68,68,0.05),rgba(2,6,23,0.8),rgba(239,68,68,0.05))] p-4">
-                      <div className="flex items-center justify-between gap-4">
-                        <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-1.5">
-                          {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
-                            ? <img src={av} alt={selectedRivalry.teamA} className="h-14 w-14 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/40" />
-                            : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
-                          })()}
-                          <span className="text-center text-xs font-black text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
-                          <span className="text-3xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: aLeads ? '#4ade80' : bLeads ? '#f87171' : '#e2e8f0' }}>{wA}</span>
-                        </a>
-                        <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">All-Time</div>
-                          <div className="h-px w-6 bg-white/10" />
-                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">Record</div>
-                        </div>
-                        <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-1.5">
-                          {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
-                            ? <img src={av} alt={selectedRivalry.teamB} className="h-14 w-14 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/40" />
-                            : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
-                          })()}
-                          <span className="text-center text-xs font-black text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
-                          <span className="text-3xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: bLeads ? '#4ade80' : aLeads ? '#f87171' : '#e2e8f0' }}>{wB}</span>
-                        </a>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {/* VS Hero strip */}
+                  <div className="relative overflow-hidden rounded-[18px] border border-white/8 bg-[linear-gradient(135deg,rgba(239,68,68,0.06),rgba(2,6,23,0.8),rgba(239,68,68,0.06))] p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Team A */}
+                      <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-2">
+                        {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
+                          ? <img src={av} alt={selectedRivalry.teamA} className="h-16 w-16 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
+                          : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
+                        })()}
+                        <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
+                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
+                          {selectedRivalry.record.split('-')[0]}
+                        </span>
+                      </a>
+
+                      {/* Center divider */}
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Record</div>
+                        <div className="h-px w-8 bg-white/10" />
+                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">All-Time</div>
                       </div>
-                      <div className="mt-3 flex justify-center">
-                        <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[10px] font-black uppercase tracking-wider
-                          ${selectedRivalry.heat === 'Legendary' ? 'border-yellow-400/30 bg-yellow-400/10 text-yellow-400'
-                          : selectedRivalry.heat === 'Elite'     ? 'border-orange-400/30 bg-orange-400/10 text-orange-400'
-                          : selectedRivalry.heat === 'High'      ? 'border-red-400/30 bg-red-400/10 text-red-400'
-                          : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
-                          <Flame className="h-3 w-3" />{selectedRivalry.heat} Rivalry
-                        </div>
-                      </div>
+
+                      {/* Team B */}
+                      <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-2">
+                        {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
+                          ? <img src={av} alt={selectedRivalry.teamB} className="h-16 w-16 rounded-xl object-cover transition-all group-hover:ring-red-400/40" />
+                          : <div className="h-12 w-12 flex items-center justify-center text-lg font-black">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
+                        })()}
+                        <span className="text-center text-lg font-black leading-tight text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
+                        <span className="text-2xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: '#e2e8f0' }}>
+                          {selectedRivalry.record.split('-')[1]}
+                        </span>
+                      </a>
                     </div>
 
-                    {/* Stats grid */}
-                    <div className="grid grid-cols-2 gap-2">
-
-                      {/* Playoffs */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Trophy className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Playoffs</span></div>
-                        <span className="text-sm font-black text-white">{selectedRivalry.playoffRecord}</span>
+                    {/* Heat badge */}
+                    <div className="mt-3 flex justify-center">
+                      <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[10px] font-black uppercase tracking-wider
+                        ${selectedRivalry.heat === 'Legendary' ? 'border-yellow-400/30 bg-yellow-400/10 text-yellow-400'
+                        : selectedRivalry.heat === 'Elite' ? 'border-orange-400/30 bg-orange-400/10 text-orange-400'
+                        : selectedRivalry.heat === 'High' ? 'border-red-400/30 bg-red-400/10 text-red-400'
+                        : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
+                        <Flame className="h-3 w-3" />
+                        {selectedRivalry.heat} Rivalry
                       </div>
-
-                      {/* Avg Margin */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Activity className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Avg Margin</span></div>
-                        <span className="text-sm font-black text-white">{selectedRivalry.avgMargin} pts</span>
-                      </div>
-
-                      {/* Last Game */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Stars className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}</span></div>
-                        <span className="text-sm font-black text-white">{selectedRivalry.lastMeeting.score}</span>
-                      </div>
-
-                      {/* Current Streak */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Radar className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Current Streak</span></div>
-                        <span className="text-sm font-black text-white">{selectedRivalry.streak}</span>
-                      </div>
-
-                      {/* Biggest Win A */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamA)}</span></div>
-                        {bigA ? (
-                          <>
-                            <span className="text-sm font-black text-white">{bigA.scoreA} – {bigA.scoreB}{bigA.margin ? <span className="text-emerald-400"> (+{bigA.margin})</span> : ''}</span>
-                            {bigA.label && <span className="text-[10px] text-slate-500">{bigA.label}</span>}
-                          </>
-                        ) : <span className="text-xs text-slate-600">—</span>}
-                      </div>
-
-                      {/* Biggest Win B */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamB)}</span></div>
-                        {bigB ? (
-                          <>
-                            <span className="text-sm font-black text-white">{bigB.scoreA} – {bigB.scoreB}{bigB.margin ? <span className="text-emerald-400"> (+{bigB.margin})</span> : ''}</span>
-                            {bigB.label && <span className="text-[10px] text-slate-500">{bigB.label}</span>}
-                          </>
-                        ) : <span className="text-xs text-slate-600">—</span>}
-                      </div>
-
-                      {/* Best Streak A */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamA)}</span></div>
-                        {strA?.count ? (
-                          <>
-                            <span className="text-sm font-black text-white">{strA.result}{strA.count}</span>
-                            {strA.start && <span className="text-[10px] text-slate-500">{strA.start}{strA.end ? ` → ${strA.end}` : ''}</span>}
-                          </>
-                        ) : <span className="text-xs text-slate-600">—</span>}
-                      </div>
-
-                      {/* Best Streak B */}
-                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamB)}</span></div>
-                        {strB?.count ? (
-                          <>
-                            <span className="text-sm font-black text-white">{strB.result}{strB.count}</span>
-                            {strB.start && <span className="text-[10px] text-slate-500">{strB.start}{strB.end ? ` → ${strB.end}` : ''}</span>}
-                          </>
-                        ) : <span className="text-xs text-slate-600">—</span>}
-                      </div>
-
                     </div>
                   </div>
-                )
-              })()}
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[
+                      { icon: Trophy,   label: 'Playoffs',      value: selectedRivalry.playoffRecord },
+                      { icon: Activity, label: 'Avg Margin',    value: `${selectedRivalry.avgMargin} pts` },
+                      { icon: Stars,    label: 'Last Game',     value: selectedRivalry.lastMeeting.score },
+                      { icon: Radar,    label: 'Streak',        value: selectedRivalry.streak },
+                    ].map(({ icon: Icon, label, value }) => (
+                      <div key={label} className="flex flex-col gap-1.5 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
+                        <div className="flex items-center gap-1.5">
+                          <Icon className="h-3 w-3 text-red-400/70" />
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</span>
+                        </div>
+                        <div className="text-xl font-black leading-tight text-white">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -2901,7 +2835,7 @@ export default function TapitasLeagueHomepage() {
                       </div>
                       {avatar && <img src={avatar} alt={team.team} className="h-8 w-8 flex-shrink-0 rounded-xl object-cover" />}
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-base font-black text-white group-hover:text-cyan-300 transition-colors">{team.team}</div>
+                        <div className="truncate text-xl font-black text-white group-hover:text-cyan-300 transition-colors">{team.team}</div>
                         {(sub?.key==='W Streak RS'||sub?.key==='W Streak Total'||sub?.key==='L Streak RS'||sub?.key==='L Streak Total') ? (() => {
                           const kl={'W Streak RS':'streakRS','W Streak Total':'streakTotal','L Streak RS':'lStreakRS','L Streak Total':'lStreakTotal'}
                           const si = streakMap[team.team]?.[kl[sub.key]]
@@ -2967,7 +2901,7 @@ export default function TapitasLeagueHomepage() {
               className="opacity-40"
               style={{ filter: 'invert(1)' }}
             />
-            <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">
+            <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-500">
               Tapitas League
             </span>
           </div>

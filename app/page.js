@@ -1076,22 +1076,59 @@ export default function TapitasLeagueHomepage() {
           })
           if (mounted) { setPrData(prRows); setCurrentSeason(latestSeason) }
 
-          // ── Current standings (week-by-week from game data) ──────────────────
+          // ── Current standings ─────────────────────────────────────────────
+          // Determine the latest season with any game data
+          const allSeasonsList = [...new Set(
+            gameData.map(g => String(g?.Season || '').trim()).filter(Boolean)
+          )].sort((a, b) => Number(a) - Number(b))
+          const newestSeason = allSeasonsList[allSeasonsList.length - 1]
+
+          // Reg season games for the newest season
           const rsGamesAll = gameData.filter(g =>
-            String(g?.Season || '').trim() === latestSeason &&
+            String(g?.Season || '').trim() === newestSeason &&
             String(g?.gameStage || g?.GameStage || '').trim() === 'Reg Season'
           )
-          // Latest reg-season week that has data
-          const rsWeeksSorted = [...new Set(
-            rsGamesAll.map(g => String(g?.Week || '').trim()).filter(Boolean)
-          )].sort((a, b) => parseFloat(a) - parseFloat(b))
-          const latestRSWeek = parseFloat(rsWeeksSorted[rsWeeksSorted.length - 1] || '0')
 
-          // Accumulate W/L/PF per team up to (and including) that week
+          // Playoff/consolation games for the newest season
+          const poGamesAll = gameData.filter(g =>
+            String(g?.Season || '').trim() === newestSeason &&
+            String(g?.gameStage || g?.GameStage || '').trim() !== 'Reg Season' &&
+            String(g?.gameStage || g?.GameStage || '').trim() !== ''
+          )
+
+          // Decide which season to display and whether it's finished
+          let displaySeason = newestSeason
+          let isSeasonFinished = poGamesAll.length > 0  // playoff data = season over
+          let standingsSourceGames = []
+          let weekLabel = ''
+
+          if (rsGamesAll.length === 0) {
+            // New season with no reg games yet — fall back to previous complete season
+            const prevSeason = allSeasonsList[allSeasonsList.length - 2]
+            if (prevSeason) {
+              displaySeason = prevSeason
+              isSeasonFinished = true
+              standingsSourceGames = gameData.filter(g =>
+                String(g?.Season || '').trim() === prevSeason
+              )
+            }
+          } else if (isSeasonFinished) {
+            // Season finished — use all game stages for full record
+            standingsSourceGames = gameData.filter(g =>
+              String(g?.Season || '').trim() === newestSeason
+            )
+          } else {
+            // Season in progress — reg season only, up to latest week
+            const rsWeeksSorted = [...new Set(
+              rsGamesAll.map(g => String(g?.Week || '').trim()).filter(Boolean)
+            )].sort((a, b) => parseFloat(a) - parseFloat(b))
+            weekLabel = rsWeeksSorted[rsWeeksSorted.length - 1] || ''
+            standingsSourceGames = rsGamesAll
+          }
+
+          // Accumulate W/L/PF per team
           const teamStatsMap = {}
-          rsGamesAll.forEach(g => {
-            const weekNum = parseFloat(String(g?.Week || '').replace(/[^0-9.]/g, '')) || 0
-            if (weekNum > latestRSWeek) return
+          standingsSourceGames.forEach(g => {
             const team = String(g?.Team || '').trim()
             if (!team) return
             if (!teamStatsMap[team]) teamStatsMap[team] = { team, w: 0, l: 0, pf: 0 }
@@ -1101,11 +1138,14 @@ export default function TapitasLeagueHomepage() {
             if (pf > pa) teamStatsMap[team].w += 1
             else if (pa > pf) teamStatsMap[team].l += 1
           })
+
           const seasonRows = Object.values(teamStatsMap)
             .sort((a, b) => b.w - a.w || a.l - b.l || b.pf - a.pf)
+
           if (mounted) {
             setCurrentStandings(seasonRows)
-            setCurrentWeekLabel(rsWeeksSorted[rsWeeksSorted.length - 1] || '')
+            setCurrentSeason(displaySeason)
+            setCurrentWeekLabel(isSeasonFinished ? '__final__' : weekLabel)
           }
 
           // ── Recent matchups (last week of latest season) ──────────────────
@@ -2364,7 +2404,15 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason}${currentWeekLabel ? ` · Through Week ${currentWeekLabel}` : ''}` : 'Carregando...'}</div>
+                  <div className="text-xs text-slate-500">
+                    {currentSeason
+                      ? currentWeekLabel === '__final__'
+                        ? `Season ${currentSeason} · Final Standings`
+                        : currentWeekLabel
+                          ? `Season ${currentSeason} · Through Week ${currentWeekLabel}`
+                          : `Season ${currentSeason}`
+                      : 'Carregando...'}
+                  </div>
                 </div>
               </div>
               <a href="/standings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
