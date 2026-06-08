@@ -1077,44 +1077,39 @@ export default function TapitasLeagueHomepage() {
           if (mounted) { setPrData(prRows); setCurrentSeason(latestSeason) }
 
           // ── Current standings ─────────────────────────────────────────────
-          // Find the latest season that has any data at all
           const allSeasonsList = [...new Set(
             gameData.map(g => String(g?.Season || '').trim()).filter(Boolean)
           )].sort((a, b) => Number(a) - Number(b))
           const newestSeason = allSeasonsList[allSeasonsList.length - 1]
 
-          const rsGamesNewest = gameData.filter(g =>
+          const rsGamesAll = gameData.filter(g =>
             String(g?.Season || '').trim() === newestSeason &&
             String(g?.gameStage || g?.GameStage || '').trim() === 'Reg Season'
           )
-          const poGamesNewest = gameData.filter(g =>
+          const poGamesAll = gameData.filter(g =>
             String(g?.Season || '').trim() === newestSeason &&
             String(g?.gameStage || g?.GameStage || '').trim() !== 'Reg Season' &&
             String(g?.gameStage || g?.GameStage || '').trim() !== ''
           )
 
-          // Helper: read final standings from TEAM_HISTORY_SORTED using Standing column
-          const buildFromHistory = (season) => {
-            const rows = historyData
-              .filter(r => String(r?.Season || '').trim() === season && parseNumber(r?.Standing) > 0)
-              .map(r => ({
-                team: String(r?.Team || r?.team || '').trim(),
-                w: parseNumber(r?.RS_W || 0),
-                l: parseNumber(r?.RS_L || 0),
-                pf: parseNumber(r?.RS_PF || 0),
-                standing: parseNumber(r?.Standing),
-              }))
-              .sort((a, b) => a.standing - b.standing)
-            return rows
-          }
-
           let displaySeason = newestSeason
-          let isSeasonFinished = poGamesNewest.length > 0
+          let isSeasonFinished = poGamesAll.length > 0
           let seasonRows = []
           let weekLabel = ''
 
-          if (rsGamesNewest.length === 0) {
-            // New season with no reg games yet — show previous finished season
+          const buildFromHistory = (season) => historyData
+            .filter(r => String(r?.Season || '').trim() === season && parseNumber(r?.Standing) > 0)
+            .map(r => ({
+              team: String(r?.Team || r?.team || '').trim(),
+              w: parseNumber(r?.RS_W || 0),
+              l: parseNumber(r?.RS_L || 0),
+              pf: parseNumber(r?.RS_PF || 0),
+              standing: parseNumber(r?.Standing),
+            }))
+            .sort((a, b) => a.standing - b.standing)
+
+          if (rsGamesAll.length === 0) {
+            // New season with no reg games yet — fall back to previous finished season
             const prevSeason = allSeasonsList[allSeasonsList.length - 2]
             if (prevSeason) {
               displaySeason = prevSeason
@@ -1122,17 +1117,17 @@ export default function TapitasLeagueHomepage() {
               seasonRows = buildFromHistory(prevSeason)
             }
           } else if (isSeasonFinished) {
-            // Season over — use Standing column from TEAM_HISTORY_SORTED
+            // Season finished — use Standing column from history
             seasonRows = buildFromHistory(newestSeason)
           } else {
             // Season in progress — accumulate reg season week by week
             const rsWeeksSorted = [...new Set(
-              rsGamesNewest.map(g => String(g?.Week || '').trim()).filter(Boolean)
+              rsGamesAll.map(g => String(g?.Week || '').trim()).filter(Boolean)
             )].sort((a, b) => parseFloat(a) - parseFloat(b))
             weekLabel = rsWeeksSorted[rsWeeksSorted.length - 1] || ''
 
             const teamStatsMap = {}
-            rsGamesNewest.forEach(g => {
+            rsGamesAll.forEach(g => {
               const team = String(g?.Team || '').trim()
               if (!team) return
               if (!teamStatsMap[team]) teamStatsMap[team] = { team, w: 0, l: 0, pf: 0 }
