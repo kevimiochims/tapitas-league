@@ -810,7 +810,6 @@ RENDER
               </span>
             </h1>
             <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-slate-400 leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
-              Ten years of grudge matches, upsets and vengeance.
               Explore every head-to-head in Tapitas League history.
             </p>
           </div>

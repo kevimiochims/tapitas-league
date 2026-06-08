@@ -319,7 +319,7 @@ export default function DraftPage() {
 
         const stealCandidates =
             draftedPlayersStats.filter(
-                p => p.pick >= 25
+                p => p.pick >= 31
             )
 
         const steal =
@@ -333,7 +333,7 @@ export default function DraftPage() {
 
         const bustCandidates =
             draftedPlayersStats.filter(
-                p => p.pick <= 24
+                p => p.pick <= 30
             )
 
         const bust =

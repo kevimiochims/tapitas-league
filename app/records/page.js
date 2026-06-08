@@ -891,7 +891,7 @@ export default function RecordsPage() {
               <span style={{ display: 'block', background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>LEAGUE</span>
               <span style={{ display: 'block', background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>RECORDS</span>
             </h1>
-            <p className="max-w-lg text-base text-slate-400">The numbers that define a decade of glory, rivalry and heartbreak.</p>
+            <p className="max-w-lg text-base text-slate-400">The numbers that define glory, rivalry and heartbreak.</p>
           </div>
         </div>
 
