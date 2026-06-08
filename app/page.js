@@ -1077,70 +1077,69 @@ export default function TapitasLeagueHomepage() {
           if (mounted) { setPrData(prRows); setCurrentSeason(latestSeason) }
 
           // ── Current standings ─────────────────────────────────────────────
-          // Determine the latest season with any game data
           const allSeasonsList = [...new Set(
             gameData.map(g => String(g?.Season || '').trim()).filter(Boolean)
           )].sort((a, b) => Number(a) - Number(b))
           const newestSeason = allSeasonsList[allSeasonsList.length - 1]
 
-          // Reg season games for the newest season
           const rsGamesAll = gameData.filter(g =>
             String(g?.Season || '').trim() === newestSeason &&
             String(g?.gameStage || g?.GameStage || '').trim() === 'Reg Season'
           )
-
-          // Playoff/consolation games for the newest season
           const poGamesAll = gameData.filter(g =>
             String(g?.Season || '').trim() === newestSeason &&
             String(g?.gameStage || g?.GameStage || '').trim() !== 'Reg Season' &&
             String(g?.gameStage || g?.GameStage || '').trim() !== ''
           )
 
-          // Decide which season to display and whether it's finished
           let displaySeason = newestSeason
-          let isSeasonFinished = poGamesAll.length > 0  // playoff data = season over
-          let standingsSourceGames = []
+          let isSeasonFinished = poGamesAll.length > 0
+          let seasonRows = []
           let weekLabel = ''
 
+          const buildFromHistory = (season) => historyData
+            .filter(r => String(r?.Season || '').trim() === season && parseNumber(r?.Standing) > 0)
+            .map(r => ({
+              team: String(r?.Team || r?.team || '').trim(),
+              w: parseNumber(r?.RS_W || 0),
+              l: parseNumber(r?.RS_L || 0),
+              pf: parseNumber(r?.RS_PF || 0),
+              standing: parseNumber(r?.Standing),
+            }))
+            .sort((a, b) => a.standing - b.standing)
+
           if (rsGamesAll.length === 0) {
-            // New season with no reg games yet — fall back to previous complete season
+            // New season with no reg games yet — fall back to previous finished season
             const prevSeason = allSeasonsList[allSeasonsList.length - 2]
             if (prevSeason) {
               displaySeason = prevSeason
               isSeasonFinished = true
-              standingsSourceGames = gameData.filter(g =>
-                String(g?.Season || '').trim() === prevSeason
-              )
+              seasonRows = buildFromHistory(prevSeason)
             }
           } else if (isSeasonFinished) {
-            // Season finished — use all game stages for full record
-            standingsSourceGames = gameData.filter(g =>
-              String(g?.Season || '').trim() === newestSeason
-            )
+            // Season finished — use Standing column from history
+            seasonRows = buildFromHistory(newestSeason)
           } else {
-            // Season in progress — reg season only, up to latest week
+            // Season in progress — accumulate reg season week by week
             const rsWeeksSorted = [...new Set(
               rsGamesAll.map(g => String(g?.Week || '').trim()).filter(Boolean)
             )].sort((a, b) => parseFloat(a) - parseFloat(b))
             weekLabel = rsWeeksSorted[rsWeeksSorted.length - 1] || ''
-            standingsSourceGames = rsGamesAll
+
+            const teamStatsMap = {}
+            rsGamesAll.forEach(g => {
+              const team = String(g?.Team || '').trim()
+              if (!team) return
+              if (!teamStatsMap[team]) teamStatsMap[team] = { team, w: 0, l: 0, pf: 0 }
+              const pf = parseNumber(g?.Score || g?.PF || 0)
+              const pa = parseNumber(g?.OpponentScore || g?.PA || 0)
+              teamStatsMap[team].pf += pf
+              if (pf > pa) teamStatsMap[team].w += 1
+              else if (pa > pf) teamStatsMap[team].l += 1
+            })
+            seasonRows = Object.values(teamStatsMap)
+              .sort((a, b) => b.w - a.w || a.l - b.l || b.pf - a.pf)
           }
-
-          // Accumulate W/L/PF per team
-          const teamStatsMap = {}
-          standingsSourceGames.forEach(g => {
-            const team = String(g?.Team || '').trim()
-            if (!team) return
-            if (!teamStatsMap[team]) teamStatsMap[team] = { team, w: 0, l: 0, pf: 0 }
-            const pf = parseNumber(g?.Score || g?.PF || 0)
-            const pa = parseNumber(g?.OpponentScore || g?.PA || 0)
-            teamStatsMap[team].pf += pf
-            if (pf > pa) teamStatsMap[team].w += 1
-            else if (pa > pf) teamStatsMap[team].l += 1
-          })
-
-          const seasonRows = Object.values(teamStatsMap)
-            .sort((a, b) => b.w - a.w || a.l - b.l || b.pf - a.pf)
 
           if (mounted) {
             setCurrentStandings(seasonRows)
