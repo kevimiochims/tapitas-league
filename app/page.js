@@ -1181,39 +1181,41 @@ export default function TapitasLeagueHomepage() {
             setCurrentSeason(displaySeason)
             setCurrentWeekLabel(isSeasonFinished ? '__final__' : weekLabel)
           }
+        } // end if seasonsWithPR
 
-          // ── Recent matchups — last week with any completed games, any stage ──
-          const allNewestGames = gameData.filter(g =>
-            String(g?.Season || '').trim() === newestSeason &&
-            parseNumber(g?.Score || g?.PF || 0) > 0  // only rows with actual scores
+        // ── Recent matchups — independent of PR data ──────────────────────────
+        {
+          const allSeasons2 = [...new Set(
+            gameData.map(g => String(g?.Season || '').trim()).filter(Boolean)
+          )].sort((a, b) => Number(a) - Number(b))
+          const newestSeason2 = allSeasons2[allSeasons2.length - 1]
+
+          const allNewestGames2 = gameData.filter(g =>
+            String(g?.Season || '').trim() === newestSeason2 &&
+            parseNumber(g?.Score || g?.PF || 0) > 0
           )
-          // Sort weeks numerically (handle "15-16" → 15, "17" → 17)
-          const allWeeksSorted = [...new Set(
-            allNewestGames.map(g => String(g?.Week || '').trim()).filter(Boolean)
+          const allWeeksSorted2 = [...new Set(
+            allNewestGames2.map(g => String(g?.Week || '').trim()).filter(Boolean)
           )].sort((a, b) => parseFloat(a) - parseFloat(b))
-          const lastWeekWithGames = allWeeksSorted[allWeeksSorted.length - 1]
+          const lastWeek2 = allWeeksSorted2[allWeeksSorted2.length - 1]
 
-          // Build unique matchups for that week
-          const lastWeekAllGames = allNewestGames.filter(g =>
-            String(g?.Week || '').trim() === lastWeekWithGames
-          )
-          const seen = new Set()
-          const matchups = []
-          for (const g of lastWeekAllGames) {
+          const seen2 = new Set()
+          const matchups2 = []
+          for (const g of allNewestGames2.filter(g => String(g?.Week || '').trim() === lastWeek2)) {
             const team = String(g?.Team || '').trim()
             const opp  = String(g?.Opponent || '').trim()
             const key  = [team, opp].sort().join('|')
-            if (seen.has(key)) continue
-            seen.add(key)
+            if (seen2.has(key)) continue
+            seen2.add(key)
             const score    = parseNumber(g?.Score || g?.PF || 0)
             const oppScore = parseNumber(g?.OpponentScore || g?.PA || 0)
             const stage    = String(g?.gameStage || g?.GameStage || '').trim()
-            matchups.push({ team, opp, score, oppScore, week: lastWeekWithGames, season: newestSeason, stage })
+            matchups2.push({ team, opp, score, oppScore, week: lastWeek2, season: newestSeason2, stage })
           }
-          if (mounted) setRecentMatchups(matchups.slice(0, 6))
+          if (mounted) setRecentMatchups(matchups2.slice(0, 6))
         }
 
-        // ── Draft picks (last season, first 24 picks = rounds 1-3 ish) ──────
+        // ── Draft picks ───────────────────────────────────────────────────────
         if (draftData.length > 0) {
           const draftSeasons = [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
             .sort((a, b) => Number(a) - Number(b))
