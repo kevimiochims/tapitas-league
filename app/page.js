@@ -1182,20 +1182,24 @@ export default function TapitasLeagueHomepage() {
             setCurrentWeekLabel(isSeasonFinished ? '__final__' : weekLabel)
           }
 
-          // ── Recent matchups (last week of latest season) ──────────────────
-          const regGames = gameData.filter(g =>
-            String(g?.Season || '').trim() === latestSeason &&
-            String(g?.gameStage || g?.GameStage || '').trim() === 'Reg Season'
+          // ── Recent matchups — last week with any completed games, any stage ──
+          const allNewestGames = gameData.filter(g =>
+            String(g?.Season || '').trim() === newestSeason &&
+            parseNumber(g?.Score || g?.PF || 0) > 0  // only rows with actual scores
           )
-          const regWeeks = [...new Set(regGames.map(g => String(g?.Week || '').trim()).filter(Boolean))]
-            .sort((a, b) => parseFloat(a) - parseFloat(b))
-          const lastRegWeek = regWeeks[regWeeks.length - 1]
+          // Sort weeks numerically (handle "15-16" → 15, "17" → 17)
+          const allWeeksSorted = [...new Set(
+            allNewestGames.map(g => String(g?.Week || '').trim()).filter(Boolean)
+          )].sort((a, b) => parseFloat(a) - parseFloat(b))
+          const lastWeekWithGames = allWeeksSorted[allWeeksSorted.length - 1]
 
-          // Build unique matchups (each game appears twice, one per side)
-          const lastWeekGames = regGames.filter(g => String(g?.Week || '').trim() === lastRegWeek)
+          // Build unique matchups for that week
+          const lastWeekAllGames = allNewestGames.filter(g =>
+            String(g?.Week || '').trim() === lastWeekWithGames
+          )
           const seen = new Set()
           const matchups = []
-          for (const g of lastWeekGames) {
+          for (const g of lastWeekAllGames) {
             const team = String(g?.Team || '').trim()
             const opp  = String(g?.Opponent || '').trim()
             const key  = [team, opp].sort().join('|')
@@ -1203,7 +1207,8 @@ export default function TapitasLeagueHomepage() {
             seen.add(key)
             const score    = parseNumber(g?.Score || g?.PF || 0)
             const oppScore = parseNumber(g?.OpponentScore || g?.PA || 0)
-            matchups.push({ team, opp, score, oppScore, week: lastRegWeek, season: latestSeason })
+            const stage    = String(g?.gameStage || g?.GameStage || '').trim()
+            matchups.push({ team, opp, score, oppScore, week: lastWeekWithGames, season: newestSeason, stage })
           }
           if (mounted) setRecentMatchups(matchups.slice(0, 6))
         }
@@ -2669,7 +2674,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400">Matchups Recentes</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Week ${recentMatchups[0]?.week}` : ''}</div>
+                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Week ${recentMatchups[0]?.week}${recentMatchups[0]?.stage && recentMatchups[0].stage !== 'Reg Season' ? ` · ${recentMatchups[0].stage}` : ''}` : ''}</div>
                 </div>
               </div>
               <a href="/matchups" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2826,60 +2831,60 @@ export default function TapitasLeagueHomepage() {
                     <div className="grid grid-cols-2 gap-2">
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Trophy className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Playoffs</span></div>
-                        <span className="text-sm font-black text-white">{selectedRivalry.playoffRecord}</span>
+                        <div className="flex items-center gap-1.5"><Trophy className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Playoffs</span></div>
+                        <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Activity className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Avg Margin</span></div>
-                        <span className="text-sm font-black text-white">{selectedRivalry.avgMargin} pts</span>
+                        <div className="flex items-center gap-1.5"><Activity className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Avg Margin</span></div>
+                        <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Stars className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}</span></div>
-                        <span className="text-sm font-black text-white">{selectedRivalry.lastMeeting.score}</span>
+                        <div className="flex items-center gap-1.5"><Stars className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}</span></div>
+                        <span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span>
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Radar className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Current Streak</span></div>
-                        <span className="text-sm font-black text-white">{selectedRivalry.streak}</span>
+                        <div className="flex items-center gap-1.5"><Radar className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Current Streak</span></div>
+                        <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamA)}</span></div>
+                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamA)}</span></div>
                         {bigA ? (
                           <>
-                            <span className="text-sm font-black text-white">{bigA.scoreA} – {bigA.scoreB}{bigA.margin ? <span className="text-emerald-400"> (+{bigA.margin})</span> : ''}</span>
+                            <span className="text-base font-black text-white">{bigA.scoreA} – {bigA.scoreB}{bigA.margin ? <span className="text-emerald-400"> (+{bigA.margin})</span> : ''}</span>
                             {bigA.label && <span className="text-[10px] text-slate-500">{bigA.label}</span>}
                           </>
                         ) : <span className="text-xs text-slate-600">—</span>}
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamB)}</span></div>
+                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamB)}</span></div>
                         {bigB ? (
                           <>
-                            <span className="text-sm font-black text-white">{bigB.scoreA} – {bigB.scoreB}{bigB.margin ? <span className="text-emerald-400"> (+{bigB.margin})</span> : ''}</span>
+                            <span className="text-base font-black text-white">{bigB.scoreA} – {bigB.scoreB}{bigB.margin ? <span className="text-emerald-400"> (+{bigB.margin})</span> : ''}</span>
                             {bigB.label && <span className="text-[10px] text-slate-500">{bigB.label}</span>}
                           </>
                         ) : <span className="text-xs text-slate-600">—</span>}
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamA)}</span></div>
+                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamA)}</span></div>
                         {strA?.count ? (
                           <>
-                            <span className="text-sm font-black text-white">{strA.result}{strA.count}</span>
+                            <span className="text-base font-black text-white">{strA.result}{strA.count}</span>
                             {strA.start && <span className="text-[10px] text-slate-500">{strA.start}{strA.end ? ` → ${strA.end}` : ''}</span>}
                           </>
                         ) : <span className="text-xs text-slate-600">—</span>}
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamB)}</span></div>
+                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamB)}</span></div>
                         {strB?.count ? (
                           <>
-                            <span className="text-sm font-black text-white">{strB.result}{strB.count}</span>
+                            <span className="text-base font-black text-white">{strB.result}{strB.count}</span>
                             {strB.start && <span className="text-[10px] text-slate-500">{strB.start}{strB.end ? ` → ${strB.end}` : ''}</span>}
                           </>
                         ) : <span className="text-xs text-slate-600">—</span>}
