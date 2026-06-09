@@ -981,27 +981,31 @@ export default function TapitasLeagueHomepage() {
             game?.Opponent || game?.opponent || ''
           ).trim()
 
+          // Only count games that have actually been played (PF > 0)
+          const score = parseNumber(
+            game?.Score || game?.score || game?.PF || game?.pf
+          )
+          const hasScore = score > 0
+
           const matchupKey = [season, rawWeek, team, opponent]
             .sort()
             .join('|')
 
-          if (season) {
+          // Only count seasons that have at least one played game
+          if (season && hasScore) {
             uniqueSeasons.add(season)
           }
 
-          if (team && opponent && rawWeek) {
+          // Only count games that have been played
+          if (team && opponent && rawWeek && hasScore) {
             uniqueGames.add(matchupKey)
           }
-
-          const score = parseNumber(
-            game?.Score || game?.score || game?.PF
-          )
 
           const isCombinedWeek =
             rawWeek.includes('-') ||
             rawWeek.includes('&')
 
-          if (!isCombinedWeek && score > highestScore) {
+          if (!isCombinedWeek && hasScore && score > highestScore) {
             highestScore = score
             highestScoreTeam = team
           }
@@ -1107,9 +1111,11 @@ export default function TapitasLeagueHomepage() {
           if (mounted) { setPrData(prRows); setCurrentSeason(latestSeason) }
 
           // ── Current standings ─────────────────────────────────────────────
-          // Find the latest season that has any data at all
+          // Find the latest season that has any PLAYED games (PF > 0)
           const allSeasonsList = [...new Set(
-            gameData.map(g => String(g?.Season || '').trim()).filter(Boolean)
+            gameData
+              .filter(g => parseNumber(g?.Score || g?.PF || g?.score || g?.pf || 0) > 0)
+              .map(g => String(g?.Season || '').trim()).filter(Boolean)
           )].sort((a, b) => Number(a) - Number(b))
           const newestSeason = allSeasonsList[allSeasonsList.length - 1]
 
@@ -1186,16 +1192,20 @@ export default function TapitasLeagueHomepage() {
         // ── Recent matchups — independent of PR data ──────────────────────────
         {
           const allSeasons2 = [...new Set(
-            gameData.map(g => String(g?.Season || '').trim()).filter(Boolean)
+            gameData
+              .filter(g => parseNumber(g?.Score || g?.PF || g?.score || g?.pf || 0) > 0)
+              .map(g => String(g?.Season || '').trim()).filter(Boolean)
           )].sort((a, b) => Number(a) - Number(b))
           const newestSeason2 = allSeasons2[allSeasons2.length - 1]
 
-          // All games from newest season — no score filter, just needs team + opponent
-          const allNewestGames2 = gameData.filter(g =>
-            String(g?.Season || '').trim() === newestSeason2 &&
-            String(g?.Team || '').trim() !== '' &&
-            String(g?.Opponent || '').trim() !== ''
-          )
+          // All games from newest season with actual scores (both sides filled)
+          const allNewestGames2 = gameData.filter(g => {
+            if (String(g?.Season || '').trim() !== newestSeason2) return false
+            if (!String(g?.Team || '').trim() || !String(g?.Opponent || '').trim()) return false
+            const pf = parseNumber(g?.Score || g?.PF || g?.score || g?.pf || 0)
+            const pa = parseNumber(g?.OpponentScore || g?.PA || g?.opponent_score || g?.pa || 0)
+            return pf > 0 && pa > 0
+          })
 
           // Sort weeks numerically (handle "15-16" → 15, "17" → 17)
           const allWeeksSorted2 = [...new Set(
