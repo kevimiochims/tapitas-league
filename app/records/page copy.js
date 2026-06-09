@@ -58,15 +58,15 @@ function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide })
             <Icon className={`h-5 w-5 ${a.text}`} />
           </div>
         )}
-        <div className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
+        <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
         <div className={`font-black leading-none ${a.text}`}
-          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(38px, 8vw, 56px)' }}>
+          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px, 4vw, 56px)' }}>
           {value}
         </div>
         {subArr.length > 0 && (
           <div className="mt-3 flex flex-col gap-0.5">
             {subArr.map((s, i) => (
-              <div key={i} className="font-black text-white" style={{ fontSize: 'clamp(14px, 3vw, 16px)' }}>{s}</div>
+              <div key={i} className="font-black text-white" style={{ fontSize: 'clamp(12px, 1.4vw, 16px)' }}>{s}</div>
             ))}
           </div>
         )}
@@ -89,15 +89,15 @@ function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide })
               {top5.slice(0, 5).map((item, i) => (
                 <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-white/[0.04] last:border-0">
                   <div className="flex items-start gap-2 min-w-0 flex-1">
-                    <span className={`text-sm font-black flex-shrink-0 w-5 ${i === 0 ? a.text : 'text-slate-600'}`}>{i + 1}</span>
+                    <span className={`text-xs font-black flex-shrink-0 w-4 ${i === 0 ? a.text : 'text-slate-600'}`}>{i + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-bold text-white leading-tight">
+                      <div className="text-xs font-bold text-white leading-tight">
                         {Array.isArray(item.label) ? item.label.join(', ') : item.label}
                       </div>
-                      {item.sub && <div className="text-xs text-slate-500 leading-tight mt-0.5">{item.sub}</div>}
+                      {item.sub && <div className="text-[10px] text-slate-500 leading-tight mt-0.5">{item.sub}</div>}
                     </div>
                   </div>
-                  <span className={`text-base font-black flex-shrink-0 ${i === 0 ? a.text : 'text-slate-400'}`}>{item.value}</span>
+                  <span className={`text-sm font-black flex-shrink-0 ${i === 0 ? a.text : 'text-slate-400'}`}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -326,11 +326,10 @@ export default function RecordsPage() {
       const season = parseNumber(g?.Season || 0)
       const rawWeek = String(g?.Week || '').trim()
       const weekNum = parseFloat(rawWeek.replace(/[^0-9.]/g, '')) || 0
-      // Streak_Total = across all games; Streak / Streak_RS = reg season only
-      const streakTotal = parseNumber(g?.Streak_Total || g?.Streak_total || 0)
+      const streak = parseNumber(g?.Streak || 0)
       const streakRS = parseNumber(g?.Streak_RS || g?.Streak || 0)
       if (!byTeam[team]) byTeam[team] = []
-      byTeam[team].push({ season, weekNum, rawWeek, streak: streakTotal, streakRS })
+      byTeam[team].push({ season, weekNum, rawWeek, streak, streakRS })
     })
 
     // For a given team + streak column, find when the best streak started and ended
@@ -364,7 +363,9 @@ export default function RecordsPage() {
         const team = String(r.Team || '').trim()
         const val = String(r[key] || '')
         const teamGames = byTeam[team] || []
-        const getStreak = useRS ? (g => g.streakRS) : (g => g.streak)
+        const getStreak = useRS
+          ? (g => g.streakRS)
+          : (g => g.streak)
         const range = findStreakRange(teamGames, getStreak, parseStrVal(r[key]))
         const rangeSub = range
           ? `${range.start} → ${range.end}${range.active ? ' · Active' : ''}`
@@ -372,16 +373,13 @@ export default function RecordsPage() {
         return { label: team, value: val, sub: rangeSub, active: range?.active }
       })
 
-      // Hero sub: for RS, just team names. For Total, include range.
       const topTeams = sorted.filter(r => parseStrVal(r[key]) === topVal)
       const topSubs = topTeams.map(r => {
         const team = String(r.Team || '').trim()
-        if (useRS) return team  // RS: no range in hero sub
-        // Total: include range in hero sub
         const teamGames = byTeam[team] || []
-        const range = findStreakRange(teamGames, g => g.streak, topVal)
+        const range = findStreakRange(teamGames, useRS ? (g => g.streakRS) : (g => g.streak), topVal)
         return range
-          ? `${team}${range.active ? ' 🔥' : ''}`
+          ? `${team}${range.active ? ' 🔥 Active' : ''} · ${range.start} → ${range.end}`
           : team
       })
 
@@ -784,13 +782,19 @@ export default function RecordsPage() {
     })
     Object.entries(seasonGroups).forEach(([season, rows]) => {
       const total = rows.length
-      // Only process seasons that have Standing data for all teams
+      // Tenta usar Standing primeiro
       const byStanding = rows.filter(r => parseNumber(r?.Standing) > 0)
-      // Skip seasons with no standings at all (e.g. future/incomplete seasons)
-      if (byStanding.length === 0) return
-      // Use the highest standing number (last place)
-      const last = byStanding.sort((a, b) => parseNumber(b.Standing) - parseNumber(a.Standing))[0]
-      unicorns.push(last)
+      if (byStanding.length > 0) {
+        const last = byStanding.sort((a, b) => parseNumber(b.Standing) - parseNumber(a.Standing))[0]
+        if (parseNumber(last.Standing) === total) { unicorns.push(last); return }
+      }
+      // Fallback: menor RS_W e maior RS_L
+      const sorted = [...rows].sort((a, b) => {
+        const wDiff = parseNumber(a.RS_W) - parseNumber(b.RS_W)
+        if (wDiff !== 0) return wDiff
+        return parseNumber(b.RS_L) - parseNumber(a.RS_L)
+      })
+      if (sorted[0]) unicorns.push(sorted[0])
     })
     unicorns.sort((a, b) => Number(String(b?.Season || '0')) - Number(String(a?.Season || '0')))
 
