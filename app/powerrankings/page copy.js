@@ -104,7 +104,6 @@ export default function PowerRankingsPage() {
   const formRefs = useRef({})
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [allSeasons, setAllSeasons] = useState([])
-  const [calendar, setCalendar] = useState([])
   const { setLeftSlot } = useDrawer()
 
 
@@ -129,12 +128,9 @@ export default function PowerRankingsPage() {
 
     async function load() {
 
-      const [gameData, calendarData] = await Promise.all([
-        safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-        safeFetch(`${BASE_URL}/CALENDAR`),
-      ])
-
-      setCalendar(calendarData)
+      const gameData = await safeFetch(
+        `${BASE_URL}/GAME_FACTS_ALL`
+      )
 
       // OPCIONAL:
       // criar uma aba POWER_RANKING_NOTES
@@ -276,43 +272,12 @@ export default function PowerRankingsPage() {
       parseNumber(g?.['Power Ranking']) > 0
     )
 
-    // Build a lookup from CALENDAR for the next week after `week`
-    // CALENDAR columns expected: Season | Week | Team A | Team B
-    const currentWeekStart = getWeekStart(week)
-    const nextWeekFromCalendar = (teamName) => {
-      // Find calendar rows for this season, weeks strictly after current week
-      const futureRows = calendar.filter(r => {
-        const calSeason = String(r?.Season || r?.season || '').trim()
-        const calWeek = String(r?.Week || r?.week || '').trim()
-        return calSeason === season && getWeekStart(calWeek) > currentWeekStart
-      }).sort((a, b) =>
-        getWeekStart(String(a?.Week || '')) - getWeekStart(String(b?.Week || ''))
-      )
-
-      for (const r of futureRows) {
-        const teamA = String(r?.['Team A'] || r?.TeamA || r?.team_a || r?.Home || '').trim()
-        const teamB = String(r?.['Team B'] || r?.TeamB || r?.team_b || r?.Away || '').trim()
-        const calWeek = String(r?.Week || r?.week || '').trim()
-        if (teamA.toLowerCase() === teamName.toLowerCase()) {
-          return `${teamB} (Week ${calWeek})`
-        }
-        if (teamB.toLowerCase() === teamName.toLowerCase()) {
-          return `${teamA} (Week ${calWeek})`
-        }
-      }
-      return ''
-    }
-
     const mapped = filtered.map(g => {
 
-      const teamName = String(g?.Team || '').trim()
-      const nextFromGame = String(g?.Next || '').trim()
-      // Fall back to CALENDAR when Next column is empty
-      const next = nextFromGame || nextWeekFromCalendar(teamName)
 
       return {
 
-        team: teamName,
+        team: String(g?.Team || '').trim(),
 
         owner: String(g?.Owner || '').trim(),
 
@@ -344,7 +309,7 @@ export default function PowerRankingsPage() {
 
         pa: parseNumber(g?.PA),
 
-        next,
+        next: String(g?.Next || '').trim(),
 
         note: String(g?.Note || '').trim(),
       }
@@ -371,7 +336,7 @@ export default function PowerRankingsPage() {
         }
       })
 
-  }, [games, season, week, calendar])
+  }, [games, season, week])
 
   const totalTeams = rankings.length
 

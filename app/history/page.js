@@ -20,12 +20,16 @@ const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
 const TEAM_LOGOS = {
-  'H-Lera do Mahl': '/images/hlera.png',
-  'Peytao da Massa': '/images/peytao.png',
-  'Moneyball': '/images/moneyball.png',
-  'OldBrady': '/images/oldbrady.png',
-  'I am Megatron': '/images/megatron.png',
-  'Ocupa e Resiste': '/images/ocupa.png',
+  'howmuch': '/images/howmuch.png',
+  'i am megatron': '/images/megatron.png',
+  'moneyball': '/images/moneyball.png',
+  'ocupa e resiste': '/images/ocupa.png',
+  'oldbrady': '/images/oldbrady.png',
+  'patrolao squad': '/images/patrolao.png',
+  'pequers verde': '/images/pequers.png',
+  'peytao da massa': '/images/peytao.png',
+  'rincao settlers': '/images/rincao.png',
+  'h-lera do mahl': '/images/hlera.png',
 }
 
 function parseNumber(value) {
