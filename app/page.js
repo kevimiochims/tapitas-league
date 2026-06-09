@@ -1190,10 +1190,14 @@ export default function TapitasLeagueHomepage() {
           )].sort((a, b) => Number(a) - Number(b))
           const newestSeason2 = allSeasons2[allSeasons2.length - 1]
 
+          // All games from newest season — no score filter, just needs team + opponent
           const allNewestGames2 = gameData.filter(g =>
             String(g?.Season || '').trim() === newestSeason2 &&
-            parseNumber(g?.Score || g?.PF || 0) > 0
+            String(g?.Team || '').trim() !== '' &&
+            String(g?.Opponent || '').trim() !== ''
           )
+
+          // Sort weeks numerically (handle "15-16" → 15, "17" → 17)
           const allWeeksSorted2 = [...new Set(
             allNewestGames2.map(g => String(g?.Week || '').trim()).filter(Boolean)
           )].sort((a, b) => parseFloat(a) - parseFloat(b))
@@ -1207,9 +1211,9 @@ export default function TapitasLeagueHomepage() {
             const key  = [team, opp].sort().join('|')
             if (seen2.has(key)) continue
             seen2.add(key)
-            const score    = parseNumber(g?.Score || g?.PF || 0)
-            const oppScore = parseNumber(g?.OpponentScore || g?.PA || 0)
-            const stage    = String(g?.gameStage || g?.GameStage || '').trim()
+            const score    = parseNumber(g?.Score || g?.PF || g?.score || g?.pf || 0)
+            const oppScore = parseNumber(g?.OpponentScore || g?.PA || g?.opponent_score || g?.pa || 0)
+            const stage    = String(g?.gameStage || g?.GameStage || g?.Stage || '').trim()
             matchups2.push({ team, opp, score, oppScore, week: lastWeek2, season: newestSeason2, stage })
           }
           if (mounted) setRecentMatchups(matchups2.slice(0, 6))
