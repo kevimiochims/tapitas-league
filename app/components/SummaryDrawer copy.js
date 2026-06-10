@@ -28,32 +28,13 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
 
   const [selectedSeason, setSelectedSeason] = useState(null)
   const [seasonSummary, setSeasonSummary] = useState(null)
-  const [playedSeasons, setPlayedSeasons] = useState([])
 
-  // Fetch which seasons actually have played games (PF > 0)
+  // define a temporada mais recente ao abrir
   useEffect(() => {
-    if (!open || playedSeasons.length > 0) return
-    safeSheetFetch(`${BASE_URL}/GAME_FACTS_ALL`).then(data => {
-      const seasons = [...new Set(
-        data
-          .filter(g => parseNumber(g?.PF || g?.Score || 0) > 0)
-          .map(g => String(g?.Season || '').trim())
-          .filter(Boolean)
-      )].sort((a, b) => Number(a) - Number(b))
-      setPlayedSeasons(seasons)
-      // Default to the last season that has played games
-      if (!selectedSeason && seasons.length > 0) {
-        setSelectedSeason(seasons[seasons.length - 1])
-      }
-    })
-  }, [open])
-
-  // Sync selectedSeason when playedSeasons loads
-  useEffect(() => {
-    if (playedSeasons.length > 0 && !selectedSeason) {
-      setSelectedSeason(playedSeasons[playedSeasons.length - 1])
+    if (open && allSeasons?.length > 0 && !selectedSeason) {
+      setSelectedSeason(allSeasons[allSeasons.length - 1])
     }
-  }, [playedSeasons])
+  }, [open, allSeasons])
 
   // reseta o summary ao trocar de temporada
   useEffect(() => {
@@ -109,9 +90,7 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
       )[validStandings.length - 1]
 
       const seasonGames = gamesJson.filter(r =>
-        String(r?.Season || '').trim() === SEASON &&
-        parseNumber(r?.PF || 0) > 0 &&
-        parseNumber(r?.PA || 0) > 0
+        String(r?.Season || '').trim() === SEASON
       )
 
       const highestGame = seasonGames.reduce((best, g) => {
@@ -189,7 +168,7 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
             <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">
               Season Summary
             </div>
-              <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-3 mt-1">
               <div className="text-xl font-black text-white">
                 Season{' '}
                 <select
@@ -197,8 +176,8 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
                   onChange={(e) => setSelectedSeason(e.target.value)}
                   className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-1 text-sm font-bold text-white outline-none"
                 >
-                  {(playedSeasons.length > 0 ? playedSeasons : (allSeasons || []))
-                    .slice()
+                  {allSeasons
+                    ?.slice()
                     .sort((a, b) => b - a)
                     .map((season) => (
                       <option key={season} value={season} className="bg-[#080f1e]">
@@ -207,11 +186,6 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
                     ))}
                 </select>
               </div>
-              {seasonSummary && !seasonSummary.champion && (
-                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-yellow-400 border border-yellow-400/30 bg-yellow-400/10 rounded-lg px-2 py-0.5">
-                  In Progress
-                </span>
-              )}
             </div>
           </div>
           <button
@@ -230,13 +204,6 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-
-              {!seasonSummary.champion && (
-                <div className="rounded-[20px] border border-yellow-400/20 bg-yellow-400/[0.05] p-4">
-                  <div className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400 mb-1">⏳ Temporada em andamento</div>
-                  <div className="text-xs text-slate-500">Dados parciais. Champion, Finalist e Unicórnio só aparecem quando a temporada terminar.</div>
-                </div>
-              )}
 
               {seasonSummary.champion && (
                 <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
@@ -297,7 +264,7 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
                 )}
               </div>
 
-              {seasonSummary.unicorn && seasonSummary.champion && (
+              {seasonSummary.unicorn && (
                 <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
                   <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
