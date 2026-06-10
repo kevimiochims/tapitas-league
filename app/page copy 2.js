@@ -1489,9 +1489,8 @@ export default function TapitasLeagueHomepage() {
       // Maior pontuação em um único jogo
       const seasonGames = gamesJson.filter(r => {
         const s = String(r?.Season || '').trim()
-        return s === SEASON &&
-          parseNumber(r?.PF || 0) > 0 &&
-          parseNumber(r?.PA || 0) > 0
+        const stage = String(r?.GameStage || '').trim()
+        return s === SEASON && stage === 'Reg Season'
       })
 
       const highestGame = seasonGames.reduce((best, g) => {
@@ -3088,7 +3087,7 @@ export default function TapitasLeagueHomepage() {
               </div>
               <div className="flex items-center gap-3 mt-1">
                 <div className="text-xl font-black text-white">
-                  Season{' '}
+                  Season {'                 '}
                   <select
                     value={selectedSeason}
                     onChange={(e) => {
@@ -3111,11 +3110,6 @@ export default function TapitasLeagueHomepage() {
                       ))}
                   </select>
                 </div>
-                {seasonSummary && !seasonSummary.champion && (
-                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-yellow-400 border border-yellow-400/30 bg-yellow-400/10 rounded-lg px-2 py-0.5 whitespace-nowrap">
-                    In Progress
-                  </span>
-                )}
               </div>
             </div>
             <button
@@ -3134,14 +3128,6 @@ export default function TapitasLeagueHomepage() {
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-
-                {/* In-progress warning */}
-                {!seasonSummary.champion && (
-                  <div className="rounded-[20px] border border-yellow-400/20 bg-yellow-400/[0.05] p-4">
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400 mb-1">⏳ Temporada em andamento</div>
-                    <div className="text-xs text-slate-500">Dados parciais. Champion, Finalist e Unicórnio só aparecem quando a temporada terminar.</div>
-                  </div>
-                )}
 
                 {/* Campeão */}
                 {seasonSummary.champion && (
@@ -3206,7 +3192,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
 
                 {/* Unicórnio */}
-                {seasonSummary.unicorn && seasonSummary.champion && (
+                {seasonSummary.unicorn && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
                     <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
