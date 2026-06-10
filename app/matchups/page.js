@@ -733,7 +733,7 @@ export default function MatchupsPage() {
                 }}
                 viewport={{
                   once: false,
-                  amount: 0.15,
+                  amount: 0.05,
                 }}
                 transition={{
                   duration: 0.8,
