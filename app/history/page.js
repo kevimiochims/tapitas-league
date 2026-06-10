@@ -21,15 +21,34 @@ const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
 const TEAM_LOGOS = {
   'howmuch': '/images/howmuch.png',
+  'how much is the fish': '/images/howmuch.png',
   'i am megatron': '/images/megatron.png',
   'moneyball': '/images/moneyball.png',
+  'moneyball fc': '/images/moneyball.png',
   'ocupa e resiste': '/images/ocupa.png',
+  'ocupa meu slot': '/images/ocupa.png',
   'oldbrady': '/images/oldbrady.png',
+  'old brady bunch': '/images/oldbrady.png',
   'patrolao squad': '/images/patrolao.png',
+  'patrolao': '/images/patrolao.png',
   'pequers verde': '/images/pequers.png',
+  'green bay pequers': '/images/pequers.png',
   'peytao da massa': '/images/peytao.png',
   'rincao settlers': '/images/rincao.png',
+  'settlers of rincao': '/images/rincao.png',
   'h-lera do mahl': '/images/hlera.png',
+}
+
+function normalizeString(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function getTeamLogo(name) {
+  return TEAM_LOGOS[normalizeString(name)] || null
 }
 
 function parseNumber(value) {
@@ -703,7 +722,7 @@ export default function HistoryPage() {
                                   >
                                     <Image
                                       src={
-                                        TEAM_LOGOS[s.champion] ||
+                                        getTeamLogo(s.champion) ||
                                         '/images/teams/default.png'
                                       }
                                       alt={s.champion || 'Champion'}
