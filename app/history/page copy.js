@@ -149,20 +149,15 @@ export default function HistoryPage() {
   }, [])
 
   const seasonData = useMemo(() => {
-    // Only show seasons that have a completed final (Tapitas Bowl winner)
-    const completedSeasons = [
+    const seasons = [
       ...new Set(
         games
-          .filter(g =>
-            String(g?.GameType || '').trim().toLowerCase() === 'tapitas bowl' &&
-            String(g?.Result || '').trim().toUpperCase() === 'W'
-          )
           .map(g => String(g?.Season || '').trim())
           .filter(Boolean)
       ),
     ].sort((a, b) => Number(b) - Number(a))
 
-    return completedSeasons.map(season => {
+    return seasons.map(season => {
       const seasonGames = games.filter(
         g => String(g?.Season || '').trim() === season
       )
