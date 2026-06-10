@@ -578,23 +578,10 @@ export default function RecordsPage() {
       }
     }
 
-    // Only use seasons that are complete (have Standing data)
-    const completedSeasons = new Set(
-      history
-        .filter(r => parseNumber(r?.Standing) > 0)
-        .map(r => String(r?.Season || '').trim())
-    )
-    const completedHistory = history.filter(r =>
-      completedSeasons.has(String(r?.Season || '').trim())
-    )
-
     const from21 = history.filter(r => Number(String(r?.Season || '0')) >= 2021)
     const from23 = history.filter(r => Number(String(r?.Season || '0')) >= 2023)
-    // completed variants — only for fewest points
-    const from21c = completedHistory.filter(r => Number(String(r?.Season || '0')) >= 2021)
-    const from23c = completedHistory.filter(r => Number(String(r?.Season || '0')) >= 2023)
 
-    // Avg pts/week — all seasons (useful to see in-progress averages)
+    // Avg pts/week
     const withAvg = history.map(r => ({
       ...r,
       avgPF: parseNumber(r?.RS_GP) > 0 ? parseNumber(r?.RS_PF) / parseNumber(r?.RS_GP) : 0
@@ -633,9 +620,9 @@ export default function RecordsPage() {
       byPF: mkTop(history, 'RS_PF', 5, false, v => Math.round(v).toLocaleString()),
       byPF21: mkTop(from21, 'RS_PF', 5, false, v => Math.round(v).toLocaleString()),
       byPF23: mkTop(from23, 'RS_PF', 5, false, v => Math.round(v).toLocaleString()),
-      byLowPF: mkTop(completedHistory, 'RS_PF', 5, true, v => Math.round(v).toLocaleString()),
-      byLow21: mkTop(from21c, 'RS_PF', 5, true, v => Math.round(v).toLocaleString()),
-      byLow23: mkTop(from23c, 'RS_PF', 5, true, v => Math.round(v).toLocaleString()),
+      byLowPF: mkTop(history, 'RS_PF', 5, true, v => Math.round(v).toLocaleString()),
+      byLow21: mkTop(from21, 'RS_PF', 5, true, v => Math.round(v).toLocaleString()),
+      byLow23: mkTop(from23, 'RS_PF', 5, true, v => Math.round(v).toLocaleString()),
       avgHigh: mkAvg(withAvg),
       avgHigh21: mkAvg(withAvg21),
       avgHigh23: mkAvg(withAvg23),
