@@ -145,10 +145,8 @@ export default function TeamsPage() {
 
       return Number(r.Standing) === maxStanding
     })
-    // Only completed seasons (have Standing data) for best/worst
-    const completedTeamH = teamH.filter(r => parseNumber(r?.Standing) > 0)
-    const bestSeason = [...completedTeamH].sort((a, b) => parseNumber(b.RS_W) - parseNumber(a.RS_W))[0]
-    const worstSeason = [...completedTeamH].sort((a, b) => parseNumber(a.RS_W) - parseNumber(b.RS_W))[0]
+    const bestSeason = [...teamH].sort((a, b) => parseNumber(b.RS_W) - parseNumber(a.RS_W))[0]
+    const worstSeason = [...teamH].sort((a, b) => parseNumber(a.RS_W) - parseNumber(b.RS_W))[0]
     const winPct = String(selected?.['W%'] || '').trim()
     const poWinPct = String(selected?.['PO_W%'] || '').trim()
 
