@@ -118,7 +118,7 @@ export default function NewsPage() {
                 <div className="flex flex-col md:flex-row">
                   {featured.imageUrl && (
                     <div className="relative h-56 w-full flex-shrink-0 overflow-hidden md:h-auto md:w-80">
-                      <img src={featured.imageUrl.split('|')[0]} alt={featured.title} className="h-full w-full object-cover" />
+                      <img src={featured.imageUrl.split('|')[0]} alt={featured.title} className="h-full w-full object-cover object-top" />
                     </div>
                   )}
                   <div className="flex flex-1 flex-col justify-center p-8">
@@ -158,7 +158,7 @@ export default function NewsPage() {
                     >
                       {post.imageUrl && (
                         <div className="h-44 w-full overflow-hidden">
-                          <img src={post.imageUrl.split('|')[0]} alt={post.title} className="h-full w-full object-cover transition-transform hover:scale-105" />
+                          <img src={post.imageUrl.split('|')[0]} alt={post.title} className="h-full w-full object-cover object-top transition-transform hover:scale-105" />
                         </div>
                       )}
                       <div className="p-5">

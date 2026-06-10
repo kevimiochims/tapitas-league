@@ -355,7 +355,7 @@ export default function NewsArticle() {
                                     <img
                                         src={item.imageUrl.split('|')[0]}
                                         alt={item.title}
-                                        className="h-40 w-full object-cover"
+                                        className="h-40 w-full object-cover object-top"
                                     />
                                 )}
 
