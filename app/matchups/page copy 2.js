@@ -72,14 +72,7 @@ function extractPlayers(game, prefix) {
     const name = game?.[`${prefix}${i}_Name`]
     const pts = game?.[`${prefix}${i}_Pts`]
     if (name && name !== '--empty--' && name !== '') {
-      // Try common column name variants for NFL team abbreviation
-      const nflTeam = String(
-        game?.[`${prefix}${i}_Team`] ||
-        game?.[`${prefix}${i}_NFL`] ||
-        game?.[`${prefix}${i}_Tm`] ||
-        game?.[`${prefix}${i}_Club`] || ''
-      ).trim()
-      players.push({ name: String(name).trim(), pts: parseNumber(pts), nflTeam })
+      players.push({ name: String(name).trim(), pts: parseNumber(pts) })
     }
   }
   return players
@@ -106,20 +99,6 @@ function getTeamAvatar(name) {
   return TEAM_AVATARS[normalizeString(name)] || null
 }
 
-// NFL team logo for DEF slots — uses ESPN CDN
-const NFL_ABBR_REMAP = {
-  was: 'wsh', lar: 'lar', lac: 'lac', lv: 'lv',
-  kc: 'kc', sf: 'sf', gb: 'gb', ne: 'ne',
-  nyg: 'nyg', nyj: 'nyj', tb: 'tb', no: 'no',
-}
-
-function getNFLTeamLogo(abbr) {
-  if (!abbr || abbr === '--' || abbr === '') return null
-  const raw = String(abbr).toLowerCase().trim()
-  const mapped = NFL_ABBR_REMAP[raw] || raw
-  return `https://a.espncdn.com/i/teamlogos/nfl/500/${mapped}.png`
-}
-
 // ── Player headshot helpers ──────────────────────────────────────────────────
 
 function normalizePlayerKey(value) {
@@ -133,17 +112,15 @@ function normalizePlayerKey(value) {
 }
 
 function buildPlayerLookup(rows) {
-  // Sort ascending so higher (newer) player_ids overwrite lower (older) ones on collision
-  const sorted = [...rows].sort((a, b) => Number(a?.player_id || 0) - Number(b?.player_id || 0))
   const map = new Map()
-  sorted.forEach(row => {
+  rows.forEach(row => {
     const playerId = String(row?.player_id || '').trim()
     const abbreviated = String(row?.name || '').trim()
     const fullName = String(row?.full_name || '').trim()
     if (!playerId) return
     ;[abbreviated, fullName].filter(Boolean).forEach(value => {
       const key = normalizePlayerKey(value)
-      if (key) map.set(key, playerId) // always overwrite → last (highest id) wins
+      if (key && !map.has(key)) map.set(key, playerId)
     })
   })
   return map
@@ -157,54 +134,23 @@ function getPlayerHeadshot(name, playerLookup) {
   return `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
 }
 
-function PlayerAvatar({ name, playerLookup, nflTeam, pos, size = 36, showTeam = false }) {
+function PlayerAvatar({ name, playerLookup, size = 28 }) {
   const [failed, setFailed] = useState(false)
-  const isDefense = pos === 'DEF'
-  const defLogo = isDefense ? getNFLTeamLogo(name) : null
-  const src = !failed
-    ? (isDefense ? defLogo : getPlayerHeadshot(name, playerLookup))
-    : null
+  const src = !failed ? getPlayerHeadshot(name, playerLookup) : null
   const initials = String(name || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
-  const ringColor = {
-    QB: '#f87171', RB: '#34d399', WR: '#60a5fa', TE: '#fbbf24',
-    FLEX: '#f472b6', K: '#a78bfa', DEF: '#fb923c',
-  }[pos] || '#475569'
-
-  const avatarStyle = {
-    width: size, height: size, borderRadius: '50%', flexShrink: 0,
-    overflow: 'hidden', background: 'rgba(255,255,255,0.06)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    boxShadow: `0 0 0 2px ${ringColor}55`,
-    position: 'relative',
+  const style = { width: size, height: size, borderRadius: '50%', flexShrink: 0, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  if (src) {
+    return (
+      <div style={style}>
+        <img src={src} alt={name} width={size} height={size} loading="lazy"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
+          onError={() => setFailed(true)} />
+      </div>
+    )
   }
-  const imgEl = src ? (
-    <img src={src} alt={name} width={size} height={size} loading="lazy"
-      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: isDefense ? 'center' : 'top' }}
-      onError={() => setFailed(true)} />
-  ) : (
-    <span style={{ fontSize: size * 0.3, fontWeight: 900, color: 'rgba(255,255,255,0.3)', letterSpacing: '-0.02em' }}>
-      {initials}
-    </span>
-  )
-
-  const teamLogo = showTeam && !isDefense && nflTeam ? getNFLTeamLogo(nflTeam) : null
-
   return (
-    <div style={{ position: 'relative', flexShrink: 0, width: size, height: size }}>
-      <div style={avatarStyle}>{imgEl}</div>
-      {teamLogo && (
-        <div style={{
-          position: 'absolute', bottom: -3, right: -5,
-          width: Math.round(size * 0.46), height: Math.round(size * 0.46),
-          borderRadius: '50%', background: '#0f172a',
-          border: '1.5px solid rgba(255,255,255,0.10)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden',
-        }}>
-          <img src={teamLogo} alt={nflTeam} width={Math.round(size * 0.32)} height={Math.round(size * 0.32)}
-            style={{ objectFit: 'contain' }} loading="lazy" />
-        </div>
-      )}
+    <div style={{ ...style, fontSize: size * 0.34, fontWeight: 900, color: 'rgba(255,255,255,0.3)', letterSpacing: '-0.02em' }}>
+      {initials}
     </div>
   )
 }
@@ -1013,7 +959,7 @@ export default function MatchupsPage() {
                             {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
                             <div className={`flex items-center justify-between rounded-2xl px-2 md:px-4 py-3 min-w-0 gap-1.5 ${home ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
                               <div className="flex items-center gap-1.5 min-w-0">
-                                <PlayerAvatar name={home?.name} playerLookup={playerLookup} nflTeam={home?.nflTeam} pos={pos} size={36} showTeam />
+                                <PlayerAvatar name={home?.name} playerLookup={playerLookup} size={26} />
                                 <span className="text-xs md:text-sm font-bold text-white truncate">{home?.name ?? ''}</span>
                               </div>
                               <span className={`text-xs md:text-sm font-black flex-shrink-0 ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
@@ -1035,7 +981,7 @@ export default function MatchupsPage() {
                                 {away ? away.pts.toFixed(1) : ''}
                               </span>
                               <div className="flex items-center gap-1.5 min-w-0 flex-row-reverse">
-                                <PlayerAvatar name={away?.name} playerLookup={playerLookup} nflTeam={away?.nflTeam} pos={pos} size={36} showTeam />
+                                <PlayerAvatar name={away?.name} playerLookup={playerLookup} size={26} />
                                 <span className="text-xs md:text-sm font-bold text-white truncate text-right">{away?.name ?? ''}</span>
                               </div>
                             </div>
@@ -1070,7 +1016,7 @@ export default function MatchupsPage() {
 
                             <div className={`flex items-center justify-between rounded-2xl px-2 md:px-4 py-3 min-w-0 gap-1.5 ${home ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
                               <div className="flex items-center gap-1.5 min-w-0">
-                                <PlayerAvatar name={home?.name} playerLookup={playerLookup} nflTeam={home?.nflTeam} pos="BN" size={30} showTeam />
+                                <PlayerAvatar name={home?.name} playerLookup={playerLookup} size={22} />
                                 <span className="text-xs md:text-sm font-bold text-slate-400 truncate">{home?.name ?? ''}</span>
                               </div>
                               <span className={`text-xs md:text-sm font-black flex-shrink-0 ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -1089,7 +1035,7 @@ export default function MatchupsPage() {
                                 {away ? away.pts.toFixed(1) : ''}
                               </span>
                               <div className="flex items-center gap-1.5 min-w-0 flex-row-reverse">
-                                <PlayerAvatar name={away?.name} playerLookup={playerLookup} nflTeam={away?.nflTeam} pos="BN" size={30} showTeam />
+                                <PlayerAvatar name={away?.name} playerLookup={playerLookup} size={22} />
                                 <span className="text-xs md:text-sm font-bold text-slate-400 truncate text-right">{away?.name ?? ''}</span>
                               </div>
                             </div>
