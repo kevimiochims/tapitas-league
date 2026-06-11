@@ -20,7 +20,7 @@ function parseNumber(value) {
   if (String(value).includes(',')) console.log('parseNumber:', value, '->', cleaned, '->', parsed)
   return Number.isNaN(parsed) ? 0 : parsed
 }
-
+  
 function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
