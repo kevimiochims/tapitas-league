@@ -244,7 +244,7 @@ export default function MatchupsPage() {
     async function load() {
       const [data, cacheRows] = await Promise.all([
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-        safeFetch(`${BASE_URL}/_PLAYER%20CACHE`),
+        safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
       ])
       setGames(data)
       setPlayerLookup(buildPlayerLookup(cacheRows))
