@@ -25,33 +25,6 @@ function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
 
-const TEAM_AVATARS = {
-  'howmuch': '/images/howmuch.png',
-  'how much is the fish': '/images/howmuch.png',
-  'i am megatron': '/images/megatron.png',
-  'moneyball': '/images/moneyball.png',
-  'moneyball fc': '/images/moneyball.png',
-  'ocupa e resiste': '/images/ocupa.png',
-  'ocupa meu slot': '/images/ocupa.png',
-  'oldbrady': '/images/oldbrady.png',
-  'old brady bunch': '/images/oldbrady.png',
-  'patrolao squad': '/images/patrolao.png',
-  'patrolao': '/images/patrolao.png',
-  'patrolão': '/images/patrolao.png',
-  'pequers verde': '/images/pequers.png',
-  'green bay pequers': '/images/pequers.png',
-  'peytao da massa': '/images/peytao.png',
-  'peytão da massa': '/images/peytao.png',
-  'rincao settlers': '/images/rincao.png',
-  'settlers of rincao': '/images/rincao.png',
-  'settlers of rincão': '/images/rincao.png',
-  'h-lera do mahl': '/images/hlera.png',
-}
-
-function getTeamAvatar(name) {
-  return TEAM_AVATARS[normalizeString(name)] || null
-}
-
 async function safeFetch(url) {
   try {
     console.log('Fetching:', url)
@@ -242,8 +215,7 @@ export default function StandingsPage() {
     const s = new Set()
     historyData.forEach(r => {
       const v = String(r?.Season || r?.season || '').trim()
-      // Only include seasons that have Standing data (completed)
-      if (v && parseNumber(r?.Standing) > 0) s.add(v)
+      if (v) s.add(v)
     })
     return ['All-Time', ...Array.from(s).sort((a, b) => Number(b) - Number(a))]
   }, [historyData])
@@ -331,58 +303,42 @@ export default function StandingsPage() {
     if (!chartTeam) return []
     const stat = CHART_STATS.find(s => s.label === chartStat)
     const key = stat?.keys?.[chartScope] ?? 'RS_W'
-
-    // Build a map of season -> reg season game count to detect incomplete seasons
-    const gamesPerSeason = {}
-    historyData.forEach(r => {
-      if (normalizeString(r?.Team || r?.team || '') !== normalizeString(chartTeam)) return
-      const s = String(r?.Season || '').trim()
-      if (!s) return
-      const hasStanding = parseNumber(r?.Standing) > 0
-      const gp = parseNumber(r?.RS_GP || r?.GP || 0)
-      gamesPerSeason[s] = { hasStanding, gp }
-    })
-
     return historyData
-      .filter(r => {
-        if (normalizeString(r?.Team || r?.team || '') !== normalizeString(chartTeam)) return false
-        const s = String(r?.Season || '').trim()
-        const info = gamesPerSeason[s]
-        if (!info) return false
-        // Include if: season is complete (has Standing) OR has at least 8 games played
-        return info.hasStanding || info.gp >= 8
-      })
+      .filter(r => normalizeString(r?.Team || r?.team || '') === normalizeString(chartTeam))
       .map(r => ({
         season: String(r?.Season || r?.season || '').trim(),
         value: parseNumber(String(r?.[key] || '0').replace('%', '')),
         champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
-        incomplete: !gamesPerSeason[String(r?.Season || '').trim()]?.hasStanding,
       }))
       .sort((a, b) => Number(a.season) - Number(b.season))
   }, [historyData, chartTeam, chartStat, chartScope])
 
   const chartStats = useMemo(() => {
     if (!chartData.length) return null
-
-    // For best/worst/avg: only use completed seasons
-    const completedData = chartData.filter(d => !d.incomplete)
-    const vals = completedData.length > 0
-      ? completedData.map(d => d.value)
-      : chartData.map(d => d.value)
-
+    const vals = chartData.map(d => d.value)
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length
     const isLoss = chartStat === 'Losses'
 
     const bestVal = isLoss ? Math.min(...vals) : Math.max(...vals)
     const worstVal = isLoss ? Math.max(...vals) : Math.min(...vals)
 
-    const sourceData = completedData.length > 0 ? completedData : chartData
-    const bestSeasons = sourceData.filter(d => d.value === bestVal).map(d => d.season)
-    const worstSeasons = sourceData.filter(d => d.value === worstVal).map(d => d.season)
+    const bestSeasons = chartData.filter(d => d.value === bestVal).map(d => d.season)
+    const worstSeasons = chartData.filter(d => d.value === worstVal).map(d => d.season)
+
+    // Descobre quais foram as temporadas de título
     const championSeasons = chartData.filter(d => d.champion).map(d => d.season)
+    // Mantém a contagem total baseada no tamanho desse novo array
     const titles = championSeasons.length
 
-    return { bestVal, worstVal, bestSeasons, worstSeasons, avg: Math.round(avg * 10) / 10, titles, championSeasons }
+    return {
+      bestVal,
+      worstVal,
+      bestSeasons,
+      worstSeasons,
+      avg: Math.round(avg * 10) / 10,
+      titles,
+      championSeasons // Agora você tem a lista exata de temporadas campeãs aqui!
+    }
   }, [chartData, chartStat])
 
   const paged = tableData.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
@@ -654,63 +610,79 @@ export default function StandingsPage() {
           {loading ? (
             <div className="flex items-center justify-center py-20 text-slate-500 font-bold">Loading...</div>
           ) : (
-            <div className="p-4 space-y-1.5">
-              {/* Header row */}
-              <div className="grid gap-2 px-4 pb-1"
-                style={{ gridTemplateColumns: `2rem 1fr ${tabCols[tab].map(() => '4rem').join(' ')}` }}>
-                <button
-                  onClick={() => season !== 'All-Time' && handleSort('Pos')}
-                  className={`text-[10px] font-black uppercase tracking-[0.2em] text-left ${season !== 'All-Time' ? 'cursor-pointer hover:text-cyan-300' : 'cursor-default text-slate-600'}`}
-                  style={{ color: sortCol === 'Pos' && season !== 'All-Time' ? '#22d3ee' : undefined }}
-                >
-                  #
-                </button>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Franchise</div>
-                {tabCols[tab].map(col => (
-                  <button key={col} onClick={() => handleSort(col)}
-                    className="text-[10px] font-black uppercase tracking-[0.15em] text-right transition-colors hover:text-cyan-300"
-                    style={{ color: sortCol === col ? '#22d3ee' : '#64748b' }}>
-                    {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                  </button>
-                ))}
-              </div>
-
-              {paged.map((row, i) => {
-                const rank = page * PER_PAGE + i + 1
-                const pos = season !== 'All-Time' && row.standing ? row.standing : rank
-                const avatar = getTeamAvatar(row.team)
-                const isTop3 = pos <= 3
-                return (
-                  <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                    className="grid items-center gap-2 rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all hover:bg-white/[0.05] hover:border-white/10"
-                    style={{ gridTemplateColumns: `2rem 1fr ${tabCols[tab].map(() => '4rem').join(' ')}` }}>
-                    {/* Rank */}
-                    <span className="font-black leading-none text-center"
-                      style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: pos === 1 ? '#facc15' : pos <= 3 ? '#22d3ee' : '#475569' }}>
-                      {pos}
-                    </span>
-                    {/* Team */}
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {avatar
-                        ? <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-lg object-cover" />
-                        : <div className="h-7 w-7 flex-shrink-0 rounded-lg bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">{row.team.slice(0, 2).toUpperCase()}</div>
-                      }
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-black text-white">{row.team}</div>
-                      </div>
-                      {row.champion && <span className="flex-shrink-0 text-sm">🏆</span>}
-                    </div>
-                    {/* Stats */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/5">
+                    <th
+                      onClick={() => season !== 'All-Time' && handleSort('Pos')}
+                      className={`px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${season !== 'All-Time' ? 'cursor-pointer hover:text-cyan-300' : 'cursor-default'
+                        }`}
+                      style={{ color: sortCol === 'Pos' && season !== 'All-Time' ? '#22d3ee' : '#94a3b8' }}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        Pos
+                        {sortCol === 'Pos' && season !== 'All-Time' && (
+                          <span className="text-cyan-400">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </span>
+                    </th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                      Franchise
+                    </th>
                     {tabCols[tab].map(col => (
-                      <div key={col} className="text-right">
-                        <span className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-400'}`}>
-                          {getCol(row, col)}
+                      <th
+                        key={col}
+                        onClick={() => handleSort(col)}
+                        className="cursor-pointer px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] transition-colors hover:text-cyan-300"
+                        style={{ color: sortCol === col ? '#22d3ee' : '#94a3b8' }}
+                      >
+                        <span className="inline-flex items-center justify-end gap-1">
+                          {col}
+                          {sortCol === col && (
+                            <span className="text-cyan-400">{sortDir === 'desc' ? '↓' : '↑'}</span>
+                          )}
                         </span>
-                      </div>
+                      </th>
                     ))}
-                  </a>
-                )
-              })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((row, i) => {
+                    const rank = page * PER_PAGE + i + 1
+                    return (
+                      <tr key={row.team} className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]">
+                        <td className="px-6 py-4">
+                          <span className={`text-sm font-black ${(season !== 'All-Time' ? row.standing : rank) <= 3 ? 'text-cyan-300' : 'text-slate-600'
+                            }`}>
+                            {season !== 'All-Time' && row.standing
+                              ? ['1st', '2nd', '3rd'][row.standing - 1] ?? `${row.standing}th`
+                              : rank}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-white" style={{ fontSize: 'clamp(13px, 2vw, 16px)' }}>
+                              {row.team}
+                            </span>
+                            {row.champion && (
+                              <span title="Champion">🏆</span>
+                            )}
+                          </div>
+                        </td>
+                        {tabCols[tab].map(col => (
+                          <td
+                            key={col}
+                            className={`px-4 py-4 text-right text-sm font-bold ${col === sortCol ? 'text-base font-black text-cyan-300' : 'text-slate-400'}`}
+                          >
+                            {getCol(row, col)}
+                          </td>
+                        ))}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
 
