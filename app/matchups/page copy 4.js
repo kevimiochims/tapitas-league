@@ -109,61 +109,16 @@ function normalizePlayerKey(value) {
     .trim()
 }
 
-// Maps full/nickname team names → ESPN abbr (for DEF slot)
-const NFL_TEAM_NAME_MAP = {
-  'cardinals': 'ari', 'arizona': 'ari',
-  'falcons': 'atl', 'atlanta': 'atl',
-  'ravens': 'bal', 'baltimore': 'bal',
-  'bills': 'buf', 'buffalo': 'buf',
-  'panthers': 'car', 'carolina': 'car',
-  'bears': 'chi', 'chicago': 'chi',
-  'bengals': 'cin', 'cincinnati': 'cin',
-  'browns': 'cle', 'cleveland': 'cle',
-  'cowboys': 'dal', 'dallas': 'dal',
-  'broncos': 'den', 'denver': 'den',
-  'lions': 'det', 'detroit': 'det',
-  'packers': 'gb', 'green bay': 'gb',
-  'texans': 'hou', 'houston': 'hou',
-  'colts': 'ind', 'indianapolis': 'ind',
-  'jaguars': 'jax', 'jacksonville': 'jax',
-  'chiefs': 'kc', 'kansas city': 'kc',
-  'chargers': 'lac', 'los angeles chargers': 'lac',
-  'rams': 'lar', 'los angeles rams': 'lar',
-  'raiders': 'lv', 'las vegas': 'lv', 'oakland': 'lv',
-  'dolphins': 'mia', 'miami': 'mia',
-  'vikings': 'min', 'minnesota': 'min',
-  'patriots': 'ne', 'new england': 'ne',
-  'saints': 'no', 'new orleans': 'no',
-  'giants': 'nyg', 'new york giants': 'nyg',
-  'jets': 'nyj', 'new york jets': 'nyj',
-  'eagles': 'phi', 'philadelphia': 'phi',
-  'steelers': 'pit', 'pittsburgh': 'pit',
-  'seahawks': 'sea', 'seattle': 'sea',
-  '49ers': 'sf', 'san francisco': 'sf',
-  'buccaneers': 'tb', 'tampa bay': 'tb',
-  'titans': 'ten', 'tennessee': 'ten',
-  'commanders': 'wsh', 'washington': 'wsh', 'redskins': 'wsh', 'football team': 'wsh',
-}
-
-function getNFLTeamLogo(nameOrAbbr) {
-  if (!nameOrAbbr || nameOrAbbr === '--') return null
-  const raw = String(nameOrAbbr).toLowerCase().trim()
-  const mapped = NFL_TEAM_NAME_MAP[raw]
-  if (mapped) return `https://a.espncdn.com/i/teamlogos/nfl/500/${mapped}.png`
-  const abbr = raw === 'was' ? 'wsh' : raw
-  return `https://a.espncdn.com/i/teamlogos/nfl/500/${abbr}.png`
-}
-
-// Lookup by name|pos (no team field in cache — badge omitted)
 function buildPlayerLookup(rows) {
   const map = new Map()
   rows.forEach(row => {
     const playerId = String(row?.player_id || '').trim()
     const abbreviated = String(row?.name || '').trim()
     const fullName = String(row?.full_name || '').trim()
+    const team = String(row?.team || '').trim().toLowerCase()
     const pos = String(row?.position || '').trim().toUpperCase()
     if (!playerId) return
-    const entry = { playerId, pos }
+    const entry = { playerId, team, pos }
     ;[abbreviated, fullName].filter(Boolean).forEach(value => {
       const baseKey = normalizePlayerKey(value)
       if (!baseKey) return
@@ -191,42 +146,60 @@ function getPlayerData(name, pos, playerLookup) {
   return playerLookup.get(baseKey) || null
 }
 
+const ESPN_ABBR_MAP = { was: 'wsh' }
+function getNFLTeamLogo(abbr) {
+  if (!abbr || abbr === '' || abbr === '--') return null
+  const raw = String(abbr).toLowerCase().trim()
+  return `https://a.espncdn.com/i/teamlogos/nfl/500/${ESPN_ABBR_MAP[raw] || raw}.png`
+}
+
 const POS_RING = {
   QB: '#f87171', RB: '#34d399', WR: '#60a5fa', TE: '#fbbf24',
   FLEX: '#f472b6', K: '#a78bfa', DEF: '#fb923c', BN: '#334155',
 }
 
-// Avatar: player photo (or team logo for DEF). No team badge (no team field in cache).
-function PlayerAvatar({ name, pos, playerLookup, size = 44 }) {
-  const [failed, setFailed] = useState(false)
+function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false }) {
+  const [photoFailed, setPhotoFailed] = useState(false)
+  const [logoFailed, setLogoFailed] = useState(false)
   const isDefense = pos === 'DEF'
   const data = getPlayerData(name, pos, playerLookup)
   const playerId = data?.playerId
-
-  const src = !failed
-    ? (isDefense
-        ? getNFLTeamLogo(name)
-        : (playerId ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg` : null))
+  const nflTeam = data?.team
+  const photoSrc = !photoFailed
+    ? (isDefense ? getNFLTeamLogo(name) : (playerId ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg` : null))
     : null
-
+  const teamLogoSrc = !logoFailed && !isDefense && nflTeam ? getNFLTeamLogo(nflTeam) : null
   const initials = String(name || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
   const ring = POS_RING[pos] || '#475569'
-
-  return (
+  const badgeSize = Math.round(size * 0.56)
+  const photo = (
     <div style={{
       width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-      background: 'rgba(255,255,255,0.07)', boxShadow: `0 0 0 2px ${ring}55`,
+      background: 'rgba(255,255,255,0.07)', boxShadow: `0 0 0 2px ${ring}66`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      {src ? (
-        <img src={src} alt={name} width={size} height={size} loading="lazy"
+      {photoSrc ? (
+        <img src={photoSrc} alt={name} width={size} height={size} loading="lazy"
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: isDefense ? 'center' : 'top' }}
-          onError={() => setFailed(true)} />
+          onError={() => setPhotoFailed(true)} />
       ) : (
-        <span style={{ fontSize: size * 0.32, fontWeight: 900, color: 'rgba(255,255,255,0.3)', letterSpacing: '-0.02em' }}>
-          {initials}
-        </span>
+        <span style={{ fontSize: size * 0.3, fontWeight: 900, color: 'rgba(255,255,255,0.28)' }}>{initials}</span>
       )}
+    </div>
+  )
+  const badge = teamLogoSrc ? (
+    <div style={{
+      width: badgeSize, height: badgeSize, borderRadius: '50%', flexShrink: 0,
+      background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+    }}>
+      <img src={teamLogoSrc} alt={nflTeam} width={badgeSize - 6} height={badgeSize - 6}
+        style={{ objectFit: 'contain' }} loading="lazy" onError={() => setLogoFailed(true)} />
+    </div>
+  ) : null
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+      {mirror && badge}{photo}{!mirror && badge}
     </div>
   )
 }
@@ -1033,12 +1006,12 @@ export default function MatchupsPage() {
 
                             {/* Time A — Nome → Pts */}
                             {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
-                            <div className={`flex items-center justify-between rounded-2xl px-2 py-1.5 min-w-0 gap-1.5 ${home ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
-                              <div className="flex items-center gap-1.5 min-w-0 overflow-hidden" style={{flex:'1 1 0'}}>
-                                <PlayerAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={44} />
-                                <span className="text-[11px] md:text-xs font-semibold text-slate-300 truncate leading-tight">{home?.name ?? ''}</span>
+                            <div className={`flex items-center justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${home ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
+                              <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={34} />
+                              <div className="flex flex-col items-end min-w-0 flex-1">
+                                <span className="text-[10px] font-semibold text-slate-400 truncate w-full text-right leading-tight">{home?.name ?? ''}</span>
+                                <span className={`text-lg font-black leading-tight tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
                               </div>
-                              <span className={`font-black flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`} style={{fontSize:'clamp(14px,2vw,20px)'}}>{home ? home.pts.toFixed(1) : '—'}</span>
                             </div>
 
                             {/* Posição central — Sempre centralizada perfeitamente */}
@@ -1050,12 +1023,12 @@ export default function MatchupsPage() {
 
                             {/* Time B — Pts → Nome (espelhado) */}
                             {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
-                            <div className={`flex items-center justify-between rounded-2xl px-2 py-1.5 min-w-0 gap-1.5 ${away ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
-                              <span className={`font-black flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`} style={{fontSize:'clamp(14px,2vw,20px)'}}>{away ? away.pts.toFixed(1) : '—'}</span>
-                              <div className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-row-reverse" style={{flex:'1 1 0'}}>
-                                <PlayerAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={44} />
-                                <span className="text-[11px] md:text-xs font-semibold text-slate-300 truncate leading-tight text-right">{away?.name ?? ''}</span>
+                            <div className={`flex items-center justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${away ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
+                              <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="text-[10px] font-semibold text-slate-400 truncate w-full leading-tight">{away?.name ?? ''}</span>
+                                <span className={`text-lg font-black leading-tight tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
                               </div>
+                              <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={34} mirror />
                             </div>
                           </div>
                         </React.Fragment>
@@ -1086,12 +1059,12 @@ export default function MatchupsPage() {
                         <React.Fragment key={i}>
                           <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-2 items-center">
 
-                            <div className={`flex items-center justify-between rounded-2xl px-2 py-1.5 min-w-0 gap-1.5 ${home ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
-                              <div className="flex items-center gap-1.5 min-w-0 overflow-hidden" style={{flex:'1 1 0'}}>
-                                <PlayerAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={34} />
-                                <span className="text-[10px] md:text-[11px] font-semibold text-slate-500 truncate leading-tight">{home?.name ?? ''}</span>
+                            <div className={`flex items-center justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${home ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
+                              <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={28} />
+                              <div className="flex flex-col items-end min-w-0 flex-1">
+                                <span className="text-[10px] font-semibold text-slate-500 truncate w-full text-right leading-tight">{home?.name ?? ''}</span>
+                                <span className={`text-sm font-black leading-tight tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
                               </div>
-                              <span className={`text-sm font-black flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
                             </div>
 
                             <div className="flex items-center justify-center">
@@ -1100,12 +1073,12 @@ export default function MatchupsPage() {
                               </span>
                             </div>
 
-                            <div className={`flex items-center justify-between rounded-2xl px-2 py-1.5 min-w-0 gap-1.5 ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
-                              <span className={`text-sm font-black flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
-                              <div className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-row-reverse" style={{flex:'1 1 0'}}>
-                                <PlayerAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={34} />
-                                <span className="text-[10px] md:text-[11px] font-semibold text-slate-500 truncate leading-tight text-right">{away?.name ?? ''}</span>
+                            <div className={`flex items-center justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
+                              <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="text-[10px] font-semibold text-slate-500 truncate w-full leading-tight">{away?.name ?? ''}</span>
+                                <span className={`text-sm font-black leading-tight tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
                               </div>
+                              <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={28} mirror />
                             </div>
                           </div>
                         </React.Fragment>
