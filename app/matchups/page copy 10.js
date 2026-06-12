@@ -209,16 +209,6 @@ const POS_RING = {
   BN: '#334155',
 }
 
-
-function getDisplayPlayerPos(name, pos, playerLookup) {
-  const data = getPlayerData(name, pos, playerLookup)
-  const realPos = String(data?.pos || data?.position || '').toUpperCase()
-  if (realPos === 'DST') return 'DEF'
-  if (['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].includes(realPos)) return realPos
-  if (pos === 'DEF') return 'DEF'
-  return String(pos || '').toUpperCase()
-}
-
 function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false }) {
   const [photoFailed, setPhotoFailed] = useState(false)
   const [logoFailed, setLogoFailed] = useState(false)
@@ -1163,9 +1153,9 @@ export default function MatchupsPage() {
                                 <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                   <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={42} />
                                 </div>
-                                <div className="min-w-0 flex items-center gap-1.5"><div className="text-[15px] md:text-base font-black text-white truncate leading-tight min-w-0 block">{home?.name ?? ''}</div><span className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(home?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>{getDisplayPlayerPos(home?.name, pos, playerLookup)}</span></div>
+                                <div className="text-sm font-black text-white truncate leading-tight min-w-0 block">{home?.name ?? ''}</div>
                               </div>
-                              <span className={`text-[22px] md:text-[28px] font-black flex items-center flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
+                              <span className={`text-xl md:text-2xl font-black flex items-center flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
                             </div>
 
                             {/* Posição central — Sempre centralizada perfeitamente */}
@@ -1178,12 +1168,12 @@ export default function MatchupsPage() {
                             {/* Time B — Pts → Nome (espelhado) */}
                             {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
                             <div className={`flex items-stretch justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${away ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
-                              <span className={`text-[22px] md:text-[28px] font-black flex items-center flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
+                              <span className={`text-xl md:text-2xl font-black flex items-center flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
                               <div className="min-w-0 flex-1 overflow-hidden text-right" style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4, justifyItems: 'end' }}>
                                 <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
                                   <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={42} mirror />
                                 </div>
-                                <div className="min-w-0 flex items-center justify-end gap-1.5 w-full"><span className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(away?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>{getDisplayPlayerPos(away?.name, pos, playerLookup)}</span><div className="text-[15px] md:text-base font-black text-white truncate leading-tight text-right min-w-0 block">{away?.name ?? ''}</div></div>
+                                <div className="text-sm font-black text-white truncate leading-tight text-right min-w-0 block w-full">{away?.name ?? ''}</div>
                               </div>
                             </div>
                           </div>
@@ -1220,9 +1210,9 @@ export default function MatchupsPage() {
                                 <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                   <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={32} />
                                 </div>
-                                <div className="min-w-0 flex items-center gap-1.5"><div className="text-[13px] md:text-sm font-bold text-slate-300 truncate leading-tight min-w-0 block">{home?.name ?? ''}</div><span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(home?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>{getDisplayPlayerPos(home?.name, 'BN', playerLookup)}</span></div>
+                                <div className="text-xs font-bold text-slate-400 truncate leading-tight min-w-0 block">{home?.name ?? ''}</div>
                               </div>
-                              <span className={`text-[18px] md:text-[20px] font-black flex items-center flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
+                              <span className={`text-base md:text-lg font-black flex items-center flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
                             </div>
 
                             <div className="flex items-center justify-center">
@@ -1232,12 +1222,12 @@ export default function MatchupsPage() {
                             </div>
 
                             <div className={`flex items-stretch justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
-                              <span className={`text-[18px] md:text-[20px] font-black flex items-center flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
+                              <span className={`text-base md:text-lg font-black flex items-center flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
                               <div className="min-w-0 flex-1 overflow-hidden text-right" style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4, justifyItems: 'end' }}>
                                 <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
                                   <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={32} mirror />
                                 </div>
-                                <div className="min-w-0 flex items-center justify-end gap-1.5 w-full"><span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(away?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>{getDisplayPlayerPos(away?.name, 'BN', playerLookup)}</span><div className="text-[13px] md:text-sm font-bold text-slate-300 truncate leading-tight text-right min-w-0 block">{away?.name ?? ''}</div></div>
+                                <div className="text-xs font-bold text-slate-400 truncate leading-tight text-right min-w-0 block w-full">{away?.name ?? ''}</div>
                               </div>
                             </div>
                           </div>
