@@ -228,6 +228,14 @@ function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false })
   const playerId = data?.playerId
   const nflTeam = data?.team
 
+  useEffect(() => {
+    setPhotoFailed(false)
+  }, [name, playerId, pos])
+
+  useEffect(() => {
+    setLogoFailed(false)
+  }, [name, nflTeam, pos])
+
   const photoSrc = !photoFailed
     ? (
       isDefense
