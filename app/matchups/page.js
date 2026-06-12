@@ -109,7 +109,7 @@ function normalizePlayerKey(value) {
     .trim()
 }
 
-// Maps full/nickname team names â†’ ESPN abbr
+// Maps full/nickname team names → ESPN abbr
 const NFL_TEAM_NAME_MAP = {
   'cardinals': 'ari', 'arizona': 'ari', 'arizona cardinals': 'ari',
   'falcons': 'atl', 'atlanta': 'atl', 'atlanta falcons': 'atl',
@@ -153,12 +153,12 @@ function getNFLTeamLogo(nameOrAbbr) {
   // Try full name map first
   const mapped = NFL_TEAM_NAME_MAP[raw]
   if (mapped) return `https://a.espncdn.com/i/teamlogos/nfl/500/${mapped}.png`
-  // Already an abbr (e.g. "kc", "sf") â€” remap wsh
+  // Already an abbr (e.g. "kc", "sf") — remap wsh
   const abbr = raw === 'was' ? 'wsh' : raw
   return `https://a.espncdn.com/i/teamlogos/nfl/500/${abbr}.png`
 }
 
-// Lookup: name|pos first, then name alone â€” NO sorting by id, first occurrence wins
+// Lookup: name|pos first, then name alone — NO sorting by id, first occurrence wins
 function buildPlayerLookup(rows) {
   const map = new Map()
   rows.forEach(row => {
@@ -172,7 +172,7 @@ function buildPlayerLookup(rows) {
     ;[abbreviated, fullName].filter(Boolean).forEach(value => {
       const baseKey = normalizePlayerKey(value)
       if (!baseKey) return
-      // With position: always set (last write wins per pos â€” acceptable)
+      // With position: always set (last write wins per pos — acceptable)
       if (pos) map.set(`${baseKey}|${pos}`, entry)
       // Without position: first occurrence only (no sort, original order)
       if (!map.has(baseKey)) map.set(baseKey, entry)
@@ -491,7 +491,7 @@ export default function MatchupsPage() {
     })
   }, [games, season])
 
-  // Matchups da semana selecionada â€” deduplicados (pega sÃ³ um lado de cada confronto)
+  // Matchups da semana selecionada — deduplicados (pega sÃ³ um lado de cada confronto)
   const matchups = useMemo(() => {
     if (!season || !week) return []
     const filtered = games.filter(g =>
@@ -787,7 +787,7 @@ export default function MatchupsPage() {
                   return (
                     <button
                       key={s}
-                      // ESSA LINHA Ã‰ CRUCIAL: Ela liga o botÃ£o ativo Ã  referÃªncia do JS
+                      // ESSA LINHA Ã‰ CRUCIAL: Ela liga o botÃ£o ativo Ã  referÃªncia do JS
                       ref={isActive ? activeSeasonRef : null}
                       onClick={() => handleSeasonClick(s)}
                       className={`flex-shrink-0 rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${isActive
@@ -881,7 +881,7 @@ export default function MatchupsPage() {
                     className="font-black uppercase tracking-[0.3em] text-cyan-300"
                     style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
                   >
-                    {season} â€” Week {week}
+                    {season} — Week {week}
                   </div>
                 </div>
 
@@ -934,7 +934,7 @@ export default function MatchupsPage() {
                             </span>
                           </a>
                           <span className={`text-lg font-black ml-2 flex-shrink-0 ${won ? 'text-cyan-300' : 'text-slate-400'}`}>
-                            {pf > 0 ? pf.toFixed(2) : 'â€”'}
+                            {pf > 0 ? pf.toFixed(2) : '—'}
                           </span>
                         </div>
 
@@ -956,7 +956,7 @@ export default function MatchupsPage() {
                             </span>
                           </a>
                           <span className={`text-lg font-black ml-2 flex-shrink-0 ${!won ? 'text-cyan-300' : 'text-slate-400'}`}>
-                            {pa > 0 ? pa.toFixed(2) : 'â€”'}
+                            {pa > 0 ? pa.toFixed(2) : '—'}
                           </span>
                         </div>
 
@@ -1016,7 +1016,7 @@ export default function MatchupsPage() {
                   const oppRecord = calcRecord(oppName)
                   const teamStreak = String(selected?.Streak_Total || '').trim()
 
-                  // Streak do oponente â€” busca o jogo oposto
+                  // Streak do oponente — busca o jogo oposto
                   const oppGame = games.find(g =>
                     String(g?.Season || '').trim() === season &&
                     String(g?.Week || '').trim() === week &&
@@ -1034,7 +1034,7 @@ export default function MatchupsPage() {
                       <div className="flex justify-center mb-6">
                         <div className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-1.5">
                           <span className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
-                            {season} Â· Week {week}{gameType && gameType !== 'Reg Season' ? ` Â· ${gameType}` : ''}
+                            {season} · Week {week}{gameType && gameType !== 'Reg Season' ? ` · ${gameType}` : ''}
                           </span>
                         </div>
                       </div>
@@ -1058,7 +1058,7 @@ export default function MatchupsPage() {
                           </div>
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs font-black text-slate-500">
-                              {teamRecord.w}â€“{teamRecord.l}
+                              {teamRecord.w}–{teamRecord.l}
                             </span>
                             <span className={`text-[10px] font-black rounded-lg px-2 py-0.5 border ${teamStreak.startsWith('W')
                               ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10'
@@ -1077,9 +1077,9 @@ export default function MatchupsPage() {
                           </div>
                           <div className="text-[9px] font-black uppercase tracking-widest text-slate-600">margin</div>
                           {teamWon ? (
-                            <div className="mt-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">â† WIN</div>
+                            <div className="mt-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">← WIN</div>
                           ) : (
-                            <div className="mt-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">WIN â†’</div>
+                            <div className="mt-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">WIN →</div>
                           )}
                         </div>
 
@@ -1099,7 +1099,7 @@ export default function MatchupsPage() {
                           </div>
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs font-black text-slate-500">
-                              {oppRecord.w}â€“{oppRecord.l}
+                              {oppRecord.w}-{oppRecord.l}
                             </span>
                             <span className={`text-[10px] font-black rounded-lg px-2 py-0.5 border ${oppStreak.startsWith('W')
                               ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10'
@@ -1146,27 +1146,27 @@ export default function MatchupsPage() {
                           {/* Mantido o grid original, apenas reduzindo o gap no mobile */}
                           <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-2 items-center">
 
-                            {/* Time A â€” Nome â†’ Pts */}
+                            {/* Time A — Nome → Pts */}
                             {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
                             <div className={`flex items-center justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${home ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
                               <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
                                 <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={42} />
                                 <span className="text-sm font-black text-white truncate leading-tight">{home?.name ?? ''}</span>
                               </div>
-                              <span className={`text-base font-black flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : 'â€”'}</span>
+                              <span className={`text-base font-black flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
                             </div>
 
-                            {/* PosiÃ§Ã£o central â€” Sempre centralizada perfeitamente */}
+                            {/* PosiÃ§Ã£o central — Sempre centralizada perfeitamente */}
                             <div className="flex items-center justify-center">
                               <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg px-1.5 md:px-2 py-1 border ${getPosColor(pos)} whitespace-nowrap`}>
                                 {pos}
                               </span>
                             </div>
 
-                            {/* Time B â€” Pts â†’ Nome (espelhado) */}
+                            {/* Time B — Pts → Nome (espelhado) */}
                             {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
                             <div className={`flex items-center justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${away ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
-                              <span className={`text-base font-black flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : 'â€”'}</span>
+                              <span className={`text-base font-black flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
                               <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden flex-row-reverse">
                                 <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={42} mirror />
                                 <span className="text-sm font-black text-white truncate leading-tight text-right">{away?.name ?? ''}</span>
@@ -1206,7 +1206,7 @@ export default function MatchupsPage() {
                                 <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={32} />
                                 <span className="text-xs font-bold text-slate-400 truncate leading-tight">{home?.name ?? ''}</span>
                               </div>
-                              <span className={`text-sm font-black flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : 'â€”'}</span>
+                              <span className={`text-sm font-black flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
                             </div>
 
                             <div className="flex items-center justify-center">
@@ -1216,7 +1216,7 @@ export default function MatchupsPage() {
                             </div>
 
                             <div className={`flex items-center justify-between rounded-2xl px-2 md:px-3 py-2 min-w-0 gap-2 ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
-                              <span className={`text-sm font-black flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : 'â€”'}</span>
+                              <span className={`text-sm font-black flex-shrink-0 tabular-nums ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{away ? away.pts.toFixed(1) : '—'}</span>
                               <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden flex-row-reverse">
                                 <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={32} mirror />
                                 <span className="text-xs font-bold text-slate-400 truncate leading-tight text-right">{away?.name ?? ''}</span>
@@ -1269,7 +1269,7 @@ export default function MatchupsPage() {
         <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
           <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-30" />
           <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
-            Tapitas League Â· Est. 2014
+            Tapitas League · Est. 2014
           </span>
         </div>
       </footer>
