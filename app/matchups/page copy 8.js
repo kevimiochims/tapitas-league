@@ -387,7 +387,7 @@ export default function MatchupsPage() {
   const activeGameRef = useRef(null)
 
 
-  // Efeito para rolar até a Semana Ativa
+  // Efeito para rolar atÃ© a Semana Ativa
   useEffect(() => {
     if (week && activeWeekRef.current) {
       const timer = setTimeout(() => {
@@ -401,9 +401,9 @@ export default function MatchupsPage() {
     }
   }, [week]); // Roda sempre que a semana mudar
 
-  // Efeito para rolar até o Jogo Ativo (Matchup)
+  // Efeito para rolar atÃ© o Jogo Ativo (Matchup)
   useEffect(() => {
-    // Ajuste o termo "selected" se a sua variável de estado do jogo ativo tiver outro nome
+    // Ajuste o termo "selected" se a sua variÃ¡vel de estado do jogo ativo tiver outro nome
     if (selected && activeGameRef.current) {
       const timer = setTimeout(() => {
         activeGameRef.current?.scrollIntoView({
@@ -411,7 +411,7 @@ export default function MatchupsPage() {
           block: 'nearest',
           inline: 'center'
         });
-      }, 120); // 120ms para dar uma leve fração de tempo a mais pro layout assíncrono se ajustar
+      }, 120); // 120ms para dar uma leve fraÃ§Ã£o de tempo a mais pro layout assÃ­ncrono se ajustar
       return () => clearTimeout(timer);
     }
   }, [selected]); // Roda sempre que o jogo selecionado mudar
@@ -480,7 +480,7 @@ export default function MatchupsPage() {
         .map(g => String(g?.Week || '').trim())
         .filter(w => w !== '' && w !== '0')
     )]
-    // Ordena: números simples primeiro, depois os compostos (14-15)
+    // Ordena: nÃºmeros simples primeiro, depois os compostos (14-15)
     return raw.sort((a, b) => {
       const numA = parseFloat(a)
       const numB = parseFloat(b)
@@ -491,14 +491,14 @@ export default function MatchupsPage() {
     })
   }, [games, season])
 
-  // Matchups da semana selecionada — deduplicados (pega só um lado de cada confronto)
+  // Matchups da semana selecionada — deduplicados (pega sÃ³ um lado de cada confronto)
   const matchups = useMemo(() => {
     if (!season || !week) return []
     const filtered = games.filter(g =>
       String(g?.Season || '').trim() === season &&
       String(g?.Week || '').trim() === week
     )
-    // Deduplicar: pega só os jogos onde Result === 'W' ou só um lado
+    // Deduplicar: pega sÃ³ os jogos onde Result === 'W' ou sÃ³ um lado
     const seen = new Set()
     const result = []
     filtered.forEach(g => {
@@ -657,13 +657,13 @@ export default function MatchupsPage() {
                 ))}
               </g>
 
-              {/* Triângulos */}
+              {/* TriÃ¢ngulos */}
               <g opacity="0.07" fill="#22d3ee">
                 <polygon points="900,0 900,140 760,0" />
                 <polygon points="900,340 900,200 760,340" />
               </g>
 
-              {/* Círculos */}
+              {/* CÃ­rculos */}
               <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
                 {[30, 50, 70].map((r) => (
                   <circle key={r} cx="870" cy="60" r={r} />
@@ -686,7 +686,7 @@ export default function MatchupsPage() {
                 ))}
               </g>
 
-              {/* Número fantasma */}
+              {/* NÃºmero fantasma */}
               <text
                 x="820"
                 y="310"
@@ -724,7 +724,7 @@ export default function MatchupsPage() {
               </span>
             </div>
 
-            {/* Título Principal */}
+            {/* TÃ­tulo Principal */}
             <h1
               className="leading-[0.9] tracking-[-0.02em]"
               style={{
@@ -751,7 +751,7 @@ export default function MatchupsPage() {
               </span>
             </h1>
 
-            {/* Subtítulo */}
+            {/* SubtÃ­tulo */}
             <p
               className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-slate-400"
               style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
@@ -787,7 +787,7 @@ export default function MatchupsPage() {
                   return (
                     <button
                       key={s}
-                      // ESSA LINHA É CRUCIAL: Ela liga o botão ativo à referência do JS
+                      // ESSA LINHA Ã‰ CRUCIAL: Ela liga o botÃ£o ativo Ã  referÃªncia do JS
                       ref={isActive ? activeSeasonRef : null}
                       onClick={() => handleSeasonClick(s)}
                       className={`flex-shrink-0 rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${isActive
@@ -839,7 +839,7 @@ export default function MatchupsPage() {
                     return (
                       <button
                         key={w}
-                        // LIGAÇÃO DA REF: Identifica qual semana está ativa
+                        // LIGAÃ‡ÃƒO DA REF: Identifica qual semana estÃ¡ ativa
                         ref={isActive ? activeWeekRef : null}
                         onClick={() => handleWeekClick(w)}
                         className={`flex-shrink-0 h-11 w-11 rounded-2xl text-sm font-black transition-all ${isActive
@@ -899,7 +899,7 @@ export default function MatchupsPage() {
                     return (
                       <button
                         key={i}
-                        // LIGAÇÃO DA REF: Identifica qual card de confronto está ativo
+                        // LIGAÃ‡ÃƒO DA REF: Identifica qual card de confronto estÃ¡ ativo
                         ref={isSelected ? activeGameRef : null}
                         onClick={() => setSelected(isSelected ? null : g)}
                         className={`flex-shrink-0 w-56 rounded-[24px] border p-4 text-left transition-all ${isSelected
@@ -996,7 +996,7 @@ export default function MatchupsPage() {
 
                 {/* Header do confronto */}
                 {(() => {
-                  // Calcula record até aquela semana para cada time
+                  // Calcula record atÃ© aquela semana para cada time
                   const calcRecord = (teamName) => {
                     const teamGames = games.filter(g => {
                       const s = String(g?.Season || '').trim()
@@ -1099,7 +1099,7 @@ export default function MatchupsPage() {
                           </div>
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs font-black text-slate-500">
-                              {oppRecord.w}–{oppRecord.l}
+                              {oppRecord.w}-{oppRecord.l}
                             </span>
                             <span className={`text-[10px] font-black rounded-lg px-2 py-0.5 border ${oppStreak.startsWith('W')
                               ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10'
@@ -1116,7 +1116,7 @@ export default function MatchupsPage() {
                 })()}
 
                 {/* Starters */}
-                {/* Ajustado: px-3 no mobile para economizar espaço nas bordas, px-8 no desktop */}
+                {/* Ajustado: px-3 no mobile para economizar espaÃ§o nas bordas, px-8 no desktop */}
                 <div className="px-3 md:px-8 py-6 border-b border-white/5">
                   <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-4">Starters</div>
 
@@ -1156,7 +1156,7 @@ export default function MatchupsPage() {
                               <span className={`text-base font-black flex-shrink-0 tabular-nums ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>{home ? home.pts.toFixed(1) : '—'}</span>
                             </div>
 
-                            {/* Posição central — Sempre centralizada perfeitamente */}
+                            {/* PosiÃ§Ã£o central — Sempre centralizada perfeitamente */}
                             <div className="flex items-center justify-center">
                               <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg px-1.5 md:px-2 py-1 border ${getPosColor(pos)} whitespace-nowrap`}>
                                 {pos}
