@@ -2583,13 +2583,13 @@ export default function TapitasLeagueHomepage() {
             </div>
           </div>
           {(() => {
-            const [newsIdx, setNewsIdx] = React.useState(0)
+            const [newsIdx, setNewsIdx] = useState(0)
             const posts = newsLoading ? [] : newsPosts
             const total = posts.length
             const post = posts[newsIdx]
             const s = post ? CATEGORY_STYLE[post.category] : null
             const Icon = s?.icon || Newspaper
-            React.useEffect(() => {
+            useEffect(() => {
               if (total < 2) return
               const t = setTimeout(() => setNewsIdx(i => (i + 1) % total), 7000)
               return () => clearTimeout(t)
