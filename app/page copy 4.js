@@ -413,7 +413,7 @@ function ChampionsWallInline({ champions }) {
                       {games.map((g, gi) => (
                         <div key={gi} className="flex flex-col border-b border-white/[0.04] py-1 last:border-0">
                           <div className="flex items-center gap-1">
-                            <span className={`text-[11px] font-black ${g.result==='W'?'text-emerald-400':'text-red-400'}`}>{g.result}</span>
+                            <span className={`text-[11px] font-black ${g.result === 'W' ? 'text-emerald-400' : 'text-red-400'}`}>{g.result}</span>
                             <span className="truncate text-[11px] text-slate-400">vs {g.opp}</span>
                           </div>
                           <span className="text-[10px] text-slate-600">{g.score.toFixed(1)}–{g.oppScore.toFixed(1)}</span>
@@ -647,9 +647,9 @@ const SHEET_ID_HOME = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL_HOME = `https://opensheet.elk.sh/${SHEET_ID_HOME}`
 
 const CATEGORY_STYLE = {
-  'Meme':    { color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10', icon: Laugh },
-  'Recap':   { color: 'text-cyan-400',   border: 'border-cyan-400/20',   bg: 'bg-cyan-400/10',   icon: FileText },
-  'Notícia': { color: 'text-emerald-400',border: 'border-emerald-400/20',bg: 'bg-emerald-400/10',icon: Newspaper },
+  'Meme': { color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10', icon: Laugh },
+  'Recap': { color: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/10', icon: FileText },
+  'Notícia': { color: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/10', icon: Newspaper },
 }
 
 function formatDate(dateStr) {
@@ -677,23 +677,23 @@ function topNTeams(arr, getter, n = 3) {
 }
 
 const QUICK_NAV = [
-  { label: 'Standings',       href: '/standings',     icon: BarChart2,   color: 'text-cyan-400',   border: 'border-cyan-400/20',   bg: 'bg-cyan-400/10'   },
-  { label: 'Matchups',        href: '/matchups',      icon: Swords,      color: 'text-orange-400', border: 'border-orange-400/20', bg: 'bg-orange-400/10' },
-  { label: 'Power Rankings',  href: '/powerrankings', icon: TrendingUp,  color: 'text-emerald-400',border: 'border-emerald-400/20',bg: 'bg-emerald-400/10'},
-  { label: 'Records',         href: '/records',       icon: Zap,         color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10' },
-  { label: 'Rivalries',       href: '/rivalries',     icon: Stars,       color: 'text-red-400',    border: 'border-red-400/20',    bg: 'bg-red-400/10'    },
-  { label: 'Teams',           href: '/teams',         icon: Users,       color: 'text-purple-400', border: 'border-purple-400/20', bg: 'bg-purple-400/10' },
-  { label: 'Draft',           href: '/draft',         icon: ScrollText,  color: 'text-pink-400',   border: 'border-pink-400/20',   bg: 'bg-pink-400/10'   },
-  { label: 'History',         href: '/history',       icon: BookOpen,    color: 'text-slate-400',  border: 'border-white/15',      bg: 'bg-white/[0.04]'  },
-  { label: 'News',            href: '/news',          icon: Newspaper,   color: 'text-sky-400',    border: 'border-sky-400/20',    bg: 'bg-sky-400/10'    },
+  { label: 'Standings', href: '/standings', icon: BarChart2, color: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/10' },
+  { label: 'Matchups', href: '/matchups', icon: Swords, color: 'text-orange-400', border: 'border-orange-400/20', bg: 'bg-orange-400/10' },
+  { label: 'Power Rankings', href: '/powerrankings', icon: TrendingUp, color: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/10' },
+  { label: 'Records', href: '/records', icon: Zap, color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10' },
+  { label: 'Rivalries', href: '/rivalries', icon: Stars, color: 'text-red-400', border: 'border-red-400/20', bg: 'bg-red-400/10' },
+  { label: 'Teams', href: '/teams', icon: Users, color: 'text-purple-400', border: 'border-purple-400/20', bg: 'bg-purple-400/10' },
+  { label: 'Draft', href: '/draft', icon: ScrollText, color: 'text-pink-400', border: 'border-pink-400/20', bg: 'bg-pink-400/10' },
+  { label: 'History', href: '/history', icon: BookOpen, color: 'text-slate-400', border: 'border-white/15', bg: 'bg-white/[0.04]' },
+  { label: 'News', href: '/news', icon: Newspaper, color: 'text-sky-400', border: 'border-sky-400/20', bg: 'bg-sky-400/10' },
 ]
 
 const POS_COLORS = {
-  QB:  'text-red-400 border-red-400/25 bg-red-400/10',
-  RB:  'text-emerald-400 border-emerald-400/25 bg-emerald-400/10',
-  WR:  'text-cyan-400 border-cyan-400/25 bg-cyan-400/10',
-  TE:  'text-orange-400 border-orange-400/25 bg-orange-400/10',
-  K:   'text-slate-400 border-slate-400/25 bg-slate-400/10',
+  QB: 'text-red-400 border-red-400/25 bg-red-400/10',
+  RB: 'text-emerald-400 border-emerald-400/25 bg-emerald-400/10',
+  WR: 'text-cyan-400 border-cyan-400/25 bg-cyan-400/10',
+  TE: 'text-orange-400 border-orange-400/25 bg-orange-400/10',
+  K: 'text-slate-400 border-slate-400/25 bg-slate-400/10',
   DEF: 'text-purple-400 border-purple-400/25 bg-purple-400/10',
 }
 
@@ -727,97 +727,6 @@ function parseBestStreak(value) {
   return { result: countMatch[1].toUpperCase(), count: countMatch[2], start, end }
 }
 
-function NewsCarousel({ newsLoading, newsPosts, CATEGORY_STYLE, Newspaper, formatDate }) {
-  const [newsIdx, setNewsIdx] = useState(0)
-  const posts = newsLoading ? [] : newsPosts
-  const total = posts.length
-  const prevNews = () => setNewsIdx(i => (i - 1 + total) % total)
-  const nextNews = () => setNewsIdx(i => (i + 1) % total)
-
-  useEffect(() => {
-    if (total < 2) return
-    const t = setTimeout(nextNews, 7000)
-    return () => clearTimeout(t)
-  }, [newsIdx, total])
-
-  const post = posts[newsIdx]
-  const s = post ? CATEGORY_STYLE[post.category] : null
-  const Icon = s?.icon || Newspaper
-
-  return (
-    <div className="bg-[#0efaf9] text-[#07111f]">
-      <div className="relative flex flex-col xl:flex-row">
-        {/* LEFT — cyan header */}
-        <div className="relative z-10 flex-shrink-0 px-6 py-7 xl:w-72 xl:px-8">
-          <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-[#07111f]/50">Latest stories</p>
-          <h2 className="mt-1 text-[44px] leading-none text-[#07111f]" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>
-            League News
-          </h2>
-          <a href="/news" className="mt-4 inline-flex rounded-full bg-[#07111f] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-[#0efaf9] transition-all hover:bg-[#0b1e38]">
-            Ver tudo
-          </a>
-          {total > 1 && (
-            <div className="mt-5 flex items-center gap-3">
-              <button onClick={prevNews} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#07111f]/15 text-[#07111f] text-lg font-black transition-all hover:bg-[#07111f]/25">‹</button>
-              <span className="text-[11px] font-black text-[#07111f]/60">{newsIdx + 1} / {total}</span>
-              <button onClick={nextNews} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#07111f]/15 text-[#07111f] text-lg font-black transition-all hover:bg-[#07111f]/25">›</button>
-            </div>
-          )}
-          <div className="mt-4 flex gap-1.5 flex-wrap">
-            {posts.slice(0, 10).map((_, i) => (
-              <button key={i} onClick={() => setNewsIdx(i)}
-                className={`h-1.5 rounded-full transition-all ${i === newsIdx ? 'w-6 bg-[#07111f]' : 'w-1.5 bg-[#07111f]/30'}`} />
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT — article card */}
-        <div className="relative flex-1 overflow-hidden min-h-[320px] xl:min-h-[380px]">
-          {newsLoading || !post ? (
-            <div className="flex h-full min-h-[320px] items-center justify-center bg-[#07111f]/10 text-sm font-bold text-[#07111f]/40">Carregando...</div>
-          ) : (
-            <a href={`/news/${post.slug}`} className="group block h-full">
-              {post.imageUrl ? (
-                <div className="relative h-full min-h-[320px] w-full overflow-hidden">
-                  <img
-                    src={post.imageUrl.split('|')[0]}
-                    alt={post.title}
-                    className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#07111f]/85 via-[#07111f]/25 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    {post.category && s && (
-                      <span className={`mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] ${s.color} ${s.bg}`}>
-                        <Icon className="h-2.5 w-2.5" />{post.category}
-                      </span>
-                    )}
-                    <h3 className="text-[26px] font-black leading-tight text-white" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.02em' }}>
-                      {post.title}
-                    </h3>
-                    <p className="mt-1 text-[11px] font-bold text-white/55">{formatDate(post.date)}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex h-full min-h-[320px] flex-col justify-end bg-[#07111f] p-6">
-                  {post.category && s && (
-                    <span className={`mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] ${s.color} ${s.bg}`}>
-                      <Icon className="h-2.5 w-2.5" />{post.category}
-                    </span>
-                  )}
-                  <h3 className="text-[26px] font-black leading-tight text-white" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.02em' }}>
-                    {post.title}
-                  </h3>
-                  <p className="mt-1 text-[11px] font-bold text-white/55">{formatDate(post.date)}</p>
-                </div>
-              )}
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
@@ -833,15 +742,15 @@ export default function TapitasLeagueHomepage() {
   const [currentSlide, setCurrentSlide] = useState(0)
 
   // ── NEW STATE ──────────────────────────────────────────────────────────────
-  const [newsPosts, setNewsPosts]         = useState([])
-  const [newsLoading, setNewsLoading]     = useState(true)
-  const [prData, setPrData]               = useState([])
-  const [prLoading, setPrLoading]         = useState(true)
+  const [newsPosts, setNewsPosts] = useState([])
+  const [newsLoading, setNewsLoading] = useState(true)
+  const [prData, setPrData] = useState([])
+  const [prLoading, setPrLoading] = useState(true)
   const [currentStandings, setCurrentStandings] = useState([])
   const [currentSeason, setCurrentSeason] = useState('')
   const [currentWeekLabel, setCurrentWeekLabel] = useState('')
-  const [draftPicks, setDraftPicks]       = useState([])   // last draft picks
-  const [draftSeason, setDraftSeason]     = useState('')
+  const [draftPicks, setDraftPicks] = useState([])   // last draft picks
+  const [draftSeason, setDraftSeason] = useState('')
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
 
   const touchStartX = useRef(null);
@@ -1308,13 +1217,13 @@ export default function TapitasLeagueHomepage() {
           const matchups2 = []
           for (const g of allNewestGames2.filter(g => String(g?.Week || '').trim() === lastWeek2)) {
             const team = String(g?.Team || '').trim()
-            const opp  = String(g?.Opponent || '').trim()
-            const key  = [team, opp].sort().join('|')
+            const opp = String(g?.Opponent || '').trim()
+            const key = [team, opp].sort().join('|')
             if (seen2.has(key)) continue
             seen2.add(key)
-            const score    = parseNumber(g?.Score || g?.PF || g?.score || g?.pf || 0)
+            const score = parseNumber(g?.Score || g?.PF || g?.score || g?.pf || 0)
             const oppScore = parseNumber(g?.OpponentScore || g?.PA || g?.opponent_score || g?.pa || 0)
-            const stage    = String(g?.gameStage || g?.GameStage || g?.Stage || '').trim()
+            const stage = String(g?.gameStage || g?.GameStage || g?.Stage || '').trim()
             matchups2.push({ team, opp, score, oppScore, week: lastWeek2, season: newestSeason2, stage })
           }
           if (mounted) setRecentMatchups(matchups2.slice(0, 6))
@@ -1648,6 +1557,25 @@ export default function TapitasLeagueHomepage() {
       @keyframes heroFloat {
         0%, 100% { transform: translateY(0px); }
         50%       { transform: translateY(-10px); }
+      }
+
+      .band-shell {
+        position: relative;
+        overflow: hidden;
+      }
+      .band-inner {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+      .sleeper-row {
+        border-top: 1px solid rgba(255,255,255,0.05);
+      }
+      .sleeper-row:first-child {
+        border-top: none;
+      }
+      .soft-pill {
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.04);
       }
     `}</style>
 
@@ -2456,16 +2384,16 @@ export default function TapitasLeagueHomepage() {
           className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
         >
           {[
-            { icon: Shield,   label: 'Franchises',   value: leagueStats.franchises, sub: 'All-time',                             color: 'cyan'    },
-            { icon: Calendar, label: 'Seasons',       value: leagueStats.seasons,    sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple'  },
-            { icon: Radar,    label: 'Games Played',  value: leagueStats.games,      sub: 'All-time',          color: 'emerald' },
-            { icon: Flame,    label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam,         color: 'orange'  },
+            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'All-time', color: 'cyan' },
+            { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple' },
+            { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-time', color: 'emerald' },
+            { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, color: 'orange' },
           ].map(({ icon: Icon, label, value, sub, color }) => {
             const c = {
-              cyan:    { icon: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300',    val: 'text-cyan-300',    border: 'border-cyan-400/10 hover:border-cyan-400/25'    },
-              purple:  { icon: 'border-purple-400/20 bg-purple-400/10 text-purple-300', val: 'text-purple-300', border: 'border-purple-400/10 hover:border-purple-400/25' },
+              cyan: { icon: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300', val: 'text-cyan-300', border: 'border-cyan-400/10 hover:border-cyan-400/25' },
+              purple: { icon: 'border-purple-400/20 bg-purple-400/10 text-purple-300', val: 'text-purple-300', border: 'border-purple-400/10 hover:border-purple-400/25' },
               emerald: { icon: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300', val: 'text-emerald-300', border: 'border-emerald-400/10 hover:border-emerald-400/25' },
-              orange:  { icon: 'border-orange-400/20 bg-orange-400/10 text-orange-300',  val: 'text-orange-300',  border: 'border-orange-400/10 hover:border-orange-400/25'  },
+              orange: { icon: 'border-orange-400/20 bg-orange-400/10 text-orange-300', val: 'text-orange-300', border: 'border-orange-400/10 hover:border-orange-400/25' },
             }[color]
             return (
               <div key={label} className={`flex items-center gap-4 rounded-[22px] border ${c.border} bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-5 py-4 transition-all`}>
@@ -2481,399 +2409,529 @@ export default function TapitasLeagueHomepage() {
             )
           })}
         </motion.div>
+      </section>
 
-        {/* ── QUICK NAV ──────────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.4 }}
-          className="mb-4 mt-4"
-        >
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+
+      {/* ── QUICK NAV ──────────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.4 }}
+        className="mb-4 mt-4"
+      >
+        <div className="-mx-3 border-y border-white/[0.04] bg-[#050a18] px-3 py-3 md:-mx-6 md:px-6">
+          <div className="band-inner flex flex-wrap gap-2">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
-              <a key={label} href={href}
-                className={`group flex flex-col items-center gap-1.5 rounded-[18px] border ${border} ${bg} px-2 py-3 text-center transition-all hover:scale-[1.05] hover:brightness-125`}>
-                <Icon className={`h-4 w-4 ${color}`} />
-                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>{label}</span>
+              <a
+                key={label}
+                href={href}
+                className={`group inline-flex items-center gap-2 rounded-full ${border} ${bg} px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] transition-all duration-200 hover:scale-[1.03] hover:brightness-125 ${color}`}
+              >
+                <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                {label}
               </a>
             ))}
           </div>
-        </motion.div>
+        </div>
+      </motion.div>
 
-                {/* ── POWER RANKINGS + STANDINGS ─────────────────────────────────── */}
-        <motion.section
-          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-          className="band-shell -mx-3 mb-4 md:-mx-6"
-        >
-          <div className="grid grid-cols-1 xl:grid-cols-[1.08fr_0.92fr]">
-
-            {/* POWER RANKINGS */}
-            <div className="relative bg-[linear-gradient(135deg,#071323_0%,#0b2035_45%,#0f4867_100%)] px-5 py-6 md:px-8 xl:border-r xl:border-white/[0.06]">
-              <div className="band-inner">
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Weekly movement</p>
-                    <h2 className="mt-1 text-[44px] leading-none text-emerald-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
-                      Power Rankings
-                    </h2>
-                    <p className="mt-2 text-sm text-white/50">{currentSeason ? `Season ${currentSeason} · latest update` : 'Carregando...'}</p>
-                  </div>
-                  <a href="/powerrankings" className="mt-1 flex-shrink-0 rounded-full bg-[#0b1528] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-emerald-300 transition-all hover:bg-[#101d35] hover:text-white">
-                    Ver tudo
-                  </a>
-                </div>
-                <div className="space-y-0 rounded-[22px] bg-[#081221]/70 backdrop-blur-sm">
-                  {prLoading ? (
-                    <div className="py-8 text-center text-xs font-bold text-white/45">Carregando...</div>
-                  ) : prData.map((row, i) => {
-                    const avatar = getTeamAvatar(row.team)
-                    const accent = i === 0 ? '#facc15' : i <= 2 ? '#34d399' : '#7dd3fc'
-                    return (
-                      <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                        className={`flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/[0.04] ${i > 0 ? 'border-t border-white/[0.04]' : ''}`}>
-                        <span className="w-6 flex-shrink-0 text-center font-black leading-none"
-                          style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '22px', color: accent }}>
-                          {row.rank}
-                        </span>
-                        {avatar
-                          ? <img src={avatar} alt={row.team} className="h-8 w-8 flex-shrink-0 rounded-xl object-cover" />
-                          : <div className="h-8 w-8 flex-shrink-0 rounded-xl bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center text-[9px] font-black text-emerald-400">{row.team?.slice(0,2).toUpperCase()}</div>
-                        }
-                        <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
-                        <span className={`flex items-center gap-0.5 text-xs font-black ${row.delta>0?'text-emerald-400':row.delta<0?'text-red-400':'text-slate-600'}`}>
-                          {row.delta>0?<TrendingUp className="h-3 w-3"/>:row.delta<0?<TrendingDown className="h-3 w-3"/>:<Minus className="h-3 w-3"/>}
-                          {row.delta!==0?Math.abs(row.delta):''}
-                        </span>
-                      </a>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* STANDINGS */}
-            <div className="bg-[linear-gradient(135deg,#040b18_0%,#06111f_100%)] px-5 py-6 md:px-8">
-              <div className="band-inner">
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">League table</p>
-                    <h2 className="mt-1 text-[44px] leading-none text-cyan-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
-                      Standings
-                    </h2>
-                    <p className="mt-2 text-sm text-white/50">
-                      {currentSeason
-                        ? currentWeekLabel === '__final__'
-                          ? `Season ${currentSeason} · Final Standings`
-                          : currentWeekLabel
-                            ? `Season ${currentSeason} · Through Week ${currentWeekLabel}`
-                            : `Season ${currentSeason}`
-                        : 'Carregando...'}
-                    </p>
-                  </div>
-                  <a href="/standings" className="mt-1 flex-shrink-0 rounded-full soft-pill px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-white/70 transition-all hover:bg-white/[0.08] hover:text-white">
-                    Ver tudo
-                  </a>
-                </div>
-                <div className="space-y-0 rounded-[22px] bg-white/[0.02]">
-                  {currentStandings.length === 0
-                    ? <div className="py-8 text-center text-xs font-bold text-white/40">Carregando...</div>
-                    : currentStandings.slice(0, 8).map((row, i) => {
-                        const avatar = getTeamAvatar(row.team)
-                        return (
-                          <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                            className={`flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/[0.04] ${i > 0 ? 'border-t border-white/[0.04]' : ''}`}>
-                            <span className="w-6 flex-shrink-0 text-center font-black leading-none"
-                              style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '22px', color: i===0?'#facc15':i<=3?'#22d3ee':'#64748b' }}>
-                              {i+1}
-                            </span>
-                            {avatar
-                              ? <img src={avatar} alt={row.team} className="h-8 w-8 flex-shrink-0 rounded-xl object-cover" />
-                              : <div className="h-8 w-8 flex-shrink-0 rounded-xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">{row.team?.slice(0,2).toUpperCase()}</div>
-                            }
-                            <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
-                            <div className="flex flex-shrink-0 items-center gap-1.5">
-                              <span className="text-xs font-black text-emerald-400">{row.w}W</span>
-                              <span className="text-xs text-white/20">·</span>
-                              <span className="text-xs font-black text-red-400">{row.l}L</span>
-                              <span className="text-xs text-white/20">·</span>
-                              <span className="w-14 text-right text-[10px] font-bold text-white/40">{Math.round(row.pf)} pts</span>
-                            </div>
-                          </a>
-                        )
-                      })
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* ── NEWS PREVIEW ───────────────────────────────────────────────── */}
-        <motion.section
-          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-          className="band-shell -mx-3 mb-4 md:-mx-6"
-        >
-          <NewsCarousel
-            newsLoading={newsLoading}
-            newsPosts={newsPosts}
-            CATEGORY_STYLE={CATEGORY_STYLE}
-            Newspaper={Newspaper}
-            formatDate={formatDate}
-          />
-        </motion.section>
-
-                {/* ── DRAFT PICKS + RECORDS ───────────────────────────────────────── */}
-        <motion.section
-          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-          className="band-shell -mx-3 mb-4 md:-mx-6"
-        >
-          <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr]">
-
-            {/* DRAFT BOARD */}
-            <div className="relative bg-[linear-gradient(135deg,#07111d_0%,#040a15_100%)] px-5 py-6 md:px-8 xl:border-r xl:border-white/[0.06]">
-              <div className="band-inner">
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Opening picks</p>
-                    <h2 className="mt-1 text-[44px] leading-none text-pink-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
-                      Draft Board
-                    </h2>
-                    <p className="mt-2 text-sm text-white/50">{draftSeason ? `Season ${draftSeason} · first 10 picks` : 'Carregando...'}</p>
-                  </div>
-                  <a href="/draft" className="mt-1 flex-shrink-0 rounded-full soft-pill px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-white/70 transition-all hover:bg-white/[0.08] hover:text-white">
-                    Ver tudo
-                  </a>
-                </div>
-                <div className="rounded-[24px] bg-white/[0.03] px-3 py-2">
-                  {draftPicks.length === 0 ? (
-                    <div className="py-8 text-center text-xs font-bold text-white/40">Carregando...</div>
-                  ) : draftPicks.slice(0, 10).map((pick, pickIdx) => {
-                    const posTone = POS_COLORS[pick.position] || 'text-slate-300 border-white/10 bg-white/[0.04]'
-                    const teamAv  = getTeamAvatar(pick.team)
-                    const playerImg = pick.player_id
-                      ? `https://sleepercdn.com/content/nfl/players/${pick.player_id}.jpg`
-                      : null
-                    return (
-                      <div key={`${pick.pick}-${pick.player}`} className={`grid grid-cols-[32px_48px_1fr_auto] items-center gap-3 px-2 py-2.5 ${pickIdx > 0 ? 'border-t border-white/[0.04]' : ''}`}>
-                        <div className="text-center font-black leading-none text-amber-300" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px' }}>
-                          {pick.pick}
-                        </div>
-                        <div className="relative h-12 w-12 flex-shrink-0">
-                          {playerImg && (
-                            <img
-                              src={playerImg}
-                              alt={pick.player}
-                              className="absolute inset-0 h-full w-full rounded-xl object-cover object-top ring-1 ring-white/10"
-                              onError={e => { e.currentTarget.style.display = 'none' }}
-                            />
-                          )}
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-400/10 border border-pink-400/20 text-[9px] font-black text-pink-400">
-                            {pick.player ? pick.player.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '??'}
-                          </div>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="truncate text-[14px] font-black text-white">{pick.player}</div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            {teamAv && <img src={teamAv} alt={pick.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" />}
-                            <span className="truncate text-[11px] font-bold text-white/35">{pick.team}</span>
-                          </div>
-                        </div>
-                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${posTone}`}>{pick.position || 'N/A'}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* RECORDS */}
-            <div className="bg-[linear-gradient(135deg,#241808_0%,#0d0a05_100%)] px-5 py-6 md:px-8">
-              <div className="band-inner">
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Franchise marks</p>
-                    <h2 className="mt-1 text-[44px] leading-none text-amber-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
-                      Records
-                    </h2>
-                  </div>
-                  <a href="/records" className="mt-1 flex-shrink-0 rounded-full bg-black/25 px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-amber-200 transition-all hover:bg-black/35 hover:text-white">
-                    Ver tudo
-                  </a>
-                </div>
-                <div className="divide-y divide-white/[0.04] rounded-[24px] bg-black/20 overflow-hidden">
-                  {[
-                    { emoji: '🏆', label: 'Most Titles',  getter: t => t.titles,      fmt: v => v,                    color: 'text-yellow-400'  },
-                    { emoji: '📈', label: 'Most Wins',    getter: t => t.wins,        fmt: v => v,                    color: 'text-emerald-400' },
-                    { emoji: '🔥', label: 'Top Scorer',   getter: t => t.pf,          fmt: v => Math.round(v)+' pts', color: 'text-orange-400'  },
-                    { emoji: '🎯', label: 'Best Win%',    getter: t => t.winPct,      fmt: v => v+'%',                color: 'text-cyan-400'    },
-                    { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => v,                    color: 'text-purple-400'  },
-                    { emoji: '⚔️', label: 'Finals Apps',  getter: t => t.finals,      fmt: v => v,                    color: 'text-red-400'     },
-                  ].map(({ emoji, label, getter, fmt, color }) => {
-                    const leaders = topNTeams(standings, getter, 3)
-                    const topVal  = leaders[0] ? getter(leaders[0]) : 0
-                    return (
-                      <div key={label} className="flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/[0.03]">
-                        <span className="text-base flex-shrink-0">{emoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[9px] font-black uppercase tracking-[0.15em] text-white/35 mb-1.5">{label}</div>
-                          <div className="flex flex-wrap gap-1">
-                            {leaders.map(t => {
-                              const av = getTeamAvatar(t.team)
-                              return (
-                                <a key={t.team} href={`/teams?team=${encodeURIComponent(t.team)}`}
-                                  className="flex items-center gap-1 rounded-lg bg-white/[0.05] px-2 py-1 transition-all hover:bg-white/[0.10]">
-                                  {av && <img src={av} alt={t.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" />}
-                                  <span className="text-xs font-black text-white truncate max-w-[80px]">{shortTeamName(t.team)}</span>
-                                </a>
-                              )
-                            })}
-                          </div>
-                        </div>
-                        <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>{leaders[0] ? fmt(topVal) : '—'}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.section>
-
-                {/* ── CHAMPIONS WALL + RIVALRIES ─────────────────────────────────── */}
-        {championsData.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-            className="band-shell -mx-3 mb-4 md:-mx-6"
-          >
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr]">
-
-              {/* CHAMPIONS WALL */}
-              <div className="relative bg-[linear-gradient(135deg,#131007_0%,#0c0b06_100%)] px-5 py-6 md:px-8 xl:border-r xl:border-white/[0.06]">
-                <div className="band-inner">
-                  <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Every title. Every campaign.</p>
-                  <h2 className="mt-1 mb-5 text-[44px] leading-none text-yellow-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
-                    Champions Wall
+      {/* ── POWER RANKINGS + STANDINGS ─────────────────────────────────── */}
+      <motion.section
+        initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="band-shell -mx-3 mb-4 md:-mx-6"
+      >
+        <div className="grid grid-cols-1 xl:grid-cols-[1.08fr_0.92fr]">
+          <div className="relative bg-[linear-gradient(135deg,#071323_0%,#0b2035_45%,#0f4867_100%)] px-4 py-6 md:px-8 md:py-7 xl:border-r xl:border-white/[0.06]">
+            <div className="band-inner">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Weekly movement</p>
+                  <h2 className="mt-1 text-[44px] leading-none text-emerald-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
+                    Power Rankings
                   </h2>
-                  <ChampionsWallInline champions={championsData} />
+                  <p className="mt-2 text-sm text-white/50">{currentSeason ? `Season ${currentSeason} · latest update` : 'Carregando...'}</p>
                 </div>
+                <a href="/powerrankings" className="mt-1 flex-shrink-0 rounded-full bg-[#0b1528] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-emerald-300 transition-all hover:bg-[#101d35] hover:text-white">
+                  Ver tudo
+                </a>
               </div>
 
-              {/* RIVALRIES */}
-              <div className="bg-[linear-gradient(135deg,#3d0a0a_0%,#200507_40%,#0d0305_100%)] px-5 py-6 md:px-8">
-                <div className="band-inner">
-                  <div className="mb-5 flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Head to head</p>
-                      <h2 className="mt-1 text-[44px] leading-none text-red-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
-                        Rivalries
-                      </h2>
-                    </div>
-                    <a href="/rivalries" className="mt-1 flex-shrink-0 rounded-full bg-red-950/60 px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-red-300 transition-all hover:bg-red-900/60 hover:text-white">
-                      Ver tudo
-                    </a>
-                  </div>
-
-                  <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-xs font-black text-red-400">vs</div>
-                    <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
-                  </div>
-
-                  {!selectedRivalry ? (
-                    <div className="flex flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-red-400/20 py-10 text-center">
-                      <Swords className="h-8 w-8 text-red-900/50" />
-                      <p className="text-xs font-bold text-red-300/40">Selecione dois times para ver o confronto</p>
-                    </div>
-                  ) : (() => {
-                    const bigA = parseBiggestWin(selectedRivalry.biggestA)
-                    const bigB = parseBiggestWin(selectedRivalry.biggestB)
-                    const strA = parseBestStreak(selectedRivalry.bestStreakA)
-                    const strB = parseBestStreak(selectedRivalry.bestStreakB)
-                    const wA = selectedRivalry.winsA
-                    const wB = selectedRivalry.winsB
-                    const aLeads = wA > wB, bLeads = wB > wA
-                    return (
-                      <div className="flex flex-col gap-3">
-                        <div className="overflow-hidden rounded-[18px] border border-red-400/15 bg-black/30 p-4">
-                          <div className="flex items-center justify-between gap-4">
-                            <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-1.5">
-                              {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av
-                                ? <img src={av} alt={selectedRivalry.teamA} className="h-14 w-14 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/50" />
-                                : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div>
-                              })()}
-                              <span className="text-center text-xs font-black text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
-                              <span className="text-[44px] font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: aLeads ? '#4ade80' : bLeads ? '#f87171' : '#e2e8f0' }}>{wA}</span>
-                            </a>
-                            <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-red-300/40">All-Time</div>
-                              <div className="h-px w-6 bg-red-400/20" />
-                              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-red-300/40">Record</div>
-                            </div>
-                            <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-1.5">
-                              {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av
-                                ? <img src={av} alt={selectedRivalry.teamB} className="h-14 w-14 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/50" />
-                                : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div>
-                              })()}
-                              <span className="text-center text-xs font-black text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
-                              <span className="text-[44px] font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: bLeads ? '#4ade80' : aLeads ? '#f87171' : '#e2e8f0' }}>{wB}</span>
-                            </a>
-                          </div>
-                          <div className="mt-3 flex justify-center">
-                            <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[10px] font-black uppercase tracking-wider
-                              ${selectedRivalry.heat === 'Legendary' ? 'border-yellow-400/30 bg-yellow-400/10 text-yellow-400'
-                              : selectedRivalry.heat === 'Elite'     ? 'border-orange-400/30 bg-orange-400/10 text-orange-400'
-                              : selectedRivalry.heat === 'High'      ? 'border-red-400/30 bg-red-400/10 text-red-400'
-                              : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
-                              <Flame className="h-3 w-3" />{selectedRivalry.heat} Rivalry
-                            </div>
-                          </div>
+              <div className="space-y-0 rounded-[22px] bg-[#081221]/70 backdrop-blur-sm">
+                {prLoading ? (
+                  <div className="py-8 text-center text-xs font-bold text-white/45">Carregando...</div>
+                ) : prData.map((row, i) => {
+                  const avatar = getTeamAvatar(row.team)
+                  const accent = i === 0 ? '#facc15' : i <= 2 ? '#34d399' : '#7dd3fc'
+                  return (
+                    <a
+                      key={row.team}
+                      href={`/teams?team=${encodeURIComponent(row.team)}`}
+                      className="sleeper-row group grid grid-cols-[32px_40px_1fr_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.05]"
+                    >
+                      <span
+                        className="text-center font-black leading-none tabular-nums"
+                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px', color: accent }}
+                      >
+                        {row.rank}
+                      </span>
+                      {avatar ? (
+                        <img src={avatar} alt={row.team} className="h-10 w-10 rounded-full object-cover ring-1 ring-white/10" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.06] text-[9px] font-black text-white/60">
+                          {row.team.slice(0, 2).toUpperCase()}
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
-                            <div className="flex items-center gap-1.5"><Trophy className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Playoffs</span></div>
-                            <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
-                          </div>
-                          <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
-                            <div className="flex items-center gap-1.5"><Activity className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Avg Margin</span></div>
-                            <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
-                          </div>
-                          <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
-                            <div className="flex items-center gap-1.5"><Stars className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Último Jogo{selectedRivalry.lastMeeting?.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}</span></div>
-                            <span className="text-base font-black text-white">{selectedRivalry.lastMeeting?.score ?? '—'}</span>
-                          </div>
-                          <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
-                            <div className="flex items-center gap-1.5"><Radar className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Streak</span></div>
-                            <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
-                          </div>
-                          <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
-                            <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Bigger Win · {shortTeamName(selectedRivalry.teamA)}</span></div>
-                            {bigA ? (<><span className="text-base font-black text-white">{bigA.scoreA} – {bigA.scoreB}{bigA.margin ? <span className="text-emerald-400"> (+{bigA.margin})</span> : ''}</span>{bigA.label && <span className="text-[10px] text-white/35">{bigA.label}</span>}</>) : <span className="text-xs text-white/30">—</span>}
-                          </div>
-                          <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
-                            <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Bigger Win · {shortTeamName(selectedRivalry.teamB)}</span></div>
-                            {bigB ? (<><span className="text-base font-black text-white">{bigB.scoreA} – {bigB.scoreB}{bigB.margin ? <span className="text-emerald-400"> (+{bigB.margin})</span> : ''}</span>{bigB.label && <span className="text-[10px] text-white/35">{bigB.label}</span>}</>) : <span className="text-xs text-white/30">—</span>}
-                          </div>
-                          <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
-                            <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Best Streak · {shortTeamName(selectedRivalry.teamA)}</span></div>
-                            {strA ? (<><span className="text-base font-black text-white">{strA.wins}W streak</span>{strA.label && <span className="text-[10px] text-white/35">{strA.label}</span>}</>) : <span className="text-xs text-white/30">—</span>}
-                          </div>
-                          <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
-                            <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Best Streak · {shortTeamName(selectedRivalry.teamB)}</span></div>
-                            {strB ? (<><span className="text-base font-black text-white">{strB.wins}W streak</span>{strB.label && <span className="text-[10px] text-white/35">{strB.label}</span>}</>) : <span className="text-xs text-white/30">—</span>}
-                          </div>
-                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="truncate text-[15px] font-black text-white group-hover:text-cyan-200">{row.team}</div>
+                        <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/35">Ranked this week</div>
                       </div>
-                    )
-                  })()}
+                      <div className={`rounded-full px-2.5 py-1 text-[10px] font-black ${row.delta > 0 ? 'bg-emerald-500/15 text-emerald-300' : row.delta < 0 ? 'bg-red-500/15 text-red-300' : 'bg-white/[0.05] text-white/35'}`}>
+                        {row.delta > 0 ? `↑ ${Math.abs(row.delta)}` : row.delta < 0 ? `↓ ${Math.abs(row.delta)}` : '—'}
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[linear-gradient(135deg,#040b18_0%,#06111f_100%)] px-4 py-6 md:px-8 md:py-7">
+            <div className="band-inner xl:ml-0 xl:mr-auto">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">League table</p>
+                  <h2 className="mt-1 text-[44px] leading-none text-cyan-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
+                    Standings
+                  </h2>
+                  <p className="mt-2 text-sm text-white/50">
+                    {currentSeason
+                      ? currentWeekLabel === '__final__'
+                        ? `Season ${currentSeason} · final`
+                        : currentWeekLabel
+                          ? `Season ${currentSeason} · through week ${currentWeekLabel}`
+                          : `Season ${currentSeason}`
+                      : 'Carregando...'}
+                  </p>
+                </div>
+                <a href="/standings" className="mt-1 flex-shrink-0 rounded-full soft-pill px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-white/70 transition-all hover:bg-white/[0.08] hover:text-white">
+                  Ver tudo
+                </a>
+              </div>
+
+              <div className="rounded-[22px] bg-white/[0.03] px-2 py-2">
+                <div className="grid grid-cols-[28px_36px_1fr_52px_36px_36px] gap-x-2 px-3 pb-2 text-[9px] font-black uppercase tracking-[0.18em] text-white/30">
+                  <span></span><span></span><span>Team</span><span className="text-right">Pts</span><span className="text-center">W</span><span className="text-center">L</span>
+                </div>
+                {currentStandings.length === 0 ? (
+                  <div className="py-8 text-center text-xs font-bold text-white/40">Carregando...</div>
+                ) : currentStandings.slice(0, 8).map((row, i) => {
+                  const avatar = getTeamAvatar(row.team)
+                  const tone = i === 0 ? '#facc15' : i <= 3 ? '#38bdf8' : '#475569'
+                  return (
+                    <a
+                      key={row.team}
+                      href={`/teams?team=${encodeURIComponent(row.team)}`}
+                      className={`grid grid-cols-[28px_36px_1fr_52px_36px_36px] items-center gap-x-2 rounded-[16px] px-3 py-2.5 transition-colors hover:bg-white/[0.05] ${i === 3 ? 'mb-1 border-b border-white/[0.05] pb-3' : ''}`}
+                    >
+                      <span className="text-right font-black leading-none" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '19px', color: tone }}>
+                        {i + 1}
+                      </span>
+                      {avatar ? (
+                        <img src={avatar} alt={row.team} className="h-9 w-9 rounded-full object-cover ring-1 ring-white/10" />
+                      ) : (
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.05] text-[9px] font-black text-white/50">
+                          {row.team.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="truncate text-[13px] font-black text-white/90">{row.team}</span>
+                      <span className="text-right text-[11px] font-bold tabular-nums text-white/55">{Math.round(row.pf)}</span>
+                      <span className="text-center text-[12px] font-black text-emerald-300">{row.w}</span>
+                      <span className="text-center text-[12px] font-black text-red-300">{row.l}</span>
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+
+      {/* ── NEWS PREVIEW ───────────────────────────────────────────────── */}
+      <motion.section
+        initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="band-shell -mx-3 mb-4 md:-mx-6"
+      >
+        {(() => {
+          const [newsIdx, setNewsIdx] = React.useState(0)
+          const posts = newsLoading ? [] : newsPosts
+          const total = posts.length
+          const prevNews = () => setNewsIdx(i => (i - 1 + total) % total)
+          const nextNews = () => setNewsIdx(i => (i + 1) % total)
+          React.useEffect(() => {
+            if (total < 2) return
+            const t = setTimeout(nextNews, 7000)
+            return () => clearTimeout(t)
+          }, [newsIdx, total])
+          const post = posts[newsIdx]
+          const s = post ? CATEGORY_STYLE[post.category] : null
+          const Icon = s?.icon || Newspaper
+          return (
+            <div className="bg-[#0efaf9] text-[#07111f]">
+              <div className="relative flex flex-col xl:flex-row">
+                {/* LEFT — cyan header */}
+                <div className="relative z-10 flex-shrink-0 px-6 py-7 xl:w-72 xl:px-8">
+                  <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-[#07111f]/50">Latest stories</p>
+                  <h2 className="mt-1 text-[44px] leading-none text-[#07111f]" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>
+                    League News
+                  </h2>
+                  <a href="/news" className="mt-4 inline-flex rounded-full bg-[#07111f] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-[#0efaf9] transition-all hover:bg-[#0b1e38]">
+                    Ver tudo
+                  </a>
+                  {total > 1 && (
+                    <div className="mt-5 flex items-center gap-3">
+                      <button onClick={prevNews} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#07111f]/15 text-[#07111f] text-lg font-black transition-all hover:bg-[#07111f]/25">‹</button>
+                      <span className="text-[11px] font-black text-[#07111f]/60">{newsIdx + 1} / {total}</span>
+                      <button onClick={nextNews} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#07111f]/15 text-[#07111f] text-lg font-black transition-all hover:bg-[#07111f]/25">›</button>
+                    </div>
+                  )}
+                  <div className="mt-4 flex gap-1.5 flex-wrap">
+                    {posts.slice(0, 10).map((_, i) => (
+                      <button key={i} onClick={() => setNewsIdx(i)}
+                        className={`h-1.5 rounded-full transition-all ${i === newsIdx ? 'w-6 bg-[#07111f]' : 'w-1.5 bg-[#07111f]/30'}`} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* RIGHT — article card */}
+                <div className="relative flex-1 overflow-hidden min-h-[320px] xl:min-h-[380px]">
+                  {newsLoading || !post ? (
+                    <div className="flex h-full min-h-[320px] items-center justify-center bg-[#07111f]/10 text-sm font-bold text-[#07111f]/40">Carregando...</div>
+                  ) : (
+                    <a href={`/news/${post.slug}`} className="group block h-full">
+                      {post.imageUrl ? (
+                        <div className="relative h-full min-h-[320px] w-full overflow-hidden">
+                          <img
+                            src={post.imageUrl.split('|')[0]}
+                            alt={post.title}
+                            className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#07111f]/85 via-[#07111f]/25 to-transparent" />
+                          <div className="absolute bottom-0 left-0 right-0 p-6">
+                            {post.category && s && (
+                              <span className={`mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] ${s.color} ${s.bg}`}>
+                                <Icon className="h-2.5 w-2.5" />{post.category}
+                              </span>
+                            )}
+                            <h3 className="text-[26px] font-black leading-tight text-white" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.02em' }}>
+                              {post.title}
+                            </h3>
+                            <p className="mt-1 text-[11px] font-bold text-white/55">{formatDate(post.date)}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-full min-h-[320px] flex-col justify-end bg-[#07111f] p-6">
+                          {post.category && s && (
+                            <span className={`mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] ${s.color} ${s.bg}`}>
+                              <Icon className="h-2.5 w-2.5" />{post.category}
+                            </span>
+                          )}
+                          <h3 className="text-[26px] font-black leading-tight text-white" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.02em' }}>
+                            {post.title}
+                          </h3>
+                          <p className="mt-1 text-[11px] font-bold text-white/55">{formatDate(post.date)}</p>
+                        </div>
+                      )}
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
-          </motion.section>
-        )}
-      </section>
+          )
+        })()}
+      </motion.section>
+
+      {/* ── DRAFT PICKS + RECORDS ───────────────────────────────────────── */}
+      <motion.section
+        initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="band-shell -mx-3 mb-4 md:-mx-6"
+      >
+        <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr]">
+
+          {/* DRAFT BOARD */}
+          <div className="relative bg-[linear-gradient(135deg,#07111d_0%,#040a15_100%)] px-5 py-6 md:px-8 xl:border-r xl:border-white/[0.06]">
+            <div className="band-inner">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Opening picks</p>
+                  <h2 className="mt-1 text-[44px] leading-none text-pink-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
+                    Draft Board
+                  </h2>
+                  <p className="mt-2 text-sm text-white/50">{draftSeason ? `Season ${draftSeason} · first 10 picks` : 'Carregando...'}</p>
+                </div>
+                <a href="/draft" className="mt-1 flex-shrink-0 rounded-full soft-pill px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-white/70 transition-all hover:bg-white/[0.08] hover:text-white">
+                  Ver tudo
+                </a>
+              </div>
+
+              <div className="rounded-[24px] bg-white/[0.03] px-3 py-2">
+                {draftPicks.length === 0 ? (
+                  <div className="py-8 text-center text-xs font-bold text-white/40">Carregando...</div>
+                ) : draftPicks.slice(0, 10).map((pick, idx) => {
+                  const posTone = POS_COLORS[pick.position] || 'text-slate-300 border-white/10 bg-white/[0.04]'
+                  const teamAv = getTeamAvatar(pick.team)
+                  const playerImg = pick.player_id
+                    ? `https://sleepercdn.com/content/nfl/players/${pick.player_id}.jpg`
+                    : null
+                  return (
+                    <div key={`${pick.pick}-${pick.player}`} className={`grid grid-cols-[32px_48px_1fr_auto] items-center gap-3 px-2 py-2.5 ${idx > 0 ? 'border-t border-white/[0.04]' : ''}`}>
+                      <div className="text-center font-black leading-none text-amber-300" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '24px' }}>
+                        {pick.pick}
+                      </div>
+                      {/* Player photo with fallback */}
+                      <div className="relative h-12 w-12 flex-shrink-0">
+                        {playerImg && (
+                          <img
+                            src={playerImg}
+                            alt={pick.player}
+                            className="absolute inset-0 h-full w-full rounded-xl object-cover object-top ring-1 ring-white/10"
+                            onError={e => { e.currentTarget.style.display = 'none' }}
+                          />
+                        )}
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-400/10 border border-pink-400/20 text-[9px] font-black text-pink-400">
+                          {pick.player ? pick.player.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '??'}
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate text-[14px] font-black text-white">{pick.player}</div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {teamAv && <img src={teamAv} alt={pick.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" />}
+                          <span className="truncate text-[11px] font-bold text-white/35">{pick.team}</span>
+                        </div>
+                      </div>
+                      <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${posTone}`}>{pick.position || 'N/A'}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* RECORDS */}
+          <div className="bg-[linear-gradient(135deg,#241808_0%,#0d0a05_100%)] px-5 py-6 md:px-8">
+            <div className="band-inner">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Franchise marks</p>
+                  <h2 className="mt-1 text-[44px] leading-none text-amber-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
+                    Records
+                  </h2>
+                </div>
+                <a href="/records" className="mt-1 flex-shrink-0 rounded-full bg-black/25 px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-amber-200 transition-all hover:bg-black/35 hover:text-white">
+                  Ver tudo
+                </a>
+              </div>
+
+              <div className="divide-y divide-white/[0.04] rounded-[24px] bg-black/20 overflow-hidden">
+                {[
+                  { emoji: '🏆', label: 'Most Titles', getter: t => t.titles, fmt: v => v, color: 'text-yellow-400' },
+                  { emoji: '📈', label: 'Most Wins', getter: t => t.wins, fmt: v => v, color: 'text-emerald-400' },
+                  { emoji: '🔥', label: 'Top Scorer', getter: t => t.pf, fmt: v => Math.round(v) + ' pts', color: 'text-orange-400' },
+                  { emoji: '🎯', label: 'Best Win%', getter: t => t.winPct, fmt: v => v + '%', color: 'text-cyan-400' },
+                  { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => v, color: 'text-purple-400' },
+                  { emoji: '⚔️', label: 'Finals Apps', getter: t => t.finals, fmt: v => v, color: 'text-red-400' },
+                ].map(({ emoji, label, getter, fmt, color }) => {
+                  const leaders = topNTeams(standings, getter, 3)
+                  const topVal = leaders[0] ? getter(leaders[0]) : 0
+                  return (
+                    <div key={label} className="flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/[0.03]">
+                      <span className="text-base flex-shrink-0">{emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[9px] font-black uppercase tracking-[0.15em] text-white/35 mb-1.5">{label}</div>
+                        <div className="flex flex-wrap gap-1">
+                          {leaders.map(t => {
+                            const av = getTeamAvatar(t.team)
+                            return (
+                              <a key={t.team} href={`/teams?team=${encodeURIComponent(t.team)}`}
+                                className="flex items-center gap-1 rounded-lg bg-white/[0.05] px-2 py-1 transition-all hover:bg-white/[0.10]">
+                                {av && <img src={av} alt={t.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" />}
+                                <span className="text-xs font-black text-white truncate max-w-[80px]">{shortTeamName(t.team)}</span>
+                              </a>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>{leaders[0] ? fmt(topVal) : '—'}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+      {championsData.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="band-shell -mx-3 mb-4 md:-mx-6"
+        >
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr]">
+
+            {/* CHAMPIONS WALL */}
+            <div className="relative bg-[linear-gradient(135deg,#131007_0%,#0c0b06_100%)] px-5 py-6 md:px-8 xl:border-r xl:border-white/[0.06]">
+              <div className="band-inner">
+                <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Every title. Every campaign.</p>
+                <h2 className="mt-1 mb-5 text-[44px] leading-none text-yellow-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
+                  Champions Wall
+                </h2>
+                <ChampionsWallInline champions={championsData} />
+              </div>
+            </div>
+
+            {/* RIVALRIES — vibrant dark red bg */}
+            <div className="bg-[linear-gradient(135deg,#3d0a0a_0%,#200507_40%,#0d0305_100%)] px-5 py-6 md:px-8">
+              <div className="band-inner">
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/50">Head to head</p>
+                    <h2 className="mt-1 text-[44px] leading-none text-red-400" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.06em' }}>
+                      Rivalries
+                    </h2>
+                  </div>
+                  <a href="/rivalries" className="mt-1 flex-shrink-0 rounded-full bg-red-950/60 px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-red-300 transition-all hover:bg-red-900/60 hover:text-white">
+                    Ver tudo
+                  </a>
+                </div>
+
+                <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                  <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-xs font-black text-red-400">vs</div>
+                  <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
+                </div>
+
+                {!selectedRivalry ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-red-400/20 py-10 text-center">
+                    <Swords className="h-8 w-8 text-red-900/50" />
+                    <p className="text-xs font-bold text-red-300/40">Selecione dois times para ver o confronto</p>
+                  </div>
+                ) : (() => {
+                  const bigA = parseBiggestWin(selectedRivalry.biggestA)
+                  const bigB = parseBiggestWin(selectedRivalry.biggestB)
+                  const strA = parseBestStreak(selectedRivalry.bestStreakA)
+                  const strB = parseBestStreak(selectedRivalry.bestStreakB)
+                  const wA = selectedRivalry.winsA
+                  const wB = selectedRivalry.winsB
+                  const aLeads = wA > wB, bLeads = wB > wA
+                  return (
+                    <div className="flex flex-col gap-3">
+
+                      {/* VS hero strip */}
+                      <div className="overflow-hidden rounded-[18px] border border-red-400/15 bg-black/30 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-1.5">
+                            {(() => {
+                              const av = getTeamAvatar(selectedRivalry.teamA); return av
+                                ? <img src={av} alt={selectedRivalry.teamA} className="h-14 w-14 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/50" />
+                                : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamA.slice(0, 2).toUpperCase()}</div>
+                            })()}
+                            <span className="text-center text-xs font-black text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
+                            <span className="text-[44px] font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: aLeads ? '#4ade80' : bLeads ? '#f87171' : '#e2e8f0' }}>{wA}</span>
+                          </a>
+                          <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-red-300/40">All-Time</div>
+                            <div className="h-px w-6 bg-red-400/20" />
+                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-red-300/40">Record</div>
+                          </div>
+                          <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-1.5">
+                            {(() => {
+                              const av = getTeamAvatar(selectedRivalry.teamB); return av
+                                ? <img src={av} alt={selectedRivalry.teamB} className="h-14 w-14 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/50" />
+                                : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamB.slice(0, 2).toUpperCase()}</div>
+                            })()}
+                            <span className="text-center text-xs font-black text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
+                            <span className="text-[44px] font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: bLeads ? '#4ade80' : aLeads ? '#f87171' : '#e2e8f0' }}>{wB}</span>
+                          </a>
+                        </div>
+                        <div className="mt-3 flex justify-center">
+                          <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[10px] font-black uppercase tracking-wider
+                              ${selectedRivalry.heat === 'Legendary' ? 'border-yellow-400/30 bg-yellow-400/10 text-yellow-400'
+                              : selectedRivalry.heat === 'Elite' ? 'border-orange-400/30 bg-orange-400/10 text-orange-400'
+                                : selectedRivalry.heat === 'High' ? 'border-red-400/30 bg-red-400/10 text-red-400'
+                                  : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
+                            <Flame className="h-3 w-3" />{selectedRivalry.heat} Rivalry
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Stats grid — all restored */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
+                          <div className="flex items-center gap-1.5"><Trophy className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Playoffs</span></div>
+                          <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
+                          <div className="flex items-center gap-1.5"><Activity className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Avg Margin</span></div>
+                          <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
+                        </div>
+                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
+                          <div className="flex items-center gap-1.5"><Stars className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Último Jogo{selectedRivalry.lastMeeting?.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}</span></div>
+                          <span className="text-base font-black text-white">{selectedRivalry.lastMeeting?.score ?? '—'}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
+                          <div className="flex items-center gap-1.5"><Radar className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Current Streak</span></div>
+                          <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
+                          <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Bigger Win · {shortTeamName(selectedRivalry.teamA)}</span></div>
+                          {bigA ? (
+                            <>
+                              <span className="text-base font-black text-white">{bigA.scoreA} – {bigA.scoreB}{bigA.margin ? <span className="text-emerald-400"> (+{bigA.margin})</span> : ''}</span>
+                              {bigA.label && <span className="text-[10px] text-white/35">{bigA.label}</span>}
+                            </>
+                          ) : <span className="text-xs text-white/30">—</span>}
+                        </div>
+                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
+                          <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Bigger Win · {shortTeamName(selectedRivalry.teamB)}</span></div>
+                          {bigB ? (
+                            <>
+                              <span className="text-base font-black text-white">{bigB.scoreA} – {bigB.scoreB}{bigB.margin ? <span className="text-emerald-400"> (+{bigB.margin})</span> : ''}</span>
+                              {bigB.label && <span className="text-[10px] text-white/35">{bigB.label}</span>}
+                            </>
+                          ) : <span className="text-xs text-white/30">—</span>}
+                        </div>
+                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
+                          <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Best Streak · {shortTeamName(selectedRivalry.teamA)}</span></div>
+                          {strA ? (
+                            <>
+                              <span className="text-base font-black text-white">{strA.wins}W streak</span>
+                              {strA.label && <span className="text-[10px] text-white/35">{strA.label}</span>}
+                            </>
+                          ) : <span className="text-xs text-white/30">—</span>}
+                        </div>
+                        <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3">
+                          <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">Best Streak · {shortTeamName(selectedRivalry.teamB)}</span></div>
+                          {strB ? (
+                            <>
+                              <span className="text-base font-black text-white">{strB.wins}W streak</span>
+                              {strB.label && <span className="text-[10px] text-white/35">{strB.label}</span>}
+                            </>
+                          ) : <span className="text-xs text-white/30">—</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+      )}
+
+
       <footer className="relative z-10 mx-auto max-w-[16100px] px-3 pb-8 pt-0">
         <div className="flex flex-col items-center gap-8 rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] px-8 py-16 text-center">
 
