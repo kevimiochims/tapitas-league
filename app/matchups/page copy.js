@@ -1139,11 +1139,13 @@ export default function MatchupsPage() {
                   <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-4">Starters</div>
 
                   {/* Header colunas */}
-                  <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-3">
+                  <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-3">
                     <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 truncate">
                       {String(selected?.Team || '').trim()}
                     </div>
-                    <div className="border-b border-white/5" />
+                    <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 text-center">
+                      Pos
+                    </div>
                     <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-500 pb-2 border-b border-white/5 text-right truncate">
                       {String(selected?.Opponent || '').trim()}
                     </div>
@@ -1159,46 +1161,69 @@ export default function MatchupsPage() {
                       const pos = positions[i] || ''
                       return (
                         <React.Fragment key={i}>
-                          <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-2 items-center">
+                          {/* Mantido o grid original, apenas reduzindo o gap no mobile */}
+                          <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-2 items-center">
 
                             {/* Time A — Nome → Pts */}
+                            {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
                             <div className={`rounded-2xl px-2 md:px-3 py-2 min-w-0 ${home ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                     <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={42} />
                                   </div>
-                                  <span className={`text-[22px] md:text-[28px] font-black flex items-center flex-shrink-0 tabular-nums leading-none ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
+
+                                  <span
+                                    className={`text-[22px] md:text-[28px] font-black flex items-center flex-shrink-0 tabular-nums leading-none ${(home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'
+                                      }`}
+                                  >
                                     {home ? home.pts.toFixed(1) : '—'}
                                   </span>
                                 </div>
-                                <div className="min-w-0 flex items-center justify-between gap-1.5">
+
+                                <div className="min-w-0 flex items-center gap-1.5">
                                   <div className="text-[15px] md:text-base font-black text-white truncate leading-tight min-w-0 block">
                                     {home?.name ?? ''}
                                   </div>
-                                  <span className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(home?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>
+                                  <span
+                                    className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(home?.name, pos, playerLookup))
+                                      } whitespace-nowrap flex-shrink-0`}
+                                  >
                                     {getDisplayPlayerPos(home?.name, pos, playerLookup)}
                                   </span>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Divisória central */}
-                            <div className="self-stretch w-px bg-white/[0.06]" />
+                            {/* Posição central — Sempre centralizada perfeitamente */}
+                            <div className="flex items-center justify-center">
+                              <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg px-1.5 md:px-2 py-1 border ${getPosColor(pos)} whitespace-nowrap`}>
+                                {pos}
+                              </span>
+                            </div>
 
                             {/* Time B — Pts → Nome (espelhado) */}
+                            {/* Ajustado: px-2 no mobile, text-xs no mobile, min-w-0 para o truncate funcionar */}
                             <div className={`rounded-2xl px-2 md:px-3 py-2 min-w-0 ${away ? 'bg-white/[0.03] border border-white/5' : 'opacity-0'}`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
-                                  <span className={`text-[22px] md:text-[28px] font-black flex items-center flex-shrink-0 tabular-nums leading-none ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'}`}>
+                                  <span
+                                    className={`text-[22px] md:text-[28px] font-black flex items-center flex-shrink-0 tabular-nums leading-none ${(away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600'
+                                      }`}
+                                  >
                                     {away ? away.pts.toFixed(1) : '—'}
                                   </span>
+
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
                                     <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={42} mirror />
                                   </div>
                                 </div>
-                                <div className="min-w-0 flex items-center justify-between gap-1.5 w-full">
-                                  <span className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(away?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>
+
+                                <div className="min-w-0 flex items-center justify-end gap-1.5 w-full">
+                                  <span
+                                    className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(away?.name, pos, playerLookup))
+                                      } whitespace-nowrap flex-shrink-0`}
+                                  >
                                     {getDisplayPlayerPos(away?.name, pos, playerLookup)}
                                   </span>
                                   <div className="text-[15px] md:text-base font-black text-white truncate leading-tight text-right min-w-0 block">
@@ -1219,7 +1244,7 @@ export default function MatchupsPage() {
                   <div className="px-3 md:px-8 py-6 border-b border-white/5">
                     <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Bench</div>
 
-                    <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-3">
+                    <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-3">
                       <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-600 pb-2 border-b border-white/5 truncate">
                         {String(selected?.Team || '').trim()}
                       </div>
@@ -1234,7 +1259,7 @@ export default function MatchupsPage() {
                       const away = oppBench[i]
                       return (
                         <React.Fragment key={i}>
-                          <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-2 items-center">
+                          <div className="grid grid-cols-[1fr_60px_1fr] gap-1 md:gap-2 mb-2 items-center">
 
                             <div className={`rounded-2xl px-2 md:px-3 py-2 min-w-0 ${home ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
@@ -1242,36 +1267,55 @@ export default function MatchupsPage() {
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                     <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={32} />
                                   </div>
-                                  <span className={`text-[18px] md:text-[20px] font-black flex items-center flex-shrink-0 tabular-nums leading-none ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
+
+                                  <span
+                                    className={`text-[18px] md:text-[20px] font-black flex items-center flex-shrink-0 tabular-nums leading-none ${(home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'
+                                      }`}
+                                  >
                                     {home ? home.pts.toFixed(1) : '—'}
                                   </span>
                                 </div>
-                                <div className="min-w-0 flex items-center justify-between gap-1.5">
+
+                                <div className="min-w-0 flex items-center gap-1.5">
                                   <div className="text-[13px] md:text-sm font-bold text-slate-300 truncate leading-tight min-w-0 block">
                                     {home?.name ?? ''}
                                   </div>
-                                  <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(home?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>
+                                  <span
+                                    className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(home?.name, 'BN', playerLookup))
+                                      } whitespace-nowrap flex-shrink-0`}
+                                  >
                                     {getDisplayPlayerPos(home?.name, 'BN', playerLookup)}
                                   </span>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Divisória central */}
-                            <div className="self-stretch w-px bg-white/[0.06]" />
+                            <div className="flex items-center justify-center">
+                              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-600 bg-white/[0.03] border border-white/[0.06] rounded-lg px-1.5 md:px-2 py-1 whitespace-nowrap">
+                                BN
+                              </span>
+                            </div>
 
                             <div className={`rounded-2xl px-2 md:px-3 py-2 min-w-0 ${away ? 'bg-white/[0.02] border border-white/[0.03]' : 'opacity-0'}`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
-                                  <span className={`text-[18px] md:text-[20px] font-black flex items-center flex-shrink-0 tabular-nums leading-none ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'}`}>
+                                  <span
+                                    className={`text-[18px] md:text-[20px] font-black flex items-center flex-shrink-0 tabular-nums leading-none ${(away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600'
+                                      }`}
+                                  >
                                     {away ? away.pts.toFixed(1) : '—'}
                                   </span>
+
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
                                     <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={32} mirror />
                                   </div>
                                 </div>
-                                <div className="min-w-0 flex items-center justify-between gap-1.5 w-full">
-                                  <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(away?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>
+
+                                <div className="min-w-0 flex items-center justify-end gap-1.5 w-full">
+                                  <span
+                                    className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-md px-1.5 py-0.5 border ${getPosColor(getDisplayPlayerPos(away?.name, 'BN', playerLookup))
+                                      } whitespace-nowrap flex-shrink-0`}
+                                  >
                                     {getDisplayPlayerPos(away?.name, 'BN', playerLookup)}
                                   </span>
                                   <div className="text-[13px] md:text-sm font-bold text-slate-300 truncate leading-tight text-right min-w-0 block">
