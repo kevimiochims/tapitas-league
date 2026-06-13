@@ -752,7 +752,6 @@ export default function TapitasLeagueHomepage() {
   const [draftPicks, setDraftPicks]       = useState([])   // last draft picks
   const [draftSeason, setDraftSeason]     = useState('')
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
-  const [playerLookup, setPlayerLookup] = useState(new Map())
 
   const touchStartX = useRef(null);
   const totalSlides = 3;
@@ -851,7 +850,6 @@ export default function TapitasLeagueHomepage() {
         ])
 
         if (!mounted) return
-        setPlayerLookup(buildPlayerLookup(playerCache || []))
 
         // Filtra apenas os campeões de cada temporada
         const champions = historyJson
@@ -1244,6 +1242,7 @@ export default function TapitasLeagueHomepage() {
               team: String(r?.Team || '').trim(),
               player: String(r?.Player || r?.Name || '').trim(),
               position: String(r?.Position || r?.Pos || '').trim().toUpperCase(),
+              playerId: String(r?.['Player ID'] || r?.player_id || r?.PlayerID || r?.SleeperID || '').trim(),
             }))
             .filter(r => r.player && r.player !== '')
             .sort((a, b) => a.pick - b.pick)
@@ -2402,7 +2401,7 @@ export default function TapitasLeagueHomepage() {
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
               <a key={label} href={href}
-                className={`group flex flex-col items-center gap-1.5 px-2 py-3 text-center transition-all hover:scale-[1.03] ${label === 'Draft' || label === 'Matchups' || label === 'News' ? `rounded-[18px] border-transparent bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(59,130,246,0.12),rgba(2,6,23,0.92))] shadow-[0_10px_30px_rgba(34,211,238,0.08)]` : `rounded-[18px] border ${border} ${bg}`}` }>
+                className={`group flex flex-col items-center gap-1.5 rounded-[18px] border ${border} ${bg} px-2 py-3 text-center transition-all hover:scale-[1.05] hover:brightness-125`}>
                 <Icon className={`h-4 w-4 ${color}`} />
                 <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>{label}</span>
               </a>
@@ -2417,29 +2416,26 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 flex flex-col gap-4 xl:flex-row"
         >
           {/* Power Rankings */}
-          <div className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-1">
-            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
-                  <TrendingUp className="h-4 w-4 text-emerald-400" />
-                </div>
+          <div className="w-full overflow-hidden rounded-[30px] border-0 bg-[#071f0e] xl:flex-1">
+            <div className="bg-[#0a2e12] px-5 py-5 border-b border-emerald-400/15">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Power Rankings</div>
-                  <div className="text-xs text-slate-950/70">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-400/60">Season {currentSeason}</div>
+                  <div className="text-[48px] leading-none text-emerald-300" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>Power Rankings</div>
                 </div>
+                <a href="/powerrankings" className="rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-300 transition-all hover:bg-emerald-400/15">
+                  Ver tudo
+                </a>
               </div>
-              <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-slate-950/10 bg-slate-950/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-950/70 transition-all hover:text-slate-950">
-                Ver tudo <ChevronRight className="h-3 w-3" />
-              </a>
             </div>
-            <div className="max-h-[620px] space-y-1.5 overflow-y-auto p-3 pr-2">
+            <div className="p-3 space-y-1.5">
               {prLoading ? (
                 <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div>
               ) : prData.map((row, i) => {
                 const avatar = getTeamAvatar(row.team)
                 return (
                   <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                    className="flex items-center gap-3 rounded-[14px] bg-slate-950/10 px-4 py-2.5 text-slate-950 backdrop-blur-sm transition-all hover:bg-slate-950/15">
+                    className="flex items-center gap-3 rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-4 py-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10">
                     <span className="w-6 flex-shrink-0 text-center font-black leading-none"
                       style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '20px', color: i===0?'#facc15':i<=1?'#22d3ee':i<=3?'#34d399':'#475569' }}>
                       {row.rank}
@@ -2448,7 +2444,7 @@ export default function TapitasLeagueHomepage() {
                       ? <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-xl object-cover" />
                       : <div className="h-7 w-7 flex-shrink-0 rounded-xl bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center text-[9px] font-black text-emerald-400">{row.team.slice(0,2).toUpperCase()}</div>
                     }
-                    <span className="flex-1 truncate text-sm font-black text-slate-950">{row.team}</span>
+                    <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
                     <span className={`flex items-center gap-0.5 text-xs font-black ${row.delta>0?'text-emerald-400':row.delta<0?'text-red-400':'text-slate-600'}`}>
                       {row.delta>0?<TrendingUp className="h-3 w-3"/>:row.delta<0?<TrendingDown className="h-3 w-3"/>:<Minus className="h-3 w-3"/>}
                       {row.delta!==0?Math.abs(row.delta):''}
@@ -2460,14 +2456,14 @@ export default function TapitasLeagueHomepage() {
           </div>
 
           {/* Current Standings */}
-          <div className="w-full overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#12e6f3_0%,#1fc7ff_38%,#071427_100%)] shadow-[0_20px_60px_rgba(34,211,238,0.14)] xl:flex-1">
-            <div className="flex items-center justify-between border-b border-black/10 px-5 py-4 backdrop-blur-sm">
+          <div className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-1">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-950/10 bg-slate-950/10">
-                  <BarChart2 className="h-4 w-4 text-slate-950/80" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                  <BarChart2 className="h-4 w-4 text-cyan-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-950">Standings</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
                   <div className="text-xs text-slate-500">
                     {currentSeason
                       ? currentWeekLabel === '__final__'
@@ -2486,7 +2482,7 @@ export default function TapitasLeagueHomepage() {
             <div className="p-3 space-y-1.5">
               {currentStandings.length === 0
                 ? <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div>
-                : currentStandings.map((row, i) => {
+                : currentStandings.slice(0, 8).map((row, i) => {
                     const avatar = getTeamAvatar(row.team)
                     return (
                       <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
@@ -2501,11 +2497,11 @@ export default function TapitasLeagueHomepage() {
                         }
                         <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
                         <div className="flex flex-shrink-0 items-center gap-1.5">
-                          <span className="text-xs font-black text-emerald-950/80">{row.w}W</span>
+                          <span className="text-xs font-black text-emerald-400">{row.w}W</span>
                           <span className="text-xs text-slate-700">·</span>
-                          <span className="text-xs font-black text-rose-950/70">{row.l}L</span>
+                          <span className="text-xs font-black text-red-400">{row.l}L</span>
                           <span className="text-xs text-slate-700">·</span>
-                          <span className="w-14 text-right text-[10px] font-bold text-slate-950/60">{Math.round(row.pf)} pts</span>
+                          <span className="w-14 text-right text-[10px] font-bold text-slate-500">{Math.round(row.pf)} pts</span>
                         </div>
                       </a>
                     )
@@ -2519,21 +2515,18 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-          className="mb-4 overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]"
+          className="mb-4 overflow-hidden rounded-[30px] border-0 bg-[#00c8cc]"
         >
-          <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
-                <Newspaper className="h-4 w-4 text-yellow-400" />
-              </div>
+          <div className="bg-[#009ea1] px-6 py-5 border-b border-[#003a3b]/30">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">Newsletter</div>
-                <div className="text-xs text-slate-500">Memes, recaps and news</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.28em] text-white/50">Newsletter</div>
+                <div className="text-[52px] leading-none text-white" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>News</div>
               </div>
+              <a href="/news" className="rounded-full bg-[#002a2b] px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-[#00c8cc] transition-all hover:bg-black">
+                Ver tudo
+              </a>
             </div>
-            <a href="/news" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
-              Ver tudo <ChevronRight className="h-3 w-3" />
-            </a>
           </div>
           {newsLoading
             ? <div className="py-10 text-center text-xs font-bold text-slate-700">Carregando...</div>
@@ -2545,7 +2538,7 @@ export default function TapitasLeagueHomepage() {
                     const Icon = s?.icon || Newspaper
                     return (
                       <a key={post.id||i} href={`/news/${post.slug}`}
-                        className="group overflow-hidden rounded-[18px] border border-white/5 bg-white/[0.02] transition-all hover:border-white/12 hover:bg-white/[0.04]">
+                        className="group overflow-hidden rounded-[18px] border border-[#003a3b]/25 bg-[#009ea1]/20 transition-all hover:border-[#003a3b]/40 hover:bg-[#009ea1]/30">
                         {post.imageUrl && (
                           <div className="h-32 w-full overflow-hidden">
                             <img src={post.imageUrl.split('|')[0]} alt={post.title}
@@ -2575,20 +2568,17 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           {/* DRAFT — scrolling picks feed */}
-          <div className="overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,rgba(236,72,153,0.18),rgba(168,85,247,0.18),rgba(2,6,23,0.98))] ring-1 ring-white/6 shadow-[0_16px_40px_rgba(236,72,153,0.12)]">
-            <div className="flex items-center justify-between border-b border-white/8 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-pink-300/25 bg-black/10">
-                  <ScrollText className="h-4 w-4 text-pink-400" />
-                </div>
+          <div className="overflow-hidden rounded-[30px] border-0 bg-[#180414]">
+            <div className="bg-[#220620] px-5 py-5 border-b border-pink-400/15">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-pink-400">Last Draft</div>
-                  <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} · Full board preview` : 'Carregando...'}</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.28em] text-pink-400/50">Season {draftSeason}</div>
+                  <div className="text-[48px] leading-none text-pink-300" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>Draft Board</div>
                 </div>
+                <a href="/draft" className="rounded-full border border-pink-400/25 bg-pink-400/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-pink-300 transition-all hover:bg-pink-400/15">
+                  Ver tudo
+                </a>
               </div>
-              <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
-                Draft Board <ChevronRight className="h-3 w-3" />
-              </a>
             </div>
             <div className="divide-y divide-white/[0.03]">
               {draftPicks.length === 0
@@ -2609,9 +2599,16 @@ export default function TapitasLeagueHomepage() {
                           <span className="w-5 flex-shrink-0 text-center text-[11px] font-black text-slate-600">
                             {pick.pick}
                           </span>
-                          {avatar
-                            ? <img src={avatar} alt={pick.team} className="h-6 w-6 flex-shrink-0 rounded-lg object-cover" />
-                            : <div className="h-6 w-6 flex-shrink-0 rounded-lg bg-pink-400/10 border border-pink-400/20 flex items-center justify-center text-[8px] font-black text-pink-400">{pick.team.slice(0,2).toUpperCase()}</div>
+                          {pick.playerId
+                            ? <img
+                                src={`https://sleepercdn.com/content/nfl/players/thumb/${pick.playerId}.jpg`}
+                                alt={pick.player}
+                                className="h-9 w-9 flex-shrink-0 rounded-xl object-cover border border-pink-400/20"
+                                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatar || ''; e.currentTarget.className = 'h-9 w-9 flex-shrink-0 rounded-xl object-cover border border-white/10'; }}
+                              />
+                            : avatar
+                              ? <img src={avatar} alt={pick.team} className="h-9 w-9 flex-shrink-0 rounded-xl object-cover" />
+                              : <div className="h-9 w-9 flex-shrink-0 rounded-xl bg-pink-400/10 border border-pink-400/20 flex items-center justify-center text-[9px] font-black text-pink-400">{pick.team.slice(0,2).toUpperCase()}</div>
                           }
                           <span className="flex-1 truncate text-sm font-black text-white">{pick.player}</span>
                           <span className={`flex-shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-black ${posColor}`}>{pick.position}</span>
@@ -2624,20 +2621,17 @@ export default function TapitasLeagueHomepage() {
           </div>
 
           {/* RECORDS — leaders per category with tied display */}
-          <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
-            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
-                  <Zap className="h-4 w-4 text-yellow-400" />
-                </div>
+          <div className="overflow-hidden rounded-[30px] border-0 bg-[#181200]">
+            <div className="bg-[#221a00] px-5 py-5 border-b border-yellow-400/15">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">All-Time Records</div>
-                  <div className="text-xs text-slate-500">Best of the best</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.28em] text-yellow-400/50">Histórico</div>
+                  <div className="text-[48px] leading-none text-yellow-300" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>All-Time Records</div>
                 </div>
+                <a href="/records" className="rounded-full border border-yellow-400/25 bg-yellow-400/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-yellow-300 transition-all hover:bg-yellow-400/15">
+                  Ver tudo
+                </a>
               </div>
-              <a href="/records" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
-                Ver tudo <ChevronRight className="h-3 w-3" />
-              </a>
             </div>
             <div className="divide-y divide-white/[0.03]">
               {[
@@ -2684,21 +2678,18 @@ export default function TapitasLeagueHomepage() {
           <motion.div
             initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-            className="mb-4 overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]"
+            className="mb-4 overflow-hidden rounded-[30px] border-0 bg-[#1a0800]"
           >
-            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-400/20 bg-orange-400/10">
-                  <Swords className="h-4 w-4 text-orange-400" />
-                </div>
+            <div className="bg-[#241000] px-5 py-5 border-b border-orange-400/15">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400">Matchups Recentes</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Week ${recentMatchups[0]?.week}${recentMatchups[0]?.stage && recentMatchups[0].stage !== 'Reg Season' ? ` · ${recentMatchups[0].stage}` : ''}` : ''}</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.28em] text-orange-400/50">Season {currentSeason} · Week {recentMatchups[0]?.week}</div>
+                  <div className="text-[48px] leading-none text-orange-300" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>Matchups</div>
                 </div>
+                <a href="/matchups" className="rounded-full border border-orange-400/25 bg-orange-400/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-orange-300 transition-all hover:bg-orange-400/15">
+                  Ver tudo
+                </a>
               </div>
-              <a href="/matchups" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
-                Ver tudo <ChevronRight className="h-3 w-3" />
-              </a>
             </div>
             <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">
               {recentMatchups.map((m, i) => {
@@ -2745,17 +2736,22 @@ export default function TapitasLeagueHomepage() {
           <motion.div
             initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-            className="mb-4 overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]"
+            className="mb-4 overflow-hidden rounded-[30px] border-0 bg-[#1a1100]"
           >
-            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
-                  <Trophy className="h-4 w-4 text-yellow-400" />
+            <div className="bg-[#231700] px-6 py-5 border-b border-yellow-400/15">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-yellow-400/35 bg-yellow-400/15">
+                    <Trophy className="h-5 w-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-yellow-400/50">Hall of Fame</div>
+                    <div className="text-[42px] leading-none text-yellow-300" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>Champions Wall</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">Champions Wall</div>
-                  <div className="text-xs text-slate-500">Every title. Every campaign.</div>
-                </div>
+                <a href="/history" className="rounded-full border border-yellow-400/25 bg-yellow-400/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-yellow-300 transition-all hover:bg-yellow-400/15">
+                  Ver tudo
+                </a>
               </div>
             </div>
             <ChampionsWallInline champions={championsData} />
@@ -2769,22 +2765,19 @@ export default function TapitasLeagueHomepage() {
           <motion.div
             initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.08 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}
-            className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-[1.15]"
+            className="w-full overflow-hidden rounded-[30px] border-0 bg-[#180404] xl:flex-[1.15]"
           >
             <div className="flex h-full flex-col p-5">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
-                    <Swords className="h-4 w-4 text-red-400" />
-                  </div>
+              <div className="bg-[#220606] px-5 py-5 border-b border-red-400/15 mb-4">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
-                    <div className="text-xs text-slate-500">All-time H2H</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-red-400/50">Duelos históricos</div>
+                    <div className="text-[48px] leading-none text-red-300" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>Rivalry Spotlight</div>
                   </div>
+                  <a href="/rivalries" className="rounded-full border border-red-400/25 bg-red-400/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-red-300 transition-all hover:bg-red-400/15">
+                    Ver tudo
+                  </a>
                 </div>
-                <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
-                  VER TUDO <ChevronRight className="h-3 w-3" />
-                </a>
               </div>
 
               <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
@@ -2920,21 +2913,20 @@ export default function TapitasLeagueHomepage() {
           <motion.div
             initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.08 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}
-            className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-[0.85]"
+            className="w-full overflow-hidden rounded-[30px] border-0 bg-[#050e1e] xl:flex-[0.85]"
           >
-            <div className="flex h-full flex-col p-5">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
-                    <Medal className="h-4 w-4 text-cyan-300" />
-                  </div>
+            <div className="flex h-full flex-col">
+              <div className="bg-[#071629] px-5 py-5 border-b border-cyan-400/12">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">Franchise Leaders</div>
-                    <div className="text-xs text-slate-500">League Rankings</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-400/50">Liga</div>
+                    <div className="text-[42px] leading-none text-cyan-300" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.04em' }}>Franchise Leaders</div>
                   </div>
                 </div>
+              </div>
+              <div className="p-4 flex-1">
                 {standings.length > 5 && (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-end gap-1.5 mb-3">
                     <button onClick={() => setStandingsPage(p => Math.max(0,p-1))} disabled={standingsPage===0}
                       className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20">
                       <ChevronLeft className="h-3.5 w-3.5" />
