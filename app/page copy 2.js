@@ -21,7 +21,7 @@ const FALLBACK_TEAMS = [
     pf: 2145,
   },
   {
-    team: 'Peytão da Massa',
+    team: 'PeytÃ£o da Massa',
     wins: 106,
     losses: 60,
     pf: 2088,
@@ -179,7 +179,7 @@ function GameRow({ game }) {
         </span>
       </div>
       <span className="text-[11px] text-slate-500">
-        {game.score.toFixed(2)} – {game.oppScore.toFixed(2)}
+        {game.score.toFixed(2)} â€“ {game.oppScore.toFixed(2)}
       </span>
     </div>
   )
@@ -209,7 +209,7 @@ const ChampionCard = memo(function ChampionCard({ champ, index, isOpen, onToggle
         : 'border-white/5 hover:border-white/10'
         } bg-[linear-gradient(180deg,rgba(12,20,38,0.9),rgba(5,10,25,0.95))]`}
     >
-      {/* Badge Reigning — sobreposto no canto superior direito */}
+      {/* Badge Reigning â€” sobreposto no canto superior direito */}
       {index === 0 && (
         <div className="absolute right-3 top-3 z-10 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-300">
           Reigning
@@ -241,11 +241,11 @@ const ChampionCard = memo(function ChampionCard({ champ, index, isOpen, onToggle
             {champ.team}
           </div>
           <div className="mt-1 text-xs text-slate-500">
-            {champ.wins}–{champ.losses} overall
+            {champ.wins}â€“{champ.losses} overall
             {champ.playoffWins > 0 || champ.playoffLosses > 0
-              ? ` • ${champ.playoffWins}–${champ.playoffLosses} playoffs`
+              ? ` â€¢ ${champ.playoffWins}â€“${champ.playoffLosses} playoffs`
               : ''}
-            {champ.pf > 0 ? ` • ${Math.round(champ.pf)} pts` : ''}
+            {champ.pf > 0 ? ` â€¢ ${Math.round(champ.pf)} pts` : ''}
           </div>
         </div>
 
@@ -368,7 +368,7 @@ function ChampionsWall({ champions }) {
   )
 }
 
-// Inline version — no outer card wrapper (card comes from the home page)
+// Inline version â€” no outer card wrapper (card comes from the home page)
 function ChampionsWallInline({ champions }) {
   const [openSet, setOpenSet] = useState(new Set())
   const toggle = (index) => {
@@ -399,13 +399,13 @@ function ChampionsWallInline({ champions }) {
                 <div className={`font-black leading-none transition-all ${isOpen ? 'text-2xl text-white' : 'text-lg text-slate-300'}`}
                   style={{ fontFamily: '"Bebas Neue",sans-serif' }}>{champ.season}</div>
                 <div className={`truncate font-black text-white transition-all ${isOpen ? 'text-base' : 'text-sm'}`}>{champ.team}</div>
-                {!isOpen && <div className="text-[10px] text-slate-500">{champ.wins}–{champ.losses} · {Math.round(champ.pf)} pts</div>}
+                {!isOpen && <div className="text-[10px] text-slate-500">{champ.wins}â€“{champ.losses} Â· {Math.round(champ.pf)} pts</div>}
               </div>
               <ChevronRight className={`h-4 w-4 flex-shrink-0 text-slate-600 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
             </button>
             {isOpen && (
               <div className="border-t border-white/5 px-4 pb-4 pt-3">
-                <div className="mb-2 text-[10px] text-slate-400">{champ.wins}–{champ.losses} overall · {champ.playoffWins}–{champ.playoffLosses} playoffs · {Math.round(champ.pf)} pts</div>
+                <div className="mb-2 text-[10px] text-slate-400">{champ.wins}â€“{champ.losses} overall Â· {champ.playoffWins}â€“{champ.playoffLosses} playoffs Â· {Math.round(champ.pf)} pts</div>
                 <div className="grid grid-cols-3 gap-2">
                   {[regCol1, regCol2, champ.playoffGames].map((games, ci) => (
                     <div key={ci}>
@@ -416,7 +416,7 @@ function ChampionsWallInline({ champions }) {
                             <span className={`text-[11px] font-black ${g.result==='W'?'text-emerald-400':'text-red-400'}`}>{g.result}</span>
                             <span className="truncate text-[11px] text-slate-400">vs {g.opp}</span>
                           </div>
-                          <span className="text-[10px] text-slate-600">{g.score.toFixed(1)}–{g.oppScore.toFixed(1)}</span>
+                          <span className="text-[10px] text-slate-600">{g.score.toFixed(1)}â€“{g.oppScore.toFixed(1)}</span>
                         </div>
                       ))}
                     </div>
@@ -468,7 +468,7 @@ function buildSeasonRanges(years) {
 
   ranges.push(start === end ? `'${String(start).slice(2)}` : `'${String(start).slice(2)}-'${String(end).slice(2)}`)
 
-  return ranges.join(' • ')
+  return ranges.join(' â€¢ ')
 }
 
 const SORT_OPTIONS = [
@@ -591,7 +591,7 @@ function buildStreakMap(gamesJson, teamsJson) {
       // O valor que buscamos: positivo pra win, negativo pra loss
       const targetVal = isWin ? bestVal : -bestVal
 
-      // Encontra o índice onde o streak atingiu o valor máximo pela PRIMEIRA vez
+      // Encontra o Ã­ndice onde o streak atingiu o valor mÃ¡ximo pela PRIMEIRA vez
       let peakIndex = -1
       for (let i = 0; i < sorted.length; i++) {
         if (sorted[i][key] === targetVal) {
@@ -604,7 +604,7 @@ function buildStreakMap(gamesJson, teamsJson) {
 
       const endGame = sorted[peakIndex]
 
-      // Percorre para trás a partir do peak até achar o 1 ou -1
+      // Percorre para trÃ¡s a partir do peak atÃ© achar o 1 ou -1
       const startTarget = isWin ? 1 : -1
       let startIndex = peakIndex
       for (let i = peakIndex; i >= 0; i--) {
@@ -616,7 +616,7 @@ function buildStreakMap(gamesJson, teamsJson) {
 
       const startGame = sorted[startIndex]
 
-      // Streak é ativo se o último jogo do time está na temporada mais recente
+      // Streak Ã© ativo se o Ãºltimo jogo do time estÃ¡ na temporada mais recente
       const lastGame = sorted[sorted.length - 1]
       const isActive = lastGame.season === maxSeason && Math.abs(sorted[sorted.length - 1][key]) >= bestVal
 
@@ -640,7 +640,7 @@ function buildStreakMap(gamesJson, teamsJson) {
   return result
 }
 
-// ── NEW CONSTANTS ─────────────────────────────────────────────────────────────
+// â”€â”€ NEW CONSTANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const NEWS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
 const SHEET_ID_HOME = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -649,7 +649,7 @@ const BASE_URL_HOME = `https://opensheet.elk.sh/${SHEET_ID_HOME}`
 const CATEGORY_STYLE = {
   'Meme':    { color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10', icon: Laugh },
   'Recap':   { color: 'text-cyan-400',   border: 'border-cyan-400/20',   bg: 'bg-cyan-400/10',   icon: FileText },
-  'Notícia': { color: 'text-emerald-400',border: 'border-emerald-400/20',bg: 'bg-emerald-400/10',icon: Newspaper },
+  'NotÃ­cia': { color: 'text-emerald-400',border: 'border-emerald-400/20',bg: 'bg-emerald-400/10',icon: Newspaper },
 }
 
 function formatDate(dateStr) {
@@ -657,9 +657,9 @@ function formatDate(dateStr) {
   catch { return dateStr }
 }
 
-// Short display name for Records card — first meaningful word, not "I" or "The"
+// Short display name for Records card â€” first meaningful word, not "I" or "The"
 function shortTeamName(name) {
-  if (!name) return '—'
+  if (!name) return 'â€”'
   // Skip articles AND single-letter words (like "I")
   const skip = new Set(['i', 'the', 'a', 'an', 'am', 'os', 'as', 'o', 'de', 'do', 'da'])
   const words = name.split(' ').filter(Boolean)
@@ -698,9 +698,9 @@ const POS_COLORS = {
 }
 
 function parseBiggestWin(value) {
-  if (!value || String(value) === '—') return null
+  if (!value || String(value) === 'â€”') return null
   const text = String(value)
-  const scoreMatch = text.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)/)
+  const scoreMatch = text.match(/(\d+(?:\.\d+)?)\s*[-â€“]\s*(\d+(?:\.\d+)?)/)
   const marginMatch = text.match(/\(\+?(\d+(?:\.\d+)?)\)/)
   const weekMatch = text.match(/Week\s*([\d][\d\-\/]*)/i)
   const yearMatch = text.match(/(20\d{2})/)
@@ -708,19 +708,19 @@ function parseBiggestWin(value) {
     scoreA: scoreMatch ? scoreMatch[1] : '0',
     scoreB: scoreMatch ? scoreMatch[2] : '0',
     margin: marginMatch ? marginMatch[1] : null,
-    label: [weekMatch ? `Week ${weekMatch[1]}` : '', yearMatch ? yearMatch[1] : ''].filter(Boolean).join(' · '),
+    label: [weekMatch ? `Week ${weekMatch[1]}` : '', yearMatch ? yearMatch[1] : ''].filter(Boolean).join(' Â· '),
   }
 }
 
 function parseBestStreak(value) {
-  if (!value || String(value) === '—') return null
+  if (!value || String(value) === 'â€”') return null
   const text = String(value).trim()
   const countMatch = text.match(/([WL])(\d+)/i)
   const rangeMatch = text.match(/\(([^)]+)\)/)
   if (!countMatch) return { raw: text }
   let start = '', end = ''
   if (rangeMatch) {
-    const parts = rangeMatch[1].split(/\s*(?:→|->|⇒)\s*/)
+    const parts = rangeMatch[1].split(/\s*(?:â†’|->|â‡’)\s*/)
     if (parts.length >= 2) { start = parts[0].trim(); end = parts[1].trim() }
     else { start = rangeMatch[1].trim() }
   }
@@ -741,7 +741,7 @@ export default function TapitasLeagueHomepage() {
   const [selectedSeason, setSelectedSeason] = useState('2025')
   const [currentSlide, setCurrentSlide] = useState(0)
 
-  // ── NEW STATE ──────────────────────────────────────────────────────────────
+  // â”€â”€ NEW STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [newsPosts, setNewsPosts]         = useState([])
   const [newsLoading, setNewsLoading]     = useState(true)
   const [prData, setPrData]               = useState([])
@@ -766,10 +766,10 @@ export default function TapitasLeagueHomepage() {
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
 
-    const threshold = 50; // distância mínima do swipe
+    const threshold = 50; // distÃ¢ncia mÃ­nima do swipe
 
     if (diff > threshold) {
-      // swipe para esquerda -> próximo slide
+      // swipe para esquerda -> prÃ³ximo slide
       setCurrentSlide((prev) => (prev + 1) % totalSlides);
     }
 
@@ -821,7 +821,7 @@ export default function TapitasLeagueHomepage() {
         <ChevronRight className="h-4 w-4" />
       </button>
     )
-    // limpa ao sair da página
+    // limpa ao sair da pÃ¡gina
     return () => setLeftSlot(null)
   }, [])
 
@@ -851,7 +851,7 @@ export default function TapitasLeagueHomepage() {
 
         if (!mounted) return
 
-        // Filtra apenas os campeões de cada temporada
+        // Filtra apenas os campeÃµes de cada temporada
         const champions = historyJson
           .filter((row) => {
             const isChamp = String(
@@ -871,7 +871,7 @@ export default function TapitasLeagueHomepage() {
           }))
           .sort((a, b) => Number(b.season) - Number(a.season))
 
-        // Para cada campeão, busca os jogos daquela temporada
+        // Para cada campeÃ£o, busca os jogos daquela temporada
         const championsWithGames = champions.map((champ) => {
           const seasonGames = gamesJson.filter((game) => {
             const season = String(game?.Season || game?.season || '').trim()
@@ -1055,7 +1055,7 @@ export default function TapitasLeagueHomepage() {
     }
   }, [])
 
-  // ── News posts ─────────────────────────────────────────────────────────────
+  // â”€â”€ News posts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     fetch(NEWS_SCRIPT_URL)
       .then(r => r.json())
@@ -1067,7 +1067,7 @@ export default function TapitasLeagueHomepage() {
       .finally(() => setNewsLoading(false))
   }, [])
 
-  // ── Power Rankings + Standings + Draft picks + Recent matchups ─────────────
+  // â”€â”€ Power Rankings + Standings + Draft picks + Recent matchups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     let mounted = true
     async function loadExtra() {
@@ -1079,7 +1079,7 @@ export default function TapitasLeagueHomepage() {
         ])
         if (!mounted) return
 
-        // ── Power Rankings ──────────────────────────────────────────────────
+        // â”€â”€ Power Rankings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const seasonsWithPR = [...new Set(
           gameData.filter(g => parseNumber(g?.['Power Ranking']) > 0)
             .map(g => String(g?.Season || '').trim()).filter(Boolean)
@@ -1110,7 +1110,7 @@ export default function TapitasLeagueHomepage() {
           })
           if (mounted) { setPrData(prRows); setCurrentSeason(latestSeason) }
 
-          // ── Current standings ─────────────────────────────────────────────
+          // â”€â”€ Current standings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           // Find the latest season that has any PLAYED games (PF > 0)
           const allSeasonsList = [...new Set(
             gameData
@@ -1150,7 +1150,7 @@ export default function TapitasLeagueHomepage() {
           let weekLabel = ''
 
           if (rsGamesNewest.length === 0) {
-            // New season with no reg games yet — show previous finished season
+            // New season with no reg games yet â€” show previous finished season
             const prevSeason = allSeasonsList[allSeasonsList.length - 2]
             if (prevSeason) {
               displaySeason = prevSeason
@@ -1158,10 +1158,10 @@ export default function TapitasLeagueHomepage() {
               seasonRows = buildFromHistory(prevSeason)
             }
           } else if (isSeasonFinished) {
-            // Season over — use Standing column from TEAM_HISTORY_SORTED
+            // Season over â€” use Standing column from TEAM_HISTORY_SORTED
             seasonRows = buildFromHistory(newestSeason)
           } else {
-            // Season in progress — accumulate reg season week by week
+            // Season in progress â€” accumulate reg season week by week
             const rsWeeksSorted = [...new Set(
               rsGamesNewest.map(g => String(g?.Week || '').trim()).filter(Boolean)
             )].sort((a, b) => parseFloat(a) - parseFloat(b))
@@ -1189,7 +1189,7 @@ export default function TapitasLeagueHomepage() {
           }
         } // end if seasonsWithPR
 
-        // ── Recent matchups — independent of PR data ──────────────────────────
+        // â”€â”€ Recent matchups â€” independent of PR data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         {
           const allSeasons2 = [...new Set(
             gameData
@@ -1207,7 +1207,7 @@ export default function TapitasLeagueHomepage() {
             return pf > 0 && pa > 0
           })
 
-          // Sort weeks numerically (handle "15-16" → 15, "17" → 17)
+          // Sort weeks numerically (handle "15-16" â†’ 15, "17" â†’ 17)
           const allWeeksSorted2 = [...new Set(
             allNewestGames2.map(g => String(g?.Week || '').trim()).filter(Boolean)
           )].sort((a, b) => parseFloat(a) - parseFloat(b))
@@ -1229,7 +1229,7 @@ export default function TapitasLeagueHomepage() {
           if (mounted) setRecentMatchups(matchups2.slice(0, 6))
         }
 
-        // ── Draft picks ───────────────────────────────────────────────────────
+        // â”€â”€ Draft picks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (draftData.length > 0) {
           const draftSeasons = [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
             .sort((a, b) => Number(a) - Number(b))
@@ -1295,14 +1295,14 @@ export default function TapitasLeagueHomepage() {
         ? getter(b) - getter(a)
         : getter(a) - getter(b)
       if (diff !== 0) return diff
-      // desempate sempre por wins desc → losses asc → pf desc
+      // desempate sempre por wins desc â†’ losses asc â†’ pf desc
       if (b.wins !== a.wins) return b.wins - a.wins
       if (a.losses !== b.losses) return a.losses - b.losses
       return b.pf - a.pf
     })
   }, [rawData, sortCategory, sortSub])
 
-  // Lista única de times extraída do h2h
+  // Lista Ãºnica de times extraÃ­da do h2h
   const allTeams = useMemo(() => {
     const teams = new Set()
     h2hData.forEach((row) => {
@@ -1315,10 +1315,10 @@ export default function TapitasLeagueHomepage() {
     return Array.from(teams).sort()
   }, [h2hData])
 
-  // Times disponíveis para o segundo dropdown (exclui o time A)
+  // Times disponÃ­veis para o segundo dropdown (exclui o time A)
   const teamsForB = useMemo(() => {
     if (!selectedTeamA) return allTeams.filter((t) => t !== selectedTeamA)
-    // Só mostra times que têm confronto com teamA na planilha
+    // SÃ³ mostra times que tÃªm confronto com teamA na planilha
     return h2hData
       .filter((row) => {
         const keys = Object.keys(row)
@@ -1391,11 +1391,11 @@ export default function TapitasLeagueHomepage() {
     const shortName = (name) => {
       const mappings = {
         'i am megatron': 'Megatron', 'h-lera do mahl': 'H-Lera',
-        'peytão da massa': 'Peytao', 'peytao da massa': 'Peytao',
+        'peytÃ£o da massa': 'Peytao', 'peytao da massa': 'Peytao',
         'ocupa meu slot': 'Ocupa', 'green bay pequers': 'Pequers',
-        'settlers of rincão': 'Rincão', 'settlers of rincao': 'Rincão',
+        'settlers of rincÃ£o': 'RincÃ£o', 'settlers of rincao': 'RincÃ£o',
         'old brady bunch': 'OldBrady', 'moneyball fc': 'Moneyball',
-        'patrolão': 'Patrolao', 'patrolao': 'Patrolao',
+        'patrolÃ£o': 'Patrolao', 'patrolao': 'Patrolao',
         'how much is the fish': 'Howmuch',
       }
       const n = normalizeString(name)
@@ -1422,13 +1422,13 @@ export default function TapitasLeagueHomepage() {
       lastMeeting: {
         score: scoreMatch ? `${scoreMatch[1]} vs ${scoreMatch[2]}` : '-- vs --',
         meta: (weekMatch || yearMatch)
-          ? `${weekMatch ? `Week ${weekMatch[1]}` : ''} ${yearMatch ? `· ${yearMatch[1]}` : ''}`.trim()
+          ? `${weekMatch ? `Week ${weekMatch[1]}` : ''} ${yearMatch ? `Â· ${yearMatch[1]}` : ''}`.trim()
           : '',
       },
-      biggestA: String(row['Biggest Win Team A'] || row['biggest_win_a'] || '—'),
-      biggestB: String(row['Biggest Win Team B'] || row['biggest_win_b'] || '—'),
-      bestStreakA: String(row['Best Streak Team A'] || row['best_streak_a'] || '—'),
-      bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || '—'),
+      biggestA: String(row['Biggest Win Team A'] || row['biggest_win_a'] || 'â€”'),
+      biggestB: String(row['Biggest Win Team B'] || row['biggest_win_b'] || 'â€”'),
+      bestStreakA: String(row['Best Streak Team A'] || row['best_streak_a'] || 'â€”'),
+      bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || 'â€”'),
     }
   }, [h2hData, selectedTeamA, selectedTeamB])
 
@@ -1486,7 +1486,7 @@ export default function TapitasLeagueHomepage() {
         parseNumber(a?.Standing) - parseNumber(b?.Standing)
       )[validStandings.length - 1]
 
-      // Maior pontuação em um único jogo
+      // Maior pontuaÃ§Ã£o em um Ãºnico jogo
       const seasonGames = gamesJson.filter(r => {
         const s = String(r?.Season || '').trim()
         return s === SEASON &&
@@ -1659,13 +1659,13 @@ export default function TapitasLeagueHomepage() {
                     ))}
                   </g>
 
-                  {/* Triângulos */}
+                  {/* TriÃ¢ngulos */}
                   <g opacity="0.07" fill="#22d3ee">
                     <polygon points="900,0 900,140 760,0" />
                     <polygon points="900,340 900,200 760,340" />
                   </g>
 
-                  {/* Círculos */}
+                  {/* CÃ­rculos */}
                   <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
                     {[30, 50, 70].map((r) => (
                       <circle key={r} cx="870" cy="60" r={r} />
@@ -1688,7 +1688,7 @@ export default function TapitasLeagueHomepage() {
                     ))}
                   </g>
 
-                  {/* Número fantasma */}
+                  {/* NÃºmero fantasma */}
                   <text
                     x="820"
                     y="310"
@@ -1712,7 +1712,7 @@ export default function TapitasLeagueHomepage() {
                 />
               </div>
 
-              {/* Conteúdo */}
+              {/* ConteÃºdo */}
               <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
 
                 {/* Texto */}
@@ -1735,7 +1735,7 @@ export default function TapitasLeagueHomepage() {
 
                   </div>
 
-                  {/* Título */}
+                  {/* TÃ­tulo */}
                   <h1
                     className="mb-2 leading-[0.9]"
                     style={{
@@ -1793,7 +1793,7 @@ export default function TapitasLeagueHomepage() {
                     </p>
 
                   </div>
-                  {/* Botões */}
+                  {/* BotÃµes */}
                   <div className="flex flex-row items-start gap-1.5 md:gap-3">
 
                     <a
@@ -1852,7 +1852,7 @@ export default function TapitasLeagueHomepage() {
                 }}
               />
 
-              {/* Conteúdo */}
+              {/* ConteÃºdo */}
               <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14">
 
                 {/* Texto */}
@@ -1879,7 +1879,7 @@ export default function TapitasLeagueHomepage() {
 
                   </div>
 
-                  {/* Título */}
+                  {/* TÃ­tulo */}
                   <h2
                     className="mb-2 leading-[0.9]"
                     style={{
@@ -1927,7 +1927,7 @@ export default function TapitasLeagueHomepage() {
 
                   </h2>
 
-                  {/* Subtítulo */}
+                  {/* SubtÃ­tulo */}
                   <div className="mx-0 mb-5 md:mb-6 text-slate-300 flex flex-col gap-1 md:gap-1.5">
 
                     <p className="text-[14px] sm:text-[14px] md:text-base font-medium leading-tight">
@@ -1940,7 +1940,7 @@ export default function TapitasLeagueHomepage() {
 
                   </div>
 
-                  {/* Botões */}
+                  {/* BotÃµes */}
                   <div className="flex flex-wrap gap-2 md:gap-3">
 
                     <a
@@ -1955,7 +1955,7 @@ export default function TapitasLeagueHomepage() {
 
                 </div>
 
-                {/* Área direita igual ao Hero */}
+                {/* Ãrea direita igual ao Hero */}
                 <div
                   className="hidden [@media(min-width:4100px)]:flex relative items-center justify-center min-w-[240px]"
                   style={{
@@ -2016,7 +2016,7 @@ export default function TapitasLeagueHomepage() {
                     />
                   </g>
 
-                  {/* Flechas secundárias preenchidas */}
+                  {/* Flechas secundÃ¡rias preenchidas */}
                   <g
                     opacity="0.50"
                     fill="#22d3ee"
@@ -2121,7 +2121,7 @@ export default function TapitasLeagueHomepage() {
 
                   </g>
 
-                  {/* Número principal */}
+                  {/* NÃºmero principal */}
                   <text
                     x="620"
                     y="300"
@@ -2133,7 +2133,7 @@ export default function TapitasLeagueHomepage() {
                     #1
                   </text>
 
-                  {/* Rankings secundários */}
+                  {/* Rankings secundÃ¡rios */}
                   <g
                     fontFamily="'Bebas Neue', sans-serif"
                     fill="#22d3ee"
@@ -2182,7 +2182,7 @@ export default function TapitasLeagueHomepage() {
 
                   </g>
 
-                  {/* Movimentações positivas */}
+                  {/* MovimentaÃ§Ãµes positivas */}
                   <g
                     fontFamily="'Bebas Neue', sans-serif"
                     fill="#22c55e"
@@ -2190,20 +2190,20 @@ export default function TapitasLeagueHomepage() {
                   >
 
                     <text x="510" y="140" fontSize="34">
-                      ▲ +3
+                      â–² +3
                     </text>
 
                     <text x="720" y="240" fontSize="34">
-                      ▲ +5
+                      â–² +5
                     </text>
 
                     <text x="460" y="285" fontSize="30">
-                      ▲ +1
+                      â–² +1
                     </text>
 
                   </g>
 
-                  {/* Movimentações negativas */}
+                  {/* MovimentaÃ§Ãµes negativas */}
                   <g
                     fontFamily="'Bebas Neue', sans-serif"
                     fill="#ef4444"
@@ -2211,11 +2211,11 @@ export default function TapitasLeagueHomepage() {
                   >
 
                     <text x="520" y="175" fontSize="34">
-                      ▼ -2
+                      â–¼ -2
                     </text>
 
                     <text x="400" y="305" fontSize="30">
-                      ▼ -1
+                      â–¼ -1
                     </text>
 
                   </g>
@@ -2232,7 +2232,7 @@ export default function TapitasLeagueHomepage() {
                 />
               </div>
 
-              {/* Conteúdo */}
+              {/* ConteÃºdo */}
               <div className="relative z-10 flex flex-row items-center justify-between gap-3 md:gap-10 p-5 sm:p-7 md:p-14 pb-10 md:pb-14">
 
                 <div className="flex-1 text-left">
@@ -2254,7 +2254,7 @@ export default function TapitasLeagueHomepage() {
 
                   </div>
 
-                  {/* Título */}
+                  {/* TÃ­tulo */}
                   <h2
                     className="mb-2 leading-[0.9]"
                     style={{
@@ -2316,7 +2316,7 @@ export default function TapitasLeagueHomepage() {
 
                   </div>
 
-                  {/* Botões */}
+                  {/* BotÃµes */}
                   <div className="flex flex-row items-start gap-1.5 md:gap-3">
 
                     <a
@@ -2353,12 +2353,12 @@ export default function TapitasLeagueHomepage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           CONTENT SECTION
-      ════════════════════════════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="relative z-10 mx-auto max-w-[16100px] px-3 pb-12 pt-3">
 
-        {/* ── STAT STRIP ─────────────────────────────────────────────────── */}
+        {/* â”€â”€ STAT STRIP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <motion.div
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.5 }}
@@ -2391,7 +2391,7 @@ export default function TapitasLeagueHomepage() {
           })}
         </motion.div>
 
-        {/* ── QUICK NAV ──────────────────────────────────────────────────── */}
+        {/* â”€â”€ QUICK NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <motion.div
           initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.4 }}
@@ -2408,7 +2408,7 @@ export default function TapitasLeagueHomepage() {
           </div>
         </motion.div>
 
-        {/* ── POWER RANKINGS + STANDINGS ─────────────────────────────────── */}
+        {/* â”€â”€ POWER RANKINGS + STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
@@ -2423,7 +2423,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Power Rankings</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
+                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} Â· Latest week` : 'Carregando...'}</div>
                 </div>
               </div>
               <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2469,9 +2469,9 @@ export default function TapitasLeagueHomepage() {
                   <div className="text-xs text-slate-500">
                     {currentSeason
                       ? currentWeekLabel === '__final__'
-                        ? `Season ${currentSeason} · Final Standings`
+                        ? `Season ${currentSeason} Â· Final Standings`
                         : currentWeekLabel
-                          ? `Season ${currentSeason} · Through Week ${currentWeekLabel}`
+                          ? `Season ${currentSeason} Â· Through Week ${currentWeekLabel}`
                           : `Season ${currentSeason}`
                       : 'Carregando...'}
                   </div>
@@ -2500,9 +2500,9 @@ export default function TapitasLeagueHomepage() {
                         <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
                         <div className="flex flex-shrink-0 items-center gap-1.5">
                           <span className="text-xs font-black text-emerald-400">{row.w}W</span>
-                          <span className="text-xs text-slate-700">·</span>
+                          <span className="text-xs text-slate-700">Â·</span>
                           <span className="text-xs font-black text-red-400">{row.l}L</span>
-                          <span className="text-xs text-slate-700">·</span>
+                          <span className="text-xs text-slate-700">Â·</span>
                           <span className="w-14 text-right text-[10px] font-bold text-slate-500">{Math.round(row.pf)} pts</span>
                         </div>
                       </a>
@@ -2513,7 +2513,7 @@ export default function TapitasLeagueHomepage() {
           </div>
         </motion.div>
 
-        {/* ── NEWS PREVIEW ───────────────────────────────────────────────── */}
+        {/* â”€â”€ NEWS PREVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
@@ -2566,13 +2566,13 @@ export default function TapitasLeagueHomepage() {
           }
         </motion.div>
 
-        {/* ── DRAFT PICKS + RECORDS ───────────────────────────────────────── */}
+        {/* â”€â”€ DRAFT PICKS + RECORDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
-          {/* DRAFT — scrolling picks feed */}
+          {/* DRAFT â€” scrolling picks feed */}
           <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
             <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
@@ -2581,7 +2581,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-pink-400">Last Draft</div>
-                  <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} · First 10 picks` : 'Carregando...'}</div>
+                  <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} Â· First 10 picks` : 'Carregando...'}</div>
                 </div>
               </div>
               <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2621,7 +2621,7 @@ export default function TapitasLeagueHomepage() {
             </div>
           </div>
 
-          {/* RECORDS — leaders per category with tied display */}
+          {/* RECORDS â€” leaders per category with tied display */}
           <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
             <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
@@ -2639,12 +2639,12 @@ export default function TapitasLeagueHomepage() {
             </div>
             <div className="divide-y divide-white/[0.03]">
               {[
-                { emoji: '🏆', label: 'Most Titles',    getter: t => t.titles,      fmt: v => v,                  color: 'text-yellow-400'  },
-                { emoji: '📈', label: 'Most Wins',      getter: t => t.wins,        fmt: v => v,                  color: 'text-emerald-400' },
-                { emoji: '🔥', label: 'Top Scorer',     getter: t => t.pf,          fmt: v => Math.round(v)+' pts', color: 'text-orange-400' },
-                { emoji: '🎯', label: 'Best Win%',      getter: t => t.winPct,      fmt: v => v+'%',              color: 'text-cyan-400'    },
-                { emoji: '🏅', label: 'Playoff Apps',   getter: t => t.playoffApps, fmt: v => v,                  color: 'text-purple-400'  },
-                { emoji: '⚔️', label: 'Finals Apps',    getter: t => t.finals,      fmt: v => v,                  color: 'text-red-400'     },
+                { emoji: 'ðŸ†', label: 'Most Titles',    getter: t => t.titles,      fmt: v => v,                  color: 'text-yellow-400'  },
+                { emoji: 'ðŸ“ˆ', label: 'Most Wins',      getter: t => t.wins,        fmt: v => v,                  color: 'text-emerald-400' },
+                { emoji: 'ðŸ”¥', label: 'Top Scorer',     getter: t => t.pf,          fmt: v => Math.round(v)+' pts', color: 'text-orange-400' },
+                { emoji: 'ðŸŽ¯', label: 'Best Win%',      getter: t => t.winPct,      fmt: v => v+'%',              color: 'text-cyan-400'    },
+                { emoji: 'ðŸ…', label: 'Playoff Apps',   getter: t => t.playoffApps, fmt: v => v,                  color: 'text-purple-400'  },
+                { emoji: 'âš”ï¸', label: 'Finals Apps',    getter: t => t.finals,      fmt: v => v,                  color: 'text-red-400'     },
               ].map(({ emoji, label, getter, fmt, color }) => {
                 const leaders = topNTeams(standings, getter, 3)
                 const topVal  = leaders[0] ? getter(leaders[0]) : 0
@@ -2669,7 +2669,7 @@ export default function TapitasLeagueHomepage() {
                         })}
                       </div>
                     </div>
-                    <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>{leaders[0] ? fmt(topVal) : '—'}</span>
+                    <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>{leaders[0] ? fmt(topVal) : 'â€”'}</span>
                   </div>
                 )
               })}
@@ -2677,7 +2677,7 @@ export default function TapitasLeagueHomepage() {
           </div>
         </motion.div>
 
-        {/* ── RECENT MATCHUPS ─────────────────────────────────────────────── */}
+        {/* â”€â”€ RECENT MATCHUPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {recentMatchups.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -2691,7 +2691,7 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400">Matchups Recentes</div>
-                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Week ${recentMatchups[0]?.week}${recentMatchups[0]?.stage && recentMatchups[0].stage !== 'Reg Season' ? ` · ${recentMatchups[0].stage}` : ''}` : ''}</div>
+                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} Â· Week ${recentMatchups[0]?.week}${recentMatchups[0]?.stage && recentMatchups[0].stage !== 'Reg Season' ? ` Â· ${recentMatchups[0].stage}` : ''}` : ''}</div>
                 </div>
               </div>
               <a href="/matchups" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
@@ -2738,7 +2738,7 @@ export default function TapitasLeagueHomepage() {
           </motion.div>
         )}
 
-        {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
+        {/* â”€â”€ CHAMPIONS WALL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {championsData.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -2760,7 +2760,7 @@ export default function TapitasLeagueHomepage() {
           </motion.div>
         )}
 
-        {/* ── RIVALRY SPOTLIGHT + FRANCHISE LEADERS ──────────────────────── */}
+        {/* â”€â”€ RIVALRY SPOTLIGHT + FRANCHISE LEADERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex flex-col gap-4 xl:flex-row">
 
           {/* RIVALRY SPOTLIGHT */}
@@ -2858,7 +2858,7 @@ export default function TapitasLeagueHomepage() {
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Stars className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}</span></div>
+                        <div className="flex items-center gap-1.5"><Stars className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Ãšltimo Jogo{selectedRivalry.lastMeeting.meta ? ` Â· ${selectedRivalry.lastMeeting.meta}` : ''}</span></div>
                         <span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span>
                       </div>
 
@@ -2868,43 +2868,43 @@ export default function TapitasLeagueHomepage() {
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamA)}</span></div>
+                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win Â· {shortTeamName(selectedRivalry.teamA)}</span></div>
                         {bigA ? (
                           <>
-                            <span className="text-base font-black text-white">{bigA.scoreA} – {bigA.scoreB}{bigA.margin ? <span className="text-emerald-400"> (+{bigA.margin})</span> : ''}</span>
+                            <span className="text-base font-black text-white">{bigA.scoreA} â€“ {bigA.scoreB}{bigA.margin ? <span className="text-emerald-400"> (+{bigA.margin})</span> : ''}</span>
                             {bigA.label && <span className="text-[10px] text-slate-500">{bigA.label}</span>}
                           </>
-                        ) : <span className="text-xs text-slate-600">—</span>}
+                        ) : <span className="text-xs text-slate-600">â€”</span>}
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamB)}</span></div>
+                        <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win Â· {shortTeamName(selectedRivalry.teamB)}</span></div>
                         {bigB ? (
                           <>
-                            <span className="text-base font-black text-white">{bigB.scoreA} – {bigB.scoreB}{bigB.margin ? <span className="text-emerald-400"> (+{bigB.margin})</span> : ''}</span>
+                            <span className="text-base font-black text-white">{bigB.scoreA} â€“ {bigB.scoreB}{bigB.margin ? <span className="text-emerald-400"> (+{bigB.margin})</span> : ''}</span>
                             {bigB.label && <span className="text-[10px] text-slate-500">{bigB.label}</span>}
                           </>
-                        ) : <span className="text-xs text-slate-600">—</span>}
+                        ) : <span className="text-xs text-slate-600">â€”</span>}
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamA)}</span></div>
+                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Best Streak Â· {shortTeamName(selectedRivalry.teamA)}</span></div>
                         {strA?.count ? (
                           <>
                             <span className="text-base font-black text-white">{strA.result}{strA.count}</span>
-                            {strA.start && <span className="text-[10px] text-slate-500">{strA.start}{strA.end ? ` → ${strA.end}` : ''}</span>}
+                            {strA.start && <span className="text-[10px] text-slate-500">{strA.start}{strA.end ? ` â†’ ${strA.end}` : ''}</span>}
                           </>
-                        ) : <span className="text-xs text-slate-600">—</span>}
+                        ) : <span className="text-xs text-slate-600">â€”</span>}
                       </div>
 
                       <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamB)}</span></div>
+                        <div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Best Streak Â· {shortTeamName(selectedRivalry.teamB)}</span></div>
                         {strB?.count ? (
                           <>
                             <span className="text-base font-black text-white">{strB.result}{strB.count}</span>
-                            {strB.start && <span className="text-[10px] text-slate-500">{strB.start}{strB.end ? ` → ${strB.end}` : ''}</span>}
+                            {strB.start && <span className="text-[10px] text-slate-500">{strB.start}{strB.end ? ` â†’ ${strB.end}` : ''}</span>}
                           </>
-                        ) : <span className="text-xs text-slate-600">—</span>}
+                        ) : <span className="text-xs text-slate-600">â€”</span>}
                       </div>
 
                     </div>
@@ -2974,7 +2974,7 @@ export default function TapitasLeagueHomepage() {
                     'L Streak RS':'Games','L Streak Total':'Games',
                     'Playoff Apps':'Apps','Finals':'Finals','Titles':'Titles',
                   }
-                  const displayValue = sub ? keyMap[sub.key]?.(team)??'—' : team.wins
+                  const displayValue = sub ? keyMap[sub.key]?.(team)??'â€”' : team.wins
                   const shortLabel   = sub ? shortLabelMap[sub.key]??sortCategory : sortCategory
                   const avatar = getTeamAvatar(team.team)
                   return (
@@ -2991,9 +2991,9 @@ export default function TapitasLeagueHomepage() {
                           const kl={'W Streak RS':'streakRS','W Streak Total':'streakTotal','L Streak RS':'lStreakRS','L Streak Total':'lStreakTotal'}
                           const si = streakMap[team.team]?.[kl[sub.key]]
                           if (!si) return null
-                          return <div className="text-[10px] font-bold text-slate-600">W{si.startWeek}, {si.startSeason} → W{si.endWeek}, {si.endSeason}{si.active&&<span className="ml-1 text-cyan-400">(active)</span>}</div>
+                          return <div className="text-[10px] font-bold text-slate-600">W{si.startWeek}, {si.startSeason} â†’ W{si.endWeek}, {si.endSeason}{si.active&&<span className="ml-1 text-cyan-400">(active)</span>}</div>
                         })() : (
-                          <div className="text-[10px] font-bold text-slate-600">{team.wins}W · {team.losses}L · {Math.round(team.pf)} pts</div>
+                          <div className="text-[10px] font-bold text-slate-600">{team.wins}W Â· {team.losses}L Â· {Math.round(team.pf)} pts</div>
                         )}
                       </div>
                       <div className="flex-shrink-0 text-right">
@@ -3039,7 +3039,7 @@ export default function TapitasLeagueHomepage() {
             </span>
           </h2>
 
-          {/* Linha divisória */}
+          {/* Linha divisÃ³ria */}
           <div className="h-px w-24 bg-white/10" />
 
           {/* Logo + nome */}
@@ -3059,13 +3059,13 @@ export default function TapitasLeagueHomepage() {
 
           {/* Copyright */}
           <p className="text-xs font-bold text-slate-600">
-            © {new Date().getFullYear()} Tapitas League · Est. 2014 · All rights reserved.
+            Â© {new Date().getFullYear()} Tapitas League Â· Est. 2014 Â· All rights reserved.
           </p>
 
         </div>
       </footer>
 
-      {/* DRAWER — Season Summary */}
+      {/* DRAWER â€” Season Summary */}
       <>
         {/* Overlay */}
         {drawerOpen && (
@@ -3122,11 +3122,11 @@ export default function TapitasLeagueHomepage() {
               onClick={() => setDrawerOpen(false)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white transition-all"
             >
-              ✕
+              âœ•
             </button>
           </div>
 
-          {/* Conteúdo */}
+          {/* ConteÃºdo */}
           <div className="p-6">
             {!seasonSummary ? (
               <div className="flex items-center justify-center py-20 text-slate-500 font-bold">
@@ -3138,20 +3138,20 @@ export default function TapitasLeagueHomepage() {
                 {/* In-progress warning */}
                 {!seasonSummary.champion && (
                   <div className="rounded-[20px] border border-yellow-400/20 bg-yellow-400/[0.05] p-4">
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400 mb-1">⏳ Temporada em andamento</div>
-                    <div className="text-xs text-slate-500">Dados parciais. Champion, Finalist e Unicórnio só aparecem quando a temporada terminar.</div>
+                    <div className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400 mb-1">â³ Temporada em andamento</div>
+                    <div className="text-xs text-slate-500">Dados parciais. Champion, Finalist e UnicÃ³rnio sÃ³ aparecem quando a temporada terminar.</div>
                   </div>
                 )}
 
-                {/* Campeão */}
+                {/* CampeÃ£o */}
                 {seasonSummary.champion && (
                   <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
-                    <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
+                    <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">ðŸ† Champion</div>
                     <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
                     <div className="mt-1 text-sm text-slate-400">
-                      {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
-                      {' • '}
-                      {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
+                      {parseNumber(seasonSummary.champion.RS_W)}â€“{parseNumber(seasonSummary.champion.RS_L)} reg season
+                      {' â€¢ '}
+                      {parseNumber(seasonSummary.champion.PO_W)}â€“{parseNumber(seasonSummary.champion.PO_L)} playoffs
                     </div>
                   </div>
                 )}
@@ -3159,12 +3159,12 @@ export default function TapitasLeagueHomepage() {
                 {/* Finalista */}
                 {seasonSummary.finalist && (
                   <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                    <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 2nd Place</div>
+                    <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸ¥ˆ 2nd Place</div>
                     <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
                     <div className="mt-1 text-sm text-slate-400">
-                      {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
-                      {' • '}
-                      {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
+                      {parseNumber(seasonSummary.finalist.RS_W)}â€“{parseNumber(seasonSummary.finalist.RS_L)} reg season
+                      {' â€¢ '}
+                      {parseNumber(seasonSummary.finalist.PO_W)}â€“{parseNumber(seasonSummary.finalist.PO_L)} playoffs
                     </div>
                   </div>
                 )}
@@ -3173,23 +3173,23 @@ export default function TapitasLeagueHomepage() {
                 <div className="grid grid-cols-2 gap-3">
                   {seasonSummary.bestRecord && (
                     <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🚀 Best Record</div>
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸš€ Best Record</div>
                       <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
-                      <span className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</span>
+                      <span className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}â€“{parseNumber(seasonSummary.bestRecord.RS_L)}</span>
                       <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                     </div>
                   )}
                   {seasonSummary.worstRecord && (
                     <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💩 Worst Record</div>
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸ’© Worst Record</div>
                       <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
-                      <span className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</span>
+                      <span className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}â€“{parseNumber(seasonSummary.worstRecord.RS_L)}</span>
                       <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                     </div>
                   )}
                   {seasonSummary.highestScorer && (
                     <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💯 Top Scorer</div>
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸ’¯ Top Scorer</div>
                       <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
                       <span className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
                       <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
@@ -3197,7 +3197,7 @@ export default function TapitasLeagueHomepage() {
                   )}
                   {seasonSummary.lowestScorer && (
                     <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😵‍💫 Lowest Scorer</div>
+                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸ˜µâ€ðŸ’« Lowest Scorer</div>
                       <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
                       <span className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</span>
                       <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
@@ -3205,53 +3205,53 @@ export default function TapitasLeagueHomepage() {
                   )}
                 </div>
 
-                {/* Unicórnio */}
+                {/* UnicÃ³rnio */}
                 {seasonSummary.unicorn && seasonSummary.champion && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                    <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
+                    <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸ¦„ UnicÃ³rnio</div>
                     <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
                     <div className="text-sm text-slate-400">
-                      {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
+                      {parseNumber(seasonSummary.unicorn.RS_W)}â€“{parseNumber(seasonSummary.unicorn.RS_L)} reg season
                     </div>
                   </div>
                 )}
 
-                {/* Jogos notáveis */}
+                {/* Jogos notÃ¡veis */}
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-2">Notable Games</div>
 
                 {seasonSummary.highestGame && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🔥 Highest Score</div>
+                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸ”¥ Highest Score</div>
                     <div className="text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
                     <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
-                    <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · W{seasonSummary.highestGame.week}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} Â· W{seasonSummary.highestGame.week}</div>
                   </div>
                 )}
 
                 {seasonSummary.closestGame && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
+                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">âš”ï¸ Closest Game</div>
                     <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
                     <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
-                    <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · W{seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} Â· W{seasonSummary.closestGame.week} Â· Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
                   </div>
                 )}
 
                 {seasonSummary.biggestWin && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
+                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸ’¥ Biggest Win</div>
                     <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
                     <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
-                    <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · W{seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} Â· W{seasonSummary.biggestWin.week} Â· Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
                   </div>
                 )}
 
                 {seasonSummary.lowestGame && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Lowest Score</div>
+                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">ðŸ˜¬ Lowest Score</div>
                     <div className="text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
                     <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
-                    <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · W{seasonSummary.lowestGame.week}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} Â· W{seasonSummary.lowestGame.week}</div>
                   </div>
                 )}
 
