@@ -1558,6 +1558,51 @@ export default function TapitasLeagueHomepage() {
         0%, 100% { transform: translateY(0px); }
         50%       { transform: translateY(-10px); }
       }
+
+      .panel-base {
+        background: linear-gradient(180deg, rgba(7,13,26,0.96), rgba(2,6,23,0.985));
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+      }
+      .panel-soft {
+        background: linear-gradient(180deg, rgba(9,16,30,0.94), rgba(3,7,18,0.98));
+        border: 1px solid rgba(255,255,255,0.07);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
+      }
+      .panel-accent-cyan {
+        background:
+          radial-gradient(circle at top left, rgba(34,211,238,0.08), transparent 28%),
+          linear-gradient(180deg, rgba(7,13,26,0.96), rgba(2,6,23,0.99));
+        border: 1px solid rgba(34,211,238,0.12);
+      }
+      .panel-accent-gold {
+        background:
+          radial-gradient(circle at top right, rgba(250,204,21,0.08), transparent 24%),
+          linear-gradient(180deg, rgba(10,14,24,0.96), rgba(4,7,15,0.99));
+        border: 1px solid rgba(250,204,21,0.10);
+      }
+      .panel-accent-sky {
+        background:
+          radial-gradient(circle at top right, rgba(56,189,248,0.07), transparent 24%),
+          linear-gradient(180deg, rgba(8,14,28,0.96), rgba(3,7,18,0.99));
+        border: 1px solid rgba(125,211,252,0.10);
+      }
+      .section-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        font-size: 10px;
+        font-weight: 900;
+      }
+      .section-kicker::before {
+        content: '';
+        width: 32px;
+        height: 1px;
+        background: currentColor;
+        opacity: .7;
+      }
     `}</style>
 
       {/* ===== HEADER ===== */}
@@ -2397,7 +2442,7 @@ export default function TapitasLeagueHomepage() {
           viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.4 }}
           className="mb-4 mt-4"
         >
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+          <div className="grid grid-cols-3 gap-2 rounded-[24px] panel-soft p-3 sm:grid-cols-5 lg:grid-cols-9 sm:p-4">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
               <a key={label} href={href}
                 className={`group flex flex-col items-center gap-1.5 rounded-[18px] border ${border} ${bg} px-2 py-3 text-center transition-all hover:scale-[1.05] hover:brightness-125`}>
@@ -2415,14 +2460,15 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 flex flex-col gap-4 xl:flex-row"
         >
           {/* Power Rankings */}
-          <div className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-1">
+          <div className="w-full overflow-hidden rounded-[28px] panel-accent-cyan xl:flex-[1.08]">
             <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Power Rankings</div>
+                  <div className="section-kicker text-emerald-300">Momentum</div>
+                  <div className="mt-2 text-sm font-black uppercase tracking-[0.22em] text-white/95">Power Rankings</div>
                   <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
                 </div>
               </div>
@@ -2437,7 +2483,7 @@ export default function TapitasLeagueHomepage() {
                 const avatar = getTeamAvatar(row.team)
                 return (
                   <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                    className="flex items-center gap-3 rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-4 py-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10">
+                    className="flex items-center gap-3 rounded-[18px] border border-white/[0.06] bg-black/10 px-4 py-3 transition-all hover:bg-white/[0.04] hover:border-white/12">
                     <span className="w-6 flex-shrink-0 text-center font-black leading-none"
                       style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '20px', color: i===0?'#facc15':i<=1?'#22d3ee':i<=3?'#34d399':'#475569' }}>
                       {row.rank}
@@ -2458,14 +2504,15 @@ export default function TapitasLeagueHomepage() {
           </div>
 
           {/* Current Standings */}
-          <div className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-1">
+          <div className="w-full overflow-hidden rounded-[28px] panel-base xl:flex-[0.92]">
             <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
                   <BarChart2 className="h-4 w-4 text-cyan-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
+                  <div className="section-kicker text-cyan-300">Standings</div>
+                  <div className="mt-2 text-sm font-black uppercase tracking-[0.22em] text-white/95">Tabela atual</div>
                   <div className="text-xs text-slate-500">
                     {currentSeason
                       ? currentWeekLabel === '__final__'
@@ -2488,7 +2535,7 @@ export default function TapitasLeagueHomepage() {
                     const avatar = getTeamAvatar(row.team)
                     return (
                       <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                        className="flex items-center gap-3 rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-4 py-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10">
+                        className="flex items-center gap-3 rounded-[18px] border border-white/[0.06] bg-white/[0.025] px-4 py-3 transition-all hover:bg-white/[0.045] hover:border-white/12">
                         <span className="w-6 flex-shrink-0 text-center font-black leading-none"
                           style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '20px', color: i===0?'#facc15':i<=3?'#22d3ee':'#475569' }}>
                           {i+1}
@@ -2517,7 +2564,7 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-          className="mb-4 overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]"
+          className="mb-4 overflow-hidden rounded-[28px] panel-soft"
         >
           <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
             <div className="flex items-center gap-3">
@@ -2573,7 +2620,7 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           {/* DRAFT — scrolling picks feed */}
-          <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
+          <div className="overflow-hidden rounded-[28px] panel-base">
             <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-400/10">
@@ -2622,7 +2669,7 @@ export default function TapitasLeagueHomepage() {
           </div>
 
           {/* RECORDS — leaders per category with tied display */}
-          <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
+          <div className="overflow-hidden rounded-[28px] panel-accent-gold">
             <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
@@ -2682,7 +2729,7 @@ export default function TapitasLeagueHomepage() {
           <motion.div
             initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-            className="mb-4 overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]"
+            className="mb-4 overflow-hidden rounded-[28px] panel-accent-sky"
           >
             <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
@@ -2743,7 +2790,7 @@ export default function TapitasLeagueHomepage() {
           <motion.div
             initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-            className="mb-4 overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]"
+            className="mb-4 overflow-hidden rounded-[28px] panel-accent-gold"
           >
             <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
