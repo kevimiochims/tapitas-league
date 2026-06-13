@@ -752,7 +752,6 @@ export default function TapitasLeagueHomepage() {
   const [draftPicks, setDraftPicks]       = useState([])   // last draft picks
   const [draftSeason, setDraftSeason]     = useState('')
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
-  const [playerLookup, setPlayerLookup] = useState(new Map())
 
   const touchStartX = useRef(null);
   const totalSlides = 3;
@@ -851,7 +850,6 @@ export default function TapitasLeagueHomepage() {
         ])
 
         if (!mounted) return
-        setPlayerLookup(buildPlayerLookup(playerCache || []))
 
         // Filtra apenas os campeões de cada temporada
         const champions = historyJson
@@ -2402,7 +2400,7 @@ export default function TapitasLeagueHomepage() {
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
               <a key={label} href={href}
-                className={`group flex flex-col items-center gap-1.5 px-2 py-3 text-center transition-all hover:scale-[1.03] ${label === 'Draft' || label === 'Matchups' || label === 'News' ? `rounded-[18px] border-transparent bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(59,130,246,0.12),rgba(2,6,23,0.92))] shadow-[0_10px_30px_rgba(34,211,238,0.08)]` : `rounded-[18px] border ${border} ${bg}`}` }>
+                className={`group flex flex-col items-center gap-1.5 rounded-[18px] border ${border} ${bg} px-2 py-3 text-center transition-all hover:scale-[1.05] hover:brightness-125`}>
                 <Icon className={`h-4 w-4 ${color}`} />
                 <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>{label}</span>
               </a>
@@ -2425,21 +2423,21 @@ export default function TapitasLeagueHomepage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Power Rankings</div>
-                  <div className="text-xs text-slate-950/70">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
+                  <div className="text-xs text-slate-500">{currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}</div>
                 </div>
               </div>
-              <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-slate-950/10 bg-slate-950/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-950/70 transition-all hover:text-slate-950">
+              <a href="/powerrankings" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
                 Ver tudo <ChevronRight className="h-3 w-3" />
               </a>
             </div>
-            <div className="max-h-[620px] space-y-1.5 overflow-y-auto p-3 pr-2">
+            <div className="p-3 space-y-1.5">
               {prLoading ? (
                 <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div>
               ) : prData.map((row, i) => {
                 const avatar = getTeamAvatar(row.team)
                 return (
                   <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                    className="flex items-center gap-3 rounded-[14px] bg-slate-950/10 px-4 py-2.5 text-slate-950 backdrop-blur-sm transition-all hover:bg-slate-950/15">
+                    className="flex items-center gap-3 rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-4 py-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10">
                     <span className="w-6 flex-shrink-0 text-center font-black leading-none"
                       style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '20px', color: i===0?'#facc15':i<=1?'#22d3ee':i<=3?'#34d399':'#475569' }}>
                       {row.rank}
@@ -2448,7 +2446,7 @@ export default function TapitasLeagueHomepage() {
                       ? <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-xl object-cover" />
                       : <div className="h-7 w-7 flex-shrink-0 rounded-xl bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center text-[9px] font-black text-emerald-400">{row.team.slice(0,2).toUpperCase()}</div>
                     }
-                    <span className="flex-1 truncate text-sm font-black text-slate-950">{row.team}</span>
+                    <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
                     <span className={`flex items-center gap-0.5 text-xs font-black ${row.delta>0?'text-emerald-400':row.delta<0?'text-red-400':'text-slate-600'}`}>
                       {row.delta>0?<TrendingUp className="h-3 w-3"/>:row.delta<0?<TrendingDown className="h-3 w-3"/>:<Minus className="h-3 w-3"/>}
                       {row.delta!==0?Math.abs(row.delta):''}
@@ -2460,14 +2458,14 @@ export default function TapitasLeagueHomepage() {
           </div>
 
           {/* Current Standings */}
-          <div className="w-full overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#12e6f3_0%,#1fc7ff_38%,#071427_100%)] shadow-[0_20px_60px_rgba(34,211,238,0.14)] xl:flex-1">
-            <div className="flex items-center justify-between border-b border-black/10 px-5 py-4 backdrop-blur-sm">
+          <div className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-1">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-950/10 bg-slate-950/10">
-                  <BarChart2 className="h-4 w-4 text-slate-950/80" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                  <BarChart2 className="h-4 w-4 text-cyan-400" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-950">Standings</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400">Standings</div>
                   <div className="text-xs text-slate-500">
                     {currentSeason
                       ? currentWeekLabel === '__final__'
@@ -2486,7 +2484,7 @@ export default function TapitasLeagueHomepage() {
             <div className="p-3 space-y-1.5">
               {currentStandings.length === 0
                 ? <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div>
-                : currentStandings.map((row, i) => {
+                : currentStandings.slice(0, 8).map((row, i) => {
                     const avatar = getTeamAvatar(row.team)
                     return (
                       <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
@@ -2501,11 +2499,11 @@ export default function TapitasLeagueHomepage() {
                         }
                         <span className="flex-1 truncate text-sm font-black text-white">{row.team}</span>
                         <div className="flex flex-shrink-0 items-center gap-1.5">
-                          <span className="text-xs font-black text-emerald-950/80">{row.w}W</span>
+                          <span className="text-xs font-black text-emerald-400">{row.w}W</span>
                           <span className="text-xs text-slate-700">·</span>
-                          <span className="text-xs font-black text-rose-950/70">{row.l}L</span>
+                          <span className="text-xs font-black text-red-400">{row.l}L</span>
                           <span className="text-xs text-slate-700">·</span>
-                          <span className="w-14 text-right text-[10px] font-bold text-slate-950/60">{Math.round(row.pf)} pts</span>
+                          <span className="w-14 text-right text-[10px] font-bold text-slate-500">{Math.round(row.pf)} pts</span>
                         </div>
                       </a>
                     )
@@ -2575,15 +2573,15 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           {/* DRAFT — scrolling picks feed */}
-          <div className="overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,rgba(236,72,153,0.18),rgba(168,85,247,0.18),rgba(2,6,23,0.98))] ring-1 ring-white/6 shadow-[0_16px_40px_rgba(236,72,153,0.12)]">
-            <div className="flex items-center justify-between border-b border-white/8 px-5 py-4">
+          <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-pink-300/25 bg-black/10">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-400/10">
                   <ScrollText className="h-4 w-4 text-pink-400" />
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.25em] text-pink-400">Last Draft</div>
-                  <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} · Full board preview` : 'Carregando...'}</div>
+                  <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} · First 10 picks` : 'Carregando...'}</div>
                 </div>
               </div>
               <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
