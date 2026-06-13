@@ -7,7 +7,7 @@ import {
   TrendingUp, Landmark, Newspaper, Laugh, FileText, BarChart2,
   Users, BookOpen, Zap, TrendingDown, Minus, Hash,
 } from 'lucide-react'
-import { useEffect, useMemo, memo, useState, useRef } from 'react'
+import React, { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
 import { motion } from 'framer-motion'
 import Header from './components/Header'
@@ -132,10 +132,8 @@ function getPlayerData(name, pos, playerLookup) {
   const direct = playerLookup[name]
   if (direct) return direct
   const normalized = normalizeString(name)
-  for (const [k, v] of Object.entries(playerLookup)) {
-    if (normalizeString(k) === normalized && (!pos || v?.position === pos || v?.pos === pos)) return v
-  }
-  return null
+  const entry = Object.entries(playerLookup).find(([k, v]) => normalizeString(k) === normalized && (!pos || v?.position === pos || v?.pos === pos))
+  return entry ? entry[1] : null
 }
 
 function getNFLTeamLogo(team) {
@@ -147,25 +145,72 @@ function getNFLTeamLogo(team) {
 function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false }) {
   const [photoFailed, setPhotoFailed] = useState(false)
   const [logoFailed, setLogoFailed] = useState(false)
+
   const isDefense = pos === 'DEF'
   const data = getPlayerData(name, pos, playerLookup)
-  const playerId = data?.playerId || data?.player_id || data?.id
-  const nflTeam = data?.team || data?.nflTeam || data?.teamAbbr || data?.team_code
-  useEffect(() => { setPhotoFailed(false) }, [name, playerId, pos])
-  useEffect(() => { setLogoFailed(false) }, [name, nflTeam, pos])
-  const photoSrc = !photoFailed ? (isDefense ? getNFLTeamLogo(name) : (playerId ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg` : null)) : null
+  const playerId = data?.playerId || data?.player_id
+  const nflTeam = data?.team
+
+  useEffect(() => {
+    setPhotoFailed(false)
+  }, [name, playerId, pos])
+
+  useEffect(() => {
+    setLogoFailed(false)
+  }, [name, nflTeam, pos])
+
+  const photoSrc = !photoFailed
+    ? (
+      isDefense
+        ? getNFLTeamLogo(name)
+        : (playerId ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg` : null)
+    )
+    : null
+
   const teamLogoSrc = !logoFailed && !isDefense && nflTeam ? getNFLTeamLogo(nflTeam) : null
-  const initials = String(name || '?').split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase()
+
+  const initials = String(name || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
   const ring = POS_RING[pos] || '#475569'
   const badgeSize = Math.round(size * 0.56)
   const ringWidth = 2
+
+  const photo = (
+    <div style={{ width: size, height: size, minWidth: size, minHeight: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxSizing: 'border-box', border: `${ringWidth}px solid ${ring}99`, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {photoSrc ? (
+        <img
+          src={photoSrc}
+          alt={name}
+          width={size}
+          height={size}
+          loading="lazy"
+          onError={() => setPhotoFailed(true)}
+          style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', objectPosition: isDefense ? 'center center' : '50% 18%' }}
+        />
+      ) : (
+        <span style={{ fontSize: size * 0.3, fontWeight: 900, color: 'rgba(255,255,255,0.28)', lineHeight: 1 }}>{initials}</span>
+      )}
+    </div>
+  )
+
+  const badge = teamLogoSrc ? (
+    <div style={{ width: badgeSize, height: badgeSize, minWidth: badgeSize, minHeight: badgeSize, borderRadius: '50%', flexShrink: 0, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxSizing: 'border-box' }}>
+      <img
+        src={teamLogoSrc}
+        alt={nflTeam}
+        width={badgeSize - 6}
+        height={badgeSize - 6}
+        loading="lazy"
+        onError={() => setLogoFailed(true)}
+        style={{ width: badgeSize - 6, height: badgeSize - 6, display: 'block', objectFit: 'contain' }}
+      />
+    </div>
+  ) : null
+
   return (
-    <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0,paddingLeft:ringWidth,paddingTop:ringWidth,paddingBottom:ringWidth}}>
-      {mirror && teamLogoSrc ? <div style={{width:badgeSize,height:badgeSize,minWidth:badgeSize,minHeight:badgeSize,borderRadius:'50%',flexShrink:0,background:'#0f172a',border:'1px solid rgba(255,255,255,0.12)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',boxSizing:'border-box'}}><img src={teamLogoSrc} alt={nflTeam} width={badgeSize-6} height={badgeSize-6} loading='lazy' onError={() => setLogoFailed(true)} style={{width:badgeSize-6,height:badgeSize-6,display:'block',objectFit:'contain'}} /></div> : null}
-      <div style={{width:size,height:size,minWidth:size,minHeight:size,borderRadius:'50%',overflow:'hidden',flexShrink:0,boxSizing:'border-box',border:`${ringWidth}px solid ${ring}99`,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        {photoSrc ? <img src={photoSrc} alt={name} width={size} height={size} loading='lazy' onError={() => setPhotoFailed(true)} style={{width:'100%',height:'100%',display:'block',objectFit:'cover',objectPosition:isDefense ? 'center center' : '50% 18%'}} /> : <span style={{fontSize:size * 0.3,fontWeight:900,color:'rgba(255,255,255,0.28)',lineHeight:1}}>{initials}</span>}
-      </div>
-      {!mirror && teamLogoSrc ? <div style={{width:badgeSize,height:badgeSize,minWidth:badgeSize,minHeight:badgeSize,borderRadius:'50%',flexShrink:0,background:'#0f172a',border:'1px solid rgba(255,255,255,0.12)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',boxSizing:'border-box'}}><img src={teamLogoSrc} alt={nflTeam} width={badgeSize-6} height={badgeSize-6} loading='lazy' onError={() => setLogoFailed(true)} style={{width:badgeSize-6,height:badgeSize-6,display:'block',objectFit:'contain'}} /></div> : null}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, paddingLeft: ringWidth, paddingTop: ringWidth, paddingBottom: ringWidth }}>
+      {mirror && badge}
+      {photo}
+      {!mirror && badge}
     </div>
   )
 }
@@ -2536,7 +2581,7 @@ export default function TapitasLeagueHomepage() {
             <div className="p-3 space-y-1.5">
               {currentStandings.length === 0
                 ? <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div>
-                : currentStandings.slice(0, 8).map((row, i) => {
+                : currentStandings.slice(0, 10).map((row, i) => {
                     const avatar = getTeamAvatar(row.team)
                     return (
                       <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
@@ -2597,12 +2642,12 @@ export default function TapitasLeagueHomepage() {
             return (
               <div className="p-5 md:p-7">
                 {newsLoading ? (
-                  <div className="rounded-[22px] bg-[#07111f] py-14 text-center text-xs font-bold text-white/40">Carregando...</div>
+                  <div className="rounded-[22px] bg-[#07111f] py-16 text-center text-xs font-bold text-white/40">Carregando...</div>
                 ) : !post ? (
-                  <div className="rounded-[22px] bg-[#07111f] py-14 text-center text-xs font-bold text-white/40">Nenhum post ainda.</div>
+                  <div className="rounded-[22px] bg-[#07111f] py-16 text-center text-xs font-bold text-white/40">Nenhum post ainda.</div>
                 ) : (
                   <div className="overflow-hidden rounded-[22px] bg-[#07111f]">
-                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr]">
+                    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr]">
                       <div className="flex flex-col justify-between gap-4 p-5">
                         <div>
                           {post.category && s && (
@@ -2621,14 +2666,20 @@ export default function TapitasLeagueHomepage() {
                           <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/35">{newsIdx + 1}/{Math.max(total, 1)}</div>
                         </div>
                       </div>
-                      <a href={`/news/${post.slug}`} className="group relative block min-h-[180px] md:min-h-[220px] overflow-hidden">
-                        {post.imageUrl ? <img src={post.imageUrl.split('|')[0]} alt={post.title} className="h-full w-full max-h-[220px] object-cover object-center transition-transform duration-700 group-hover:scale-105" /> : <div className="h-full w-full bg-[#0b1525]" />}
+                      <a href={`/news/${post.slug}`} className="group relative block min-h-[220px] md:min-h-[260px]">
+                        {post.imageUrl ? (
+                          <img src={post.imageUrl.split('|')[0]} alt={post.title} className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
+                        ) : (
+                          <div className="h-full w-full bg-[#0b1525]" />
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-[#07111f]/75 via-transparent to-transparent" />
                       </a>
                     </div>
                     {total > 1 && (
                       <div className="flex gap-1.5 border-t border-white/[0.05] px-5 py-3">
-                        {posts.slice(0, 10).map((_, i) => <button key={i} onClick={() => setNewsIdx(i)} className={`h-1.5 rounded-full transition-all ${i === newsIdx ? 'w-8 bg-[#0efaf9]' : 'w-2 bg-white/20'}`} />)}
+                        {posts.slice(0, 10).map((_, i) => (
+                          <button key={i} onClick={() => setNewsIdx(i)} className={`h-1.5 rounded-full transition-all ${i === newsIdx ? 'w-8 bg-[#0efaf9]' : 'w-2 bg-white/20'}`} />
+                        ))}
                       </div>
                     )}
                   </div>
@@ -2645,89 +2696,96 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
-            <div className="border-b border-white/5 bg-[#08111f] px-5 py-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-400/10"><ScrollText className="h-4 w-4 text-pink-400" /></div>
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-pink-400">Last Draft</div>
-                    <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} · First 10 picks` : 'Carregando...'}</div>
-                  </div>
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-pink-400/20 bg-pink-400/10">
+                  <ScrollText className="h-4 w-4 text-pink-400" />
                 </div>
-                <a href="/draft" className="rounded-full bg-[#0efaf9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#07111f] transition-all hover:bg-white">
-                  Draft Board
-                </a>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-pink-400">Last Draft</div>
+                  <div className="text-xs text-slate-500">{draftSeason ? `Season ${draftSeason} · First 10 picks` : 'Carregando...'}</div>
+                </div>
               </div>
+              <a href="/draft" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                Draft Board <ChevronRight className="h-3 w-3" />
+              </a>
             </div>
             <div className="divide-y divide-white/[0.03]">
-              {draftPicks.length === 0 ? <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div> : draftPicks.slice(0, 10).map((pick, i) => {
-                const posColor = POS_COLORS[pick.position] || 'text-slate-400 border-white/10 bg-white/[0.04]'
-                const teamAvatar = getTeamAvatar(pick.team)
-                const pid = pick.player_id || pick.playerId || pick.id || pick.sleeper_id || pick.player?.split(' ').join('_').toLowerCase()
-                const playerLookup = { [pick.player]: { playerId: pid, player_id: pid, id: pid, team: pick.team || pick.nflTeam || pick.teamAbbr || pick.proTeam || pick.team_code, position: pick.position } }
-                return (
-                  <a key={`${pick.pick}-${pick.player}`} href={`/teams?team=${encodeURIComponent(pick.team)}`} className="flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-white/[0.03]">
-                    <span className="w-5 flex-shrink-0 text-center text-[11px] font-black text-slate-600">{pick.pick}</span>
-                    <PlayerRowAvatar name={pick.player} pos={pick.position} playerLookup={playerLookup} size={38} />
-                    <div className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-black text-white">{pick.player}</span>
-                      <span className="mt-0.5 flex items-center gap-1.5 text-[10px] font-bold text-slate-500">{teamAvatar ? <img src={teamAvatar} alt={pick.team} className="h-4 w-4 rounded-md object-cover" /> : null}<span className="truncate">{pick.team}</span></span>
-                    </div>
-                    <span className={`flex-shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-black ${posColor}`}>{pick.position}</span>
-                  </a>
-                )
-              })}
+              {draftPicks.length === 0
+                ? <div className="py-8 text-center text-xs font-bold text-slate-700">Carregando...</div>
+                : draftPicks.slice(0, 10).map((pick, i) => {
+                    const posColor = POS_COLORS[pick.position] || 'text-slate-400 border-white/10 bg-white/[0.04]'
+                    const teamAvatar = getTeamAvatar(pick.team)
+                    const playerLookup = { [pick.player]: { playerId: pick.player_id, player_id: pick.player_id, team: pick.nflTeam || pick.nfl_team || pick.teamAbbr || pick.proTeam || pick.team_code, position: pick.position } }
+                    const isFirstRoundEnd = i > 0 && draftPicks[i-1].round !== pick.round
+                    return (
+                      <div key={i}>
+                        {isFirstRoundEnd && (
+                          <div className="px-4 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 bg-white/[0.01]">Round {pick.round}</div>
+                        )}
+                        <a href={`/teams?team=${encodeURIComponent(pick.team)}`} className="flex items-center gap-3 px-4 py-2.5 transition-all hover:bg-white/[0.03]">
+                          <span className="w-5 flex-shrink-0 text-center text-[11px] font-black text-slate-600">{pick.pick}</span>
+                          <PlayerRowAvatar name={pick.player} pos={pick.position} playerLookup={playerLookup} size={38} />
+                          <div className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-black text-white">{pick.player}</span>
+                            <span className="mt-0.5 flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                              {teamAvatar ? <img src={teamAvatar} alt={pick.team} className="h-4 w-4 rounded-md object-cover" /> : null}
+                              <span className="truncate">{pick.team}</span>
+                            </span>
+                          </div>
+                          <span className={`flex-shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-black ${posColor}`}>{pick.position}</span>
+                        </a>
+                      </div>
+                    )
+                  })}
             </div>
           </div>
 
           <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))]">
-            <div className="border-b border-white/5 bg-[#08111f] px-5 py-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10"><Zap className="h-4 w-4 text-yellow-400" /></div>
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">All-Time Records</div>
-                    <div className="text-xs text-slate-500">Colored cards, no old layout</div>
-                  </div>
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
+                  <Zap className="h-4 w-4 text-yellow-400" />
                 </div>
-                <a href="/records" className="rounded-full bg-[#0efaf9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#07111f] transition-all hover:bg-white">
-                  Ver tudo
-                </a>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-yellow-400">All-Time Records</div>
+                  <div className="text-xs text-slate-500">Best of the best</div>
+                </div>
               </div>
+              <a href="/records" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                Ver tudo <ChevronRight className="h-3 w-3" />
+              </a>
             </div>
-            <div className="grid grid-cols-1 gap-2 p-3 md:grid-cols-2">
+            <div className="divide-y divide-white/[0.03]">
               {[
-                { emoji: '🏆', label: 'Most Titles', getter: t => t.titles || 0, color: 'bg-yellow-400/10 border-yellow-400/20 text-yellow-300' },
-                { emoji: '📈', label: 'Most Wins', getter: t => t.wins || 0, color: 'bg-emerald-400/10 border-emerald-400/20 text-emerald-300' },
-                { emoji: '🔥', label: 'Top Scorer', getter: t => t.pf || 0, color: 'bg-orange-400/10 border-orange-400/20 text-orange-300' },
-                { emoji: '🎯', label: 'Best Win%', getter: t => t.winPct || 0, color: 'bg-cyan-400/10 border-cyan-400/20 text-cyan-300' },
-                { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps || 0, color: 'bg-purple-400/10 border-purple-400/20 text-purple-300' },
-                { emoji: '⚔️', label: 'Finals Apps', getter: t => t.finals || 0, color: 'bg-red-400/10 border-red-400/20 text-red-300' },
-                { emoji: '🤝', label: 'Most Ties', getter: t => t.ties || 0, color: 'bg-slate-400/10 border-slate-400/20 text-slate-300' },
-              ].map(({ emoji, label, getter, color }) => {
+                { emoji: '🏆', label: 'Most Titles', getter: t => t.titles, fmt: v => v, color: 'text-yellow-400' },
+                { emoji: '📈', label: 'Most Wins', getter: t => t.wins, fmt: v => v, color: 'text-emerald-400' },
+                { emoji: '🔥', label: 'Top Scorer', getter: t => t.pf, fmt: v => Math.round(v) + ' pts', color: 'text-orange-400' },
+                { emoji: '🎯', label: 'Best Win%', getter: t => t.winPct, fmt: v => v + '%', color: 'text-cyan-400' },
+                { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => v, color: 'text-purple-400' },
+                { emoji: '⚔️', label: 'Finals Apps', getter: t => t.finals, fmt: v => v, color: 'text-red-400' },
+                { emoji: '🤝', label: 'Most Ties', getter: t => t.ties || 0, fmt: v => v, color: 'text-slate-300' },
+              ].map(({ emoji, label, getter, fmt, color }) => {
                 const leaders = topNTeams(standings, getter, 3)
                 const topVal = leaders[0] ? getter(leaders[0]) : 0
                 return (
-                  <div key={label} className={`rounded-[18px] border p-4 ${color}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-base">{emoji}</span>
-                        <div>
-                          <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/45">{label}</div>
-                          <div className="text-sm text-white/65">{leaders.map(t => shortTeamName(t.team)).join(' · ')}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[28px] font-black leading-none text-white">{leaders[0] ? topVal : '—'}</div>
-                        <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/30">Leader</div>
+                  <div key={label} className="flex items-center gap-3 px-4 py-3 transition-all hover:bg-white/[0.02]">
+                    <span className="text-base flex-shrink-0">{emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">{label}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {leaders.map(t => {
+                          const av = getTeamAvatar(t.team)
+                          return (
+                            <a key={t.team} href={`/teams?team=${encodeURIComponent(t.team)}`} className="flex items-center gap-1 rounded-lg bg-white/[0.03] px-2 py-1 transition-all hover:bg-white/[0.06]">
+                              {av ? <img src={av} alt={t.team} className="h-4 w-4 rounded-md object-cover flex-shrink-0" /> : null}
+                              <span className="text-xs font-black text-white truncate max-w-[80px]">{shortTeamName(t.team)}</span>
+                            </a>
+                          )
+                        })}
                       </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {leaders.map(t => {
-                        const av = getTeamAvatar(t.team)
-                        return <a key={t.team} href={`/teams?team=${encodeURIComponent(t.team)}`} className="flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-black text-white/80"><span>{av ? <img src={av} alt={t.team} className="h-4 w-4 rounded-md object-cover" /> : null}</span>{shortTeamName(t.team)}</a>
-                      })}
-                    </div>
+                    <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>{leaders[0] ? fmt(topVal) : '—'}</span>
                   </div>
                 )
               })}
@@ -2820,32 +2878,37 @@ export default function TapitasLeagueHomepage() {
 
         {/* ── RIVALRY SPOTLIGHT + FRANCHISE LEADERS ──────────────────────── */}
         <div className="flex flex-col gap-4 xl:flex-row">
+
           <motion.div
             initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.08 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}
             className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[#07111f] xl:flex-[1.15]"
           >
-            <div className="p-5">
+            <div className="flex h-full flex-col p-5">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10"><Swords className="h-4 w-4 text-red-400" /></div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10">
+                    <Swords className="h-4 w-4 text-red-400" />
+                  </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">Rivalry Spotlight</div>
                     <div className="text-xs text-slate-500">All-time H2H</div>
                   </div>
                 </div>
-                <a href="/rivalries" className="rounded-full bg-[#0efaf9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#07111f] transition-all hover:bg-white">
-                  VER TUDO
+                <a href="/rivalries" className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                  VER TUDO <ChevronRight className="h-3 w-3" />
                 </a>
               </div>
+
               <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                 <TeamSelect value={selectedTeamA} onChange={(val) => { setSelectedTeamA(val); setSelectedTeamB('') }} options={allTeams} placeholder="Time A..." />
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-xs font-black text-red-400">vs</div>
                 <TeamSelect value={selectedTeamB} onChange={setSelectedTeamB} options={teamsForB} placeholder="Time B..." disabled={!selectedTeamA} />
               </div>
+
               {!selectedRivalry ? (
-                <div className="flex flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-white/10 py-10 text-center">
-                  <Swords className="h-8 w-8 text-slate-700" />
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-white/10 py-10 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.03]"><Swords className="h-5 w-5 text-slate-700" /></div>
                   <p className="text-xs font-bold text-slate-600">Selecione dois times para ver o confronto</p>
                 </div>
               ) : (() => {
@@ -2858,19 +2921,11 @@ export default function TapitasLeagueHomepage() {
                 const aLeads = wA > wB, bLeads = wB > wA
                 return (
                   <div className="flex flex-col gap-3">
-                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                      {[
-                        { title:'H2H Record', bg:'bg-red-400/10 border-red-400/20', titleColor:'text-red-300', value:`${shortTeamName(selectedRivalry.teamA)} ${wA}  ·  ${wB} ${shortTeamName(selectedRivalry.teamB)}` },
-                        { title:'Heat', bg:'bg-yellow-400/10 border-yellow-400/20', titleColor:'text-yellow-300', value:`${selectedRivalry.heat} Rivalry` },
-                        { title:'Playoffs', bg:'bg-cyan-400/10 border-cyan-400/20', titleColor:'text-cyan-300', value:selectedRivalry.playoffRecord },
-                        { title:'Avg Margin', bg:'bg-emerald-400/10 border-emerald-400/20', titleColor:'text-emerald-300', value:`${selectedRivalry.avgMargin} pts` },
-                      ].map(card => <div key={card.title} className={`rounded-[18px] border p-4 ${card.bg}`}><div className={`text-[10px] font-black uppercase tracking-[0.16em] ${card.titleColor}`}>{card.title}</div><div className="mt-2 text-sm font-black text-white">{card.value}</div></div>)}
-                    </div>
-                    <div className="overflow-hidden rounded-[18px] border border-white/8 bg-[#08111f] p-4">
+                    <div className="overflow-hidden rounded-[18px] border border-white/8 bg-black/25 p-4">
                       <div className="flex items-center justify-between gap-4">
                         <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="group flex flex-1 flex-col items-center gap-1.5">
                           {(() => { const av = getTeamAvatar(selectedRivalry.teamA); return av ? <img src={av} alt={selectedRivalry.teamA} className="h-14 w-14 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/40" /> : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamA.slice(0,2).toUpperCase()}</div> })()}
-                          <span className="text-center text-xs font-black text-white">{shortTeamName(selectedRivalry.teamA)}</span>
+                          <span className="text-center text-xs font-black text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamA)}</span>
                           <span className="text-3xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: aLeads ? '#4ade80' : bLeads ? '#f87171' : '#e2e8f0' }}>{wA}</span>
                         </a>
                         <div className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -2880,19 +2935,24 @@ export default function TapitasLeagueHomepage() {
                         </div>
                         <a href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="group flex flex-1 flex-col items-center gap-1.5">
                           {(() => { const av = getTeamAvatar(selectedRivalry.teamB); return av ? <img src={av} alt={selectedRivalry.teamB} className="h-14 w-14 rounded-xl object-cover transition-all group-hover:ring-2 group-hover:ring-red-400/40" /> : <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/[0.05] flex items-center justify-center text-sm font-black text-slate-400">{selectedRivalry.teamB.slice(0,2).toUpperCase()}</div> })()}
-                          <span className="text-center text-xs font-black text-white">{shortTeamName(selectedRivalry.teamB)}</span>
+                          <span className="text-center text-xs font-black text-white group-hover:text-red-300 transition-colors">{shortTeamName(selectedRivalry.teamB)}</span>
                           <span className="text-3xl font-black leading-none" style={{ fontFamily: '"Bebas Neue",sans-serif', color: bLeads ? '#4ade80' : aLeads ? '#f87171' : '#e2e8f0' }}>{wB}</span>
                         </a>
                       </div>
                       <div className="mt-3 flex justify-center">
-                        <div className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-300"><Flame className="h-3 w-3 text-red-400" />{selectedRivalry.heat} Rivalry</div>
+                        <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary' ? 'border-yellow-400/30 bg-yellow-400/10 text-yellow-400' : selectedRivalry.heat === 'Elite' ? 'border-orange-400/30 bg-orange-400/10 text-orange-400' : selectedRivalry.heat === 'High' ? 'border-red-400/30 bg-red-400/10 text-red-400' : 'border-white/10 bg-white/[0.04] text-slate-400'}`}><Flame className="h-3 w-3" />{selectedRivalry.heat} Rivalry</div>
                       </div>
                     </div>
+
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded-[14px] border border-red-400/20 bg-red-400/10 p-3"><div className="text-[10px] font-black uppercase tracking-[0.14em] text-red-300">Biggest Win A</div><div className="mt-2 text-sm font-black text-white">{bigA ? `${bigA.scoreA} – ${bigA.scoreB}` : '—'}</div></div>
-                      <div className="rounded-[14px] border border-red-400/20 bg-red-400/10 p-3"><div className="text-[10px] font-black uppercase tracking-[0.14em] text-red-300">Biggest Win B</div><div className="mt-2 text-sm font-black text-white">{bigB ? `${bigB.scoreA} – ${bigB.scoreB}` : '—'}</div></div>
-                      <div className="rounded-[14px] border border-emerald-400/20 bg-emerald-400/10 p-3"><div className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-300">Best Streak A</div><div className="mt-2 text-sm font-black text-white">{strA ? `${strA.result}${strA.count}` : '—'}</div></div>
-                      <div className="rounded-[14px] border border-emerald-400/20 bg-emerald-400/10 p-3"><div className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-300">Best Streak B</div><div className="mt-2 text-sm font-black text-white">{strB ? `${strB.result}${strB.count}` : '—'}</div></div>
+                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3"><div className="flex items-center gap-1.5"><Trophy className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Playoffs</span></div><span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span></div>
+                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3"><div className="flex items-center gap-1.5"><Activity className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Avg Margin</span></div><span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span></div>
+                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3"><div className="flex items-center gap-1.5"><Stars className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}</span></div><span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span></div>
+                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3"><div className="flex items-center gap-1.5"><Radar className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Current Streak</span></div><span className="text-base font-black text-white">{selectedRivalry.streak}</span></div>
+                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3"><div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamA)}</span></div>{bigA ? <><span className="text-base font-black text-white">{bigA.scoreA} – {bigA.scoreB}{bigA.margin ? <span className="text-emerald-400"> (+{bigA.margin})</span> : ''}</span>{bigA.label && <span className="text-[10px] text-slate-500">{bigA.label}</span>}</> : <span className="text-xs text-slate-600">—</span>}</div>
+                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3"><div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Biggest Win · {shortTeamName(selectedRivalry.teamB)}</span></div>{bigB ? <><span className="text-base font-black text-white">{bigB.scoreA} – {bigB.scoreB}{bigB.margin ? <span className="text-emerald-400"> (+{bigB.margin})</span> : ''}</span>{bigB.label && <span className="text-[10px] text-slate-500">{bigB.label}</span>}</> : <span className="text-xs text-slate-600">—</span>}</div>
+                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3"><div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamA)}</span></div>{strA?.count ? <><span className="text-base font-black text-white">{strA.result}{strA.count}</span>{strA.start && <span className="text-[10px] text-slate-500">{strA.start}{strA.end ? ` → ${strA.end}` : ''}</span>}</> : <span className="text-xs text-slate-600">—</span>}</div>
+                      <div className="flex flex-col gap-1 rounded-[14px] border border-white/[0.05] bg-black/20 p-3"><div className="flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-red-400/70" /><span className="text-xs font-black uppercase tracking-[0.1em] text-slate-500">Best Streak · {shortTeamName(selectedRivalry.teamB)}</span></div>{strB?.count ? <><span className="text-base font-black text-white">{strB.result}{strB.count}</span>{strB.start && <span className="text-[10px] text-slate-500">{strB.start}{strB.end ? ` → ${strB.end}` : ''}</span>}</> : <span className="text-xs text-slate-600">—</span>}</div>
                     </div>
                   </div>
                 )
@@ -2903,18 +2963,26 @@ export default function TapitasLeagueHomepage() {
           <motion.div
             initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.08 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}
-            className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[#07111f] xl:flex-[0.85]"
+            className="w-full overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(10,18,35,0.98),rgba(2,6,23,0.99))] xl:flex-[0.85]"
           >
-            <div className="p-5">
+            <div className="flex h-full flex-col p-5">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10"><Medal className="h-4 w-4 text-cyan-300" /></div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                    <Medal className="h-4 w-4 text-cyan-300" />
+                  </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">Franchise Leaders</div>
                     <div className="text-xs text-slate-500">League Rankings</div>
                   </div>
                 </div>
-                {standings.length > 5 && <div className="flex items-center gap-1.5"><button onClick={() => setStandingsPage(p => Math.max(0,p-1))} disabled={standingsPage===0} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20"><ChevronLeft className="h-3.5 w-3.5" /></button><span className="text-[10px] font-black text-slate-600">{standingsPage+1}/{Math.ceil(standings.length/5)}</span><button onClick={() => setStandingsPage(p => Math.min(Math.ceil(standings.length/5)-1,p+1))} disabled={standingsPage>=Math.ceil(standings.length/5)-1} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20"><ChevronRight className="h-3.5 w-3.5" /></button></div>}
+                {standings.length > 5 && (
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setStandingsPage(p => Math.max(0,p-1))} disabled={standingsPage===0} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20"><ChevronLeft className="h-3.5 w-3.5" /></button>
+                    <span className="text-[10px] font-black text-slate-600">{standingsPage+1}/{Math.ceil(standings.length/5)}</span>
+                    <button onClick={() => setStandingsPage(p => Math.min(Math.ceil(standings.length/5)-1,p+1))} disabled={standingsPage>=Math.ceil(standings.length/5)-1} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white disabled:opacity-20"><ChevronRight className="h-3.5 w-3.5" /></button>
+                  </div>
+                )}
               </div>
               <div className="mb-4 flex flex-col gap-2 sm:flex-row">
                 <TeamSelect value={sortCategory} onChange={setSortCategory} options={SORT_OPTIONS.map(o=>o.label)} placeholder="Category..." />
@@ -2934,7 +3002,15 @@ export default function TapitasLeagueHomepage() {
                     <a key={`${team.team}-${globalIndex}`} href={`/teams?team=${encodeURIComponent(team.team)}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all hover:border-white/10 hover:bg-white/[0.05]">
                       <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 font-black text-cyan-300" style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '17px' }}>{globalIndex+1}</div>
                       {avatar && <img src={avatar} alt={team.team} className="h-8 w-8 flex-shrink-0 rounded-xl object-cover" />}
-                      <div className="min-w-0 flex-1"><div className="truncate text-xl font-black text-white group-hover:text-cyan-300 transition-colors">{team.team}</div><div className="text-[10px] font-bold text-slate-600">{team.wins}W · {team.losses}L · {Math.round(team.pf)} pts</div></div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xl font-black text-white group-hover:text-cyan-300 transition-colors">{team.team}</div>
+                        {(sub?.key==='W Streak RS'||sub?.key==='W Streak Total'||sub?.key==='L Streak RS'||sub?.key==='L Streak Total') ? (() => {
+                          const kl={'W Streak RS':'streakRS','W Streak Total':'streakTotal','L Streak RS':'lStreakRS','L Streak Total':'lStreakTotal'}
+                          const si = streakMap[team.team]?.[kl[sub.key]]
+                          if (!si) return null
+                          return <div className="text-[10px] font-bold text-slate-600">W{si.startWeek}, {si.startSeason} → W{si.endWeek}, {si.endSeason}{si.active&&<span className="ml-1 text-cyan-400">(active)</span>}</div>
+                        })() : <div className="text-[10px] font-bold text-slate-600">{team.wins}W · {team.losses}L · {Math.round(team.pf)} pts</div>}
+                      </div>
                       <div className="flex-shrink-0 text-right"><div className="font-black leading-none text-cyan-300" style={{ fontSize: 'clamp(24px,4vw,36px)' }}>{displayValue}</div><div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-600">{shortLabel}</div></div>
                     </a>
                   )
