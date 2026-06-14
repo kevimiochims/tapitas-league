@@ -392,8 +392,8 @@ function ChampionsWallInline({ champions }) {
           <div
             key={champ.season}
             className={`relative overflow-hidden rounded-[24px] border shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all ${isOpen
-              ? 'border-yellow-300/25 bg-[#39588a]'
-              : 'border-white/8 bg-[#2b4270] hover:border-white/12 hover:bg-[#345184]'
+              ? 'border-yellow-300/25 bg-[#2a4878]/85'
+              : 'border-white/8 bg-[#223058]/80 hover:border-white/12 hover:bg-[#2a4272]/90'
               }`}
           >
             {index === 0 && (
@@ -445,7 +445,7 @@ function ChampionsWallInline({ champions }) {
                 </div>
 
                 {!isOpen && (
-                  <div className="text-[10px] text-slate-300">
+                  <div className="text-[11px] text-slate-300">
                     {champ.wins}–{champ.losses} · {Math.round(champ.pf)} pts
                   </div>
                 )}
@@ -459,7 +459,7 @@ function ChampionsWallInline({ champions }) {
 
             {isOpen && (
               <div className="border-t border-white/8 bg-black/10 px-4 pb-4 pt-3">
-                <div className="mb-3 text-[10px] text-slate-200">
+                <div className="mb-3 text-[11px] text-slate-200">
                   {champ.wins}–{champ.losses} overall · {champ.playoffWins}–{champ.playoffLosses} playoffs · {Math.round(champ.pf)} pts
                 </div>
 
@@ -2539,7 +2539,7 @@ export default function TapitasLeagueHomepage() {
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[#31527a]/84 px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[#375c88]/92"
+                      className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[#223058]/80 px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[#2a4272]/90"
                     >
                       <div className="flex w-8 flex-shrink-0 justify-center">
                         <span
@@ -2658,7 +2658,7 @@ export default function TapitasLeagueHomepage() {
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[#2a3f6b] px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[#314a7c]"
+                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[#223058]/80 px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[#2a4272]/90"
                     >
                       <div className="flex w-8 flex-shrink-0 justify-center">
                         <span
@@ -2785,7 +2785,7 @@ export default function TapitasLeagueHomepage() {
 
                     <div className="p-4">
                       {post.category && s && (
-                        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-100">
+                        <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}>
                           <Icon className="h-3 w-3" />
                           {post.category}
                         </div>
@@ -2873,7 +2873,7 @@ export default function TapitasLeagueHomepage() {
 
                       <a
                         href={`/teams?team=${encodeURIComponent(pick.team)}`}
-                        className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[#2a3f6b] px-4 py-3 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[#314a7c]"
+                        className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[#223058]/80 px-4 py-3 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[#2a4272]/90"
                       >
                         <span
                           className="w-7 flex-shrink-0 text-center font-black leading-none text-slate-300"
@@ -2967,7 +2967,7 @@ export default function TapitasLeagueHomepage() {
                 return (
                   <div
                     key={label}
-                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[#31527a]/84 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[#375c88]/92"
+                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[#223058]/80 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[#2a4272]/90"
                   >
                     <span className="flex-shrink-0 text-lg leading-none">{emoji}</span>
 
@@ -3236,7 +3236,7 @@ export default function TapitasLeagueHomepage() {
               </div>
 
               {!selectedRivalry ? (
-                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[#31527a]/45 py-10 text-center sm:mx-5">
+                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[#223058]/40 py-10 text-center sm:mx-5">
                   <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/10 bg-white/[0.05]">
                     <Swords className="h-5 w-5 text-slate-200" />
                   </div>
@@ -3257,7 +3257,7 @@ export default function TapitasLeagueHomepage() {
                 return (
                   <div className="flex flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
                     {/* VS strip */}
-                    <div className="overflow-hidden rounded-[24px] border border-white/9 bg-[#31527a]/84 p-4 shadow-[0_8px_18px_rgba(15,23,42,0.12)]">
+                    <div className="overflow-hidden rounded-[24px] border border-white/9 bg-[#223058]/80 p-4 shadow-[0_8px_18px_rgba(15,23,42,0.12)]">
                       <div className="flex items-center justify-between gap-4">
                         <a
                           href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
@@ -3353,7 +3353,7 @@ export default function TapitasLeagueHomepage() {
 
                     {/* Stats grid */}
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
                         <div className="flex items-center gap-1.5">
                           <Trophy className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3363,7 +3363,7 @@ export default function TapitasLeagueHomepage() {
                         <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
                         <div className="flex items-center gap-1.5">
                           <Activity className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3373,7 +3373,7 @@ export default function TapitasLeagueHomepage() {
                         <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
                         <div className="flex items-center gap-1.5">
                           <Stars className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3383,7 +3383,7 @@ export default function TapitasLeagueHomepage() {
                         <span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span>
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
                         <div className="flex items-center gap-1.5">
                           <Radar className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3393,7 +3393,7 @@ export default function TapitasLeagueHomepage() {
                         <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
                         <div className="flex items-center gap-1.5">
                           <Flame className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3406,14 +3406,14 @@ export default function TapitasLeagueHomepage() {
                               {bigA.scoreA} – {bigA.scoreB}
                               {bigA.margin ? <span className="text-emerald-300"> (+{bigA.margin})</span> : ''}
                             </span>
-                            {bigA.label && <span className="text-[10px] text-cyan-50/60">{bigA.label}</span>}
+                            {bigA.label && <span className="text-[11px] text-cyan-50/60">{bigA.label}</span>}
                           </>
                         ) : (
                           <span className="text-xs text-cyan-50/45">—</span>
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
                         <div className="flex items-center gap-1.5">
                           <Flame className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3426,14 +3426,14 @@ export default function TapitasLeagueHomepage() {
                               {bigB.scoreA} – {bigB.scoreB}
                               {bigB.margin ? <span className="text-emerald-300"> (+{bigB.margin})</span> : ''}
                             </span>
-                            {bigB.label && <span className="text-[10px] text-cyan-50/60">{bigB.label}</span>}
+                            {bigB.label && <span className="text-[11px] text-cyan-50/60">{bigB.label}</span>}
                           </>
                         ) : (
                           <span className="text-xs text-cyan-50/45">—</span>
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
                         <div className="flex items-center gap-1.5">
                           <TrendingUp className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3444,7 +3444,7 @@ export default function TapitasLeagueHomepage() {
                           <>
                             <span className="text-base font-black text-white">{strA.result}{strA.count}</span>
                             {strA.start && (
-                              <span className="text-[10px] text-cyan-50/60">
+                              <span className="text-[11px] text-cyan-50/60">
                                 {strA.start}{strA.end ? ` → ${strA.end}` : ''}
                               </span>
                             )}
@@ -3454,7 +3454,7 @@ export default function TapitasLeagueHomepage() {
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
                         <div className="flex items-center gap-1.5">
                           <TrendingUp className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3465,7 +3465,7 @@ export default function TapitasLeagueHomepage() {
                           <>
                             <span className="text-base font-black text-white">{strB.result}{strB.count}</span>
                             {strB.start && (
-                              <span className="text-[10px] text-cyan-50/60">
+                              <span className="text-[11px] text-cyan-50/60">
                                 {strB.start}{strB.end ? ` → ${strB.end}` : ''}
                               </span>
                             )}
@@ -3656,13 +3656,13 @@ export default function TapitasLeagueHomepage() {
                             if (!si) return null
 
                             return (
-                              <div className="text-[10px] font-bold text-slate-400">
+                              <div className="text-[11px] font-bold text-slate-400">
                                 W{si.startWeek}, {si.startSeason} → W{si.endWeek}, {si.endSeason}
                                 {si.active && <span className="ml-1 text-cyan-300">(active)</span>}
                               </div>
                             )
                           })() : (
-                          <div className="text-[10px] font-bold text-slate-400">
+                          <div className="text-[11px] font-bold text-slate-400">
                             {team.wins}W · {team.losses}L · {Math.round(team.pf)} pts
                           </div>
                         )}
@@ -3675,7 +3675,7 @@ export default function TapitasLeagueHomepage() {
                         >
                           {displayValue}
                         </div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">
+                        <div className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500">
                           {shortLabel}
                         </div>
                       </div>
