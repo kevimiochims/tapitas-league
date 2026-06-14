@@ -2971,8 +2971,15 @@ export default function TapitasLeagueHomepage() {
                         <div className="truncate text-[15px] font-black tracking-[-0.01em] text-white">
                           {pick.player}
                         </div>
-                        <div className="mt-0.5 truncate text-[11px] font-bold text-slate-400">
-                          {pick.team}
+                        <div className="mt-0.5 flex items-center gap-1.5 min-w-0 text-[11px] font-bold text-slate-400">
+                          <span className="truncate">{pick.team}</span>
+                          {getTeamAvatar(pick.team) ? (
+                            <img
+                              src={getTeamAvatar(pick.team)}
+                              alt={pick.team}
+                              className="h-4 w-4 flex-shrink-0 rounded-md object-cover"
+                            />
+                          ) : null}
                         </div>
                       </div>
 
