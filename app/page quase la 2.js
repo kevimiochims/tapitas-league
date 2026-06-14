@@ -75,10 +75,10 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
         onClick={() => !disabled && setOpen((p) => !p)}
         disabled={disabled}
         className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-[12px] font-bold transition-all duration-300 ${disabled
-          ? 'cursor-not-allowed border-white/5 bg-[linear-gradient(135deg,rgba(15,23,42,0.45),rgba(2,6,23,0.55))] text-slate-600'
+          ? 'cursor-not-allowed border-white/5 bg-white/[0.01] text-slate-600'
           : open
-            ? 'border-cyan-400 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] text-white shadow-[0_0_15px_rgba(34,211,238,0.15)]'
-            : 'border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] text-white hover:border-white/20 hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
+            ? 'border-cyan-400 bg-cyan-950/30 text-white shadow-[0_0_15px_rgba(34,211,238,0.15)]'
+            : 'border-white/10 bg-white/[0.04] text-white hover:border-white/20 hover:bg-white/[0.07]'
           }`}
       >
         <span className={value ? 'text-white' : 'text-slate-500'}>
@@ -91,7 +91,7 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(2,6,23,0.98))] backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1525]/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="max-h-56 overflow-y-auto">
             {options.map((opt) => (
               <button
@@ -2495,7 +2495,7 @@ export default function TapitasLeagueHomepage() {
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                  <TrendingUp className="h-5 w-5 text-emerald-300" />
+                  <TrendingUp className="h-5 w-5 text-white" />
                 </div>
 
                 <div className="min-w-0">
@@ -2519,7 +2519,7 @@ export default function TapitasLeagueHomepage() {
 
               <a
                 href="/powerrankings"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
               >
                 Ver tudo
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -2608,7 +2608,7 @@ export default function TapitasLeagueHomepage() {
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <BarChart2 className="h-5 w-5 text-cyan-300" />
+                  <BarChart2 className="h-5 w-5 text-white" />
                 </div>
 
                 <div className="min-w-0">
@@ -2638,7 +2638,7 @@ export default function TapitasLeagueHomepage() {
 
               <a
                 href="/standings"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
               >
                 Ver tudo
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -2722,7 +2722,7 @@ export default function TapitasLeagueHomepage() {
           <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
             <div className="flex min-w-0 items-center gap-4">
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                <Newspaper className="h-5 w-5 text-sky-300" />
+                <Newspaper className="h-5 w-5 text-white" />
               </div>
 
               <div className="min-w-0">
@@ -2746,7 +2746,7 @@ export default function TapitasLeagueHomepage() {
 
             <a
               href="/news"
-              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
             >
               Ver tudo
               <ChevronRight className="h-3.5 w-3.5" />
@@ -2819,7 +2819,7 @@ export default function TapitasLeagueHomepage() {
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <ScrollText className="h-5 w-5 text-pink-300" />
+                  <ScrollText className="h-5 w-5 text-white" />
                 </div>
 
                 <div className="min-w-0">
@@ -2843,7 +2843,7 @@ export default function TapitasLeagueHomepage() {
 
               <a
                 href="/draft"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
               >
                 Draft Board
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -2945,7 +2945,7 @@ export default function TapitasLeagueHomepage() {
 
               <a
                 href="/records"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
               >
                 Ver tudo
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -3025,7 +3025,7 @@ export default function TapitasLeagueHomepage() {
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <Swords className="h-5 w-5 text-red-300" />
+                  <Swords className="h-5 w-5 text-white" />
                 </div>
 
                 <div className="min-w-0">
@@ -3054,7 +3054,7 @@ export default function TapitasLeagueHomepage() {
 
               <a
                 href="/matchups"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
               >
                 Ver tudo
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -3141,7 +3141,7 @@ export default function TapitasLeagueHomepage() {
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <Trophy className="h-5 w-5 text-yellow-300" />
+                  <Trophy className="h-5 w-5 text-white" />
                 </div>
 
                 <div className="min-w-0">
@@ -3183,7 +3183,7 @@ export default function TapitasLeagueHomepage() {
               <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                    <Swords className="h-5 w-5 text-red-300" />
+                    <Swords className="h-5 w-5 text-white" />
                   </div>
 
                   <div>
@@ -3206,7 +3206,7 @@ export default function TapitasLeagueHomepage() {
 
                 <a
                   href="/rivalries"
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
                 >
                   Ver tudo
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -3493,7 +3493,7 @@ export default function TapitasLeagueHomepage() {
               <div className="mb-4 flex items-start justify-between gap-4 px-4 pb-1 pt-3 sm:px-5 sm:pt-4">
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                    <Medal className="h-5 w-5 text-yellow-300" />
+                    <Medal className="h-5 w-5 text-white" />
                   </div>
 
                   <div>
@@ -3520,7 +3520,7 @@ export default function TapitasLeagueHomepage() {
                     <button
                       onClick={() => setStandingsPage(p => Math.max(0, p - 1))}
                       disabled={standingsPage === 0}
-                      className="flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                      className="flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/10 bg-white/[0.04] text-slate-300 transition-all hover:bg-white/[0.07] hover:text-white disabled:opacity-20"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
@@ -3532,7 +3532,7 @@ export default function TapitasLeagueHomepage() {
                     <button
                       onClick={() => setStandingsPage(p => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
                       disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
-                      className="flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                      className="flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/10 bg-white/[0.04] text-slate-300 transition-all hover:bg-white/[0.07] hover:text-white disabled:opacity-20"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>
