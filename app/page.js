@@ -392,8 +392,8 @@ function ChampionsWallInline({ champions }) {
           <div
             key={champ.season}
             className={`relative overflow-hidden rounded-[24px] border shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all ${isOpen
-              ? 'border-yellow-300/25 bg-[#2a4878]/85'
-              : 'border-white/8 bg-[#223058]/80 hover:border-white/12 hover:bg-[#2a4272]/90'
+              ? 'border-yellow-300/25 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))]'
+              : 'border-white/8 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] hover:border-white/12 hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
               }`}
           >
             {index === 0 && (
@@ -2539,7 +2539,7 @@ export default function TapitasLeagueHomepage() {
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[#223058]/80 px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[#2a4272]/90"
+                      className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                     >
                       <div className="flex w-8 flex-shrink-0 justify-center">
                         <span
@@ -2658,7 +2658,7 @@ export default function TapitasLeagueHomepage() {
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[#223058]/80 px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[#2a4272]/90"
+                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                     >
                       <div className="flex w-8 flex-shrink-0 justify-center">
                         <span
@@ -2873,7 +2873,7 @@ export default function TapitasLeagueHomepage() {
 
                       <a
                         href={`/teams?team=${encodeURIComponent(pick.team)}`}
-                        className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[#223058]/80 px-4 py-3 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[#2a4272]/90"
+                        className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-3 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                       >
                         <span
                           className="w-7 flex-shrink-0 text-center font-black leading-none text-slate-300"
@@ -2967,7 +2967,7 @@ export default function TapitasLeagueHomepage() {
                 return (
                   <div
                     key={label}
-                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[#223058]/80 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[#2a4272]/90"
+                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                   >
                     <span className="flex-shrink-0 text-lg leading-none">{emoji}</span>
 
@@ -3236,7 +3236,7 @@ export default function TapitasLeagueHomepage() {
               </div>
 
               {!selectedRivalry ? (
-                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[#223058]/40 py-10 text-center sm:mx-5">
+                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.45))] py-10 text-center sm:mx-5">
                   <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/10 bg-white/[0.05]">
                     <Swords className="h-5 w-5 text-slate-200" />
                   </div>
@@ -3257,7 +3257,7 @@ export default function TapitasLeagueHomepage() {
                 return (
                   <div className="flex flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
                     {/* VS strip */}
-                    <div className="overflow-hidden rounded-[24px] border border-white/9 bg-[#223058]/80 p-4 shadow-[0_8px_18px_rgba(15,23,42,0.12)]">
+                    <div className="overflow-hidden rounded-[24px] border border-white/9 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-4 shadow-[0_8px_18px_rgba(15,23,42,0.12)]">
                       <div className="flex items-center justify-between gap-4">
                         <a
                           href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
@@ -3353,7 +3353,7 @@ export default function TapitasLeagueHomepage() {
 
                     {/* Stats grid */}
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3">
                         <div className="flex items-center gap-1.5">
                           <Trophy className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3363,7 +3363,7 @@ export default function TapitasLeagueHomepage() {
                         <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3">
                         <div className="flex items-center gap-1.5">
                           <Activity className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3373,7 +3373,7 @@ export default function TapitasLeagueHomepage() {
                         <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3">
                         <div className="flex items-center gap-1.5">
                           <Stars className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3383,7 +3383,7 @@ export default function TapitasLeagueHomepage() {
                         <span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span>
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3">
                         <div className="flex items-center gap-1.5">
                           <Radar className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3393,7 +3393,7 @@ export default function TapitasLeagueHomepage() {
                         <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3">
                         <div className="flex items-center gap-1.5">
                           <Flame className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3413,7 +3413,7 @@ export default function TapitasLeagueHomepage() {
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3">
                         <div className="flex items-center gap-1.5">
                           <Flame className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3433,7 +3433,7 @@ export default function TapitasLeagueHomepage() {
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3">
                         <div className="flex items-center gap-1.5">
                           <TrendingUp className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
@@ -3454,7 +3454,7 @@ export default function TapitasLeagueHomepage() {
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#223058]/80 p-3">
+                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3">
                         <div className="flex items-center gap-1.5">
                           <TrendingUp className="h-3 w-3 text-cyan-200/75" />
                           <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
