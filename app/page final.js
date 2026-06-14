@@ -524,90 +524,6 @@ function getTeamAvatar(name) {
   return TEAM_AVATARS[normalizeString(name)] || null
 }
 
-function normalizePlayerKey(value) {
-  return normalizeString(value)
-    .replace(/\./g, '')
-    .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '')
-    .replace(/[^a-z0-9 ]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function buildPlayerLookup(rows) {
-  const lookup = new Map()
-
-  rows.forEach((row) => {
-    const playerId = String(row?.player_id || '').trim()
-    const fullName = String(row?.full_name || '').trim()
-    const firstName = String(row?.first_name || '').trim()
-    const lastName = String(row?.last_name || '').trim()
-    const team = String(row?.team || '').trim()
-    const pos = String(row?.position || row?.pos || '').trim().toUpperCase()
-
-    if (!playerId) return
-
-    const entry = { playerId, team, pos, fullName }
-
-      ;[fullName, `${firstName} ${lastName}`, row?.search_full_name].forEach((value) => {
-        const key = normalizePlayerKey(value)
-        if (!key || lookup.has(key)) return
-        lookup.set(key, entry)
-      })
-  })
-
-  return lookup
-}
-
-function getPlayerDataByFullName(name, playerLookup) {
-  if (!playerLookup || !name) return null
-  const key = normalizePlayerKey(name)
-  if (!key) return null
-  return playerLookup.get(key) || null
-}
-
-function DraftPickPlayerAvatar({ name, playerLookup, size = 36 }) {
-  const [photoFailed, setPhotoFailed] = useState(false)
-
-  const data = getPlayerDataByFullName(name, playerLookup)
-  const playerId = data?.playerId
-
-  useEffect(() => {
-    setPhotoFailed(false)
-  }, [name, playerId])
-
-  const photoSrc =
-    !photoFailed && playerId
-      ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
-      : null
-
-  return photoSrc ? (
-    <img
-      src={photoSrc}
-      alt={name}
-      className="flex-shrink-0 rounded-[14px] object-cover"
-      width={size}
-      height={size}
-      style={{ width: size, height: size }}
-      onError={() => setPhotoFailed(true)}
-    />
-  ) : (
-    <div
-      className="flex flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-[9px] font-black text-slate-100"
-      style={{ width: size, height: size }}
-      aria-label={name}
-      title={name}
-    >
-      {String(name || '?')
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join('')
-        .toUpperCase() || '?'}
-    </div>
-  )
-}
-
 function buildSeasonRanges(years) {
   if (!years || years.length === 0) return ''
 
@@ -912,7 +828,6 @@ export default function TapitasLeagueHomepage() {
   const [draftPicks, setDraftPicks] = useState([])   // last draft picks
   const [draftSeason, setDraftSeason] = useState('')
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
-  const [playerLookup, setPlayerLookup] = useState(new Map())
 
   const touchStartX = useRef(null);
   const totalSlides = 3;
@@ -1233,15 +1148,12 @@ export default function TapitasLeagueHomepage() {
     let mounted = true
     async function loadExtra() {
       try {
-        const [gameData, historyData, draftData, playerCacheData] = await Promise.all([
+        const [gameData, historyData, draftData] = await Promise.all([
           safeSheetFetch(`${BASE_URL_HOME}/GAME_FACTS_ALL`),
           safeSheetFetch(`${BASE_URL_HOME}/TEAM_HISTORY_SORTED`),
           safeSheetFetch(`${BASE_URL_HOME}/DRAFT_BOARD`),
-          safeSheetFetch(`${BASE_URL_HOME}/_PLAYER_CACHE`),
         ])
         if (!mounted) return
-
-        setPlayerLookup(buildPlayerLookup(playerCacheData))
 
         // ── Power Rankings ──────────────────────────────────────────────────
         const seasonsWithPR = [...new Set(
@@ -2945,43 +2857,59 @@ export default function TapitasLeagueHomepage() {
                 </div>
               ) : (
                 draftPicks.map((pick, i) => {
+                  const avatar = getTeamAvatar(pick.team)
                   const posColor =
-                    POS_COLORS[pick.position] || 'text-slate-200 border-white/10 bg-white/8'
+                    POS_COLORS[pick.position] ||
+                    'text-slate-200 border-white/10 bg-white/8'
+                  const isFirstRoundEnd = i > 0 && draftPicks[i - 1].round !== pick.round
 
                   return (
-                    <a
-                      key={i}
-                      href={`/teams?team=${encodeURIComponent(pick.team)}`}
-                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                    >
-                      <span
-                        className="w-7 flex-shrink-0 text-center font-black leading-none text-slate-300"
-                        style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '22px' }}
-                      >
-                        {pick.pick}
-                      </span>
-
-                      <DraftPickPlayerAvatar
-                        name={pick.player}
-                        playerLookup={playerLookup}
-                        size={36}
-                      />
-
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[15px] font-black tracking-[-0.01em] text-white">
-                          {pick.player}
+                    <div key={i}>
+                      {isFirstRoundEnd && (
+                        <div className="px-4 pb-1 pt-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300">
+                          Round {pick.round}
                         </div>
-                        <div className="mt-0.5 truncate text-[11px] font-bold text-slate-400">
-                          {pick.team}
-                        </div>
-                      </div>
+                      )}
 
-                      <span
-                        className={`flex-shrink-0 rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${posColor}`}
+                      <a
+                        href={`/teams?team=${encodeURIComponent(pick.team)}`}
+                        className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                       >
-                        {pick.position || '—'}
-                      </span>
-                    </a>
+                        <span
+                          className="w-7 flex-shrink-0 text-center font-black leading-none text-slate-300"
+                          style={{
+                            fontFamily: '"Bebas Neue", sans-serif',
+                            fontSize: '22px',
+                          }}
+                        >
+                          {pick.pick}
+                        </span>
+
+                        {avatar ? (
+                          <img
+                            src={avatar}
+                            alt={pick.team}
+                            className="h-9 w-9 flex-shrink-0 rounded-[14px] object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-[9px] font-black text-slate-100">
+                            {pick.team.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[15px] font-black tracking-[0.01em] text-white">
+                            {pick.player}
+                          </div>
+                        </div>
+
+                        <span
+                          className={`flex-shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${posColor}`}
+                        >
+                          {pick.position}
+                        </span>
+                      </a>
+                    </div>
                   )
                 })
               )}
@@ -3041,7 +2969,7 @@ export default function TapitasLeagueHomepage() {
                     key={label}
                     className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                   >
-
+                    
 
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 text-[12px] font-black uppercase tracking-[0.15em] text-cyan-50/72">
