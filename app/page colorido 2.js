@@ -2491,7 +2491,7 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 flex flex-col gap-4 xl:flex-row"
         >
           {/* Power Rankings */}
-          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
+          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.18)] xl:flex-1">
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
@@ -2604,7 +2604,7 @@ export default function TapitasLeagueHomepage() {
           </div>
 
           {/* Current Standings */}
-          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
+          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.16)] xl:flex-1">
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
@@ -2815,7 +2815,7 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           {/* DRAFT — scrolling picks feed */}
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
+          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.16)]">
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
@@ -2917,7 +2917,7 @@ export default function TapitasLeagueHomepage() {
           </div>
 
           {/* RECORDS — leaders per category with tied display */}
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
+          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.18)]">
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
@@ -3136,7 +3136,7 @@ export default function TapitasLeagueHomepage() {
             whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.06 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+            className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.16)]"
           >
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
@@ -3177,7 +3177,7 @@ export default function TapitasLeagueHomepage() {
             whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.08 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[1.15]"
+            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.18)] xl:flex-[1.15]"
           >
             <div className="flex h-full flex-col">
               <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
