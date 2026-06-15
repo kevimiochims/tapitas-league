@@ -618,12 +618,12 @@ function DraftPickTile({ pick, playerLookup }) {
             )}
           </div>
 
-          <div className="absolute left-0 top-0 rounded-full border border-black/10 bg-black/80 px-2 py-1 text-[10px] font-black leading-none text-white shadow-lg">
+          <div className="absolute left-0 top-0 rounded-full border border-black bg-black px-2 py-1 text-[10px] font-black leading-none text-white shadow-lg">
             #{pick.pick}
           </div>
 
           <div
-            className={`absolute bottom-[-6px] left-1/2 -translate-x-1/2 rounded-xl border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] shadow-lg backdrop-blur-sm ${posColor}`}
+            className={`absolute bottom-[-6px] left-1/2 -translate-x-1/2 rounded-xl border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] shadow-lg ${posColor}`}
           >
             {pick.position || '—'}
           </div>
@@ -892,12 +892,13 @@ const QUICK_NAV = [
 ]
 
 const POS_COLORS = {
-  QB: 'text-red-400 border-red-400/25 bg-red-400/10',
-  RB: 'text-emerald-400 border-emerald-400/25 bg-emerald-400/10',
-  WR: 'text-cyan-400 border-cyan-400/25 bg-cyan-400/10',
-  TE: 'text-orange-400 border-orange-400/25 bg-orange-400/10',
-  K: 'text-slate-400 border-slate-400/25 bg-slate-400/10',
-  DEF: 'text-purple-400 border-purple-400/25 bg-purple-400/10',
+  QB: 'text-white border-red-500 bg-red-500',
+  RB: 'text-white border-emerald-500 bg-emerald-500',
+  WR: 'text-white border-blue-500 bg-blue-500',
+  TE: 'text-white border-yellow-500 bg-yellow-500',
+  K: 'text-white border-violet-500 bg-violet-500',
+  DEF: 'text-white border-orange-500 bg-orange-500',
+  BN: 'text-white border-slate-600 bg-slate-600',
 }
 
 function parseBiggestWin(value) {
@@ -2614,7 +2615,7 @@ export default function TapitasLeagueHomepage() {
           className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
         >
           {[
-            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'All-time', color: 'cyan' },
+            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'Current', color: 'cyan' },
             { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple' },
             { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-time', color: 'emerald' },
             { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, color: 'orange' },
@@ -2656,6 +2657,96 @@ export default function TapitasLeagueHomepage() {
             ))}
           </div>
         </motion.div>
+
+        {/* DRAFT — scrolling picks feed */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          className="mb-4"
+        >
+          <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+            <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                  <ScrollText className="h-5 w-5 text-pink-300" />
+                </div>
+
+                <div className="min-w-0">
+                  <div
+                    className="truncate uppercase leading-none text-pink-300"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: '24px',
+                      letterSpacing: '0.075em',
+                      fontWeight: 900,
+                    }}
+                  >
+                    Last Draft
+                  </div>
+
+                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                    Draft {draftSeason}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
+                <a
+                  href="/draft"
+                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                >
+                  Ver tudo
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </a>
+
+                {draftRounds.length > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => goDraftRound(-1)}
+                      disabled={!canGoDraftPrev}
+                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                    >
+                      <ChevronLeft className="h-3 w-3" />
+                    </button>
+
+                    <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-pink-300">
+                      R{selectedDraftRound}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => goDraftRound(1)}
+                      disabled={!canGoDraftNext}
+                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+              <div
+                ref={draftScrollRef}
+                className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                <div className="flex min-w-max gap-4 snap-x snap-mandatory pr-2 md:mx-auto md:w-fit md:min-w-0 md:justify-center">
+                  {visibleDraftPicks.map((pick, i) => (
+                    <DraftPickTile
+                      key={`${pick.pick}-${pick.player}-${i}`}
+                      pick={pick}
+                      playerLookup={playerLookup}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
 
         {/* ── POWER RANKINGS + STANDINGS ─────────────────────────────────── */}
         <motion.div
@@ -3766,96 +3857,6 @@ export default function TapitasLeagueHomepage() {
           )}
 
         </motion.div>
-
-        {/* DRAFT — scrolling picks feed */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.15 }}
-          transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="mt-8"
-        >
-          <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-            <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <ScrollText className="h-5 w-5 text-pink-300" />
-                </div>
-
-                <div className="min-w-0">
-                  <div
-                    className="truncate uppercase leading-none text-pink-300"
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
-                      fontWeight: 900,
-                    }}
-                  >
-                    Last Draft
-                  </div>
-
-                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                    Draft {draftSeason}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
-                <a
-                  href="/draft"
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                >
-                  Ver tudo
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </a>
-
-                {draftRounds.length > 1 && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => goDraftRound(-1)}
-                      disabled={!canGoDraftPrev}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronLeft className="h-3 w-3" />
-                    </button>
-
-                    <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-pink-300">
-                      R{selectedDraftRound}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => goDraftRound(1)}
-                      disabled={!canGoDraftNext}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronRight className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-              <div
-                ref={draftScrollRef}
-                className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                <div className="flex min-w-max gap-4 snap-x snap-mandatory pr-2 md:mx-auto md:w-fit md:min-w-0 md:justify-center">
-                  {visibleDraftPicks.map((pick, i) => (
-                    <DraftPickTile
-                      key={`${pick.pick}-${pick.player}-${i}`}
-                      pick={pick}
-                      playerLookup={playerLookup}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.section>
 
       </section>
 
