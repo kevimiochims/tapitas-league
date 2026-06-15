@@ -957,6 +957,7 @@ export default function TapitasLeagueHomepage() {
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
   const [playerLookup, setPlayerLookup] = useState(new Map())
   const [selectedDraftRound, setSelectedDraftRound] = useState(1)
+  const draftScrollRef = useRef(null)
   const touchStartX = useRef(null);
   const totalSlides = 3;
 
@@ -1668,6 +1669,17 @@ export default function TapitasLeagueHomepage() {
       bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || '—'),
     }
   }, [h2hData, selectedTeamA, selectedTeamB])
+
+  useEffect(() => {
+    if (!draftScrollRef.current) return
+
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches
+
+    draftScrollRef.current.scrollTo({
+      left: 0,
+      behavior: isDesktop ? 'auto' : 'smooth',
+    })
+  }, [selectedDraftRound])
 
   useEffect(() => {
     if (!drawerOpen || seasonSummary) return
@@ -3764,49 +3776,73 @@ export default function TapitasLeagueHomepage() {
           className="mt-8"
         >
           <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-            <div className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-5 md:px-8 md:py-6">
-
+            <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
                   <ScrollText className="h-5 w-5 text-pink-300" />
                 </div>
+
                 <div className="min-w-0">
-                  <div className="text-sm font-black uppercase tracking-[0.3em] text-pink-300">
+                  <div
+                    className="truncate uppercase leading-none text-pink-300"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: '24px',
+                      letterSpacing: '0.075em',
+                      fontWeight: 900,
+                    }}
+                  >
                     Last Draft
                   </div>
-                  <div className="text-sm text-slate-400 md:text-base">
+
+                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
                     Draft {draftSeason}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
-                <button
-                  type="button"
-                  onClick={() => goDraftRound(-1)}
-                  disabled={!canGoDraftPrev}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
+                <a
+                  href="/draft"
+                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
+                  Ver tudo
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </a>
 
-                <div className="min-w-[84px] text-center text-[11px] font-black uppercase tracking-[0.16em] text-white">
-                  Round {selectedDraftRound}
-                </div>
+                {draftRounds.length > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => goDraftRound(-1)}
+                      disabled={!canGoDraftPrev}
+                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                    >
+                      <ChevronLeft className="h-3 w-3" />
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => goDraftRound(1)}
-                  disabled={!canGoDraftNext}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                    <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-pink-300">
+                      R{selectedDraftRound}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => goDraftRound(1)}
+                      disabled={!canGoDraftNext}
+                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="px-4 py-5 md:px-6 md:py-6">
-              <div className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+              <div
+                ref={draftScrollRef}
+                className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
                 <div className="flex min-w-max gap-4 snap-x snap-mandatory pr-2 md:mx-auto md:w-fit md:min-w-0 md:justify-center">
                   {visibleDraftPicks.map((pick, i) => (
                     <DraftPickTile
