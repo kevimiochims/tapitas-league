@@ -2526,7 +2526,7 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.5 }}
-          className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
+          className="mb-8 grid grid-cols-2 gap-2 lg:grid-cols-4"
         >
           {[
             { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'All-time', color: 'cyan' },
@@ -2559,7 +2559,7 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.4 }}
-          className="mb-4 mt-4"
+          className="mb-8 mt-4"
         >
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
@@ -2576,7 +2576,7 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 flex flex-col gap-4 xl:flex-row"
+          className="mb-8 flex flex-col gap-4 xl:flex-row"
         >
           {/* Power Rankings */}
           <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
@@ -2805,17 +2805,17 @@ export default function TapitasLeagueHomepage() {
           whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+          className="mb-8 overflow-hidden bg-cyan-400 p-3"
         >
           <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                <Newspaper className="h-5 w-5 text-sky-300" />
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                <Newspaper className="h-5 w-5" />
               </div>
 
               <div className="min-w-0">
                 <div
-                  className="uppercase leading-none text-white"
+                  className="uppercase leading-none text-[rgba(18,30,52,0.98)]"
                   style={{
                     fontFamily: '"Bebas Neue", sans-serif',
                     fontSize: '24px',
@@ -2826,7 +2826,7 @@ export default function TapitasLeagueHomepage() {
                   Newsletter
                 </div>
 
-                <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-[rgba(18,30,52,0.98)] sm:text-sm">
                   Memes, recaps and news
                 </div>
               </div>
@@ -2900,7 +2900,7 @@ export default function TapitasLeagueHomepage() {
           whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
+          className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           {/* DRAFT — scrolling picks feed */}
           <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
@@ -3099,17 +3099,17 @@ export default function TapitasLeagueHomepage() {
             whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.06 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+            className="mb-4 overflow-hidden bg-cyan-400 p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
           >
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <Swords className="h-5 w-5 text-red-300" />
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                  <Swords className="h-5 w-5 text-white" />
                 </div>
 
                 <div className="min-w-0">
                   <div
-                    className="uppercase leading-none text-white"
+                    className="uppercase leading-none text-[rgba(18,30,52,0.98)]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
                       fontSize: '24px',
@@ -3120,13 +3120,8 @@ export default function TapitasLeagueHomepage() {
                     Recent Matchups
                   </div>
 
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                    {currentSeason
-                      ? `${currentSeason} · Week ${recentMatchups[0]?.week}${recentMatchups[0]?.stage && recentMatchups[0].stage !== 'Reg Season'
-                        ? ` · ${recentMatchups[0].stage}`
-                        : ''
-                      }`
-                      : ''}
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-[rgba(18,30,52,0.98)] sm:text-sm">
+                    {`${currentSeason} · Week ${recentMatchups[0]?.week}`}
                   </div>
                 </div>
               </div>
@@ -3208,47 +3203,8 @@ export default function TapitasLeagueHomepage() {
           </motion.div>
         )}
 
-        {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
-        {championsData.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
-            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            viewport={{ once: false, amount: 0.06 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
-          >
-            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <Trophy className="h-5 w-5 text-yellow-300" />
-                </div>
-
-                <div className="min-w-0">
-                  <div
-                    className="uppercase leading-none text-white"
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
-                      fontWeight: 900,
-                    }}
-                  >
-                    Champions Wall
-                  </div>
-
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                    Every title. Every campaign.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <ChampionsWallInline champions={championsData} />
-          </motion.div>
-        )}
-
-        {/* ── RIVALRY SPOTLIGHT + FRANCHISE LEADERS ──────────────────────── */}
-        <div className="flex flex-col gap-4 xl:flex-row">
+         {/* ── RIVALRY SPOTLIGHT + FRANCHISE LEADERS ──────────────────────── */}
+        <div className="mb-8 flex flex-col gap-4 xl:flex-row">
 
           {/* RIVALRY SPOTLIGHT */}
           <motion.div
@@ -3765,6 +3721,47 @@ export default function TapitasLeagueHomepage() {
             </div>
           </motion.div>
         </div>
+
+        {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
+        {championsData.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
+            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            viewport={{ once: false, amount: 0.06 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-4 overflow-hidden bg-cyan-400 p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+          >
+            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                  <Trophy className="h-5 w-5 text-white" />
+                </div>
+
+                <div className="min-w-0">
+                  <div
+                    className="uppercase leading-none text-[rgba(18,30,52,0.98)]"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: '24px',
+                      letterSpacing: '0.075em',
+                      fontWeight: 900,
+                    }}
+                  >
+                    Champions Wall
+                  </div>
+
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-[rgba(18,30,52,0.98)] sm:text-sm">
+                    Every title. Every campaign.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <ChampionsWallInline champions={championsData} />
+          </motion.div>
+        )}
+
+       
 
       </section>
 
