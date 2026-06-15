@@ -555,7 +555,11 @@ function buildPlayerLookup(rows) {
       shortName,
     }
 
-      ;[fullName, `${firstName} ${lastName}`, row?.search_full_name].forEach((value) => {
+      ;[
+        fullName,
+        `${firstName} ${lastName}`,
+        row?.search_full_name,
+      ].forEach((value) => {
         const key = normalizePlayerKey(value)
         if (!key || lookup.has(key)) return
         lookup.set(key, entry)
@@ -591,7 +595,7 @@ function DraftPickTile({ pick, playerLookup }) {
     POS_COLORS[pick.position] || 'text-slate-200 border-white/10 bg-white/8'
 
   return (
-    <div className="w-[106px] flex-shrink-0 snap-start">
+    <div className="w-[106px] flex-shrink-0">
       <a
         href={`/teams?team=${encodeURIComponent(pick.team)}`}
         className="group block"
@@ -650,6 +654,48 @@ function DraftPickTile({ pick, playerLookup }) {
   )
 }
 
+function DraftPickPlayerAvatar({ name, playerLookup, size = 36 }) {
+  const [photoFailed, setPhotoFailed] = useState(false)
+
+  const data = getPlayerDataByFullName(name, playerLookup)
+  const playerId = data?.playerId
+
+  useEffect(() => {
+    setPhotoFailed(false)
+  }, [name, playerId])
+
+  const photoSrc =
+    !photoFailed && playerId
+      ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
+      : null
+
+  return photoSrc ? (
+    <img
+      src={photoSrc}
+      alt={name}
+      className="flex-shrink-0 rounded-[14px] object-cover"
+      width={size}
+      height={size}
+      style={{ width: size, height: size }}
+      onError={() => setPhotoFailed(true)}
+    />
+  ) : (
+    <div
+      className="flex flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-[9px] font-black text-slate-100"
+      style={{ width: size, height: size }}
+      aria-label={name}
+      title={name}
+    >
+      {String(name || '?')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase() || '?'}
+    </div>
+  )
+}
 
 function buildSeasonRanges(years) {
   if (!years || years.length === 0) return ''
@@ -956,7 +1002,7 @@ export default function TapitasLeagueHomepage() {
   const [draftSeason, setDraftSeason] = useState('')
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
   const [playerLookup, setPlayerLookup] = useState(new Map())
-  const [selectedDraftRound, setSelectedDraftRound] = useState(1)
+
   const touchStartX = useRef(null);
   const totalSlides = 3;
 
@@ -1438,29 +1484,21 @@ export default function TapitasLeagueHomepage() {
 
         // ── Draft picks ───────────────────────────────────────────────────────
         if (draftData.length > 0) {
-          const draftSeasons = [...new Set(draftData.map((r) => String(r?.Season).trim()).filter(Boolean))].sort(
-            (a, b) => Number(a) - Number(b)
-          )
-
+          const draftSeasons = [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
+            .sort((a, b) => Number(a) - Number(b))
           const lastDraftSeason = draftSeasons[draftSeasons.length - 1]
-
           const picks = draftData
-            .filter((r) => String(r?.Season).trim() === lastDraftSeason)
-            .map((r) => ({
+            .filter(r => String(r?.Season || '').trim() === lastDraftSeason)
+            .map(r => ({
               pick: parseNumber(r?.Pick || r?.Overall || 0),
-              round: parseNumber(r?.Round || r?.Rd || 0),
+              round: parseNumber(r?.Round || 0),
               team: String(r?.Team || '').trim(),
               player: String(r?.Player || r?.Name || '').trim(),
               position: String(r?.Position || r?.Pos || '').trim().toUpperCase(),
             }))
-            .filter((r) => r.player && r.player !== '')
+            .filter(r => r.player && r.player !== '')
             .sort((a, b) => a.pick - b.pick)
-
-          if (mounted) {
-            setDraftPicks(picks)
-            setDraftSeason(lastDraftSeason)
-            setSelectedDraftRound(1)
-          }
+          if (mounted) { setDraftPicks(picks.slice(0, 10)); setDraftSeason(lastDraftSeason) }
         }
       } catch (e) { console.error(e) }
       finally { if (mounted) setPrLoading(false) }
@@ -1468,28 +1506,6 @@ export default function TapitasLeagueHomepage() {
     loadExtra()
     return () => { mounted = false }
   }, [])
-
-  const draftRounds = useMemo(() => {
-    return [...new Set(draftPicks.map((p) => p.round).filter((r) => r > 0))].sort((a, b) => a - b)
-  }, [draftPicks])
-
-  const visibleDraftPicks = useMemo(() => {
-    const picksInRound = draftPicks.filter((p) => p.round === selectedDraftRound)
-    return picksInRound.slice(0, 10)
-  }, [draftPicks, selectedDraftRound])
-
-  const canGoDraftPrev = draftRounds.indexOf(selectedDraftRound) > 0
-  const canGoDraftNext = draftRounds.indexOf(selectedDraftRound) < draftRounds.length - 1
-
-  function goDraftRound(direction) {
-    const currentIndex = draftRounds.indexOf(selectedDraftRound)
-    if (currentIndex === -1) return
-
-    const nextIndex = currentIndex + direction
-    if (nextIndex < 0 || nextIndex >= draftRounds.length) return
-
-    setSelectedDraftRound(draftRounds[nextIndex])
-  }
 
   const standings = useMemo(() => {
     const base =
@@ -3756,59 +3772,50 @@ export default function TapitasLeagueHomepage() {
         </motion.div>
 
         {/* DRAFT — scrolling picks feed */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.15 }}
-          transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="mt-8"
-        >
-          <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-            <div className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-5 md:px-8 md:py-6">
-
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <ScrollText className="h-5 w-5 text-pink-300" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-black uppercase tracking-[0.3em] text-pink-300">
-                    Last Draft
-                  </div>
-                  <div className="text-sm text-slate-400 md:text-base">
-                    Draft {draftSeason}
-                  </div>
-                </div>
+        <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
+          <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                <ScrollText className="h-5 w-5 text-pink-300" />
               </div>
 
-              <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
-                <button
-                  type="button"
-                  onClick={() => goDraftRound(-1)}
-                  disabled={!canGoDraftPrev}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+              <div className="min-w-0">
+                <div
+                  className="uppercase leading-none text-white"
+                  style={{
+                    fontFamily: '"Bebas Neue", sans-serif',
+                    fontSize: '24px',
+                    letterSpacing: '0.075em',
+                    fontWeight: 900,
+                  }}
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-
-                <div className="min-w-[84px] text-center text-[11px] font-black uppercase tracking-[0.16em] text-white">
-                  Round {selectedDraftRound}
+                  Last Draft
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => goDraftRound(1)}
-                  disabled={!canGoDraftNext}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                  {draftSeason ? `${draftSeason} · First 10 picks` : 'Carregando...'}
+                </div>
               </div>
             </div>
 
-            <div className="px-4 py-5 md:px-6 md:py-6">
-              <div className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex min-w-max gap-4 snap-x snap-mandatory pr-2 md:mx-auto md:w-fit md:min-w-0 md:justify-center">
-                  {visibleDraftPicks.map((pick, i) => (
+            <a
+              href="/draft"
+              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+            >
+              Draft Board
+              <ChevronRight className="h-3.5 w-3.5" />
+            </a>
+          </div>
+
+          <div className="space-y-2.5 sm:space-y-3">
+            {draftPicks.length === 0 ? (
+              <div className="py-8 text-center text-sm font-bold text-slate-300">
+                Carregando...
+              </div>
+            ) : (
+              <div className="mt-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex gap-4 min-w-max pr-2">
+                  {draftPicks.map((pick, i) => (
                     <DraftPickTile
                       key={`${pick.pick}-${pick.player}-${i}`}
                       pick={pick}
@@ -3817,9 +3824,9 @@ export default function TapitasLeagueHomepage() {
                   ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
-        </motion.section>
+        </div>
 
       </section>
 
