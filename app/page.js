@@ -1065,8 +1065,14 @@ export default function TapitasLeagueHomepage() {
   }, [currentStandings, standingsLeader, standingsPage])
 
   const standingsSectionLabel = useMemo(() => {
+    const isFinalStandings = currentWeekLabel === '__final__'
+
+    if (isFinalStandings) {
+      return standingsPage === 0 ? 'Final table leaders' : 'Final standings'
+    }
+
     return standingsPage === 0 ? 'Playoff pace' : 'Chasing the cut'
-  }, [standingsPage])
+  }, [standingsPage, currentWeekLabel])
 
   useEffect(() => {
     setStandingsPage(0)
@@ -1429,8 +1435,11 @@ export default function TapitasLeagueHomepage() {
             return rows
           }
 
+          const finalHistoryRowsNewest = buildFromHistory(newestSeason)
+          const hasFinalStandingsNewest = finalHistoryRowsNewest.length > 0
+
           let displaySeason = newestSeason
-          let isSeasonFinished = poGamesNewest.length > 0
+          let isSeasonFinished = hasFinalStandingsNewest
           let seasonRows = []
           let weekLabel = ''
 
@@ -1442,9 +1451,9 @@ export default function TapitasLeagueHomepage() {
               isSeasonFinished = true
               seasonRows = buildFromHistory(prevSeason)
             }
-          } else if (isSeasonFinished) {
+          } else if (hasFinalStandingsNewest) {
             // Season over — use Standing column from TEAM_HISTORY_SORTED
-            seasonRows = buildFromHistory(newestSeason)
+            seasonRows = finalHistoryRowsNewest
           } else {
             // Season in progress — accumulate reg season week by week
             const rsWeeksSorted = [...new Set(
@@ -3321,7 +3330,13 @@ export default function TapitasLeagueHomepage() {
                         </div>
 
                         <div className="mt-0.5 text-[11px] font-bold text-slate-400">
-                          {isPlayoffRange ? 'Dentro da zona de playoffs' : 'Na perseguição por vaga'}
+                          {currentWeekLabel === '__final__'
+                            ? isPlayoffRange
+                              ? 'The top teams'
+                              : 'The other teams'
+                            : isPlayoffRange
+                              ? 'Playoff-bound teams'
+                              : 'Chasing the cut'}
                         </div>
 
                         <div className="mt-1.5 flex items-center gap-1.5 whitespace-nowrap sm:hidden">
