@@ -3993,7 +3993,6 @@ export default function TapitasLeagueHomepage() {
             className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[1.15]"
           >
             <div className="flex h-full flex-col">
-              {/* HEADER PADRÃO */}
               <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
@@ -4174,7 +4173,6 @@ export default function TapitasLeagueHomepage() {
 
                 return (
                   <div className="flex flex-col gap-4 px-4 pb-4 sm:px-5 sm:pb-5">
-                    {/* HERO */}
                     <div className="overflow-hidden rounded-[26px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
                       <div className="flex items-center justify-between gap-4">
                         <a
@@ -4273,7 +4271,6 @@ export default function TapitasLeagueHomepage() {
                       </div>
                     </div>
 
-                    {/* CLEAN STATS */}
                     <div className="space-y-4 px-1 pt-2 sm:px-2 sm:pt-3">
                       {[
                         {
@@ -4297,6 +4294,7 @@ export default function TapitasLeagueHomepage() {
                           rightLead: false,
                           breakAfterArrowLeft: false,
                           breakAfterArrowRight: false,
+                          valueClassName: 'text-[16px] xs:text-[18px] sm:text-[22px] md:text-[20px] lg:text-[24px]',
                         },
                         {
                           label: 'Best Streak',
@@ -4347,8 +4345,8 @@ export default function TapitasLeagueHomepage() {
                           <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
                             <div className="min-w-0 text-left">
                               <div
-                                className={`whitespace-nowrap text-[22px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
-                                  }`}
+                                className={`whitespace-nowrap leading-none ${item.valueClassName || 'text-[22px] sm:text-[30px]'
+                                  } ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'}`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
                                 {item.left}
@@ -4368,8 +4366,8 @@ export default function TapitasLeagueHomepage() {
 
                             <div className="min-w-0 text-right">
                               <div
-                                className={`whitespace-nowrap text-[22px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
-                                  }`}
+                                className={`whitespace-nowrap leading-none ${item.valueClassName || 'text-[22px] sm:text-[30px]'
+                                  } ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'}`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
                                 {item.right}
