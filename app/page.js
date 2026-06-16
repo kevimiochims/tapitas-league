@@ -4155,7 +4155,7 @@ export default function TapitasLeagueHomepage() {
                   bestStreakRightScore > bestStreakLeftScore
 
                 return (
-                  <div className="flex flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
+                  <div className="flex flex-col gap-4 px-4 pb-4 sm:px-5 sm:pb-5">
                     {/* HERO */}
                     <div className="overflow-hidden rounded-[26px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
                       <div className="flex items-center justify-between gap-4">
@@ -4241,12 +4241,12 @@ export default function TapitasLeagueHomepage() {
                       <div className="mt-3 flex justify-center">
                         <div
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
-                            ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
-                            : selectedRivalry.heat === 'Elite'
-                              ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
-                              : selectedRivalry.heat === 'High'
-                                ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
-                                : 'border-white/10 bg-white/[0.04] text-slate-300'
+                              ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
+                              : selectedRivalry.heat === 'Elite'
+                                ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
+                                : selectedRivalry.heat === 'High'
+                                  ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                                  : 'border-white/10 bg-white/[0.04] text-slate-300'
                             }`}
                         >
                           <Flame className="h-3 w-3" />
@@ -4256,7 +4256,7 @@ export default function TapitasLeagueHomepage() {
                     </div>
 
                     {/* CLEAN STATS */}
-                    <div className="space-y-3">
+                    <div className="space-y-4 px-1 pt-2 sm:px-2 sm:pt-3">
                       {[
                         {
                           label: 'Playoff Record',
@@ -4314,38 +4314,38 @@ export default function TapitasLeagueHomepage() {
                         },
                       ].map((item, idx, arr) => (
                         <div key={item.label}>
-                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                          <div className="grid grid-cols-[minmax(0,1fr)_84px_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] sm:gap-4">
                             <div className="min-w-0 text-left">
                               <div
-                                className={`truncate text-[24px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                className={`break-words text-[24px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
                                   }`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
                                 {item.left}
                               </div>
                               {item.subLeft ? (
-                                <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                                <div className="mt-1 break-words text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
                                   {item.subLeft}
                                 </div>
                               ) : null}
                             </div>
 
-                            <div className="px-2 text-center">
-                              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 sm:text-[11px]">
+                            <div className="pt-1 text-center">
+                              <div className="break-words text-[10px] font-black uppercase leading-[1.15] tracking-[0.14em] text-slate-500 sm:text-[11px]">
                                 {item.label}
                               </div>
                             </div>
 
                             <div className="min-w-0 text-right">
                               <div
-                                className={`truncate text-[24px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                className={`break-words text-[24px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
                                   }`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
                                 {item.right}
                               </div>
                               {item.subRight ? (
-                                <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                                <div className="mt-1 break-words text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
                                   {item.subRight}
                                 </div>
                               ) : null}
@@ -4353,7 +4353,7 @@ export default function TapitasLeagueHomepage() {
                           </div>
 
                           {idx < arr.length - 1 ? (
-                            <div className="mt-3 h-px w-full bg-white/6" />
+                            <div className="mt-4 h-px w-full bg-white/6" />
                           ) : null}
                         </div>
                       ))}
