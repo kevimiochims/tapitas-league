@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Header from './components/Header'
 
 
@@ -961,6 +961,8 @@ export default function TapitasLeagueHomepage() {
 
   // ── NEW STATE ──────────────────────────────────────────────────────────────
   const [newsPage, setNewsPage] = useState(0)
+  const [newsDirection, setNewsDirection] = useState(0)
+  const newsTouchStartX = useRef(null)
   const [newsPosts, setNewsPosts] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
   const [prData, setPrData] = useState([])
@@ -1019,7 +1021,40 @@ export default function TapitasLeagueHomepage() {
 
   useEffect(() => {
     setNewsPage(0)
+    setNewsDirection(0)
   }, [newsPosts])
+
+  function goNewsPage(step) {
+    setNewsPage((current) => {
+      const next = Math.max(0, Math.min(newsTotalPages - 1, current + step))
+      if (next !== current) setNewsDirection(step > 0 ? 1 : -1)
+      return next
+    })
+  }
+
+  function handleNewsTouchStart(e) {
+    newsTouchStartX.current = e.touches[0]?.clientX ?? null
+  }
+
+  function handleNewsTouchEnd(e) {
+    if (newsTouchStartX.current == null) return
+
+    const endX = e.changedTouches[0]?.clientX ?? null
+    if (endX == null) return
+
+    const deltaX = endX - newsTouchStartX.current
+    const threshold = 45
+
+    if (deltaX <= -threshold && newsPage < newsTotalPages - 1) {
+      setNewsDirection(1)
+      setNewsPage((p) => Math.min(newsTotalPages - 1, p + 1))
+    } else if (deltaX >= threshold && newsPage > 0) {
+      setNewsDirection(-1)
+      setNewsPage((p) => Math.max(0, p - 1))
+    }
+
+    newsTouchStartX.current = null
+  }
 
   // =============
 
