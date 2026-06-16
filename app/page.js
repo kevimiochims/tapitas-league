@@ -4154,6 +4154,24 @@ export default function TapitasLeagueHomepage() {
                   bestStreakRightScore !== null &&
                   bestStreakRightScore > bestStreakLeftScore
 
+                const formatRangeWithResponsiveBreak = (text) => {
+                  if (!text) return ''
+                  const parts = String(text).split(/\s*→\s*/)
+                  if (parts.length < 2) return text
+
+                  return (
+                    <>
+                      <span>{parts[0]}</span>
+                      <span className="inline sm:hidden">
+                        {' '}→
+                        <br />
+                      </span>
+                      <span className="hidden sm:inline">{' → '}</span>
+                      <span>{parts.slice(1).join(' → ')}</span>
+                    </>
+                  )
+                }
+
                 return (
                   <div className="flex flex-col gap-4 px-4 pb-4 sm:px-5 sm:pb-5">
                     {/* HERO */}
@@ -4266,6 +4284,8 @@ export default function TapitasLeagueHomepage() {
                           subRight: '',
                           leftLead: leftPlayoffLead,
                           rightLead: rightPlayoffLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
                         },
                         {
                           label: 'Biggest Win',
@@ -4275,6 +4295,8 @@ export default function TapitasLeagueHomepage() {
                           subRight: bigB?.label || '',
                           leftLead: false,
                           rightLead: false,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
                         },
                         {
                           label: 'Best Streak',
@@ -4284,6 +4306,8 @@ export default function TapitasLeagueHomepage() {
                           subRight: strB?.start ? `${strB.start}${strB.end ? ` → ${strB.end}` : ''}` : '',
                           leftLead: leftBestStreakLead,
                           rightLead: rightBestStreakLead,
+                          breakAfterArrowLeft: true,
+                          breakAfterArrowRight: true,
                         },
                         {
                           label: 'Last Meeting',
@@ -4293,6 +4317,8 @@ export default function TapitasLeagueHomepage() {
                           subRight: selectedRivalry.lastMeeting?.meta || '',
                           leftLead: leftLastMeetingLead,
                           rightLead: rightLastMeetingLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
                         },
                         {
                           label: 'Current Streak',
@@ -4302,6 +4328,8 @@ export default function TapitasLeagueHomepage() {
                           subRight: '',
                           leftLead: leftStreakLead,
                           rightLead: rightStreakLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
                         },
                         {
                           label: 'Avg Margin',
@@ -4311,21 +4339,23 @@ export default function TapitasLeagueHomepage() {
                           subRight: '',
                           leftLead: leftAvgMarginLead,
                           rightLead: rightAvgMarginLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
                         },
                       ].map((item, idx, arr) => (
                         <div key={item.label}>
-                          <div className="grid grid-cols-[minmax(0,1fr)_84px_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] sm:gap-4">
+                          <div className="grid grid-cols-[minmax(0,1fr)_minmax(62px,max-content)_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(84px,max-content)_minmax(0,1fr)] sm:gap-4">
                             <div className="min-w-0 text-left">
                               <div
-                                className={`break-words text-[24px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                className={`whitespace-nowrap text-[24px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
                                   }`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
                                 {item.left}
                               </div>
                               {item.subLeft ? (
-                                <div className="mt-1 break-words text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
-                                  {item.subLeft}
+                                <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                  {item.breakAfterArrowLeft ? formatRangeWithResponsiveBreak(item.subLeft) : item.subLeft}
                                 </div>
                               ) : null}
                             </div>
@@ -4338,15 +4368,15 @@ export default function TapitasLeagueHomepage() {
 
                             <div className="min-w-0 text-right">
                               <div
-                                className={`break-words text-[24px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                className={`whitespace-nowrap text-[24px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
                                   }`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
                                 {item.right}
                               </div>
                               {item.subRight ? (
-                                <div className="mt-1 break-words text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
-                                  {item.subRight}
+                                <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                  {item.breakAfterArrowRight ? formatRangeWithResponsiveBreak(item.subRight) : item.subRight}
                                 </div>
                               ) : null}
                             </div>
