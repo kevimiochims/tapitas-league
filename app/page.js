@@ -3445,7 +3445,7 @@ export default function TapitasLeagueHomepage() {
                 <div className="flex items-center gap-1 sm:hidden">
                   <button
                     type="button"
-                    onClick={() => setNewsPage((p) => Math.max(0, p - 1))}
+                    onClick={() => goNewsPage(-1)}
                     disabled={newsPage === 0}
                     className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
                   >
@@ -3458,7 +3458,7 @@ export default function TapitasLeagueHomepage() {
 
                   <button
                     type="button"
-                    onClick={() => setNewsPage((p) => Math.min(newsTotalPages - 1, p + 1))}
+                    onClick={() => goNewsPage(1)}
                     disabled={newsPage >= newsTotalPages - 1}
                     className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
                   >
@@ -3469,6 +3469,8 @@ export default function TapitasLeagueHomepage() {
             </div>
           </div>
 
+
+          {/* ── CONTEUDO ------ */}
           {newsLoading ? (
             <div className="py-10 text-center text-sm font-bold text-slate-300">
               Carregando...
@@ -3479,47 +3481,93 @@ export default function TapitasLeagueHomepage() {
             </div>
           ) : (
             <>
-              <div className="block sm:hidden px-4 pb-4">
-                {featuredNewsPosts[newsPage] && (() => {
-                  const post = featuredNewsPosts[newsPage]
-                  const s = CATEGORY_STYLE[post.category]
-                  const Icon = s?.icon || Newspaper
+              <div
+                className="block sm:hidden px-4 pb-3"
+                onTouchStart={handleNewsTouchStart}
+                onTouchEnd={handleNewsTouchEnd}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {featuredNewsPosts[newsPage] && (() => {
+                    const post = featuredNewsPosts[newsPage]
+                    const s = CATEGORY_STYLE[post.category]
+                    const Icon = s?.icon || Newspaper
 
-                  return (
-                    <a
-                      href={`/news/${post.slug}`}
-                      className="group block overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:bg-white/[0.05] hover:border-white/12"
-                    >
-                      {post.imageUrl && (
-                        <div className="h-44 w-full overflow-hidden rounded-t-[24px]">
-                          <img
-                            src={post.imageUrl.split('|')[0]}
-                            alt={post.title}
-                            className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                          />
-                        </div>
-                      )}
-
-                      <div className="p-4">
-                        {post.category && s && (
-                          <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}>
-                            <Icon className="h-3 w-3" />
-                            {post.category}
+                    return (
+                      <motion.a
+                        key={post.id || `${post.slug}-${newsPage}`}
+                        href={`/news/${post.slug}`}
+                        initial={{
+                          opacity: 0,
+                          x: newsDirection > 0 ? 28 : -28,
+                          scale: 0.98,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          x: 0,
+                          scale: 1,
+                        }}
+                        exit={{
+                          opacity: 0,
+                          x: newsDirection > 0 ? -28 : 28,
+                          scale: 0.98,
+                        }}
+                        transition={{
+                          duration: 0.26,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="group block overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:bg-white/[0.05] hover:border-white/12"
+                      >
+                        {post.imageUrl && (
+                          <div className="h-44 w-full overflow-hidden rounded-t-[24px]">
+                            <img
+                              src={post.imageUrl.split('|')[0]}
+                              alt={post.title}
+                              className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                            />
                           </div>
                         )}
 
-                        <h3 className="text-[16px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300">
-                          {post.title}
-                        </h3>
+                        <div className="p-4">
+                          {post.category && s && (
+                            <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}>
+                              <Icon className="h-3 w-3" />
+                              {post.category}
+                            </div>
+                          )}
 
-                        <div className="mt-2 text-[12px] font-bold text-slate-400">
-                          {formatDate(post.date)}
+                          <h3 className="text-[16px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300">
+                            {post.title}
+                          </h3>
+
+                          <div className="mt-2 text-[12px] font-bold text-slate-400">
+                            {formatDate(post.date)}
+                          </div>
                         </div>
-                      </div>
-                    </a>
-                  )
-                })()}
+                      </motion.a>
+                    )
+                  })()}
+                </AnimatePresence>
               </div>
+
+              {newsTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 px-4 pb-4 sm:hidden">
+                  {featuredNewsPosts.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setNewsDirection(i > newsPage ? 1 : -1)
+                        setNewsPage(i)
+                      }}
+                      aria-label={`Go to newsletter item ${i + 1}`}
+                      className={`h-2.5 rounded-full transition-all ${i === newsPage
+                          ? 'w-6 bg-sky-300'
+                          : 'w-2.5 bg-white/20 hover:bg-white/35'
+                        }`}
+                    />
+                  ))}
+                </div>
+              )}
 
               <div className="hidden grid-cols-2 gap-3 px-4 pb-4 sm:grid lg:grid-cols-4 sm:px-5 sm:pb-5">
                 {featuredNewsPosts.map((post, i) => {
