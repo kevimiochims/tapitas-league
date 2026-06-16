@@ -1024,54 +1024,8 @@ export default function TapitasLeagueHomepage() {
     highestScoreTeam: '',
   })
 
-  // ===== STANDINGS =====
-
-  const standingsPageSize = 5
-
-  const standingsTotalPages = useMemo(() => {
-    return Math.max(1, Math.ceil((currentStandings?.length || 0) / standingsPageSize))
-  }, [currentStandings])
-
-  const standingsLeader = useMemo(() => {
-    return (currentStandings || [])[0] || null
-  }, [currentStandings])
-
-  const visibleStandingsRows = useMemo(() => {
-    const base = (currentStandings || []).slice(
-      standingsPage * standingsPageSize,
-      standingsPage * standingsPageSize + standingsPageSize
-    )
-
-    if (standingsPage === 0 && standingsLeader) {
-      return base.filter((row) => row.team !== standingsLeader.team)
-    }
-
-    return base
-  }, [currentStandings, standingsLeader, standingsPage])
-
-  const standingsSectionLabel = useMemo(() => {
-    return standingsPage === 0 ? 'Playoff pace' : 'Chasing the cut'
-  }, [standingsPage])
-
-  useEffect(() => {
-    setStandingsPage(0)
-  }, [currentStandings])
-
-  function getStandingsLeaderMessage(row) {
-    if (!row) return ''
-
-    if (currentWeekLabel === '__final__') {
-      return 'Terminou no topo e fechou a temporada com a melhor campanha'
-    }
-
-    if (currentWeekLabel) {
-      return `Lidera a liga até a Week ${currentWeekLabel}`
-    }
-
-    return 'Abriu a temporada na liderança'
-  }
-
   // ===== CHAMPIONS WALL =====
+  // Adicione este useEffect e estado junto aos outros no componente principal
 
   const [championsData, setChampionsData] = useState([])
 
@@ -2993,7 +2947,7 @@ export default function TapitasLeagueHomepage() {
                   visiblePrRows.map((row, i) => {
                     const avatar = getTeamAvatar(row.team)
                     const globalIndex = prPage * prPageSize + i
-                    const isTop3 = globalIndex < 2
+                    const isTop3 = globalIndex < 3
 
                     const trendText =
                       row.delta > 0
@@ -3080,8 +3034,7 @@ export default function TapitasLeagueHomepage() {
 
           {/* Current Standings */}
           <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
-            {/* ── HEADER ──── */}
-            <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
+            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
                   <BarChart2 className="h-5 w-5 text-cyan-300" />
@@ -3089,7 +3042,7 @@ export default function TapitasLeagueHomepage() {
 
                 <div className="min-w-0">
                   <div
-                    className="truncate uppercase leading-none text-cyan-300"
+                    className="uppercase leading-none text-white"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
                       fontSize: '24px',
@@ -3100,7 +3053,7 @@ export default function TapitasLeagueHomepage() {
                     Standings
                   </div>
 
-                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
                     {currentSeason
                       ? currentWeekLabel === '__final__'
                         ? `${currentSeason} · Final Standings`
@@ -3112,146 +3065,45 @@ export default function TapitasLeagueHomepage() {
                 </div>
               </div>
 
-              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
-                <a
-                  href="/standings"
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                >
-                  Ver tudo
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </a>
-
-                {standingsTotalPages > 1 && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
-                      disabled={standingsPage === 0}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronLeft className="h-3 w-3" />
-                    </button>
-
-                    <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300">
-                      {standingsPage + 1}/{standingsTotalPages}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setStandingsPage((p) => Math.min(standingsTotalPages - 1, p + 1))}
-                      disabled={standingsPage >= standingsTotalPages - 1}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronRight className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
+              <a
+                href="/standings"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+              >
+                Ver tudo
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
             </div>
 
-            {/* ── DESTAQUE DE MELHOR TIME ──── */}
-            {standingsLeader && currentStandings.length > 0 && (
-              <a
-                href={`/teams?team=${encodeURIComponent(standingsLeader.team)}`}
-                className="mx-4 mb-4 flex items-center gap-4 rounded-[26px] border border-cyan-300/18 bg-[linear-gradient(135deg,rgba(18,50,68,0.98),rgba(10,18,35,0.99))] px-4 py-4 text-white shadow-[0_12px_28px_rgba(34,211,238,0.10)] transition-all hover:-translate-y-[1px] sm:mx-5"
-              >
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-cyan-300/25 bg-cyan-300/12 font-black text-cyan-200">
-                  <span
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '28px',
-                      lineHeight: 1,
-                    }}
-                  >
-                    1
-                  </span>
-                </div>
-
-                {getTeamAvatar(standingsLeader.team) ? (
-                  <img
-                    src={getTeamAvatar(standingsLeader.team)}
-                    alt={standingsLeader.team}
-                    className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover ring-1 ring-white/10"
-                  />
-                ) : (
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
-                    {standingsLeader.team.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="truncate text-[16px] font-black tracking-[0.01em] text-white">
-                      {standingsLeader.team}
-                    </div>
-
-                    <span className="rounded-full border border-cyan-500 bg-cyan-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white">
-                      Best record
-                    </span>
-                  </div>
-
-                  <div className="mt-1 text-[11px] font-bold text-cyan-100/90">
-                    {getStandingsLeaderMessage(standingsLeader)}
-                  </div>
-                </div>
-
-                <div className="flex flex-shrink-0 flex-col items-end text-right">
-                  <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                    <span className="text-sm font-black text-emerald-400 sm:text-lg">
-                      {parseNumber(standingsLeader.w)}W
-                    </span>
-                    <span className="text-xs text-white/25">·</span>
-                    <span className="text-sm font-black text-rose-400 sm:text-lg">
-                      {parseNumber(standingsLeader.l)}L
-                    </span>
-                  </div>
-
-                  <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200/75 sm:text-[11px]">
-                    {Math.round(Number(standingsLeader?.pf ?? 0))} pts
-                  </div>
-                </div>
-              </a>
-            )}
-
-            {/* ── LABEL DA SEÇÃO ──── */}
-            {currentStandings.length > 0 && visibleStandingsRows.length > 0 && (
-              <div className="px-4 pb-2 sm:px-5">
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-                  {standingsSectionLabel}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2.5 px-4 pb-4 sm:space-y-3 sm:px-5 sm:pb-5">
+            <div className="space-y-2.5 sm:space-y-3">
               {currentStandings.length === 0 ? (
                 <div className="py-8 text-center text-sm font-bold text-slate-300">
                   Carregando...
                 </div>
               ) : (
-                visibleStandingsRows.map((row, i) => {
+                currentStandings.slice(0, 10).map((row, i) => {
                   const avatar = getTeamAvatar(row.team)
-                  const globalIndex = standingsPage * standingsPageSize + i + (standingsPage === 0 && standingsLeader ? 1 : 0)
-                  const isPlayoffRange = globalIndex < 6
 
                   return (
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className={`flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] ${isPlayoffRange
-                        ? 'border-cyan-300/12 bg-[linear-gradient(160deg,rgba(18,36,56,0.98),rgba(10,18,35,0.99))]'
-                        : 'border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
-                        }`}
+                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                     >
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/5">
+                      <div className="flex w-8 flex-shrink-0 justify-center">
                         <span
                           className="text-center font-black leading-none"
                           style={{
                             fontFamily: '"Bebas Neue", sans-serif',
-                            fontSize: '22px',
-                            color: isPlayoffRange ? '#a5f3fc' : '#cbd5e1',
+                            fontSize: '24px',
+                            color:
+                              i === 0
+                                ? '#ffffff'
+                                : i <= 3
+                                  ? '#dbe7ff'
+                                  : '#7b95bf',
                           }}
                         >
-                          {globalIndex + 1}
+                          {i + 1}
                         </span>
                       </div>
 
@@ -3270,10 +3122,6 @@ export default function TapitasLeagueHomepage() {
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[15px] font-black tracking-[0.01em] text-white">
                           {row.team}
-                        </div>
-
-                        <div className="mt-0.5 text-[11px] font-bold text-slate-400">
-                          {isPlayoffRange ? 'Dentro da zona de playoffs' : 'Na perseguição por vaga'}
                         </div>
                       </div>
 

@@ -539,7 +539,6 @@ function buildPlayerLookup(rows) {
   rows.forEach((row) => {
     const playerId = String(row?.player_id || '').trim()
     const fullName = String(row?.full_name || '').trim()
-    const shortName = String(row?.name || '').trim()
     const firstName = String(row?.first_name || '').trim()
     const lastName = String(row?.last_name || '').trim()
     const team = String(row?.team || '').trim()
@@ -547,13 +546,7 @@ function buildPlayerLookup(rows) {
 
     if (!playerId) return
 
-    const entry = {
-      playerId,
-      team,
-      pos,
-      fullName,
-      shortName,
-    }
+    const entry = { playerId, team, pos, fullName }
 
       ;[fullName, `${firstName} ${lastName}`, row?.search_full_name].forEach((value) => {
         const key = normalizePlayerKey(value)
@@ -572,84 +565,48 @@ function getPlayerDataByFullName(name, playerLookup) {
   return playerLookup.get(key) || null
 }
 
-function DraftPickTile({ pick, playerLookup }) {
+function DraftPickPlayerAvatar({ name, playerLookup, size = 36 }) {
   const [photoFailed, setPhotoFailed] = useState(false)
 
-  const data = getPlayerDataByFullName(pick.player, playerLookup)
+  const data = getPlayerDataByFullName(name, playerLookup)
   const playerId = data?.playerId
-  const shortName = data?.shortName || pick.player
+
+  useEffect(() => {
+    setPhotoFailed(false)
+  }, [name, playerId])
+
   const photoSrc =
     !photoFailed && playerId
       ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
       : null
 
-  useEffect(() => {
-    setPhotoFailed(false)
-  }, [pick.player, playerId])
-
-  const posColor =
-    POS_COLORS[pick.position] || 'text-slate-200 border-white/10 bg-white/8'
-
-  return (
-    <div className="w-[106px] flex-shrink-0 snap-start">
-      <a
-        href={`/teams?team=${encodeURIComponent(pick.team)}`}
-        className="group block"
-      >
-        <div className="relative mx-auto h-[88px] w-[88px]">
-          <div className="h-full w-full overflow-hidden rounded-full bg-slate-200/90 ring-1 ring-white/10">
-            {photoSrc ? (
-              <img
-                src={photoSrc}
-                alt={shortName}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                onError={() => setPhotoFailed(true)}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-white/10 text-lg font-black text-white">
-                {String(shortName)
-                  .split(' ')
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((part) => part[0])
-                  .join('')
-                  .toUpperCase() || '?'}
-              </div>
-            )}
-          </div>
-
-          <div className="absolute left-0 top-0 rounded-full border border-black bg-black px-2 py-1 text-[10px] font-black leading-none text-white shadow-lg">
-            #{pick.pick}
-          </div>
-
-          <div
-            className={`absolute bottom-[-6px] left-1/2 -translate-x-1/2 rounded-xl border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] shadow-lg ${posColor}`}
-          >
-            {pick.position || '—'}
-          </div>
-        </div>
-
-        <div className="mt-4 text-center">
-          <div className="truncate text-[14px] font-black tracking-[-0.01em] text-white">
-            {shortName}
-          </div>
-
-          <div className="mt-1 flex items-center justify-center gap-1.5 text-[10px] font-bold text-slate-400">
-            {getTeamAvatar(pick.team) ? (
-              <img
-                src={getTeamAvatar(pick.team)}
-                alt={pick.team}
-                className="h-3.5 w-3.5 flex-shrink-0 rounded-md object-cover opacity-90"
-              />
-            ) : null}
-            <span className="truncate">{pick.team}</span>
-          </div>
-        </div>
-      </a>
+  return photoSrc ? (
+    <img
+      src={photoSrc}
+      alt={name}
+      className="flex-shrink-0 rounded-[14px] object-cover"
+      width={size}
+      height={size}
+      style={{ width: size, height: size }}
+      onError={() => setPhotoFailed(true)}
+    />
+  ) : (
+    <div
+      className="flex flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-[9px] font-black text-slate-100"
+      style={{ width: size, height: size }}
+      aria-label={name}
+      title={name}
+    >
+      {String(name || '?')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase() || '?'}
     </div>
   )
 }
-
 
 function buildSeasonRanges(years) {
   if (!years || years.length === 0) return ''
@@ -892,13 +849,12 @@ const QUICK_NAV = [
 ]
 
 const POS_COLORS = {
-  QB: 'text-white border-red-500 bg-red-500',
-  RB: 'text-white border-emerald-500 bg-emerald-500',
-  WR: 'text-white border-blue-500 bg-blue-500',
-  TE: 'text-white border-yellow-500 bg-yellow-500',
-  K: 'text-white border-violet-500 bg-violet-500',
-  DEF: 'text-white border-orange-500 bg-orange-500',
-  BN: 'text-white border-slate-600 bg-slate-600',
+  QB: 'text-red-400 border-red-400/25 bg-red-400/10',
+  RB: 'text-emerald-400 border-emerald-400/25 bg-emerald-400/10',
+  WR: 'text-cyan-400 border-cyan-400/25 bg-cyan-400/10',
+  TE: 'text-orange-400 border-orange-400/25 bg-orange-400/10',
+  K: 'text-slate-400 border-slate-400/25 bg-slate-400/10',
+  DEF: 'text-purple-400 border-purple-400/25 bg-purple-400/10',
 }
 
 function parseBiggestWin(value) {
@@ -931,20 +887,6 @@ function parseBestStreak(value) {
   return { result: countMatch[1].toUpperCase(), count: countMatch[2], start, end }
 }
 
-function getPrLeaderMessage(row) {
-  if (!row) return ''
-
-  if (row.delta > 0) {
-    return `Reached the top spot climbing ${Math.abs(row.delta)} ${Math.abs(row.delta) === 1 ? 'position' : 'positions'}`
-  }
-
-  if (row.delta < 0) {
-    return 'Still holds the lead despite pressure this week'
-  }
-
-  return 'Still on Top '
-}
-
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
@@ -971,9 +913,7 @@ export default function TapitasLeagueHomepage() {
   const [draftSeason, setDraftSeason] = useState('')
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
   const [playerLookup, setPlayerLookup] = useState(new Map())
-  const [selectedDraftRound, setSelectedDraftRound] = useState(1)
-  const [prPage, setPrPage] = useState(0)
-  const draftScrollRef = useRef(null)
+
   const touchStartX = useRef(null);
   const totalSlides = 3;
 
@@ -1024,54 +964,8 @@ export default function TapitasLeagueHomepage() {
     highestScoreTeam: '',
   })
 
-  // ===== STANDINGS =====
-
-  const standingsPageSize = 5
-
-  const standingsTotalPages = useMemo(() => {
-    return Math.max(1, Math.ceil((currentStandings?.length || 0) / standingsPageSize))
-  }, [currentStandings])
-
-  const standingsLeader = useMemo(() => {
-    return (currentStandings || [])[0] || null
-  }, [currentStandings])
-
-  const visibleStandingsRows = useMemo(() => {
-    const base = (currentStandings || []).slice(
-      standingsPage * standingsPageSize,
-      standingsPage * standingsPageSize + standingsPageSize
-    )
-
-    if (standingsPage === 0 && standingsLeader) {
-      return base.filter((row) => row.team !== standingsLeader.team)
-    }
-
-    return base
-  }, [currentStandings, standingsLeader, standingsPage])
-
-  const standingsSectionLabel = useMemo(() => {
-    return standingsPage === 0 ? 'Playoff pace' : 'Chasing the cut'
-  }, [standingsPage])
-
-  useEffect(() => {
-    setStandingsPage(0)
-  }, [currentStandings])
-
-  function getStandingsLeaderMessage(row) {
-    if (!row) return ''
-
-    if (currentWeekLabel === '__final__') {
-      return 'Terminou no topo e fechou a temporada com a melhor campanha'
-    }
-
-    if (currentWeekLabel) {
-      return `Lidera a liga até a Week ${currentWeekLabel}`
-    }
-
-    return 'Abriu a temporada na liderança'
-  }
-
   // ===== CHAMPIONS WALL =====
+  // Adicione este useEffect e estado junto aos outros no componente principal
 
   const [championsData, setChampionsData] = useState([])
 
@@ -1501,29 +1395,21 @@ export default function TapitasLeagueHomepage() {
 
         // ── Draft picks ───────────────────────────────────────────────────────
         if (draftData.length > 0) {
-          const draftSeasons = [...new Set(draftData.map((r) => String(r?.Season).trim()).filter(Boolean))].sort(
-            (a, b) => Number(a) - Number(b)
-          )
-
+          const draftSeasons = [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
+            .sort((a, b) => Number(a) - Number(b))
           const lastDraftSeason = draftSeasons[draftSeasons.length - 1]
-
           const picks = draftData
-            .filter((r) => String(r?.Season).trim() === lastDraftSeason)
-            .map((r) => ({
+            .filter(r => String(r?.Season || '').trim() === lastDraftSeason)
+            .map(r => ({
               pick: parseNumber(r?.Pick || r?.Overall || 0),
-              round: parseNumber(r?.Round || r?.Rd || 0),
+              round: parseNumber(r?.Round || 0),
               team: String(r?.Team || '').trim(),
               player: String(r?.Player || r?.Name || '').trim(),
               position: String(r?.Position || r?.Pos || '').trim().toUpperCase(),
             }))
-            .filter((r) => r.player && r.player !== '')
+            .filter(r => r.player && r.player !== '')
             .sort((a, b) => a.pick - b.pick)
-
-          if (mounted) {
-            setDraftPicks(picks)
-            setDraftSeason(lastDraftSeason)
-            setSelectedDraftRound(1)
-          }
+          if (mounted) { setDraftPicks(picks.slice(0, 10)); setDraftSeason(lastDraftSeason) }
         }
       } catch (e) { console.error(e) }
       finally { if (mounted) setPrLoading(false) }
@@ -1531,62 +1417,6 @@ export default function TapitasLeagueHomepage() {
     loadExtra()
     return () => { mounted = false }
   }, [])
-
-  const draftRounds = useMemo(() => {
-    return [...new Set(draftPicks.map((p) => p.round).filter((r) => r > 0))].sort((a, b) => a - b)
-  }, [draftPicks])
-
-  const visibleDraftPicks = useMemo(() => {
-    const picksInRound = draftPicks.filter((p) => p.round === selectedDraftRound)
-    return picksInRound.slice(0, 10)
-  }, [draftPicks, selectedDraftRound])
-
-  const canGoDraftPrev = draftRounds.indexOf(selectedDraftRound) > 0
-  const canGoDraftNext = draftRounds.indexOf(selectedDraftRound) < draftRounds.length - 1
-
-  function goDraftRound(direction) {
-    const currentIndex = draftRounds.indexOf(selectedDraftRound)
-    if (currentIndex === -1) return
-
-    const nextIndex = currentIndex + direction
-    if (nextIndex < 0 || nextIndex >= draftRounds.length) return
-
-    setSelectedDraftRound(draftRounds[nextIndex])
-  }
-
-  const prPageSize = 5
-
-  const prTotalPages = useMemo(() => {
-    return Math.max(1, Math.ceil((prData?.length || 0) / prPageSize))
-  }, [prData])
-
-  const visiblePrData = useMemo(() => {
-    return (prData || []).slice(prPage * prPageSize, prPage * prPageSize + prPageSize)
-  }, [prData, prPage])
-
-  useEffect(() => {
-    setPrPage(0)
-  }, [prData])
-
-  const prLeader = useMemo(() => {
-    return (prData || []).find((row) => Number(row.rank) === 1) || (prData || [])[0] || null
-  }, [prData])
-
-  const visiblePrRows = useMemo(() => {
-    const base = (prData || []).slice(prPage * prPageSize, prPage * prPageSize + prPageSize)
-
-    if (prPage === 0 && prLeader) {
-      return base.filter((row) => row.team !== prLeader.team)
-    }
-
-    return base
-  }, [prData, prPage, prPageSize, prLeader])
-
-  const prSectionLabel = useMemo(() => {
-    if (prPage === 0) return 'Top contenders'
-    if (prPage === 1) return 'Chasing the top'
-    return 'More rankings'
-  }, [prPage])
 
   const standings = useMemo(() => {
     const base =
@@ -1765,17 +1595,6 @@ export default function TapitasLeagueHomepage() {
       bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || '—'),
     }
   }, [h2hData, selectedTeamA, selectedTeamB])
-
-  useEffect(() => {
-    if (!draftScrollRef.current) return
-
-    const isDesktop = window.matchMedia('(min-width: 768px)').matches
-
-    draftScrollRef.current.scrollTo({
-      left: 0,
-      behavior: isDesktop ? 'auto' : 'smooth',
-    })
-  }, [selectedDraftRound])
 
   useEffect(() => {
     if (!drawerOpen || seasonSummary) return
@@ -2707,10 +2526,10 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.5 }}
-          className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
+          className="mb-8 grid grid-cols-2 gap-2 lg:grid-cols-4"
         >
           {[
-            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'Current', color: 'cyan' },
+            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'All-time', color: 'cyan' },
             { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple' },
             { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-time', color: 'emerald' },
             { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, color: 'orange' },
@@ -2740,7 +2559,7 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.4 }}
-          className="mb-4 mt-4"
+          className="mb-8 mt-4"
         >
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
@@ -2753,24 +2572,23 @@ export default function TapitasLeagueHomepage() {
           </div>
         </motion.div>
 
-        {/* DRAFT — scrolling picks feed */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.15 }}
-          transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="mb-4"
+        {/* ── POWER RANKINGS + STANDINGS ─────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-8 flex flex-col gap-4 xl:flex-row"
         >
-          <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-            <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
+          {/* Power Rankings */}
+          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
+            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <ScrollText className="h-5 w-5 text-pink-300" />
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  <TrendingUp className="h-5 w-5 text-emerald-300" />
                 </div>
 
                 <div className="min-w-0">
                   <div
-                    className="truncate uppercase leading-none text-pink-300"
+                    className="uppercase leading-none text-white"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
                       fontSize: '24px',
@@ -2778,310 +2596,104 @@ export default function TapitasLeagueHomepage() {
                       fontWeight: 900,
                     }}
                   >
-                    Last Draft
+                    Power Rankings
                   </div>
 
-                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                    Draft {draftSeason}
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
+                    {currentSeason ? `${currentSeason} · Latest week` : 'Carregando...'}
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
-                <a
-                  href="/draft"
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                >
-                  Ver tudo
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </a>
-
-                {draftRounds.length > 1 && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => goDraftRound(-1)}
-                      disabled={!canGoDraftPrev}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronLeft className="h-3 w-3" />
-                    </button>
-
-                    <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-pink-300">
-                      R{selectedDraftRound}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => goDraftRound(1)}
-                      disabled={!canGoDraftNext}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronRight className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-              <div
-                ref={draftScrollRef}
-                className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              <a
+                href="/powerrankings"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
               >
-                <div className="flex min-w-max gap-4 snap-x snap-mandatory pr-2 md:mx-auto md:w-fit md:min-w-0 md:justify-center">
-                  {visibleDraftPicks.map((pick, i) => (
-                    <DraftPickTile
-                      key={`${pick.pick}-${pick.player}-${i}`}
-                      pick={pick}
-                      playerLookup={playerLookup}
-                    />
-                  ))}
-                </div>
-              </div>
+                Ver tudo
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
             </div>
-          </div>
-        </motion.section>
 
-        {/* ── POWER RANKINGS + STANDINGS ─────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }} whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.06 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 flex flex-col gap-4 xl:flex-row"
-        >
-          {/* Power Rankings */}
-          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
-            <div className="flex h-full flex-col">
-              <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                    <TrendingUp className="h-5 w-5 text-emerald-300" />
-                  </div>
+            <div className="space-y-2.5 sm:space-y-3">
+              {prLoading ? (
+                <div className="py-8 text-center text-sm font-bold text-white/82">
+                  Carregando...
+                </div>
+              ) : (
+                prData.map((row, i) => {
+                  const avatar = getTeamAvatar(row.team)
 
-                  <div className="min-w-0">
-                    <div
-                      className="truncate uppercase leading-none text-emerald-300"
-                      style={{
-                        fontFamily: '"Bebas Neue", sans-serif',
-                        fontSize: '24px',
-                        letterSpacing: '0.075em',
-                        fontWeight: 900,
-                      }}
+                  return (
+                    <a
+                      key={row.team}
+                      href={`/teams?team=${encodeURIComponent(row.team)}`}
+                      className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                     >
-                      Power Rankings
-                    </div>
-
-                    <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                      {currentSeason ? `${currentSeason} · Latest week` : 'Carregando...'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
-                  <a
-                    href="/powerrankings"
-                    className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                  >
-                    Ver tudo
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </a>
-
-                  {prTotalPages > 1 && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setPrPage((p) => Math.max(0, p - 1))}
-                        disabled={prPage === 0}
-                        className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                      >
-                        <ChevronLeft className="h-3 w-3" />
-                      </button>
-
-                      <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-emerald-300">
-                        {prPage + 1}/{prTotalPages}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setPrPage((p) => Math.min(prTotalPages - 1, p + 1))}
-                        disabled={prPage >= prTotalPages - 1}
-                        className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                      >
-                        <ChevronRight className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {!prLoading && prLeader && (
-                <a
-                  href={`/teams?team=${encodeURIComponent(prLeader.team)}`}
-                  className="mx-4 mb-4 flex items-center gap-4 rounded-[26px] border border-emerald-300/18 bg-[linear-gradient(135deg,rgba(28,54,52,0.98),rgba(10,18,35,0.99))] px-4 py-4 text-white shadow-[0_12px_28px_rgba(16,185,129,0.10)] transition-all hover:-translate-y-[1px] sm:mx-5"
-                >
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-emerald-300/25 bg-emerald-300/12 font-black text-emerald-200">
-                    <span
-                      style={{
-                        fontFamily: '"Bebas Neue", sans-serif',
-                        fontSize: '28px',
-                        lineHeight: 1,
-                      }}
-                    >
-                      #1
-                    </span>
-                  </div>
-
-                  {getTeamAvatar(prLeader.team) ? (
-                    <img
-                      src={getTeamAvatar(prLeader.team)}
-                      alt={prLeader.team}
-                      className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover ring-1 ring-white/10"
-                    />
-                  ) : (
-                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
-                      {prLeader.team.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="truncate text-[16px] font-black tracking-[0.01em] text-white">
-                        {prLeader.team}
-                      </div>
-
-                      <span className="rounded-full border border-emerald-500 bg-emerald-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white">
-                        Leader
-                      </span>
-                    </div>
-
-                    <div className="mt-1 text-[11px] font-bold text-emerald-100/90">
-                      {getPrLeaderMessage(prLeader)}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white">
-                    {prLeader.delta > 0 ? (
-                      <TrendingUp className="h-3.5 w-3.5 text-emerald-300" />
-                    ) : prLeader.delta < 0 ? (
-                      <TrendingDown className="h-3.5 w-3.5 text-rose-300" />
-                    ) : (
-                      <Minus className="h-3.5 w-3.5 text-slate-300" />
-                    )}
-                    {prLeader.delta > 0
-                      ? `+${Math.abs(prLeader.delta)}`
-                      : prLeader.delta < 0
-                        ? `-${Math.abs(prLeader.delta)}`
-                        : '0'}
-                  </div>
-                </a>
-              )}
-
-              {!prLoading && visiblePrRows.length > 0 && (
-                <div className="px-4 pb-2 sm:px-5">
-                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-                    {prSectionLabel}
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2.5 px-4 pb-4 sm:space-y-3 sm:px-5 sm:pb-5">
-                {prLoading ? (
-                  <div className="py-8 text-center text-sm font-bold text-white/82">
-                    Carregando...
-                  </div>
-                ) : (
-                  visiblePrRows.map((row, i) => {
-                    const avatar = getTeamAvatar(row.team)
-                    const globalIndex = prPage * prPageSize + i
-                    const isTop3 = globalIndex < 2
-
-                    const trendText =
-                      row.delta > 0
-                        ? `Climbed ${Math.abs(row.delta)} ${Math.abs(row.delta) === 1 ? 'position' : 'positions'}`
-                        : row.delta < 0
-                          ? `Dropped ${Math.abs(row.delta)} ${Math.abs(row.delta) === 1 ? 'position' : 'positions'}`
-                          : 'Remained stable'
-
-                    const trendChip =
-                      row.delta > 0
-                        ? {
-                          label: 'HOT',
-                          className: 'border-emerald-500 bg-emerald-500 text-white',
-                          icon: <TrendingUp className="h-3.5 w-3.5" />,
-                        }
-                        : row.delta < 0
-                          ? {
-                            label: 'DOWN',
-                            className: 'border-rose-500 bg-rose-500 text-white',
-                            icon: <TrendingDown className="h-3.5 w-3.5" />,
-                          }
-                          : {
-                            label: 'EVEN',
-                            className: 'border-slate-500 bg-slate-500 text-white',
-                            icon: <Minus className="h-3.5 w-3.5" />,
-                          }
-
-                    return (
-                      <a
-                        key={`${row.team}-${globalIndex}`}
-                        href={`/teams?team=${encodeURIComponent(row.team)}`}
-                        className={`group flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] ${isTop3
-                          ? 'border-emerald-300/16 bg-[linear-gradient(160deg,rgba(24,48,54,0.98),rgba(10,18,35,0.99))]'
-                          : 'border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
-                          }`}
-                      >
-                        <div
-                          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border font-black ${isTop3
-                            ? 'border-emerald-300/25 bg-emerald-300/12 text-emerald-200'
-                            : 'border-white/10 bg-white/5 text-slate-200'
-                            }`}
-                          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px' }}
+                      <div className="flex w-8 flex-shrink-0 justify-center">
+                        <span
+                          className="text-center font-black leading-none"
+                          style={{
+                            fontFamily: '"Bebas Neue", sans-serif',
+                            fontSize: '24px',
+                            color:
+                              i === 0
+                                ? '#ffffff'
+                                : i <= 1
+                                  ? '#dbe7ff'
+                                  : i <= 3
+                                    ? '#b4cbed'
+                                    : '#89a3c8',
+                          }}
                         >
                           {row.rank}
-                        </div>
+                        </span>
+                      </div>
 
-                        {avatar ? (
-                          <img
-                            src={avatar}
-                            alt={row.team}
-                            className="h-10 w-10 flex-shrink-0 rounded-[16px] object-cover"
-                          />
+                      {avatar ? (
+                        <img
+                          src={avatar}
+                          alt={row.team}
+                          className="h-10 w-10 flex-shrink-0 rounded-[16px] object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[16px] border border-cyan-100/16 bg-white/8 text-[10px] font-black text-cyan-50">
+                          {row.team.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[15px] font-black tracking-[0.01em] text-white">
+                          {row.team}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`flex min-w-[34px] items-center justify-end gap-1 text-xs font-black ${row.delta > 0
+                          ? 'text-emerald-300'
+                          : row.delta < 0
+                            ? 'text-rose-300'
+                            : 'text-slate-300'
+                          }`}
+                      >
+                        {row.delta > 0 ? (
+                          <TrendingUp className="h-3.5 w-3.5" />
+                        ) : row.delta < 0 ? (
+                          <TrendingDown className="h-3.5 w-3.5" />
                         ) : (
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/8 text-[10px] font-black text-cyan-50">
-                            {row.team.slice(0, 2).toUpperCase()}
-                          </div>
+                          <Minus className="h-3.5 w-3.5" />
                         )}
-
-                        <div className="min-w-0 flex-1">
-                          <div className={`truncate text-[15px] font-black tracking-[0.01em] ${isTop3 ? 'text-emerald-50' : 'text-white'}`}>
-                            {row.team}
-                          </div>
-
-                          <div className="mt-0.5 text-[11px] font-bold text-slate-400">
-                            {trendText}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-shrink-0 items-center gap-2">
-                          <div
-                            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${trendChip.className}`}
-                          >
-                            {trendChip.icon}
-                            {trendChip.label}
-                          </div>
-                        </div>
-                      </a>
-                    )
-                  })
-                )}
-              </div>
+                        {row.delta !== 0 ? Math.abs(row.delta) : ''}
+                      </span>
+                    </a>
+                  )
+                })
+              )}
             </div>
           </div>
 
           {/* Current Standings */}
           <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
-            {/* ── HEADER ──── */}
-            <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
+            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
                   <BarChart2 className="h-5 w-5 text-cyan-300" />
@@ -3089,7 +2701,7 @@ export default function TapitasLeagueHomepage() {
 
                 <div className="min-w-0">
                   <div
-                    className="truncate uppercase leading-none text-cyan-300"
+                    className="uppercase leading-none text-white"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
                       fontSize: '24px',
@@ -3100,7 +2712,7 @@ export default function TapitasLeagueHomepage() {
                     Standings
                   </div>
 
-                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
                     {currentSeason
                       ? currentWeekLabel === '__final__'
                         ? `${currentSeason} · Final Standings`
@@ -3112,146 +2724,45 @@ export default function TapitasLeagueHomepage() {
                 </div>
               </div>
 
-              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
-                <a
-                  href="/standings"
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                >
-                  Ver tudo
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </a>
-
-                {standingsTotalPages > 1 && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
-                      disabled={standingsPage === 0}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronLeft className="h-3 w-3" />
-                    </button>
-
-                    <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300">
-                      {standingsPage + 1}/{standingsTotalPages}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setStandingsPage((p) => Math.min(standingsTotalPages - 1, p + 1))}
-                      disabled={standingsPage >= standingsTotalPages - 1}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronRight className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
+              <a
+                href="/standings"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+              >
+                Ver tudo
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
             </div>
 
-            {/* ── DESTAQUE DE MELHOR TIME ──── */}
-            {standingsLeader && currentStandings.length > 0 && (
-              <a
-                href={`/teams?team=${encodeURIComponent(standingsLeader.team)}`}
-                className="mx-4 mb-4 flex items-center gap-4 rounded-[26px] border border-cyan-300/18 bg-[linear-gradient(135deg,rgba(18,50,68,0.98),rgba(10,18,35,0.99))] px-4 py-4 text-white shadow-[0_12px_28px_rgba(34,211,238,0.10)] transition-all hover:-translate-y-[1px] sm:mx-5"
-              >
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-cyan-300/25 bg-cyan-300/12 font-black text-cyan-200">
-                  <span
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '28px',
-                      lineHeight: 1,
-                    }}
-                  >
-                    1
-                  </span>
-                </div>
-
-                {getTeamAvatar(standingsLeader.team) ? (
-                  <img
-                    src={getTeamAvatar(standingsLeader.team)}
-                    alt={standingsLeader.team}
-                    className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover ring-1 ring-white/10"
-                  />
-                ) : (
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
-                    {standingsLeader.team.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="truncate text-[16px] font-black tracking-[0.01em] text-white">
-                      {standingsLeader.team}
-                    </div>
-
-                    <span className="rounded-full border border-cyan-500 bg-cyan-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white">
-                      Best record
-                    </span>
-                  </div>
-
-                  <div className="mt-1 text-[11px] font-bold text-cyan-100/90">
-                    {getStandingsLeaderMessage(standingsLeader)}
-                  </div>
-                </div>
-
-                <div className="flex flex-shrink-0 flex-col items-end text-right">
-                  <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                    <span className="text-sm font-black text-emerald-400 sm:text-lg">
-                      {parseNumber(standingsLeader.w)}W
-                    </span>
-                    <span className="text-xs text-white/25">·</span>
-                    <span className="text-sm font-black text-rose-400 sm:text-lg">
-                      {parseNumber(standingsLeader.l)}L
-                    </span>
-                  </div>
-
-                  <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200/75 sm:text-[11px]">
-                    {Math.round(Number(standingsLeader?.pf ?? 0))} pts
-                  </div>
-                </div>
-              </a>
-            )}
-
-            {/* ── LABEL DA SEÇÃO ──── */}
-            {currentStandings.length > 0 && visibleStandingsRows.length > 0 && (
-              <div className="px-4 pb-2 sm:px-5">
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-                  {standingsSectionLabel}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2.5 px-4 pb-4 sm:space-y-3 sm:px-5 sm:pb-5">
+            <div className="space-y-2.5 sm:space-y-3">
               {currentStandings.length === 0 ? (
                 <div className="py-8 text-center text-sm font-bold text-slate-300">
                   Carregando...
                 </div>
               ) : (
-                visibleStandingsRows.map((row, i) => {
+                currentStandings.slice(0, 10).map((row, i) => {
                   const avatar = getTeamAvatar(row.team)
-                  const globalIndex = standingsPage * standingsPageSize + i + (standingsPage === 0 && standingsLeader ? 1 : 0)
-                  const isPlayoffRange = globalIndex < 6
 
                   return (
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className={`flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] ${isPlayoffRange
-                        ? 'border-cyan-300/12 bg-[linear-gradient(160deg,rgba(18,36,56,0.98),rgba(10,18,35,0.99))]'
-                        : 'border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
-                        }`}
+                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
                     >
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/5">
+                      <div className="flex w-8 flex-shrink-0 justify-center">
                         <span
                           className="text-center font-black leading-none"
                           style={{
                             fontFamily: '"Bebas Neue", sans-serif',
-                            fontSize: '22px',
-                            color: isPlayoffRange ? '#a5f3fc' : '#cbd5e1',
+                            fontSize: '24px',
+                            color:
+                              i === 0
+                                ? '#ffffff'
+                                : i <= 3
+                                  ? '#dbe7ff'
+                                  : '#7b95bf',
                           }}
                         >
-                          {globalIndex + 1}
+                          {i + 1}
                         </span>
                       </div>
 
@@ -3270,10 +2781,6 @@ export default function TapitasLeagueHomepage() {
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[15px] font-black tracking-[0.01em] text-white">
                           {row.team}
-                        </div>
-
-                        <div className="mt-0.5 text-[11px] font-bold text-slate-400">
-                          {isPlayoffRange ? 'Dentro da zona de playoffs' : 'Na perseguição por vaga'}
                         </div>
                       </div>
 
@@ -3298,17 +2805,17 @@ export default function TapitasLeagueHomepage() {
           whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+          className="mb-8 overflow-hidden bg-[linear-gradient(135deg,#06b6d4_0%,#0891b2_60%,#0e7490_100%)] p-3 shadow-[0_8px_32px_rgba(6,182,212,0.25)]"
         >
           <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                <Newspaper className="h-5 w-5 text-sky-300" />
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-black/20 bg-black/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+                <Newspaper className="h-5 w-5 text-white" />
               </div>
 
               <div className="min-w-0">
                 <div
-                  className="uppercase leading-none text-white"
+                  className="uppercase leading-none text-[rgba(18,30,52,0.98)]"
                   style={{
                     fontFamily: '"Bebas Neue", sans-serif',
                     fontSize: '24px',
@@ -3319,7 +2826,7 @@ export default function TapitasLeagueHomepage() {
                   Newsletter
                 </div>
 
-                <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-white/85 sm:text-sm">
                   Memes, recaps and news
                 </div>
               </div>
@@ -3387,14 +2894,565 @@ export default function TapitasLeagueHomepage() {
           )}
         </motion.div>
 
-        {/* ── LEADERS + RIVALRY ───────────────────────────────────────── */}
+        {/* ── DRAFT PICKS + RECORDS ───────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
           whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
+          className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
+          {/* DRAFT — scrolling picks feed */}
+          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
+            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                  <ScrollText className="h-5 w-5 text-pink-300" />
+                </div>
+
+                <div className="min-w-0">
+                  <div
+                    className="uppercase leading-none text-white"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: '24px',
+                      letterSpacing: '0.075em',
+                      fontWeight: 900,
+                    }}
+                  >
+                    Last Draft
+                  </div>
+
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                    {draftSeason ? `${draftSeason} · First 10 picks` : 'Carregando...'}
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href="/draft"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+              >
+                Draft Board
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
+
+            <div className="space-y-2.5 sm:space-y-3">
+              {draftPicks.length === 0 ? (
+                <div className="py-8 text-center text-sm font-bold text-slate-300">
+                  Carregando...
+                </div>
+              ) : (
+                draftPicks.map((pick, i) => {
+                  const posColor =
+                    POS_COLORS[pick.position] || 'text-slate-200 border-white/10 bg-white/8'
+
+                  return (
+                    <a
+                      key={i}
+                      href={`/teams?team=${encodeURIComponent(pick.team)}`}
+                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                    >
+                      <span
+                        className="w-7 flex-shrink-0 text-center font-black leading-none text-slate-300"
+                        style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '22px' }}
+                      >
+                        {pick.pick}
+                      </span>
+
+                      <DraftPickPlayerAvatar
+                        name={pick.player}
+                        playerLookup={playerLookup}
+                        size={36}
+                      />
+
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[15px] font-black tracking-[-0.01em] text-white">
+                          {pick.player}
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1.5 min-w-0 text-[11px] font-bold text-slate-400">
+                          <span className="truncate">{pick.team}</span>
+                          {getTeamAvatar(pick.team) ? (
+                            <img
+                              src={getTeamAvatar(pick.team)}
+                              alt={pick.team}
+                              className="h-4 w-4 flex-shrink-0 rounded-md object-cover"
+                            />
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`flex-shrink-0 rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${posColor}`}
+                      >
+                        {pick.position || '—'}
+                      </span>
+                    </a>
+                  )
+                })
+              )}
+            </div>
+          </div>
+
+          {/* RECORDS — leaders per category with tied display */}
+          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
+            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  <Zap className="h-5 w-5 text-white" />
+                </div>
+
+                <div className="min-w-0">
+                  <div
+                    className="uppercase leading-none text-white"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: '24px',
+                      letterSpacing: '0.075em',
+                      fontWeight: 900,
+                    }}
+                  >
+                    All-Time Records
+                  </div>
+
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
+                    Best of the best
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href="/records"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+              >
+                Ver tudo
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
+
+            <div className="space-y-2.5 sm:space-y-3">
+              {[
+                { emoji: '🏆', label: 'Most Titles', getter: t => t.titles, fmt: v => v, color: 'text-yellow-300' },
+                { emoji: '📈', label: 'Most Wins', getter: t => t.wins, fmt: v => v, color: 'text-emerald-300' },
+                { emoji: '🔥', label: 'Top Scorer', getter: t => t.pf, fmt: v => Math.round(v) + ' pts', color: 'text-orange-300' },
+                { emoji: '🎯', label: 'Best Win%', getter: t => t.winPct, fmt: v => v + '%', color: 'text-cyan-200' },
+                { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => v, color: 'text-violet-300' },
+                { emoji: '⚔️', label: 'Finals Apps', getter: t => t.finals, fmt: v => v, color: 'text-rose-300' },
+              ].map(({ emoji, label, getter, fmt, color }) => {
+                const leaders = topNTeams(standings, getter, 3)
+                const topVal = leaders[0] ? getter(leaders[0]) : 0
+
+                return (
+                  <div
+                    key={label}
+                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                  >
+
+
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 text-[12px] font-black uppercase tracking-[0.15em] text-cyan-50/72">
+                        {label}
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {leaders.map(t => {
+                          const av = getTeamAvatar(t.team)
+
+                          return (
+                            <a
+                              key={t.team}
+                              href={`/teams?team=${encodeURIComponent(t.team)}`}
+                              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-all hover:bg-white/12"
+                            >
+                              {av ? (
+                                <img
+                                  src={av}
+                                  alt={t.team}
+                                  className="h-7 w-7 rounded-full object-cover flex-shrink-0"
+                                />
+                              ) : null}
+
+                              <span className="max-w-[88px] truncate text-xs font-black text-white">
+                                {shortTeamName(t.team)}
+                              </span>
+                            </a>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>
+                      {leaders[0] ? fmt(topVal) : '—'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── RECENT MATCHUPS ─────────────────────────────────────────────── */}
+        {recentMatchups.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
+            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            viewport={{ once: false, amount: 0.06 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-4 overflow-hidden bg-[linear-gradient(135deg,#06b6d4_0%,#0891b2_60%,#0e7490_100%)] p-3 shadow-[0_8px_32px_rgba(6,182,212,0.25)]"
+          >
+            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-black/20 bg-black/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+                  <Swords className="h-5 w-5 text-white" />
+                </div>
+
+                <div className="min-w-0">
+                  <div
+                    className="uppercase leading-none text-[rgba(18,30,52,0.98)]"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: '24px',
+                      letterSpacing: '0.075em',
+                      fontWeight: 900,
+                    }}
+                  >
+                    Recent Matchups
+                  </div>
+
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-[rgba(18,30,52,0.98)] sm:text-sm">
+                    {`${currentSeason} · Week ${recentMatchups[0]?.week}`}
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href="/matchups"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+              >
+                Ver tudo
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 p-0 sm:grid-cols-2 lg:grid-cols-3">
+              {recentMatchups.map((m, i) => {
+                const avA = getTeamAvatar(m.team)
+                const avB = getTeamAvatar(m.opp)
+                const winA = m.score > m.oppScore
+
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 rounded-[24px] border border-white/[0.06] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 transition-all hover:bg-white/[0.05]"
+                  >
+                    <a
+                      href={`/teams?team=${encodeURIComponent(m.team)}`}
+                      className="group flex min-w-0 flex-1 flex-col items-center gap-1"
+                    >
+                      {avA ? (
+                        <img src={avA} alt={m.team} className="h-10 w-10 rounded-[16px] object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-[10px] font-black text-slate-400">
+                          {m.team.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+
+                      <span className="line-clamp-1 text-center text-[10px] font-black leading-tight text-white transition-colors group-hover:text-cyan-300">
+                        {m.team}
+                      </span>
+
+                      <span className={`text-base font-black leading-none ${winA ? 'text-emerald-400' : 'text-slate-500'}`}>
+                        {m.score.toFixed(1)}
+                      </span>
+                    </a>
+
+                    <div className="flex flex-shrink-0 flex-col items-center gap-0.5">
+                      <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">vs</span>
+                      {winA ? (
+                        <span className="text-[9px] font-black text-emerald-400">W</span>
+                      ) : (
+                        <span className="text-[9px] font-black text-red-400">L</span>
+                      )}
+                    </div>
+
+                    <a
+                      href={`/teams?team=${encodeURIComponent(m.opp)}`}
+                      className="group flex min-w-0 flex-1 flex-col items-center gap-1"
+                    >
+                      {avB ? (
+                        <img src={avB} alt={m.opp} className="h-10 w-10 rounded-[16px] object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-[10px] font-black text-slate-400">
+                          {m.opp.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+
+                      <span className="line-clamp-1 text-center text-[10px] font-black leading-tight text-white transition-colors group-hover:text-cyan-300">
+                        {m.opp}
+                      </span>
+
+                      <span className={`text-base font-black leading-none ${!winA ? 'text-emerald-400' : 'text-slate-500'}`}>
+                        {m.oppScore.toFixed(1)}
+                      </span>
+                    </a>
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── RIVALRY SPOTLIGHT + FRANCHISE LEADERS ──────────────────────── */}
+        <div className="mb-8 flex flex-col gap-4 xl:flex-row">
+
+          {/* RIVALRY SPOTLIGHT */}
+          <motion.div
+            initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            viewport={{ once: false, amount: 0.08 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[1.15]"
+          >
+            <div className="flex h-full flex-col">
+              <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                    <Swords className="h-5 w-5 text-red-300" />
+                  </div>
+
+                  <div>
+                    <div
+                      className="uppercase leading-none text-white"
+                      style={{
+                        fontFamily: '"Bebas Neue", sans-serif',
+                        fontSize: '24px',
+                        letterSpacing: '0.075em',
+                        fontWeight: 900,
+                      }}
+                    >
+                      Rivalry Spotlight
+                    </div>
+                    <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
+                      All-time H2H
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href="/rivalries"
+                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                >
+                  Ver tudo
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
+
+              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-5">
+                <TeamSelect
+                  value={selectedTeamA}
+                  onChange={(val) => {
+                    setSelectedTeamA(val)
+                    setSelectedTeamB('')
+                  }}
+                  options={allTeams}
+                  placeholder="Time A..."
+                />
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-xs font-black text-white">
+                  vs
+                </div>
+                <TeamSelect
+                  value={selectedTeamB}
+                  onChange={setSelectedTeamB}
+                  options={teamsForB}
+                  placeholder="Time B..."
+                  disabled={!selectedTeamA}
+                />
+              </div>
+
+              {!selectedRivalry ? (
+                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] py-10 text-center sm:mx-5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/10 bg-white/[0.05]">
+                    <Swords className="h-5 w-5 text-slate-200" />
+                  </div>
+                  <p className="text-xs font-bold text-cyan-50/75">
+                    Selecione dois times para ver o confronto
+                  </p>
+                </div>
+              ) : (() => {
+                const bigA = parseBiggestWin(selectedRivalry.biggestA)
+                const bigB = parseBiggestWin(selectedRivalry.biggestB)
+                const strA = parseBestStreak(selectedRivalry.bestStreakA)
+                const strB = parseBestStreak(selectedRivalry.bestStreakB)
+                const wA = selectedRivalry.winsA
+                const wB = selectedRivalry.winsB
+                const aLeads = wA > wB
+                const bLeads = wB > wA
+
+                return (
+                  <div className="flex flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
+                    {/* VS strip */}
+                    <div className="overflow-hidden rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_8px_18px_rgba(15,23,42,0.12)]">
+                      <div className="flex items-center justify-between gap-4">
+                        <a
+                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
+                          className="group flex flex-1 flex-col items-center gap-1.5"
+                        >
+                          {(() => {
+                            const av = getTeamAvatar(selectedRivalry.teamA)
+                            return av ? (
+                              <img
+                                src={av}
+                                alt={selectedRivalry.teamA}
+                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-cyan-200/45"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
+                                {selectedRivalry.teamA.slice(0, 2).toUpperCase()}
+                              </div>
+                            )
+                          })()}
+                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-cyan-200">
+                            {shortTeamName(selectedRivalry.teamA)}
+                          </span>
+                          <span
+                            className="text-3xl font-black leading-none"
+                            style={{
+                              fontFamily: '"Bebas Neue",sans-serif',
+                              color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0',
+                            }}
+                          >
+                            {wA}
+                          </span>
+                        </a>
+
+                        <div className="flex flex-shrink-0 flex-col items-center gap-1">
+                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-50/65">
+                            All-Time
+                          </div>
+                          <div className="h-px w-6 bg-white/10" />
+                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-50/65">
+                            Record
+                          </div>
+                        </div>
+
+                        <a
+                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`}
+                          className="group flex flex-1 flex-col items-center gap-1.5"
+                        >
+                          {(() => {
+                            const av = getTeamAvatar(selectedRivalry.teamB)
+                            return av ? (
+                              <img
+                                src={av}
+                                alt={selectedRivalry.teamB}
+                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-cyan-200/45"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
+                                {selectedRivalry.teamB.slice(0, 2).toUpperCase()}
+                              </div>
+                            )
+                          })()}
+                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-cyan-200">
+                            {shortTeamName(selectedRivalry.teamB)}
+                          </span>
+                          <span
+                            className="text-3xl font-black leading-none"
+                            style={{
+                              fontFamily: '"Bebas Neue",sans-serif',
+                              color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0',
+                            }}
+                          >
+                            {wB}
+                          </span>
+                        </a>
+                      </div>
+
+                      <div className="mt-3 flex justify-center">
+                        <div
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
+                            ? 'border-yellow-300/30 bg-yellow-300/10 text-yellow-200'
+                            : selectedRivalry.heat === 'Elite'
+                              ? 'border-orange-300/30 bg-orange-300/10 text-orange-200'
+                              : selectedRivalry.heat === 'High'
+                                ? 'border-rose-300/30 bg-rose-300/10 text-rose-200'
+                                : 'border-white/10 bg-white/[0.04] text-cyan-50/75'
+                            }`}
+                        >
+                          <Flame className="h-3 w-3" />
+                          {selectedRivalry.heat} Rivalry
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats grid */}
+                    {/* Stats — 3-column table: A | Label | B */}
+                    <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-white/[0.025]">
+                      {[
+                        {
+                          label: 'Current Streak', icon: Radar,
+                          valA: selectedRivalry.streak, valB: null, single: true
+                        },
+                        {
+                          label: 'Playoffs', icon: Trophy,
+                          valA: selectedRivalry.playoffRecord.split('-')[0],
+                          valB: selectedRivalry.playoffRecord.split('-')[1]
+                        },
+                        {
+                          label: 'Avg Margin', icon: Activity,
+                          valA: `${selectedRivalry.avgMargin} pts`, valB: null, single: true
+                        },
+                        {
+                          label: 'Last Game', icon: Stars,
+                          valA: selectedRivalry.lastMeeting.score.split(' vs ')[0],
+                          valB: selectedRivalry.lastMeeting.score.split(' vs ')[1],
+                          subA: selectedRivalry.lastMeeting.meta || null,
+                          subB: selectedRivalry.lastMeeting.meta || null
+                        },
+                        {
+                          label: 'Biggest Win', icon: Flame,
+                          valA: bigA ? `${bigA.scoreA}–${bigA.scoreB}${bigA.margin ? ` (+${bigA.margin})` : ''}` : '—',
+                          valB: bigB ? `${bigB.scoreA}–${bigB.scoreB}${bigB.margin ? ` (+${bigB.margin})` : ''}` : '—',
+                          subA: bigA?.label || null, subB: bigB?.label || null
+                        },
+                        {
+                          label: 'Best Streak', icon: TrendingUp,
+                          valA: strA?.count ? `${strA.result}${strA.count}` : '—',
+                          valB: strB?.count ? `${strB.result}${strB.count}` : '—',
+                          subA: strA?.start ? `${strA.start}${strA.end ? ` → ${strA.end}` : ''}` : null,
+                          subB: strB?.start ? `${strB.start}${strB.end ? ` → ${strB.end}` : ''}` : null
+                        },
+                      ].map(({ label, icon: Icon, valA, valB, subA, subB, single }) => (
+                        <div key={label} className="grid grid-cols-[1fr_auto_1fr] border-b border-white/[0.05] last:border-0">
+                          {/* Team A */}
+                          <div className="flex flex-col justify-center px-3 py-2.5 min-w-0">
+                            <span className="text-sm font-black text-white leading-tight truncate">{valA ?? '—'}</span>
+                            {subA && <span className="text-[10px] text-slate-500 mt-0.5 leading-tight">{subA}</span>}
+                          </div>
+                          {/* Center label */}
+                          <div className="flex flex-col items-center justify-center gap-1 border-x border-white/[0.05] px-3 py-2.5 min-w-[86px]">
+                            <Icon className="h-3 w-3 text-red-400/60 flex-shrink-0" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 text-center leading-tight">{label}</span>
+                          </div>
+                          {/* Team B */}
+                          <div className="flex flex-col items-end justify-center px-3 py-2.5 min-w-0">
+                            {!single && (
+                              <>
+                                <span className="text-sm font-black text-white leading-tight truncate">{valB ?? '—'}</span>
+                                {subB && <span className="text-[10px] text-slate-500 mt-0.5 leading-tight text-right">{subB}</span>}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          </motion.div>
+
           {/* FRANCHISE LEADERS */}
           <motion.div
             initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
@@ -3599,338 +3657,26 @@ export default function TapitasLeagueHomepage() {
               </div>
             </div>
           </motion.div>
+        </div>
 
-          {/* RIVALRY SPOTLIGHT */}
-          <motion.div
-            initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
-            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            viewport={{ once: false, amount: 0.08 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[1.15]"
-          >
-            <div className="flex h-full flex-col">
-              <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                    <Swords className="h-5 w-5 text-red-300" />
-                  </div>
-
-                  <div>
-                    <div
-                      className="uppercase leading-none text-white"
-                      style={{
-                        fontFamily: '"Bebas Neue", sans-serif',
-                        fontSize: '24px',
-                        letterSpacing: '0.075em',
-                        fontWeight: 900,
-                      }}
-                    >
-                      Rivalry Spotlight
-                    </div>
-                    <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
-                      All-time H2H
-                    </div>
-                  </div>
-                </div>
-
-                <a
-                  href="/rivalries"
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                >
-                  Ver tudo
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </a>
-              </div>
-
-              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-5">
-                <TeamSelect
-                  value={selectedTeamA}
-                  onChange={(val) => {
-                    setSelectedTeamA(val)
-                    setSelectedTeamB('')
-                  }}
-                  options={allTeams}
-                  placeholder="Time A..."
-                />
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-xs font-black text-white">
-                  vs
-                </div>
-                <TeamSelect
-                  value={selectedTeamB}
-                  onChange={setSelectedTeamB}
-                  options={teamsForB}
-                  placeholder="Time B..."
-                  disabled={!selectedTeamA}
-                />
-              </div>
-
-              {!selectedRivalry ? (
-                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] py-10 text-center sm:mx-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/10 bg-white/[0.05]">
-                    <Swords className="h-5 w-5 text-slate-200" />
-                  </div>
-                  <p className="text-xs font-bold text-cyan-50/75">
-                    Selecione dois times para ver o confronto
-                  </p>
-                </div>
-              ) : (() => {
-                const bigA = parseBiggestWin(selectedRivalry.biggestA)
-                const bigB = parseBiggestWin(selectedRivalry.biggestB)
-                const strA = parseBestStreak(selectedRivalry.bestStreakA)
-                const strB = parseBestStreak(selectedRivalry.bestStreakB)
-                const wA = selectedRivalry.winsA
-                const wB = selectedRivalry.winsB
-                const aLeads = wA > wB
-                const bLeads = wB > wA
-
-                return (
-                  <div className="flex flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
-                    {/* VS strip */}
-                    <div className="overflow-hidden rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_8px_18px_rgba(15,23,42,0.12)]">
-                      <div className="flex items-center justify-between gap-4">
-                        <a
-                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
-                          className="group flex flex-1 flex-col items-center gap-1.5"
-                        >
-                          {(() => {
-                            const av = getTeamAvatar(selectedRivalry.teamA)
-                            return av ? (
-                              <img
-                                src={av}
-                                alt={selectedRivalry.teamA}
-                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-cyan-200/45"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
-                                {selectedRivalry.teamA.slice(0, 2).toUpperCase()}
-                              </div>
-                            )
-                          })()}
-                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-cyan-200">
-                            {shortTeamName(selectedRivalry.teamA)}
-                          </span>
-                          <span
-                            className="text-3xl font-black leading-none"
-                            style={{
-                              fontFamily: '"Bebas Neue",sans-serif',
-                              color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0',
-                            }}
-                          >
-                            {wA}
-                          </span>
-                        </a>
-
-                        <div className="flex flex-shrink-0 flex-col items-center gap-1">
-                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-50/65">
-                            All-Time
-                          </div>
-                          <div className="h-px w-6 bg-white/10" />
-                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-50/65">
-                            Record
-                          </div>
-                        </div>
-
-                        <a
-                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`}
-                          className="group flex flex-1 flex-col items-center gap-1.5"
-                        >
-                          {(() => {
-                            const av = getTeamAvatar(selectedRivalry.teamB)
-                            return av ? (
-                              <img
-                                src={av}
-                                alt={selectedRivalry.teamB}
-                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-cyan-200/45"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
-                                {selectedRivalry.teamB.slice(0, 2).toUpperCase()}
-                              </div>
-                            )
-                          })()}
-                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-cyan-200">
-                            {shortTeamName(selectedRivalry.teamB)}
-                          </span>
-                          <span
-                            className="text-3xl font-black leading-none"
-                            style={{
-                              fontFamily: '"Bebas Neue",sans-serif',
-                              color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0',
-                            }}
-                          >
-                            {wB}
-                          </span>
-                        </a>
-                      </div>
-
-                      <div className="mt-3 flex justify-center">
-                        <div
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
-                            ? 'border-yellow-300/30 bg-yellow-300/10 text-yellow-200'
-                            : selectedRivalry.heat === 'Elite'
-                              ? 'border-orange-300/30 bg-orange-300/10 text-orange-200'
-                              : selectedRivalry.heat === 'High'
-                                ? 'border-rose-300/30 bg-rose-300/10 text-rose-200'
-                                : 'border-white/10 bg-white/[0.04] text-cyan-50/75'
-                            }`}
-                        >
-                          <Flame className="h-3 w-3" />
-                          {selectedRivalry.heat} Rivalry
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Stats grid */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Trophy className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Playoffs
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Activity className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Avg Margin
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Stars className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Radar className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Current Streak
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Flame className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Biggest Win · {shortTeamName(selectedRivalry.teamA)}
-                          </span>
-                        </div>
-                        {bigA ? (
-                          <>
-                            <span className="text-base font-black text-white">
-                              {bigA.scoreA} – {bigA.scoreB}
-                              {bigA.margin ? <span className="text-emerald-300"> (+{bigA.margin})</span> : ''}
-                            </span>
-                            {bigA.label && <span className="text-[11px] text-cyan-50/60">{bigA.label}</span>}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Flame className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Biggest Win · {shortTeamName(selectedRivalry.teamB)}
-                          </span>
-                        </div>
-                        {bigB ? (
-                          <>
-                            <span className="text-base font-black text-white">
-                              {bigB.scoreA} – {bigB.scoreB}
-                              {bigB.margin ? <span className="text-emerald-300"> (+{bigB.margin})</span> : ''}
-                            </span>
-                            {bigB.label && <span className="text-[11px] text-cyan-50/60">{bigB.label}</span>}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <TrendingUp className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Best Streak · {shortTeamName(selectedRivalry.teamA)}
-                          </span>
-                        </div>
-                        {strA?.count ? (
-                          <>
-                            <span className="text-base font-black text-white">{strA.result}{strA.count}</span>
-                            {strA.start && (
-                              <span className="text-[11px] text-cyan-50/60">
-                                {strA.start}{strA.end ? ` → ${strA.end}` : ''}
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <TrendingUp className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Best Streak · {shortTeamName(selectedRivalry.teamB)}
-                          </span>
-                        </div>
-                        {strB?.count ? (
-                          <>
-                            <span className="text-base font-black text-white">{strB.result}{strB.count}</span>
-                            {strB.start && (
-                              <span className="text-[11px] text-cyan-50/60">
-                                {strB.start}{strB.end ? ` → ${strB.end}` : ''}
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })()}
-            </div>
-          </motion.div>
-
-
-        </motion.div>
-
-        {/* ── RECENT MATCHUPS ─────────────────────────────────────────────── */}
-        {recentMatchups.length > 0 && (
+        {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
+        {championsData.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
             whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.06 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+            className="mb-4 overflow-hidden bg-[linear-gradient(135deg,#06b6d4_0%,#0891b2_60%,#0e7490_100%)] p-3 shadow-[0_8px_32px_rgba(6,182,212,0.25)]"
           >
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <Swords className="h-5 w-5 text-red-300" />
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-black/20 bg-black/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+                  <Trophy className="h-5 w-5 text-white" />
                 </div>
 
                 <div className="min-w-0">
                   <div
-                    className="uppercase leading-none text-white"
+                    className="uppercase leading-none text-[rgba(18,30,52,0.98)]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
                       fontSize: '24px',
@@ -3938,242 +3684,21 @@ export default function TapitasLeagueHomepage() {
                       fontWeight: 900,
                     }}
                   >
-                    Recent Matchups
+                    Champions Wall
                   </div>
 
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                    {currentSeason
-                      ? `${currentSeason} · Week ${recentMatchups[0]?.week}${recentMatchups[0]?.stage && recentMatchups[0].stage !== 'Reg Season'
-                        ? ` · ${recentMatchups[0].stage}`
-                        : ''
-                      }`
-                      : ''}
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-[rgba(18,30,52,0.98)] sm:text-sm">
+                    Every title. Every campaign.
                   </div>
                 </div>
               </div>
-
-              <a
-                href="/matchups"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-              >
-                Ver tudo
-                <ChevronRight className="h-3.5 w-3.5" />
-              </a>
             </div>
 
-            <div className="grid grid-cols-1 gap-2 p-0 sm:grid-cols-2 lg:grid-cols-3">
-              {recentMatchups.map((m, i) => {
-                const avA = getTeamAvatar(m.team)
-                const avB = getTeamAvatar(m.opp)
-                const winA = m.score > m.oppScore
-
-                return (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 rounded-[24px] border border-white/[0.06] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 transition-all hover:bg-white/[0.05]"
-                  >
-                    <a
-                      href={`/teams?team=${encodeURIComponent(m.team)}`}
-                      className="group flex min-w-0 flex-1 flex-col items-center gap-1"
-                    >
-                      {avA ? (
-                        <img src={avA} alt={m.team} className="h-10 w-10 rounded-[16px] object-cover" />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-[10px] font-black text-slate-400">
-                          {m.team.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-
-                      <span className="line-clamp-1 text-center text-[10px] font-black leading-tight text-white transition-colors group-hover:text-cyan-300">
-                        {m.team}
-                      </span>
-
-                      <span className={`text-base font-black leading-none ${winA ? 'text-emerald-400' : 'text-slate-500'}`}>
-                        {m.score.toFixed(1)}
-                      </span>
-                    </a>
-
-                    <div className="flex flex-shrink-0 flex-col items-center gap-0.5">
-                      <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">vs</span>
-                      {winA ? (
-                        <span className="text-[9px] font-black text-emerald-400">W</span>
-                      ) : (
-                        <span className="text-[9px] font-black text-red-400">L</span>
-                      )}
-                    </div>
-
-                    <a
-                      href={`/teams?team=${encodeURIComponent(m.opp)}`}
-                      className="group flex min-w-0 flex-1 flex-col items-center gap-1"
-                    >
-                      {avB ? (
-                        <img src={avB} alt={m.opp} className="h-10 w-10 rounded-[16px] object-cover" />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-[10px] font-black text-slate-400">
-                          {m.opp.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-
-                      <span className="line-clamp-1 text-center text-[10px] font-black leading-tight text-white transition-colors group-hover:text-cyan-300">
-                        {m.opp}
-                      </span>
-
-                      <span className={`text-base font-black leading-none ${!winA ? 'text-emerald-400' : 'text-slate-500'}`}>
-                        {m.oppScore.toFixed(1)}
-                      </span>
-                    </a>
-                  </div>
-                )
-              })}
-            </div>
+            <ChampionsWallInline champions={championsData} />
           </motion.div>
         )}
 
-        {/* ── RECORDS + CHAMPIONS WALL ──────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
-          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.06 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
-        >
 
-          {/* RECORDS — leaders per category with tied display */}
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
-            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                  <Zap className="h-5 w-5 text-white" />
-                </div>
-
-                <div className="min-w-0">
-                  <div
-                    className="uppercase leading-none text-white"
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
-                      fontWeight: 900,
-                    }}
-                  >
-                    All-Time Records
-                  </div>
-
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
-                    Best of the best
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href="/records"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-              >
-                Ver tudo
-                <ChevronRight className="h-3.5 w-3.5" />
-              </a>
-            </div>
-
-            <div className="space-y-2.5 sm:space-y-3">
-              {[
-                { emoji: '🏆', label: 'Most Titles', getter: t => t.titles, fmt: v => v, color: 'text-yellow-300' },
-                { emoji: '📈', label: 'Most Wins', getter: t => t.wins, fmt: v => v, color: 'text-emerald-300' },
-                { emoji: '🔥', label: 'Top Scorer', getter: t => t.pf, fmt: v => Math.round(v) + ' pts', color: 'text-orange-300' },
-                { emoji: '🎯', label: 'Best Win%', getter: t => t.winPct, fmt: v => v + '%', color: 'text-cyan-200' },
-                { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => v, color: 'text-violet-300' },
-                { emoji: '⚔️', label: 'Finals Apps', getter: t => t.finals, fmt: v => v, color: 'text-rose-300' },
-              ].map(({ emoji, label, getter, fmt, color }) => {
-                const leaders = topNTeams(standings, getter, 3)
-                const topVal = leaders[0] ? getter(leaders[0]) : 0
-
-                return (
-                  <div
-                    key={label}
-                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                  >
-
-
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 text-[12px] font-black uppercase tracking-[0.15em] text-cyan-50/72">
-                        {label}
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {leaders.map(t => {
-                          const av = getTeamAvatar(t.team)
-
-                          return (
-                            <a
-                              key={t.team}
-                              href={`/teams?team=${encodeURIComponent(t.team)}`}
-                              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-all hover:bg-white/12"
-                            >
-                              {av ? (
-                                <img
-                                  src={av}
-                                  alt={t.team}
-                                  className="h-7 w-7 rounded-full object-cover flex-shrink-0"
-                                />
-                              ) : null}
-
-                              <span className="max-w-[88px] truncate text-xs font-black text-white">
-                                {shortTeamName(t.team)}
-                              </span>
-                            </a>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>
-                      {leaders[0] ? fmt(topVal) : '—'}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
-          {championsData.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
-              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              viewport={{ once: false, amount: 0.06 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
-            >
-              <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                    <Trophy className="h-5 w-5 text-yellow-300" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div
-                      className="uppercase leading-none text-white"
-                      style={{
-                        fontFamily: '"Bebas Neue", sans-serif',
-                        fontSize: '24px',
-                        letterSpacing: '0.075em',
-                        fontWeight: 900,
-                      }}
-                    >
-                      Champions Wall
-                    </div>
-
-                    <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                      Every title. Every campaign.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <ChampionsWallInline champions={championsData} />
-            </motion.div>
-          )}
-
-        </motion.div>
 
       </section>
 
