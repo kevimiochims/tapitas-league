@@ -15,7 +15,7 @@ import Header from './components/Header'
 
 const FALLBACK_TEAMS = [
   {
-    team: 'Tapitas Empire',
+    team: 'Moneyball',
     wins: 112,
     losses: 54,
     pf: 2145,
@@ -74,14 +74,14 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
       <button
         onClick={() => !disabled && setOpen((p) => !p)}
         disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-[12px] font-bold transition-all duration-300 ${disabled
-          ? 'cursor-not-allowed border-white/5 bg-white/[0.01] text-slate-600'
+        className={`flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-[12px] font-bold transition-all duration-300 ${disabled
+          ? 'cursor-not-allowed border-white/5 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-600'
           : open
-            ? 'border-cyan-400 bg-cyan-950/30 text-white shadow-[0_0_15px_rgba(34,211,238,0.15)]'
-            : 'border-white/10 bg-white/[0.04] text-white hover:border-white/20 hover:bg-white/[0.07]'
+            ? 'border-cyan-400 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-white shadow-[0_0_15px_rgba(34,211,238,0.15)]'
+            : 'border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-white hover:border-white/20 hover:bg-[linear-gradient(160deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
           }`}
       >
-        <span className={value ? 'text-white' : 'text-slate-500'}>
+        <span className="block min-w-0 flex-1 truncate whitespace-nowrap text-left">
           {selected || placeholder}
         </span>
         <ChevronRight
@@ -91,7 +91,7 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1525]/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="max-h-56 overflow-y-auto">
             {options.map((opt) => (
               <button
@@ -392,8 +392,8 @@ function ChampionsWallInline({ champions }) {
           <div
             key={champ.season}
             className={`relative overflow-hidden rounded-[24px] border shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all ${isOpen
-              ? 'border-yellow-300/25 bg-[#39588a]'
-              : 'border-white/8 bg-[#2b4270] hover:border-white/12 hover:bg-[#345184]'
+              ? 'border-yellow-300/25 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]'
+              : 'border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:border-white/12 hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
               }`}
           >
             {index === 0 && (
@@ -445,7 +445,7 @@ function ChampionsWallInline({ champions }) {
                 </div>
 
                 {!isOpen && (
-                  <div className="text-[10px] text-slate-300">
+                  <div className="text-[11px] text-slate-300">
                     {champ.wins}–{champ.losses} · {Math.round(champ.pf)} pts
                   </div>
                 )}
@@ -459,7 +459,7 @@ function ChampionsWallInline({ champions }) {
 
             {isOpen && (
               <div className="border-t border-white/8 bg-black/10 px-4 pb-4 pt-3">
-                <div className="mb-3 text-[10px] text-slate-200">
+                <div className="mb-3 text-[11px] text-slate-200">
                   {champ.wins}–{champ.losses} overall · {champ.playoffWins}–{champ.playoffLosses} playoffs · {Math.round(champ.pf)} pts
                 </div>
 
@@ -523,6 +523,133 @@ const TEAM_AVATARS = {
 function getTeamAvatar(name) {
   return TEAM_AVATARS[normalizeString(name)] || null
 }
+
+function normalizePlayerKey(value) {
+  return normalizeString(value)
+    .replace(/\./g, '')
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function buildPlayerLookup(rows) {
+  const lookup = new Map()
+
+  rows.forEach((row) => {
+    const playerId = String(row?.player_id || '').trim()
+    const fullName = String(row?.full_name || '').trim()
+    const shortName = String(row?.name || '').trim()
+    const firstName = String(row?.first_name || '').trim()
+    const lastName = String(row?.last_name || '').trim()
+    const team = String(row?.team || '').trim()
+    const pos = String(row?.position || row?.pos || '').trim().toUpperCase()
+
+    if (!playerId) return
+
+    const entry = {
+      playerId,
+      team,
+      pos,
+      fullName,
+      shortName,
+    }
+
+      ;[fullName, `${firstName} ${lastName}`, row?.search_full_name].forEach((value) => {
+        const key = normalizePlayerKey(value)
+        if (!key || lookup.has(key)) return
+        lookup.set(key, entry)
+      })
+  })
+
+  return lookup
+}
+
+function getPlayerDataByFullName(name, playerLookup) {
+  if (!playerLookup || !name) return null
+  const key = normalizePlayerKey(name)
+  if (!key) return null
+  return playerLookup.get(key) || null
+}
+
+function DraftPickTile({ pick, playerLookup }) {
+  const [photoFailed, setPhotoFailed] = useState(false)
+
+  const data = getPlayerDataByFullName(pick.player, playerLookup)
+  const playerId = data?.playerId
+  const shortName = data?.shortName || pick.player
+  const photoSrc =
+    !photoFailed && playerId
+      ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
+      : null
+
+  useEffect(() => {
+    setPhotoFailed(false)
+  }, [pick.player, playerId])
+
+  const posColor =
+    POS_COLORS[pick.position] || 'text-slate-200 border-white/10 bg-white/8'
+
+  return (
+    <div className="w-[106px] flex-shrink-0 snap-start">
+      <a
+        href={`/teams?team=${encodeURIComponent(pick.team)}`}
+        className="group block"
+      >
+        <div className="relative mx-auto h-[88px] w-[88px]">
+          <div className="h-full w-full overflow-hidden rounded-full bg-slate-200/90 ring-1 ring-white/10">
+            {photoSrc ? (
+              <img
+                src={photoSrc}
+                alt={shortName}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                onError={() => setPhotoFailed(true)}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-white/10 text-lg font-black text-white">
+                {String(shortName)
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join('')
+                  .toUpperCase() || '?'}
+              </div>
+            )}
+          </div>
+
+          <div className="absolute left-0 top-0 rounded-full border border-black bg-black px-2 py-1 text-[10px] font-black leading-none text-white shadow-lg">
+            #{pick.pick}
+          </div>
+
+          <div
+            className={`absolute bottom-[-6px] left-1/2 -translate-x-1/2 rounded-xl border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] shadow-lg ${posColor}`}
+          >
+            {pick.position || '—'}
+          </div>
+        </div>
+
+        <div className="mt-4 text-center">
+          <div className="truncate text-[14px] font-black tracking-[-0.01em] text-white">
+            {shortName}
+          </div>
+
+          <div className="mt-1 flex items-center justify-center gap-1.5 text-[10px] font-bold text-slate-400">
+            {getTeamAvatar(pick.team) ? (
+              <img
+                src={getTeamAvatar(pick.team)}
+                alt={pick.team}
+                className="h-3.5 w-3.5 flex-shrink-0 rounded-md object-cover opacity-90"
+              />
+            ) : null}
+            <span className="truncate">{pick.team}</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  )
+}
+
 
 function buildSeasonRanges(years) {
   if (!years || years.length === 0) return ''
@@ -765,12 +892,13 @@ const QUICK_NAV = [
 ]
 
 const POS_COLORS = {
-  QB: 'text-red-400 border-red-400/25 bg-red-400/10',
-  RB: 'text-emerald-400 border-emerald-400/25 bg-emerald-400/10',
-  WR: 'text-cyan-400 border-cyan-400/25 bg-cyan-400/10',
-  TE: 'text-orange-400 border-orange-400/25 bg-orange-400/10',
-  K: 'text-slate-400 border-slate-400/25 bg-slate-400/10',
-  DEF: 'text-purple-400 border-purple-400/25 bg-purple-400/10',
+  QB: 'text-white border-red-500 bg-red-500',
+  RB: 'text-white border-emerald-500 bg-emerald-500',
+  WR: 'text-white border-blue-500 bg-blue-500',
+  TE: 'text-white border-yellow-500 bg-yellow-500',
+  K: 'text-white border-violet-500 bg-violet-500',
+  DEF: 'text-white border-orange-500 bg-orange-500',
+  BN: 'text-white border-slate-600 bg-slate-600',
 }
 
 function parseBiggestWin(value) {
@@ -803,6 +931,20 @@ function parseBestStreak(value) {
   return { result: countMatch[1].toUpperCase(), count: countMatch[2], start, end }
 }
 
+function getPrLeaderMessage(row) {
+  if (!row) return ''
+
+  if (row.delta > 0) {
+    return `Reached the top spot climbing ${Math.abs(row.delta)} ${Math.abs(row.delta) === 1 ? 'position' : 'positions'}`
+  }
+
+  if (row.delta < 0) {
+    return 'Still holds the lead despite pressure this week'
+  }
+
+  return 'Still on Top '
+}
+
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
@@ -818,6 +960,8 @@ export default function TapitasLeagueHomepage() {
   const [currentSlide, setCurrentSlide] = useState(0)
 
   // ── NEW STATE ──────────────────────────────────────────────────────────────
+  const [newsPage, setNewsPage] = useState(0)
+  const newsTouchStartX = useRef(null)
   const [newsPosts, setNewsPosts] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
   const [prData, setPrData] = useState([])
@@ -828,7 +972,10 @@ export default function TapitasLeagueHomepage() {
   const [draftPicks, setDraftPicks] = useState([])   // last draft picks
   const [draftSeason, setDraftSeason] = useState('')
   const [recentMatchups, setRecentMatchups] = useState([]) // last week games
-
+  const [playerLookup, setPlayerLookup] = useState(new Map())
+  const [selectedDraftRound, setSelectedDraftRound] = useState(1)
+  const [prPage, setPrPage] = useState(0)
+  const draftScrollRef = useRef(null)
   const touchStartX = useRef(null);
   const totalSlides = 3;
 
@@ -863,6 +1010,46 @@ export default function TapitasLeagueHomepage() {
     setCurrentSlide((prev) => (prev + 1) % 3);
   };
 
+  // ===== NEWS =====
+
+  const featuredNewsPosts = useMemo(() => {
+    return (newsPosts || []).slice(0, 4)
+  }, [newsPosts])
+
+  const newsTotalPages = featuredNewsPosts.length
+
+  useEffect(() => {
+    setNewsPage(0)
+  }, [newsPosts])
+
+  function goNewsPage(step) {
+    setNewsPage((current) => Math.max(0, Math.min(newsTotalPages - 1, current + step)))
+  }
+
+  function handleNewsTouchStart(e) {
+    newsTouchStartX.current = e.touches[0]?.clientX ?? null
+  }
+
+  function handleNewsTouchEnd(e) {
+    if (newsTouchStartX.current == null) return
+
+    const endX = e.changedTouches[0]?.clientX ?? null
+    if (endX == null) return
+
+    const deltaX = endX - newsTouchStartX.current
+    const threshold = 45
+
+    if (deltaX <= -threshold && newsPage < newsTotalPages - 1) {
+      setNewsPage((p) => Math.min(newsTotalPages - 1, p + 1))
+    } else if (deltaX >= threshold && newsPage > 0) {
+      setNewsPage((p) => Math.max(0, p - 1))
+    }
+
+    newsTouchStartX.current = null
+  }
+
+  // =============
+
   useEffect(() => {
     const timer = setTimeout(nextSlide, 10000);
 
@@ -879,8 +1066,67 @@ export default function TapitasLeagueHomepage() {
     highestScoreTeam: '',
   })
 
+  // ===== STANDINGS =====
+
+  const standingsPageSize = 5
+
+  const standingsTotalPages = useMemo(() => {
+    return Math.max(1, Math.ceil((currentStandings?.length || 0) / standingsPageSize))
+  }, [currentStandings])
+
+  const standingsLeader = useMemo(() => {
+    return (currentStandings || [])[0] || null
+  }, [currentStandings])
+
+
+  const visibleStandingsRows = useMemo(() => {
+    const base = (currentStandings || []).slice(
+      standingsPage * standingsPageSize,
+      standingsPage * standingsPageSize + standingsPageSize
+    )
+
+    if (standingsPage === 0 && standingsLeader) {
+      return base.filter((row) => row.team !== standingsLeader.team)
+    }
+
+    return base
+  }, [currentStandings, standingsLeader, standingsPage])
+
+  const standingsSectionLabel = useMemo(() => {
+    const isFinalStandings = currentWeekLabel === '__final__'
+
+    if (isFinalStandings) {
+      return standingsPage === 0 ? 'Final table leaders' : 'Final standings'
+    }
+
+    return standingsPage === 0 ? 'Playoff pace' : 'Chasing the cut'
+  }, [standingsPage, currentWeekLabel])
+
+  useEffect(() => {
+    setStandingsPage(0)
+  }, [currentStandings])
+
+  useEffect(() => {
+    setStandingsPage(0)
+  }, [sortCategory, sortSub])
+
+  function getStandingsLeaderMessage(row) {
+    if (!row) return ''
+
+    if (currentWeekLabel === '__final__') {
+      return 'Terminou no topo e fechou a temporada com a melhor campanha'
+    }
+
+    if (currentWeekLabel) {
+      return `Lidera a liga até a Week ${currentWeekLabel}`
+    }
+
+    return 'Abriu a temporada na liderança'
+  }
+
+
+
   // ===== CHAMPIONS WALL =====
-  // Adicione este useEffect e estado junto aos outros no componente principal
 
   const [championsData, setChampionsData] = useState([])
 
@@ -1148,12 +1394,15 @@ export default function TapitasLeagueHomepage() {
     let mounted = true
     async function loadExtra() {
       try {
-        const [gameData, historyData, draftData] = await Promise.all([
+        const [gameData, historyData, draftData, playerCacheData] = await Promise.all([
           safeSheetFetch(`${BASE_URL_HOME}/GAME_FACTS_ALL`),
           safeSheetFetch(`${BASE_URL_HOME}/TEAM_HISTORY_SORTED`),
           safeSheetFetch(`${BASE_URL_HOME}/DRAFT_BOARD`),
+          safeSheetFetch(`${BASE_URL_HOME}/_PLAYER_CACHE`),
         ])
         if (!mounted) return
+
+        setPlayerLookup(buildPlayerLookup(playerCacheData))
 
         // ── Power Rankings ──────────────────────────────────────────────────
         const seasonsWithPR = [...new Set(
@@ -1211,17 +1460,20 @@ export default function TapitasLeagueHomepage() {
               .filter(r => String(r?.Season || '').trim() === season && parseNumber(r?.Standing) > 0)
               .map(r => ({
                 team: String(r?.Team || r?.team || '').trim(),
-                w: parseNumber(r?.RS_W || 0),
-                l: parseNumber(r?.RS_L || 0),
-                pf: parseNumber(r?.RS_PF || 0),
+                w: parseNumber(r?.W || 0),
+                l: parseNumber(r?.L || 0),
+                pf: parseNumber(r?.PF || 0),
                 standing: parseNumber(r?.Standing),
               }))
               .sort((a, b) => a.standing - b.standing)
             return rows
           }
 
+          const finalHistoryRowsNewest = buildFromHistory(newestSeason)
+          const hasFinalStandingsNewest = finalHistoryRowsNewest.length > 0
+
           let displaySeason = newestSeason
-          let isSeasonFinished = poGamesNewest.length > 0
+          let isSeasonFinished = hasFinalStandingsNewest
           let seasonRows = []
           let weekLabel = ''
 
@@ -1233,9 +1485,9 @@ export default function TapitasLeagueHomepage() {
               isSeasonFinished = true
               seasonRows = buildFromHistory(prevSeason)
             }
-          } else if (isSeasonFinished) {
+          } else if (hasFinalStandingsNewest) {
             // Season over — use Standing column from TEAM_HISTORY_SORTED
-            seasonRows = buildFromHistory(newestSeason)
+            seasonRows = finalHistoryRowsNewest
           } else {
             // Season in progress — accumulate reg season week by week
             const rsWeeksSorted = [...new Set(
@@ -1307,21 +1559,29 @@ export default function TapitasLeagueHomepage() {
 
         // ── Draft picks ───────────────────────────────────────────────────────
         if (draftData.length > 0) {
-          const draftSeasons = [...new Set(draftData.map(r => String(r?.Season || '').trim()).filter(Boolean))]
-            .sort((a, b) => Number(a) - Number(b))
+          const draftSeasons = [...new Set(draftData.map((r) => String(r?.Season).trim()).filter(Boolean))].sort(
+            (a, b) => Number(a) - Number(b)
+          )
+
           const lastDraftSeason = draftSeasons[draftSeasons.length - 1]
+
           const picks = draftData
-            .filter(r => String(r?.Season || '').trim() === lastDraftSeason)
-            .map(r => ({
+            .filter((r) => String(r?.Season).trim() === lastDraftSeason)
+            .map((r) => ({
               pick: parseNumber(r?.Pick || r?.Overall || 0),
-              round: parseNumber(r?.Round || 0),
+              round: parseNumber(r?.Round || r?.Rd || 0),
               team: String(r?.Team || '').trim(),
               player: String(r?.Player || r?.Name || '').trim(),
               position: String(r?.Position || r?.Pos || '').trim().toUpperCase(),
             }))
-            .filter(r => r.player && r.player !== '')
+            .filter((r) => r.player && r.player !== '')
             .sort((a, b) => a.pick - b.pick)
-          if (mounted) { setDraftPicks(picks.slice(0, 10)); setDraftSeason(lastDraftSeason) }
+
+          if (mounted) {
+            setDraftPicks(picks)
+            setDraftSeason(lastDraftSeason)
+            setSelectedDraftRound(1)
+          }
         }
       } catch (e) { console.error(e) }
       finally { if (mounted) setPrLoading(false) }
@@ -1329,6 +1589,62 @@ export default function TapitasLeagueHomepage() {
     loadExtra()
     return () => { mounted = false }
   }, [])
+
+  const draftRounds = useMemo(() => {
+    return [...new Set(draftPicks.map((p) => p.round).filter((r) => r > 0))].sort((a, b) => a - b)
+  }, [draftPicks])
+
+  const visibleDraftPicks = useMemo(() => {
+    const picksInRound = draftPicks.filter((p) => p.round === selectedDraftRound)
+    return picksInRound.slice(0, 10)
+  }, [draftPicks, selectedDraftRound])
+
+  const canGoDraftPrev = draftRounds.indexOf(selectedDraftRound) > 0
+  const canGoDraftNext = draftRounds.indexOf(selectedDraftRound) < draftRounds.length - 1
+
+  function goDraftRound(direction) {
+    const currentIndex = draftRounds.indexOf(selectedDraftRound)
+    if (currentIndex === -1) return
+
+    const nextIndex = currentIndex + direction
+    if (nextIndex < 0 || nextIndex >= draftRounds.length) return
+
+    setSelectedDraftRound(draftRounds[nextIndex])
+  }
+
+  const prPageSize = 5
+
+  const prTotalPages = useMemo(() => {
+    return Math.max(1, Math.ceil((prData?.length || 0) / prPageSize))
+  }, [prData])
+
+  const visiblePrData = useMemo(() => {
+    return (prData || []).slice(prPage * prPageSize, prPage * prPageSize + prPageSize)
+  }, [prData, prPage])
+
+  useEffect(() => {
+    setPrPage(0)
+  }, [prData])
+
+  const prLeader = useMemo(() => {
+    return (prData || []).find((row) => Number(row.rank) === 1) || (prData || [])[0] || null
+  }, [prData])
+
+  const visiblePrRows = useMemo(() => {
+    const base = (prData || []).slice(prPage * prPageSize, prPage * prPageSize + prPageSize)
+
+    if (prPage === 0 && prLeader) {
+      return base.filter((row) => row.team !== prLeader.team)
+    }
+
+    return base
+  }, [prData, prPage, prPageSize, prLeader])
+
+  const prSectionLabel = useMemo(() => {
+    if (prPage === 0) return 'Top contenders'
+    if (prPage === 1) return 'Chasing the top'
+    return 'More rankings'
+  }, [prPage])
 
   const standings = useMemo(() => {
     const base =
@@ -1377,6 +1693,20 @@ export default function TapitasLeagueHomepage() {
       return b.pf - a.pf
     })
   }, [rawData, sortCategory, sortSub])
+
+  const [leadersPage, setLeadersPage] = useState(0)
+
+  useEffect(() => {
+    setLeadersPage(0)
+  }, [sortCategory, sortSub])
+
+  const topLeader = standings[0] ?? null
+  const leadersTotalPages = standings.length <= 5 ? 1 : 2
+
+  const pagedLeaders =
+    leadersPage === 0
+      ? standings.slice(1, 5)
+      : standings.slice(5, 10)
 
   // Lista única de times extraída do h2h
   const allTeams = useMemo(() => {
@@ -1507,6 +1837,17 @@ export default function TapitasLeagueHomepage() {
       bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || '—'),
     }
   }, [h2hData, selectedTeamA, selectedTeamB])
+
+  useEffect(() => {
+    if (!draftScrollRef.current) return
+
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches
+
+    draftScrollRef.current.scrollTo({
+      left: 0,
+      behavior: isDesktop ? 'auto' : 'smooth',
+    })
+  }, [selectedDraftRound])
 
   useEffect(() => {
     if (!drawerOpen || seasonSummary) return
@@ -2206,7 +2547,7 @@ export default function TapitasLeagueHomepage() {
                     fill="#22d3ee"
                     opacity="0.18"
                   >
-                    #1
+                    1
                   </text>
 
                   {/* Rankings secundários */}
@@ -2436,53 +2777,181 @@ export default function TapitasLeagueHomepage() {
 
         {/* ── STAT STRIP ─────────────────────────────────────────────────── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.5 }}
           className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
         >
           {[
-            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'All-time', color: 'cyan' },
-            { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple' },
-            { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-time', color: 'emerald' },
-            { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, color: 'orange' },
-          ].map(({ icon: Icon, label, value, sub, color }) => {
+            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'Current', color: 'cyan', href: '/teams' },
+            { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple', href: '/history' },
+            { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-time', color: 'emerald', href: '/matchups' },
+            { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, color: 'orange', href: '/records' },
+          ].map(({ icon: Icon, label, value, sub, color, href }) => {
             const c = {
-              cyan: { icon: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300', val: 'text-cyan-300', border: 'border-cyan-400/10 hover:border-cyan-400/25' },
-              purple: { icon: 'border-purple-400/20 bg-purple-400/10 text-purple-300', val: 'text-purple-300', border: 'border-purple-400/10 hover:border-purple-400/25' },
-              emerald: { icon: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300', val: 'text-emerald-300', border: 'border-emerald-400/10 hover:border-emerald-400/25' },
-              orange: { icon: 'border-orange-400/20 bg-orange-400/10 text-orange-300', val: 'text-orange-300', border: 'border-orange-400/10 hover:border-orange-400/25' },
+              cyan: {
+                icon: 'border-cyan-400/18 bg-cyan-400/8 text-cyan-300',
+                val: 'text-cyan-300',
+              },
+              purple: {
+                icon: 'border-purple-400/18 bg-purple-400/8 text-purple-300',
+                val: 'text-purple-300',
+              },
+              emerald: {
+                icon: 'border-emerald-400/18 bg-emerald-400/8 text-emerald-300',
+                val: 'text-emerald-300',
+              },
+              orange: {
+                icon: 'border-orange-400/18 bg-orange-400/8 text-orange-300',
+                val: 'text-orange-300',
+              },
             }[color]
+
             return (
-              <div key={label} className={`flex items-center gap-4 rounded-[22px] border ${c.border} bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-5 py-4 transition-all`}>
-                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border ${c.icon}`}>
+              <a
+                key={label}
+                href={href}
+                className="flex items-center gap-3 rounded-[22px] border border-white/8 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.10)] transition-all hover:-translate-y-[1px] hover:border-white/12 sm:gap-4 sm:px-5 sm:py-4"
+              >
+                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border ${c.icon} sm:h-10 sm:w-10 sm:rounded-xl`}>
                   <Icon className="h-4 w-4" />
                 </div>
+
                 <div className="min-w-0 flex-1">
-                  <div className="mb-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
-                  <div className={`text-2xl font-black leading-none ${c.val}`}>{value}</div>
-                  <div className="mt-0.5 truncate text-[10px] font-bold text-slate-600">{sub}</div>
+                  <div className="mb-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500 sm:text-[10px]">
+                    {label}
+                  </div>
+
+                  <div className={`text-[22px] font-black leading-none sm:text-2xl ${c.val}`}>
+                    {value}
+                  </div>
+
+                  <div className="mt-0.5 truncate text-[10px] font-bold text-slate-500 sm:text-[10px]">
+                    {sub}
+                  </div>
                 </div>
-              </div>
+              </a>
             )
           })}
         </motion.div>
 
         {/* ── QUICK NAV ──────────────────────────────────────────────────── */}
         <motion.div
-          initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.4 }}
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.4 }}
           className="mb-4 mt-4"
         >
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
-              <a key={label} href={href}
-                className={`group flex flex-col items-center gap-1.5 rounded-[18px] border ${border} ${bg} px-2 py-3 text-center transition-all hover:scale-[1.05] hover:brightness-125`}>
-                <Icon className={`h-4 w-4 ${color}`} />
-                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>{label}</span>
+              <a
+                key={label}
+                href={href}
+                className={`group flex flex-col items-center justify-center gap-2 rounded-[18px] border ${border} ${bg} px-2.5 py-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.10)] transition-all hover:-translate-y-[1px] hover:border-white/12 sm:px-3 sm:py-3.5`}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-[12px] transition-all group-hover:bg-white/[0.05]">
+                  <Icon className={`h-4 w-4 ${color}`} />
+                </div>
+
+                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>
+                  {label}
+                </span>
               </a>
             ))}
           </div>
         </motion.div>
+
+        {/* DRAFT — scrolling picks feed */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          className="mb-4"
+        >
+          <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+            <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                  <ScrollText className="h-4.5 w-4.5 text-pink-300 sm:h-5 sm:w-5" />
+                </div>
+
+                <div className="min-w-0">
+                  <div
+                    className="truncate uppercase leading-none text-pink-300"
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: '20px',
+                      letterSpacing: '0.06em',
+                      fontWeight: 900,
+                    }}
+                  >
+                    Last Draft
+                  </div>
+
+                  <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                    Draft {draftSeason}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
+                <a
+                  href="/draft"
+                  className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+                >
+                  Ver tudo
+                  <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                </a>
+
+                {draftRounds.length > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => goDraftRound(-1)}
+                      disabled={!canGoDraftPrev}
+                      className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                    >
+                      <ChevronLeft className="h-3 w-3" />
+                    </button>
+
+                    <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-pink-300 sm:min-w-[42px] sm:text-[10px]">
+                      R{selectedDraftRound}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => goDraftRound(1)}
+                      disabled={!canGoDraftNext}
+                      className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+              <div
+                ref={draftScrollRef}
+                className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                <div className="flex min-w-max gap-4 snap-x snap-mandatory pr-2 md:mx-auto md:w-fit md:min-w-0 md:justify-center">
+                  {visibleDraftPicks.map((pick, i) => (
+                    <DraftPickTile
+                      key={`${pick.pick}-${pick.player}-${i}`}
+                      pick={pick}
+                      playerLookup={playerLookup}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
 
         {/* ── POWER RANKINGS + STANDINGS ─────────────────────────────────── */}
         <motion.div
@@ -2491,190 +2960,441 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 flex flex-col gap-4 xl:flex-row"
         >
           {/* Power Rankings */}
-          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.18)] xl:flex-1">
-            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                  <TrendingUp className="h-5 w-5 text-white" />
+          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
+            <div className="flex h-full flex-col">
+              {/* Header */}
+              <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                    <TrendingUp className="h-4.5 w-4.5 text-emerald-300 sm:h-5 sm:w-5" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div
+                      className="truncate uppercase leading-none text-emerald-300"
+                      style={{
+                        fontFamily: '"Bebas Neue", sans-serif',
+                        fontSize: '20px',
+                        letterSpacing: '0.06em',
+                        fontWeight: 900,
+                      }}
+                    >
+                      Power Rankings
+                    </div>
+
+                    <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                      {currentSeason ? `${currentSeason} · Latest week` : 'Carregando...'}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="min-w-0">
-                  <div
-                    className="uppercase leading-none text-white"
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
-                      fontWeight: 900,
-                    }}
+                <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
+                  <a
+                    href="/powerrankings"
+                    className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
                   >
-                    Power Rankings
-                  </div>
+                    Ver tudo
+                    <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  </a>
 
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
-                    {currentSeason ? `Season ${currentSeason} · Latest week` : 'Carregando...'}
-                  </div>
+                  {prTotalPages > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setPrPage((p) => Math.max(0, p - 1))}
+                        disabled={prPage === 0}
+                        className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                      </button>
+
+                      <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-emerald-300 sm:min-w-[42px] sm:text-[10px]">
+                        {prPage + 1}/{prTotalPages}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setPrPage((p) => Math.min(prTotalPages - 1, p + 1))}
+                        disabled={prPage >= prTotalPages - 1}
+                        className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <a
-                href="/powerrankings"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
-              >
-                Ver tudo
-                <ChevronRight className="h-3.5 w-3.5" />
-              </a>
-            </div>
-
-            <div className="space-y-2.5 sm:space-y-3">
-              {prLoading ? (
-                <div className="py-8 text-center text-sm font-bold text-white/82">
-                  Carregando...
-                </div>
-              ) : (
-                prData.map((row, i) => {
-                  const avatar = getTeamAvatar(row.team)
-
-                  return (
-                    <a
-                      key={row.team}
-                      href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[#31527a]/84 px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[#375c88]/92"
+              {!prLoading && prLeader && (
+                <a
+                  href={`/teams?team=${encodeURIComponent(prLeader.team)}`}
+                  className="mx-4 mb-4 flex items-center gap-4 rounded-[26px] border border-emerald-300/18 bg-[linear-gradient(135deg,rgba(28,54,52,0.98),rgba(10,18,35,0.99))] px-4 py-4 text-white shadow-[0_12px_28px_rgba(16,185,129,0.10)] transition-all hover:-translate-y-[1px] sm:mx-5"
+                >
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-emerald-300/25 bg-emerald-300/12 font-black text-emerald-200">
+                    <span
+                      style={{
+                        fontFamily: '"Bebas Neue", sans-serif',
+                        fontSize: '28px',
+                        lineHeight: 1,
+                      }}
                     >
-                      <div className="flex w-8 flex-shrink-0 justify-center">
-                        <span
-                          className="text-center font-black leading-none"
-                          style={{
-                            fontFamily: '"Bebas Neue", sans-serif',
-                            fontSize: '24px',
-                            color:
-                              i === 0
-                                ? '#ffffff'
-                                : i <= 1
-                                  ? '#dbe7ff'
-                                  : i <= 3
-                                    ? '#b4cbed'
-                                    : '#89a3c8',
-                          }}
-                        >
-                          {row.rank}
-                        </span>
+                      1
+                    </span>
+                  </div>
+
+                  {getTeamAvatar(prLeader.team) ? (
+                    <img
+                      src={getTeamAvatar(prLeader.team)}
+                      alt={prLeader.team}
+                      className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
+                      {prLeader.team.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div className="truncate text-[15px] font-black tracking-[0.01em] text-white sm:text-[16px]">
+                        {prLeader.team}
                       </div>
 
-                      {avatar ? (
-                        <img
-                          src={avatar}
-                          alt={row.team}
-                          className="h-10 w-10 flex-shrink-0 rounded-[16px] object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[16px] border border-cyan-100/16 bg-white/8 text-[10px] font-black text-cyan-50">
-                          {row.team.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
+                      <span className="hidden rounded-full border border-emerald-500 bg-emerald-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white sm:inline-flex">
+                        Leader
+                      </span>
+                    </div>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[15px] font-black tracking-[0.01em] text-white">
-                          {row.team}
-                        </div>
+                    <div className="mt-1 text-[11px] font-bold text-emerald-100/90">
+                      {getPrLeaderMessage(prLeader)}
+                    </div>
+
+                    <div className="mt-2 sm:hidden">
+                      <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white">
+                        {prLeader.delta > 0 ? (
+                          <TrendingUp className="h-3.5 w-3.5 text-emerald-300" />
+                        ) : prLeader.delta < 0 ? (
+                          <TrendingDown className="h-3.5 w-3.5 text-rose-300" />
+                        ) : (
+                          <Minus className="h-3.5 w-3.5 text-slate-300" />
+                        )}
+                        {prLeader.delta > 0
+                          ? `+${Math.abs(prLeader.delta)}`
+                          : prLeader.delta < 0
+                            ? `-${Math.abs(prLeader.delta)}`
+                            : '0'}
                       </div>
+                    </div>
+                  </div>
 
-                      <span
-                        className={`flex min-w-[34px] items-center justify-end gap-1 text-xs font-black ${row.delta > 0
-                          ? 'text-emerald-300'
-                          : row.delta < 0
-                            ? 'text-rose-300'
-                            : 'text-slate-300'
+                  <div className="hidden flex-shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white sm:inline-flex">
+                    {prLeader.delta > 0 ? (
+                      <TrendingUp className="h-3.5 w-3.5 text-emerald-300" />
+                    ) : prLeader.delta < 0 ? (
+                      <TrendingDown className="h-3.5 w-3.5 text-rose-300" />
+                    ) : (
+                      <Minus className="h-3.5 w-3.5 text-slate-300" />
+                    )}
+                    {prLeader.delta > 0
+                      ? `+${Math.abs(prLeader.delta)}`
+                      : prLeader.delta < 0
+                        ? `-${Math.abs(prLeader.delta)}`
+                        : '0'}
+                  </div>
+                </a>
+              )}
+
+              {!prLoading && visiblePrRows.length > 0 && (
+                <div className="px-4 pb-2 sm:px-5">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    {prSectionLabel}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2.5 px-4 pb-4 sm:space-y-3 sm:px-5 sm:pb-5">
+                {prLoading ? (
+                  <div className="py-8 text-center text-sm font-bold text-white/82">
+                    Carregando...
+                  </div>
+                ) : (
+                  visiblePrRows.map((row, i) => {
+                    const avatar = getTeamAvatar(row.team)
+                    const globalIndex = prPage * prPageSize + i
+                    const isTop3 = globalIndex < 2
+
+                    const trendText =
+                      row.delta > 0
+                        ? `Climbed ${Math.abs(row.delta)} ${Math.abs(row.delta) === 1 ? 'position' : 'positions'}`
+                        : row.delta < 0
+                          ? `Dropped ${Math.abs(row.delta)} ${Math.abs(row.delta) === 1 ? 'position' : 'positions'}`
+                          : 'Remained stable'
+
+                    const trendChip =
+                      row.delta > 0
+                        ? {
+                          label: 'HOT',
+                          className: 'border-emerald-500 bg-emerald-500 text-white',
+                          icon: <TrendingUp className="h-3.5 w-3.5" />,
+                        }
+                        : row.delta < 0
+                          ? {
+                            label: 'DOWN',
+                            className: 'border-rose-500 bg-rose-500 text-white',
+                            icon: <TrendingDown className="h-3.5 w-3.5" />,
+                          }
+                          : {
+                            label: 'EVEN',
+                            className: 'border-slate-500 bg-slate-500 text-white',
+                            icon: <Minus className="h-3.5 w-3.5" />,
+                          }
+
+                    return (
+                      <a
+                        key={`${row.team}-${globalIndex}`}
+                        href={`/teams?team=${encodeURIComponent(row.team)}`}
+                        className={`group flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] ${isTop3
+                          ? 'border-emerald-300/16 bg-[linear-gradient(160deg,rgba(24,48,54,0.98),rgba(10,18,35,0.99))]'
+                          : 'border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
                           }`}
                       >
-                        {row.delta > 0 ? (
-                          <TrendingUp className="h-3.5 w-3.5" />
-                        ) : row.delta < 0 ? (
-                          <TrendingDown className="h-3.5 w-3.5" />
+                        <div
+                          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border font-black ${isTop3
+                            ? 'border-emerald-300/25 bg-emerald-300/12 text-emerald-200'
+                            : 'border-white/10 bg-white/5 text-slate-200'
+                            }`}
+                          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px' }}
+                        >
+                          {row.rank}
+                        </div>
+
+                        {avatar ? (
+                          <img
+                            src={avatar}
+                            alt={row.team}
+                            className="h-10 w-10 flex-shrink-0 rounded-[16px] object-cover"
+                          />
                         ) : (
-                          <Minus className="h-3.5 w-3.5" />
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/8 text-[10px] font-black text-cyan-50">
+                            {row.team.slice(0, 2).toUpperCase()}
+                          </div>
                         )}
-                        {row.delta !== 0 ? Math.abs(row.delta) : ''}
-                      </span>
-                    </a>
-                  )
-                })
-              )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className={`truncate text-[15px] font-black tracking-[0.01em] ${isTop3 ? 'text-emerald-50' : 'text-white'}`}>
+                            {row.team}
+                          </div>
+
+                          <div className="mt-0.5 text-[11px] font-bold text-slate-400">
+                            {trendText}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-shrink-0 items-center gap-2">
+                          <div
+                            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${trendChip.className}`}
+                          >
+                            {trendChip.icon}
+                            {trendChip.label}
+                          </div>
+                        </div>
+                      </a>
+                    )
+                  })
+                )}
+              </div>
             </div>
           </div>
 
           {/* Current Standings */}
-          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.16)] xl:flex-1">
-            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <BarChart2 className="h-5 w-5 text-white" />
+          <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
+            {/* ── HEADER ──── */}
+            <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                  <BarChart2 className="h-4.5 w-4.5 text-cyan-300 sm:h-5 sm:w-5" />
                 </div>
 
                 <div className="min-w-0">
                   <div
-                    className="uppercase leading-none text-white"
+                    className="truncate uppercase leading-none text-cyan-300"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
+                      fontSize: '20px',
+                      letterSpacing: '0.06em',
                       fontWeight: 900,
                     }}
                   >
                     Standings
                   </div>
 
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                  <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                     {currentSeason
                       ? currentWeekLabel === '__final__'
-                        ? `Season ${currentSeason} · Final Standings`
+                        ? `${currentSeason} · Final Standings`
                         : currentWeekLabel
-                          ? `Season ${currentSeason} · Through Week ${currentWeekLabel}`
-                          : `Season ${currentSeason}`
+                          ? `${currentSeason} · Through Week ${currentWeekLabel}`
+                          : `${currentSeason}`
                       : 'Carregando...'}
                   </div>
                 </div>
               </div>
 
-              <a
-                href="/standings"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
-              >
-                Ver tudo
-                <ChevronRight className="h-3.5 w-3.5" />
-              </a>
+              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
+                <a
+                  href="/standings"
+                  className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+                >
+                  Ver tudo
+                  <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                </a>
+
+                {standingsTotalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setStandingsPage((p) => Math.max(0, p - 1))}
+                      disabled={standingsPage === 0}
+                      className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                    >
+                      <ChevronLeft className="h-3 w-3" />
+                    </button>
+
+                    <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-cyan-300 sm:min-w-[42px] sm:text-[10px]">
+                      {standingsPage + 1}/{standingsTotalPages}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setStandingsPage((p) => Math.min(standingsTotalPages - 1, p + 1))}
+                      disabled={standingsPage >= standingsTotalPages - 1}
+                      className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2.5 sm:space-y-3">
+            {/* ── DESTAQUE DE MELHOR TIME ──── */}
+            {standingsLeader && currentStandings.length > 0 && (
+              <a
+                href={`/teams?team=${encodeURIComponent(standingsLeader.team)}`}
+                className="mx-4 mb-4 flex items-center gap-4 rounded-[26px] border border-cyan-300/18 bg-[linear-gradient(135deg,rgba(18,50,68,0.98),rgba(10,18,35,0.99))] px-4 py-4 text-white shadow-[0_12px_28px_rgba(34,211,238,0.10)] transition-all hover:-translate-y-[1px] sm:mx-5"
+              >
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-cyan-300/25 bg-cyan-300/12 font-black text-cyan-200">
+                  <span
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: '28px',
+                      lineHeight: 1,
+                    }}
+                  >
+                    1
+                  </span>
+                </div>
+
+                {getTeamAvatar(standingsLeader.team) ? (
+                  <img
+                    src={getTeamAvatar(standingsLeader.team)}
+                    alt={standingsLeader.team}
+                    className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
+                    {standingsLeader.team.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="truncate text-[15px] font-black tracking-[0.01em] text-white sm:text-[16px]">
+                      {standingsLeader.team}
+                    </div>
+
+                    <span className="hidden rounded-full border border-cyan-500 bg-cyan-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white sm:inline-flex">
+                      Best record
+                    </span>
+                  </div>
+
+                  <div className="mt-1 text-[11px] font-bold text-cyan-100/90">
+                    {getStandingsLeaderMessage(standingsLeader)}
+                  </div>
+
+                  <div className="mt-2 flex items-center gap-1.5 whitespace-nowrap sm:hidden">
+                    <span className="text-sm font-black text-emerald-400">
+                      {parseNumber(standingsLeader.w)}W
+                    </span>
+                    <span className="text-xs text-white/25">·</span>
+                    <span className="text-sm font-black text-rose-400">
+                      {parseNumber(standingsLeader.l)}L
+                    </span>
+                    <span className="text-xs text-white/25">·</span>
+                    <span className="text-sm font-bold text-slate-200">
+                      {Math.round(Number(standingsLeader?.pf ?? 0))} pts
+                    </span>
+                  </div>
+                </div>
+
+                <div className="hidden flex-shrink-0 flex-col items-end text-right sm:flex">
+                  <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                    <span className="text-sm font-black text-emerald-400 sm:text-base">
+                      {parseNumber(standingsLeader.w)}W
+                    </span>
+                    <span className="text-xs text-white/25">·</span>
+                    <span className="text-sm font-black text-rose-400 sm:text-base">
+                      {parseNumber(standingsLeader.l)}L
+                    </span>
+                  </div>
+
+                  <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200/75 sm:text-[11px]">
+                    {Math.round(Number(standingsLeader?.pf ?? 0))} pts
+                  </div>
+                </div>
+              </a>
+            )}
+
+            {/* ── LABEL DA SEÇÃO ──── */}
+            {currentStandings.length > 0 && visibleStandingsRows.length > 0 && (
+              <div className="px-4 pb-2 sm:px-5">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                  {standingsSectionLabel}
+                </div>
+              </div>
+            )}
+
+            {/* ── CONTEUDO ──── */}
+            <div className="space-y-2.5 px-4 pb-4 sm:space-y-3 sm:px-5 sm:pb-5">
               {currentStandings.length === 0 ? (
                 <div className="py-8 text-center text-sm font-bold text-slate-300">
                   Carregando...
                 </div>
               ) : (
-                currentStandings.slice(0, 10).map((row, i) => {
+                visibleStandingsRows.map((row, i) => {
                   const avatar = getTeamAvatar(row.team)
+                  const globalIndex = standingsPage * standingsPageSize + i + (standingsPage === 0 && standingsLeader ? 1 : 0)
+                  const isPlayoffRange = globalIndex < 6
 
                   return (
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[#2a3f6b] px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[#314a7c]"
+                      className={`flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] ${isPlayoffRange
+                        ? 'border-cyan-300/12 bg-[linear-gradient(160deg,rgba(18,36,56,0.98),rgba(10,18,35,0.99))]'
+                        : 'border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
+                        }`}
                     >
-                      <div className="flex w-8 flex-shrink-0 justify-center">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/5">
                         <span
                           className="text-center font-black leading-none"
                           style={{
                             fontFamily: '"Bebas Neue", sans-serif',
-                            fontSize: '24px',
-                            color:
-                              i === 0
-                                ? '#ffffff'
-                                : i <= 3
-                                  ? '#dbe7ff'
-                                  : '#7b95bf',
+                            fontSize: '22px',
+                            color: isPlayoffRange ? '#a5f3fc' : '#cbd5e1',
                           }}
                         >
-                          {i + 1}
+                          {globalIndex + 1}
                         </span>
                       </div>
 
@@ -2694,9 +3414,27 @@ export default function TapitasLeagueHomepage() {
                         <div className="truncate text-[15px] font-black tracking-[0.01em] text-white">
                           {row.team}
                         </div>
+
+                        <div className="mt-0.5 text-[11px] font-bold text-slate-400">
+                          {currentWeekLabel === '__final__'
+                            ? isPlayoffRange
+                              ? 'The top teams'
+                              : 'The other teams'
+                            : isPlayoffRange
+                              ? 'Playoff-bound teams'
+                              : 'Chasing the cut'}
+                        </div>
+
+                        <div className="mt-1.5 flex items-center gap-1.5 whitespace-nowrap sm:hidden">
+                          <span className="text-sm font-black text-emerald-400">{row.w}W</span>
+                          <span className="text-xs text-white/25">·</span>
+                          <span className="text-sm font-black text-rose-400">{row.l}L</span>
+                          <span className="text-xs text-white/25">·</span>
+                          <span className="text-sm font-bold text-slate-200">{Math.round(row.pf)} pts</span>
+                        </div>
                       </div>
 
-                      <div className="flex flex-shrink-0 items-center gap-1.5 pl-2 whitespace-nowrap">
+                      <div className="hidden flex-shrink-0 items-center gap-1.5 pl-2 whitespace-nowrap sm:flex">
                         <span className="text-sm font-black text-emerald-400">{row.w}W</span>
                         <span className="text-xs text-white/25">·</span>
                         <span className="text-sm font-black text-rose-400">{row.l}L</span>
@@ -2711,48 +3449,79 @@ export default function TapitasLeagueHomepage() {
           </div>
         </motion.div>
 
-        {/* ── NEWS PREVIEW ───────────────────────────────────────────────── */}
+        {/* ── NEWS PREVIEW ────── */}
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
           whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: false, amount: 0.06 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+          className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
         >
-          <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                <Newspaper className="h-5 w-5 text-white" />
+          {/* ── HEADER───────── */}
+          <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                <Newspaper className="h-4.5 w-4.5 text-sky-300 sm:h-5 sm:w-5" />
               </div>
 
               <div className="min-w-0">
                 <div
-                  className="uppercase leading-none text-white"
+                  className="truncate uppercase leading-none text-sky-300"
                   style={{
                     fontFamily: '"Bebas Neue", sans-serif',
-                    fontSize: '24px',
-                    letterSpacing: '0.075em',
+                    fontSize: '20px',
+                    letterSpacing: '0.06em',
                     fontWeight: 900,
                   }}
                 >
                   Newsletter
                 </div>
 
-                <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                   Memes, recaps and news
                 </div>
               </div>
             </div>
 
-            <a
-              href="/news"
-              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
-            >
-              Ver tudo
-              <ChevronRight className="h-3.5 w-3.5" />
-            </a>
+            <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
+              <a
+                href="/news"
+                className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+              >
+                Ver tudo
+                <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              </a>
+
+              {newsTotalPages > 1 && (
+                <div className="flex items-center gap-1 sm:hidden">
+                  <button
+                    type="button"
+                    onClick={() => goNewsPage(-1)}
+                    disabled={newsPage === 0}
+                    className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </button>
+
+                  <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-sky-300">
+                    {newsPage + 1}/{newsTotalPages}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => goNewsPage(1)}
+                    disabled={newsPage >= newsTotalPages - 1}
+                    className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
+
+          {/* ── CONTEUDO ------ */}
           {newsLoading ? (
             <div className="py-10 text-center text-sm font-bold text-slate-300">
               Carregando...
@@ -2762,255 +3531,890 @@ export default function TapitasLeagueHomepage() {
               Nenhum post ainda.
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {newsPosts.map((post, i) => {
-                const s = CATEGORY_STYLE[post.category]
-                const Icon = s?.icon || Newspaper
+            <>
+              <div
+                className="block sm:hidden px-4 pb-3"
+                onTouchStart={handleNewsTouchStart}
+                onTouchEnd={handleNewsTouchEnd}
+              >
+                {featuredNewsPosts[newsPage] && (() => {
+                  const post = featuredNewsPosts[newsPage]
+                  const s = CATEGORY_STYLE[post.category]
+                  const Icon = s?.icon || Newspaper
 
-                return (
-                  <a
-                    key={post.id || i}
-                    href={`/news/${post.slug}`}
-                    className="group overflow-hidden rounded-[24px] border border-white/8 bg-white/[0.03] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-white/[0.05] hover:border-white/12"
-                  >
-                    {post.imageUrl && (
-                      <div className="h-36 w-full overflow-hidden rounded-t-[24px]">
-                        <img
-                          src={post.imageUrl.split('|')[0]}
-                          alt={post.title}
-                          className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                    )}
-
-                    <div className="p-4">
-                      {post.category && s && (
-                        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-100">
-                          <Icon className="h-3 w-3" />
-                          {post.category}
+                  return (
+                    <a
+                      href={`/news/${post.slug}`}
+                      className="group block overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:bg-white/[0.05] hover:border-white/12"
+                    >
+                      {post.imageUrl && (
+                        <div className="h-44 w-full overflow-hidden rounded-t-[24px]">
+                          <motion.img
+                            key={post.imageUrl}
+                            src={post.imageUrl.split('|')[0]}
+                            alt={post.title}
+                            initial={{ scale: 1.03, opacity: 0.92 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                            className="h-full w-full object-cover object-top"
+                          />
                         </div>
                       )}
 
-                      <h3 className="line-clamp-2 text-[14px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300 sm:text-[15px]">
-                        {post.title}
-                      </h3>
+                      <div className="p-4">
+                        <motion.div
+                          key={`${post.id || post.slug || newsPage}-content`}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          {post.category && s && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2, delay: 0.02, ease: [0.22, 1, 0.36, 1] }}
+                              className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}
+                            >
+                              <Icon className="h-3 w-3" />
+                              {post.category}
+                            </motion.div>
+                          )}
 
-                      <div className="mt-2 text-[12px] font-bold text-slate-400">
-                        {formatDate(post.date)}
+                          <motion.h3
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.24, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+                            className="text-[16px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300"
+                          >
+                            {post.title}
+                          </motion.h3>
+
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.24, delay: 0.09, ease: [0.22, 1, 0.36, 1] }}
+                            className="mt-2 text-[12px] font-bold text-slate-400"
+                          >
+                            {formatDate(post.date)}
+                          </motion.div>
+                        </motion.div>
+                      </div>
+                    </a>
+                  )
+                })()}
+              </div>
+
+              {newsTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 px-4 pb-4 sm:hidden">
+                  {featuredNewsPosts.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setNewsPage(i)}
+                      aria-label={`Go to newsletter item ${i + 1}`}
+                      className={`h-2.5 rounded-full transition-all ${i === newsPage
+                        ? 'w-6 bg-sky-300'
+                        : 'w-2.5 bg-white/20 hover:bg-white/35'
+                        }`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="hidden grid-cols-2 gap-3 px-4 pb-4 sm:grid lg:grid-cols-4 sm:px-5 sm:pb-5">
+                {featuredNewsPosts.map((post, i) => {
+                  const s = CATEGORY_STYLE[post.category]
+                  const Icon = s?.icon || Newspaper
+
+                  return (
+                    <a
+                      key={post.id || i}
+                      href={`/news/${post.slug}`}
+                      className="group overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-white/[0.05] hover:border-white/12"
+                    >
+                      {post.imageUrl && (
+                        <div className="h-36 w-full overflow-hidden rounded-t-[24px]">
+                          <img
+                            src={post.imageUrl.split('|')[0]}
+                            alt={post.title}
+                            className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </div>
+                      )}
+
+                      <div className="p-4">
+                        {post.category && s && (
+                          <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}>
+                            <Icon className="h-3 w-3" />
+                            {post.category}
+                          </div>
+                        )}
+
+                        <h3 className="line-clamp-2 text-[14px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300 sm:text-[15px]">
+                          {post.title}
+                        </h3>
+
+                        <div className="mt-2 text-[12px] font-bold text-slate-400">
+                          {formatDate(post.date)}
+                        </div>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </motion.div>
+
+        {/* ── LEADERS + RIVALRY ───────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
+          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: true, amount: 0.06 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
+        >
+          {/* FRANCHISE LEADERS */}
+          <motion.div
+            initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            viewport={{ once: true, amount: 0.08 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[0.85]"
+          >
+            <div className="flex h-full flex-col">
+              {/* Header */}
+              <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                    <Medal className="h-4.5 w-4.5 text-yellow-300 sm:h-5 sm:w-5" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div
+                      className="truncate uppercase leading-none text-yellow-300"
+                      style={{
+                        fontFamily: '"Bebas Neue", sans-serif',
+                        fontSize: '20px',
+                        letterSpacing: '0.06em',
+                        fontWeight: 900,
+                      }}
+                    >
+                      Franchise Leaders
+                    </div>
+
+                    <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                      League rankings
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
+                  <a
+                    href="/standings"
+                    className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+                  >
+                    Ver tudo
+                    <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  </a>
+
+                  {leadersTotalPages > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setLeadersPage((p) => Math.max(0, p - 1))}
+                        disabled={leadersPage === 0}
+                        className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                      </button>
+
+                      <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-yellow-300 sm:min-w-[42px] sm:text-[10px]">
+                        {leadersPage + 1}/{leadersTotalPages}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setLeadersPage((p) => Math.min(leadersTotalPages - 1, p + 1))}
+                        disabled={leadersPage >= leadersTotalPages - 1}
+                        className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-4 flex flex-col gap-2 px-4 sm:flex-row sm:gap-3 sm:px-5">
+                <TeamSelect
+                  value={sortCategory}
+                  onChange={setSortCategory}
+                  options={SORT_OPTIONS.map(o => o.label)}
+                  placeholder="Category..."
+                />
+
+                {SORT_OPTIONS.find(o => o.label === sortCategory)?.subs.length > 1 && (
+                  <TeamSelect
+                    value={sortSub}
+                    onChange={setSortSub}
+                    options={SORT_OPTIONS.find(o => o.label === sortCategory)?.subs.map(s => s.label) ?? []}
+                    placeholder="Type..."
+                  />
+                )}
+              </div>
+
+              {topLeader && (() => {
+                const cat = SORT_OPTIONS.find(o => o.label === sortCategory)
+                const sub = cat?.subs.find(s => s.label === sortSub) ?? cat?.subs[0]
+
+                const keyMap = {
+                  'W': t => t.wins,
+                  'RS_W': t => t.rsW,
+                  'PO_W': t => t.poW,
+                  'L': t => t.losses,
+                  'RS_L': t => t.rsL,
+                  'PO_L': t => t.poL,
+                  'W%': t => `${Math.round(t.winPct)}%`,
+                  'RS_W%': t => `${Math.round(t.rsWinPct)}%`,
+                  'PO_W%': t => `${Math.round(t.poWinPct)}%`,
+                  'PF': t => Math.round(t.pf),
+                  'RS_PF': t => Math.round(t.rsPF),
+                  'PO_PF': t => Math.round(t.poPF),
+                  'W Streak RS': t => t.wStreakRS,
+                  'W Streak Total': t => t.wStreakTotal,
+                  'L Streak RS': t => t.lStreakRS,
+                  'L Streak Total': t => t.lStreakTotal,
+                  'Playoff Apps': t => t.playoffApps,
+                  'Finals': t => t.finals,
+                  'Titles': t => t.titles,
+                }
+
+                const shortLabelMap = {
+                  'W': 'Wins',
+                  'RS_W': 'Wins',
+                  'PO_W': 'Wins',
+                  'L': 'Losses',
+                  'RS_L': 'Losses',
+                  'PO_L': 'Losses',
+                  'W%': 'Win %',
+                  'RS_W%': 'Win %',
+                  'PO_W%': 'Win %',
+                  'PF': 'Points',
+                  'RS_PF': 'Points',
+                  'PO_PF': 'Points',
+                  'W Streak RS': 'Games',
+                  'W Streak Total': 'Games',
+                  'L Streak RS': 'Games',
+                  'L Streak Total': 'Games',
+                  'Playoff Apps': 'Apps',
+                  'Finals': 'Finals',
+                  'Titles': 'Titles',
+                }
+
+                const displayValue = sub ? keyMap[sub.key]?.(topLeader) ?? '—' : topLeader.wins
+                const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
+                const avatar = getTeamAvatar(topLeader.team)
+
+                return (
+                  <a
+                    href={`/teams?team=${encodeURIComponent(topLeader.team)}`}
+                    className="mx-4 mb-4 flex items-center gap-4 rounded-[26px] border border-yellow-300/16 bg-[linear-gradient(135deg,rgba(54,43,20,0.62),rgba(10,18,35,0.99))] px-4 py-4 text-white shadow-[0_12px_28px_rgba(245,158,11,0.08)] transition-all hover:-translate-y-[1px] sm:mx-5"
+                  >
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-yellow-300/20 bg-yellow-300/10 font-black text-yellow-200">
+                      <span
+                        style={{
+                          fontFamily: '"Bebas Neue", sans-serif',
+                          fontSize: '28px',
+                          lineHeight: 1,
+                        }}
+                      >
+                        1
+                      </span>
+                    </div>
+
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt={topLeader.team}
+                        className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
+                        {topLeader.team.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="truncate text-[15px] font-black tracking-[0.01em] text-white sm:text-[16px]">
+                          {topLeader.team}
+                        </div>
+
+                        <span className="hidden rounded-full border border-yellow-500/80 bg-yellow-500/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 sm:inline-flex">
+                          Leader
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0 text-right">
+                      <div
+                        className="font-black leading-none text-yellow-200"
+                        style={{ fontSize: 'clamp(28px,5vw,40px)' }}
+                      >
+                        {displayValue}
+                      </div>
+
+                      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-yellow-200/75 sm:text-[11px]">
+                        {shortLabel}
                       </div>
                     </div>
                   </a>
                 )
-              })}
-            </div>
-          )}
-        </motion.div>
+              })()}
 
-        {/* ── DRAFT PICKS + RECORDS ───────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
-          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.06 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
-        >
-          {/* DRAFT — scrolling picks feed */}
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.16)]">
-            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <ScrollText className="h-5 w-5 text-white" />
-                </div>
+              <div className="space-y-2.5 px-4 pb-4 sm:space-y-3 sm:px-5 sm:pb-5">
+                {pagedLeaders.map((team, index) => {
+                  const cat = SORT_OPTIONS.find(o => o.label === sortCategory)
+                  const sub = cat?.subs.find(s => s.label === sortSub) ?? cat?.subs[0]
 
-                <div className="min-w-0">
-                  <div
-                    className="uppercase leading-none text-white"
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
-                      fontWeight: 900,
-                    }}
-                  >
-                    Last Draft
-                  </div>
+                  const keyMap = {
+                    'W': t => t.wins,
+                    'RS_W': t => t.rsW,
+                    'PO_W': t => t.poW,
+                    'L': t => t.losses,
+                    'RS_L': t => t.rsL,
+                    'PO_L': t => t.poL,
+                    'W%': t => `${Math.round(t.winPct)}%`,
+                    'RS_W%': t => `${Math.round(t.rsWinPct)}%`,
+                    'PO_W%': t => `${Math.round(t.poWinPct)}%`,
+                    'PF': t => Math.round(t.pf),
+                    'RS_PF': t => Math.round(t.rsPF),
+                    'PO_PF': t => Math.round(t.poPF),
+                    'W Streak RS': t => t.wStreakRS,
+                    'W Streak Total': t => t.wStreakTotal,
+                    'L Streak RS': t => t.lStreakRS,
+                    'L Streak Total': t => t.lStreakTotal,
+                    'Playoff Apps': t => t.playoffApps,
+                    'Finals': t => t.finals,
+                    'Titles': t => t.titles,
+                  }
 
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                    {draftSeason ? `Season ${draftSeason} · First 10 picks` : 'Carregando...'}
-                  </div>
-                </div>
-              </div>
+                  const shortLabelMap = {
+                    'W': 'Wins',
+                    'RS_W': 'Wins',
+                    'PO_W': 'Wins',
+                    'L': 'Losses',
+                    'RS_L': 'Losses',
+                    'PO_L': 'Losses',
+                    'W%': 'Win %',
+                    'RS_W%': 'Win %',
+                    'PO_W%': 'Win %',
+                    'PF': 'Points',
+                    'RS_PF': 'Points',
+                    'PO_PF': 'Points',
+                    'W Streak RS': 'Games',
+                    'W Streak Total': 'Games',
+                    'L Streak RS': 'Games',
+                    'L Streak Total': 'Games',
+                    'Playoff Apps': 'Apps',
+                    'Finals': 'Finals',
+                    'Titles': 'Titles',
+                  }
 
-              <a
-                href="/draft"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
-              >
-                Draft Board
-                <ChevronRight className="h-3.5 w-3.5" />
-              </a>
-            </div>
-
-            <div className="space-y-2.5 sm:space-y-3">
-              {draftPicks.length === 0 ? (
-                <div className="py-8 text-center text-sm font-bold text-slate-300">
-                  Carregando...
-                </div>
-              ) : (
-                draftPicks.map((pick, i) => {
-                  const avatar = getTeamAvatar(pick.team)
-                  const posColor =
-                    POS_COLORS[pick.position] ||
-                    'text-slate-200 border-white/10 bg-white/8'
-                  const isFirstRoundEnd = i > 0 && draftPicks[i - 1].round !== pick.round
+                  const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
+                  const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
+                  const avatar = getTeamAvatar(team.team)
+                  const globalIndex = leadersPage === 0 ? index + 1 : index + 5
+                  const isTop3 = globalIndex < 3
 
                   return (
-                    <div key={i}>
-                      {isFirstRoundEnd && (
-                        <div className="px-4 pb-1 pt-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300">
-                          Round {pick.round}
+                    <a
+                      key={`${team.team}-${globalIndex}`}
+                      href={`/teams?team=${encodeURIComponent(team.team)}`}
+                      className={`group flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] ${isTop3
+                        ? 'border-yellow-300/10 bg-[linear-gradient(160deg,rgba(36,31,20,0.52),rgba(10,18,35,0.99))]'
+                        : 'border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
+                        }`}
+                    >
+                      <div
+                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border font-black ${isTop3
+                          ? 'border-yellow-300/14 bg-yellow-300/[0.06] text-yellow-100'
+                          : 'border-white/10 bg-white/5 text-slate-200'
+                          }`}
+                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px' }}
+                      >
+                        {globalIndex + 1}
+                      </div>
+
+                      {avatar ? (
+                        <img
+                          src={avatar}
+                          alt={team.team}
+                          className="h-10 w-10 flex-shrink-0 rounded-[16px] object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/8 text-[10px] font-black text-cyan-50">
+                          {team.team.slice(0, 2).toUpperCase()}
                         </div>
                       )}
 
-                      <a
-                        href={`/teams?team=${encodeURIComponent(pick.team)}`}
-                        className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-[#2a3f6b] px-4 py-3 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-[#314a7c]"
-                      >
-                        <span
-                          className="w-7 flex-shrink-0 text-center font-black leading-none text-slate-300"
-                          style={{
-                            fontFamily: '"Bebas Neue", sans-serif',
-                            fontSize: '22px',
-                          }}
+                      <div className="min-w-0 flex-1">
+                        <div className={`truncate text-[15px] font-black tracking-[0.01em] ${isTop3 ? 'text-yellow-50' : 'text-white'}`}>
+                          {team.team}
+                        </div>
+                      </div>
+
+                      <div className="flex-shrink-0 text-right">
+                        <div
+                          className={`font-black leading-none ${isTop3 ? 'text-yellow-100' : 'text-slate-200'}`}
+                          style={{ fontSize: 'clamp(24px,4vw,36px)' }}
                         >
-                          {pick.pick}
-                        </span>
-
-                        {avatar ? (
-                          <img
-                            src={avatar}
-                            alt={pick.team}
-                            className="h-9 w-9 flex-shrink-0 rounded-[14px] object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-[9px] font-black text-slate-100">
-                            {pick.team.slice(0, 2).toUpperCase()}
-                          </div>
-                        )}
-
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-[15px] font-black tracking-[0.01em] text-white">
-                            {pick.player}
-                          </div>
+                          {displayValue}
                         </div>
 
-                        <span
-                          className={`flex-shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${posColor}`}
-                        >
-                          {pick.position}
-                        </span>
-                      </a>
-                    </div>
+                        <div className={`text-[11px] font-black uppercase tracking-[0.15em] ${isTop3 ? 'text-yellow-200/55' : 'text-slate-500'}`}>
+                          {shortLabel}
+                        </div>
+                      </div>
+                    </a>
                   )
-                })
-              )}
+                })}
+              </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* RECORDS — leaders per category with tied display */}
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.18)]">
-            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                  <Zap className="h-5 w-5 text-white" />
+          {/* RIVALRY SPOTLIGHT */}
+          <motion.div
+            initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            viewport={{ once: true, amount: 0.08 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[1.15]"
+          >
+            <div className="flex h-full flex-col">
+              <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                    <Swords className="h-4.5 w-4.5 text-rose-300 sm:h-5 sm:w-5" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div
+                      className="truncate uppercase leading-none text-rose-300"
+                      style={{
+                        fontFamily: '"Bebas Neue", sans-serif',
+                        fontSize: '20px',
+                        letterSpacing: '0.06em',
+                        fontWeight: 900,
+                      }}
+                    >
+                      Rivalry Spotlight
+                    </div>
+
+                    <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                      All-time H2H
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href="/rivalries"
+                  className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+                >
+                  Ver tudo
+                  <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                </a>
+              </div>
+
+              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-5">
+                <div className="min-w-0">
+                  <TeamSelect
+                    value={selectedTeamA}
+                    onChange={(val) => {
+                      setSelectedTeamA(val)
+                      setSelectedTeamB('')
+                    }}
+                    options={allTeams}
+                    placeholder="Time A..."
+                  />
+                </div>
+
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-xs font-black text-white">
+                  vs
                 </div>
 
                 <div className="min-w-0">
-                  <div
-                    className="uppercase leading-none text-white"
-                    style={{
-                      fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
-                      fontWeight: 900,
-                    }}
-                  >
-                    All-Time Records
-                  </div>
-
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
-                    Best of the best
-                  </div>
+                  <TeamSelect
+                    value={selectedTeamB}
+                    onChange={setSelectedTeamB}
+                    options={teamsForB}
+                    placeholder="Time B..."
+                    disabled={!selectedTeamA}
+                  />
                 </div>
               </div>
 
-              <a
-                href="/records"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
-              >
-                Ver tudo
-                <ChevronRight className="h-3.5 w-3.5" />
-              </a>
-            </div>
+              {!selectedRivalry ? (
+                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] py-10 text-center sm:mx-5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/10 bg-white/[0.05]">
+                    <Swords className="h-5 w-5 text-slate-200" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-300">
+                    Selecione dois times para ver o confronto
+                  </p>
+                </div>
+              ) : (() => {
+                const bigA = parseBiggestWin(selectedRivalry.biggestA)
+                const bigB = parseBiggestWin(selectedRivalry.biggestB)
+                const strA = parseBestStreak(selectedRivalry.bestStreakA)
+                const strB = parseBestStreak(selectedRivalry.bestStreakB)
+                const wA = selectedRivalry.winsA
+                const wB = selectedRivalry.winsB
+                const aLeads = wA > wB
+                const bLeads = wB > wA
 
-            <div className="space-y-2.5 sm:space-y-3">
-              {[
-                { emoji: '🏆', label: 'Most Titles', getter: t => t.titles, fmt: v => v, color: 'text-yellow-300' },
-                { emoji: '📈', label: 'Most Wins', getter: t => t.wins, fmt: v => v, color: 'text-emerald-300' },
-                { emoji: '🔥', label: 'Top Scorer', getter: t => t.pf, fmt: v => Math.round(v) + ' pts', color: 'text-orange-300' },
-                { emoji: '🎯', label: 'Best Win%', getter: t => t.winPct, fmt: v => v + '%', color: 'text-cyan-200' },
-                { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => v, color: 'text-violet-300' },
-                { emoji: '⚔️', label: 'Finals Apps', getter: t => t.finals, fmt: v => v, color: 'text-rose-300' },
-              ].map(({ emoji, label, getter, fmt, color }) => {
-                const leaders = topNTeams(standings, getter, 3)
-                const topVal = leaders[0] ? getter(leaders[0]) : 0
+                const lastMeetingRaw = String(selectedRivalry.lastMeeting?.score || '').trim()
+                const lastMeetingParts = lastMeetingRaw
+                  ? lastMeetingRaw.split(/[-–—]|vs/i).map(part => part.trim()).filter(Boolean)
+                  : []
+
+                const leftLastMeeting = lastMeetingParts[0] || '—'
+                const rightLastMeeting = lastMeetingParts[1] || '—'
+
+                const leftLastMeetingNum = parseNumber(leftLastMeeting)
+                const rightLastMeetingNum = parseNumber(rightLastMeeting)
+                const leftLastMeetingLead = leftLastMeetingNum > rightLastMeetingNum
+                const rightLastMeetingLead = rightLastMeetingNum > leftLastMeetingNum
+
+                const rawStreak = String(selectedRivalry.streak || '').trim()
+                const streakToken = rawStreak.match(/\b([WL])\s*(\d+)\b/i)
+
+                let leftStreak = '—'
+                let rightStreak = '—'
+                let leftStreakScore = null
+                let rightStreakScore = null
+
+                if (streakToken) {
+                  const result = streakToken[1].toUpperCase()
+                  const count = Number(streakToken[2])
+                  leftStreak = `${result}${count}`
+                  rightStreak = `${result === 'W' ? 'L' : 'W'}${count}`
+                  leftStreakScore = result === 'W' ? count : -count
+                  rightStreakScore = result === 'W' ? -count : count
+                }
+
+                const leftStreakLead =
+                  leftStreakScore !== null && rightStreakScore !== null && leftStreakScore > rightStreakScore
+                const rightStreakLead =
+                  leftStreakScore !== null && rightStreakScore !== null && rightStreakScore > leftStreakScore
+
+                const avgMarginValue = parseNumber(selectedRivalry.avgMargin)
+                const hasAvgMargin =
+                  selectedRivalry.avgMargin !== null &&
+                  selectedRivalry.avgMargin !== undefined &&
+                  String(selectedRivalry.avgMargin).trim() !== ''
+
+                const leftAvgMarginRaw = hasAvgMargin ? avgMarginValue : null
+                const rightAvgMarginRaw = hasAvgMargin ? avgMarginValue * -1 : null
+
+                const leftAvgMargin =
+                  leftAvgMarginRaw === null
+                    ? '—'
+                    : `${leftAvgMarginRaw > 0 ? '+' : leftAvgMarginRaw < 0 ? '' : ''}${leftAvgMarginRaw}`
+
+                const rightAvgMargin =
+                  rightAvgMarginRaw === null
+                    ? '—'
+                    : `${rightAvgMarginRaw > 0 ? '+' : rightAvgMarginRaw < 0 ? '' : ''}${rightAvgMarginRaw}`
+
+                const leftAvgMarginLead =
+                  leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && leftAvgMarginRaw > rightAvgMarginRaw
+                const rightAvgMarginLead =
+                  leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && rightAvgMarginRaw > leftAvgMarginRaw
+
+                const playoffLeft = parseNumber(selectedRivalry.playoffRecord?.split('-')[0] ?? '')
+                const playoffRight = parseNumber(selectedRivalry.playoffRecord?.split('-')[1] ?? '')
+                const leftPlayoffLead = playoffLeft > playoffRight
+                const rightPlayoffLead = playoffRight > playoffLeft
+
+                const bestStreakLeftScore =
+                  strA?.count ? (String(strA.result).toUpperCase() === 'W' ? Number(strA.count) : -Number(strA.count)) : null
+                const bestStreakRightScore =
+                  strB?.count ? (String(strB.result).toUpperCase() === 'W' ? Number(strB.count) : -Number(strB.count)) : null
+
+                const leftBestStreakLead =
+                  bestStreakLeftScore !== null &&
+                  bestStreakRightScore !== null &&
+                  bestStreakLeftScore > bestStreakRightScore
+
+                const rightBestStreakLead =
+                  bestStreakLeftScore !== null &&
+                  bestStreakRightScore !== null &&
+                  bestStreakRightScore > bestStreakLeftScore
+
+                const formatRangeWithResponsiveBreak = (text) => {
+                  if (!text) return ''
+                  const parts = String(text).split(/\s*→\s*/)
+                  if (parts.length < 2) return text
+
+                  return (
+                    <>
+                      <span>{parts[0]}</span>
+                      <span className="inline sm:hidden">
+                        {' '}→
+                        <br />
+                      </span>
+                      <span className="hidden sm:inline">{' → '}</span>
+                      <span>{parts.slice(1).join(' → ')}</span>
+                    </>
+                  )
+                }
+
+                const formatBiggestWinResponsive = (text) => {
+                  if (!text || !String(text).includes(' vs ')) return text
+                  const parts = String(text).split(' vs ')
+                  if (parts.length !== 2) return text
+
+                  return (
+                    <>
+                      <span className="sm:hidden">{text}</span>
+                      <span className="hidden sm:inline md:block lg:inline">
+                        {parts[0]}
+                        <span className="inline md:block lg:inline"> vs </span>
+                        {parts[1]}
+                      </span>
+                    </>
+                  )
+                }
 
                 return (
-                  <div
-                    key={label}
-                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[#31527a]/84 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[#375c88]/92"
-                  >
-                    <span className="flex-shrink-0 text-lg leading-none">{emoji}</span>
+                  <div className="flex flex-col gap-4 px-4 pb-4 sm:px-5 sm:pb-5">
+                    <div className="overflow-hidden rounded-[26px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
+                      <div className="flex items-center justify-between gap-4">
+                        <a
+                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
+                          className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                        >
+                          {(() => {
+                            const av = getTeamAvatar(selectedRivalry.teamA)
+                            return av ? (
+                              <img
+                                src={av}
+                                alt={selectedRivalry.teamA}
+                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-white/20"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
+                                {selectedRivalry.teamA.slice(0, 2).toUpperCase()}
+                              </div>
+                            )
+                          })()}
 
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 text-[10px] font-black uppercase tracking-[0.15em] text-cyan-50/72">
-                        {label}
+                          <span className="max-w-full truncate text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
+                            {shortTeamName(selectedRivalry.teamA)}
+                          </span>
+
+                          <span
+                            className="text-3xl font-black leading-none"
+                            style={{
+                              fontFamily: '"Bebas Neue",sans-serif',
+                              color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0',
+                            }}
+                          >
+                            {wA}
+                          </span>
+                        </a>
+
+                        <div className="flex flex-shrink-0 flex-col items-center gap-1">
+                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            All-Time
+                          </div>
+                          <div className="h-px w-6 bg-white/10" />
+                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            Record
+                          </div>
+                        </div>
+
+                        <a
+                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`}
+                          className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                        >
+                          {(() => {
+                            const av = getTeamAvatar(selectedRivalry.teamB)
+                            return av ? (
+                              <img
+                                src={av}
+                                alt={selectedRivalry.teamB}
+                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-white/20"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
+                                {selectedRivalry.teamB.slice(0, 2).toUpperCase()}
+                              </div>
+                            )
+                          })()}
+
+                          <span className="max-w-full truncate text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
+                            {shortTeamName(selectedRivalry.teamB)}
+                          </span>
+
+                          <span
+                            className="text-3xl font-black leading-none"
+                            style={{
+                              fontFamily: '"Bebas Neue",sans-serif',
+                              color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0',
+                            }}
+                          >
+                            {wB}
+                          </span>
+                        </a>
                       </div>
 
-                      <div className="flex flex-wrap gap-1.5">
-                        {leaders.map(t => {
-                          const av = getTeamAvatar(t.team)
-
-                          return (
-                            <a
-                              key={t.team}
-                              href={`/teams?team=${encodeURIComponent(t.team)}`}
-                              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/8 px-2.5 py-1 transition-all hover:bg-white/12"
-                            >
-                              {av ? (
-                                <img
-                                  src={av}
-                                  alt={t.team}
-                                  className="h-5 w-5 rounded-full object-cover flex-shrink-0"
-                                />
-                              ) : null}
-
-                              <span className="max-w-[88px] truncate text-xs font-black text-white">
-                                {shortTeamName(t.team)}
-                              </span>
-                            </a>
-                          )
-                        })}
+                      <div className="mt-3 flex justify-center">
+                        <div
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
+                              ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
+                              : selectedRivalry.heat === 'Elite'
+                                ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
+                                : selectedRivalry.heat === 'High'
+                                  ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                                  : 'border-white/10 bg-white/[0.04] text-slate-300'
+                            }`}
+                        >
+                          <Flame className="h-3 w-3" />
+                          {selectedRivalry.heat} Rivalry
+                        </div>
                       </div>
                     </div>
 
-                    <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>
-                      {leaders[0] ? fmt(topVal) : '—'}
-                    </span>
+                    <div className="space-y-4 px-1 pt-2 sm:px-2 sm:pt-3">
+                      {[
+                        {
+                          label: 'Playoff Record',
+                          left: selectedRivalry.playoffRecord?.split('-')[0] ?? '—',
+                          right: selectedRivalry.playoffRecord?.split('-')[1] ?? '—',
+                          subLeft: '',
+                          subRight: '',
+                          leftLead: leftPlayoffLead,
+                          rightLead: rightPlayoffLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: false,
+                        },
+                        {
+                          label: 'Biggest Win',
+                          left: bigA ? `${bigA.scoreA} vs ${bigA.scoreB}` : '—',
+                          right: bigB ? `${bigB.scoreA} vs ${bigB.scoreB}` : '—',
+                          subLeft: bigA?.label || '',
+                          subRight: bigB?.label || '',
+                          leftLead: false,
+                          rightLead: false,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: true,
+                        },
+                        {
+                          label: 'Best Streak',
+                          left: strA?.count ? `${strA.result}${strA.count}` : '—',
+                          right: strB?.count ? `${strB.result}${strB.count}` : '—',
+                          subLeft: strA?.start ? `${strA.start}${strA.end ? ` → ${strA.end}` : ''}` : '',
+                          subRight: strB?.start ? `${strB.start}${strB.end ? ` → ${strB.end}` : ''}` : '',
+                          leftLead: leftBestStreakLead,
+                          rightLead: rightBestStreakLead,
+                          breakAfterArrowLeft: true,
+                          breakAfterArrowRight: true,
+                          biggestWinWrap: false,
+                        },
+                        {
+                          label: 'Last Meeting',
+                          left: leftLastMeeting,
+                          right: rightLastMeeting,
+                          subLeft: selectedRivalry.lastMeeting?.meta || '',
+                          subRight: selectedRivalry.lastMeeting?.meta || '',
+                          leftLead: leftLastMeetingLead,
+                          rightLead: rightLastMeetingLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: false,
+                        },
+                        {
+                          label: 'Current Streak',
+                          left: leftStreak,
+                          right: rightStreak,
+                          subLeft: '',
+                          subRight: '',
+                          leftLead: leftStreakLead,
+                          rightLead: rightStreakLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: false,
+                        },
+                        {
+                          label: 'Avg Margin',
+                          left: leftAvgMargin,
+                          right: rightAvgMargin,
+                          subLeft: '',
+                          subRight: '',
+                          leftLead: leftAvgMarginLead,
+                          rightLead: rightAvgMarginLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: false,
+                        },
+                      ].map((item, idx, arr) => (
+                        <div key={item.label}>
+                          <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
+                            <div className="min-w-0 text-left">
+                              <div
+                                className={`text-[22px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                  } ${item.biggestWinWrap ? 'whitespace-normal md:whitespace-normal lg:whitespace-nowrap' : 'whitespace-nowrap'}`}
+                                style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                              >
+                                {item.biggestWinWrap ? formatBiggestWinResponsive(item.left) : item.left}
+                              </div>
+                              {item.subLeft ? (
+                                <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                  {item.breakAfterArrowLeft ? formatRangeWithResponsiveBreak(item.subLeft) : item.subLeft}
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div className="w-full max-w-[72px] justify-self-center pt-1 text-center sm:max-w-[88px]">
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                                {item.label}
+                              </div>
+                            </div>
+
+                            <div className="min-w-0 text-right">
+                              <div
+                                className={`text-[22px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                  } ${item.biggestWinWrap ? 'whitespace-normal md:whitespace-normal lg:whitespace-nowrap' : 'whitespace-nowrap'}`}
+                                style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                              >
+                                {item.biggestWinWrap ? formatBiggestWinResponsive(item.right) : item.right}
+                              </div>
+                              {item.subRight ? (
+                                <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                  {item.breakAfterArrowRight ? formatRangeWithResponsiveBreak(item.subRight) : item.subRight}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          {idx < arr.length - 1 ? (
+                            <div className="mt-4 h-px w-full bg-white/6" />
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )
-              })}
+              })()}
             </div>
-          </div>
+          </motion.div>
+
+
         </motion.div>
 
         {/* ── RECENT MATCHUPS ─────────────────────────────────────────────── */}
@@ -3020,12 +4424,12 @@ export default function TapitasLeagueHomepage() {
             whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: false, amount: 0.06 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+            className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
           >
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <Swords className="h-5 w-5 text-white" />
+                  <Swords className="h-5 w-5 text-red-300" />
                 </div>
 
                 <div className="min-w-0">
@@ -3043,7 +4447,7 @@ export default function TapitasLeagueHomepage() {
 
                   <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
                     {currentSeason
-                      ? `Season ${currentSeason} · Week ${recentMatchups[0]?.week}${recentMatchups[0]?.stage && recentMatchups[0].stage !== 'Reg Season'
+                      ? `${currentSeason} · Week ${recentMatchups[0]?.week}${recentMatchups[0]?.stage && recentMatchups[0].stage !== 'Reg Season'
                         ? ` · ${recentMatchups[0].stage}`
                         : ''
                       }`
@@ -3054,7 +4458,7 @@ export default function TapitasLeagueHomepage() {
 
               <a
                 href="/matchups"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
               >
                 Ver tudo
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -3070,7 +4474,7 @@ export default function TapitasLeagueHomepage() {
                 return (
                   <div
                     key={i}
-                    className="flex items-center gap-2 rounded-[24px] border border-white/[0.06] bg-white/[0.035] p-3 transition-all hover:bg-white/[0.05]"
+                    className="flex items-center gap-2 rounded-[24px] border border-white/[0.06] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 transition-all hover:bg-white/[0.05]"
                   >
                     <a
                       href={`/teams?team=${encodeURIComponent(m.team)}`}
@@ -3129,19 +4533,21 @@ export default function TapitasLeagueHomepage() {
           </motion.div>
         )}
 
-        {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
-        {championsData.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
-            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            viewport={{ once: false, amount: 0.06 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.16)]"
-          >
+        {/* ── RECORDS + CHAMPIONS WALL ──────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
+          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: false, amount: 0.06 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
+        >
+
+          {/* RECORDS — leaders per category with tied display */}
+          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <Trophy className="h-5 w-5 text-white" />
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  <Zap className="h-5 w-5 text-white" />
                 </div>
 
                 <div className="min-w-0">
@@ -3154,349 +4560,100 @@ export default function TapitasLeagueHomepage() {
                       fontWeight: 900,
                     }}
                   >
-                    Champions Wall
+                    All-Time Records
                   </div>
 
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                    Every title. Every campaign.
+                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
+                    Best of the best
                   </div>
                 </div>
               </div>
+
+              <a
+                href="/records"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+              >
+                Ver tudo
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
             </div>
 
-            <ChampionsWallInline champions={championsData} />
-          </motion.div>
-        )}
-
-        {/* ── RIVALRY SPOTLIGHT + FRANCHISE LEADERS ──────────────────────── */}
-        <div className="flex flex-col gap-4 xl:flex-row">
-
-          {/* RIVALRY SPOTLIGHT */}
-          <motion.div
-            initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
-            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            viewport={{ once: false, amount: 0.08 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#1f304e_0%,#223556_100%)] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.18)] xl:flex-[1.15]"
-          >
-            <div className="flex h-full flex-col">
-              <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                    <Swords className="h-5 w-5 text-white" />
-                  </div>
-
-                  <div>
-                    <div
-                      className="uppercase leading-none text-white"
-                      style={{
-                        fontFamily: '"Bebas Neue", sans-serif',
-                        fontSize: '24px',
-                        letterSpacing: '0.075em',
-                        fontWeight: 900,
-                      }}
-                    >
-                      Rivalry Spotlight
-                    </div>
-                    <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
-                      All-time H2H
-                    </div>
-                  </div>
-                </div>
-
-                <a
-                  href="/rivalries"
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#18233f] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[#1d2b4d]"
-                >
-                  Ver tudo
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </a>
-              </div>
-
-              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-5">
-                <TeamSelect
-                  value={selectedTeamA}
-                  onChange={(val) => {
-                    setSelectedTeamA(val)
-                    setSelectedTeamB('')
-                  }}
-                  options={allTeams}
-                  placeholder="Time A..."
-                />
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/12 bg-white/8 text-xs font-black text-white">
-                  vs
-                </div>
-                <TeamSelect
-                  value={selectedTeamB}
-                  onChange={setSelectedTeamB}
-                  options={teamsForB}
-                  placeholder="Time B..."
-                  disabled={!selectedTeamA}
-                />
-              </div>
-
-              {!selectedRivalry ? (
-                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[#31527a]/45 py-10 text-center sm:mx-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/10 bg-white/[0.05]">
-                    <Swords className="h-5 w-5 text-slate-200" />
-                  </div>
-                  <p className="text-xs font-bold text-cyan-50/75">
-                    Selecione dois times para ver o confronto
-                  </p>
-                </div>
-              ) : (() => {
-                const bigA = parseBiggestWin(selectedRivalry.biggestA)
-                const bigB = parseBiggestWin(selectedRivalry.biggestB)
-                const strA = parseBestStreak(selectedRivalry.bestStreakA)
-                const strB = parseBestStreak(selectedRivalry.bestStreakB)
-                const wA = selectedRivalry.winsA
-                const wB = selectedRivalry.winsB
-                const aLeads = wA > wB
-                const bLeads = wB > wA
+            <div className="space-y-2.5 sm:space-y-3">
+              {[
+                { emoji: '🏆', label: 'Most Titles', getter: t => t.titles, fmt: v => v, color: 'text-yellow-300' },
+                { emoji: '📈', label: 'Most Wins', getter: t => t.wins, fmt: v => v, color: 'text-emerald-300' },
+                { emoji: '🔥', label: 'Top Scorer', getter: t => t.pf, fmt: v => Math.round(v) + ' pts', color: 'text-orange-300' },
+                { emoji: '🎯', label: 'Best Win%', getter: t => t.winPct, fmt: v => v + '%', color: 'text-cyan-200' },
+                { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => v, color: 'text-violet-300' },
+                { emoji: '⚔️', label: 'Finals Apps', getter: t => t.finals, fmt: v => v, color: 'text-rose-300' },
+              ].map(({ emoji, label, getter, fmt, color }) => {
+                const leaders = topNTeams(standings, getter, 3)
+                const topVal = leaders[0] ? getter(leaders[0]) : 0
 
                 return (
-                  <div className="flex flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
-                    {/* VS strip */}
-                    <div className="overflow-hidden rounded-[24px] border border-white/9 bg-[#31527a]/84 p-4 shadow-[0_8px_18px_rgba(15,23,42,0.12)]">
-                      <div className="flex items-center justify-between gap-4">
-                        <a
-                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
-                          className="group flex flex-1 flex-col items-center gap-1.5"
-                        >
-                          {(() => {
-                            const av = getTeamAvatar(selectedRivalry.teamA)
-                            return av ? (
-                              <img
-                                src={av}
-                                alt={selectedRivalry.teamA}
-                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-cyan-200/45"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
-                                {selectedRivalry.teamA.slice(0, 2).toUpperCase()}
-                              </div>
-                            )
-                          })()}
-                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-cyan-200">
-                            {shortTeamName(selectedRivalry.teamA)}
-                          </span>
-                          <span
-                            className="text-3xl font-black leading-none"
-                            style={{
-                              fontFamily: '"Bebas Neue",sans-serif',
-                              color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0',
-                            }}
-                          >
-                            {wA}
-                          </span>
-                        </a>
+                  <div
+                    key={label}
+                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                  >
 
-                        <div className="flex flex-shrink-0 flex-col items-center gap-1">
-                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-50/65">
-                            All-Time
-                          </div>
-                          <div className="h-px w-6 bg-white/10" />
-                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-50/65">
-                            Record
-                          </div>
-                        </div>
 
-                        <a
-                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`}
-                          className="group flex flex-1 flex-col items-center gap-1.5"
-                        >
-                          {(() => {
-                            const av = getTeamAvatar(selectedRivalry.teamB)
-                            return av ? (
-                              <img
-                                src={av}
-                                alt={selectedRivalry.teamB}
-                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-cyan-200/45"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
-                                {selectedRivalry.teamB.slice(0, 2).toUpperCase()}
-                              </div>
-                            )
-                          })()}
-                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-cyan-200">
-                            {shortTeamName(selectedRivalry.teamB)}
-                          </span>
-                          <span
-                            className="text-3xl font-black leading-none"
-                            style={{
-                              fontFamily: '"Bebas Neue",sans-serif',
-                              color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0',
-                            }}
-                          >
-                            {wB}
-                          </span>
-                        </a>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 text-[12px] font-black uppercase tracking-[0.15em] text-cyan-50/72">
+                        {label}
                       </div>
 
-                      <div className="mt-3 flex justify-center">
-                        <div
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
-                            ? 'border-yellow-300/30 bg-yellow-300/10 text-yellow-200'
-                            : selectedRivalry.heat === 'Elite'
-                              ? 'border-orange-300/30 bg-orange-300/10 text-orange-200'
-                              : selectedRivalry.heat === 'High'
-                                ? 'border-rose-300/30 bg-rose-300/10 text-rose-200'
-                                : 'border-white/10 bg-white/[0.04] text-cyan-50/75'
-                            }`}
-                        >
-                          <Flame className="h-3 w-3" />
-                          {selectedRivalry.heat} Rivalry
-                        </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {leaders.map(t => {
+                          const av = getTeamAvatar(t.team)
+
+                          return (
+                            <a
+                              key={t.team}
+                              href={`/teams?team=${encodeURIComponent(t.team)}`}
+                              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-all hover:bg-white/12"
+                            >
+                              {av ? (
+                                <img
+                                  src={av}
+                                  alt={t.team}
+                                  className="h-7 w-7 rounded-full object-cover flex-shrink-0"
+                                />
+                              ) : null}
+
+                              <span className="max-w-[88px] truncate text-xs font-black text-white">
+                                {shortTeamName(t.team)}
+                              </span>
+                            </a>
+                          )
+                        })}
                       </div>
                     </div>
 
-                    {/* Stats grid */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Trophy className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Playoffs
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Activity className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Avg Margin
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Stars className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Radar className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Current Streak
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Flame className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Biggest Win · {shortTeamName(selectedRivalry.teamA)}
-                          </span>
-                        </div>
-                        {bigA ? (
-                          <>
-                            <span className="text-base font-black text-white">
-                              {bigA.scoreA} – {bigA.scoreB}
-                              {bigA.margin ? <span className="text-emerald-300"> (+{bigA.margin})</span> : ''}
-                            </span>
-                            {bigA.label && <span className="text-[10px] text-cyan-50/60">{bigA.label}</span>}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Flame className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Biggest Win · {shortTeamName(selectedRivalry.teamB)}
-                          </span>
-                        </div>
-                        {bigB ? (
-                          <>
-                            <span className="text-base font-black text-white">
-                              {bigB.scoreA} – {bigB.scoreB}
-                              {bigB.margin ? <span className="text-emerald-300"> (+{bigB.margin})</span> : ''}
-                            </span>
-                            {bigB.label && <span className="text-[10px] text-cyan-50/60">{bigB.label}</span>}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <TrendingUp className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Best Streak · {shortTeamName(selectedRivalry.teamA)}
-                          </span>
-                        </div>
-                        {strA?.count ? (
-                          <>
-                            <span className="text-base font-black text-white">{strA.result}{strA.count}</span>
-                            {strA.start && (
-                              <span className="text-[10px] text-cyan-50/60">
-                                {strA.start}{strA.end ? ` → ${strA.end}` : ''}
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[#31527a]/84 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <TrendingUp className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Best Streak · {shortTeamName(selectedRivalry.teamB)}
-                          </span>
-                        </div>
-                        {strB?.count ? (
-                          <>
-                            <span className="text-base font-black text-white">{strB.result}{strB.count}</span>
-                            {strB.start && (
-                              <span className="text-[10px] text-cyan-50/60">
-                                {strB.start}{strB.end ? ` → ${strB.end}` : ''}
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-                    </div>
+                    <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>
+                      {leaders[0] ? fmt(topVal) : '—'}
+                    </span>
                   </div>
                 )
-              })()}
+              })}
             </div>
-          </motion.div>
+          </div>
 
-          {/* FRANCHISE LEADERS */}
-          <motion.div
-            initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
-            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            viewport={{ once: false, amount: 0.08 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[0.85]"
-          >
-            <div className="flex h-full flex-col">
-              <div className="mb-4 flex items-start justify-between gap-4 px-4 pb-1 pt-3 sm:px-5 sm:pt-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                    <Medal className="h-5 w-5 text-white" />
+          {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
+          {championsData.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
+              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              viewport={{ once: false, amount: 0.06 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+            >
+              <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                    <Trophy className="h-5 w-5 text-yellow-300" />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <div
                       className="uppercase leading-none text-white"
                       style={{
@@ -3506,186 +4663,21 @@ export default function TapitasLeagueHomepage() {
                         fontWeight: 900,
                       }}
                     >
-                      Franchise Leaders
+                      Champions Wall
                     </div>
 
                     <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                      League Rankings
+                      Every title. Every campaign.
                     </div>
                   </div>
                 </div>
-
-                {standings.length > 5 && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setStandingsPage(p => Math.max(0, p - 1))}
-                      disabled={standingsPage === 0}
-                      className="flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/10 bg-white/[0.04] text-slate-300 transition-all hover:bg-white/[0.07] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                    </button>
-
-                    <span className="text-[10px] font-black text-slate-400">
-                      {standingsPage + 1}/{Math.ceil(standings.length / 5)}
-                    </span>
-
-                    <button
-                      onClick={() => setStandingsPage(p => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
-                      disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
-                      className="flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/10 bg-white/[0.04] text-slate-300 transition-all hover:bg-white/[0.07] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
               </div>
 
-              <div className="mb-4 flex flex-col gap-2 px-4 sm:flex-row sm:px-5">
-                <TeamSelect
-                  value={sortCategory}
-                  onChange={setSortCategory}
-                  options={SORT_OPTIONS.map(o => o.label)}
-                  placeholder="Category..."
-                />
+              <ChampionsWallInline champions={championsData} />
+            </motion.div>
+          )}
 
-                {SORT_OPTIONS.find(o => o.label === sortCategory)?.subs.length > 1 && (
-                  <TeamSelect
-                    value={sortSub}
-                    onChange={setSortSub}
-                    options={SORT_OPTIONS.find(o => o.label === sortCategory)?.subs.map(s => s.label) ?? []}
-                    placeholder="Type..."
-                  />
-                )}
-              </div>
-
-              <div className="space-y-2 px-4 pb-4 sm:px-5 sm:pb-5">
-                {standings.slice(standingsPage * 5, standingsPage * 5 + 5).map((team, index) => {
-                  const globalIndex = standingsPage * 5 + index
-                  const cat = SORT_OPTIONS.find(o => o.label === sortCategory)
-                  const sub = cat?.subs.find(s => s.label === sortSub) ?? cat?.subs[0]
-
-                  const keyMap = {
-                    'W': t => t.wins,
-                    'RS_W': t => t.rsW,
-                    'PO_W': t => t.poW,
-                    'L': t => t.losses,
-                    'RS_L': t => t.rsL,
-                    'PO_L': t => t.poL,
-                    'W%': t => `${Math.round(t.winPct)}%`,
-                    'RS_W%': t => `${Math.round(t.rsWinPct)}%`,
-                    'PO_W%': t => `${Math.round(t.poWinPct)}%`,
-                    'PF': t => Math.round(t.pf),
-                    'RS_PF': t => Math.round(t.rsPF),
-                    'PO_PF': t => Math.round(t.poPF),
-                    'W Streak RS': t => t.wStreakRS,
-                    'W Streak Total': t => t.wStreakTotal,
-                    'L Streak RS': t => t.lStreakRS,
-                    'L Streak Total': t => t.lStreakTotal,
-                    'Playoff Apps': t => t.playoffApps,
-                    'Finals': t => t.finals,
-                    'Titles': t => t.titles,
-                  }
-
-                  const shortLabelMap = {
-                    'W': 'Wins',
-                    'RS_W': 'Wins',
-                    'PO_W': 'Wins',
-                    'L': 'Losses',
-                    'RS_L': 'Losses',
-                    'PO_L': 'Losses',
-                    'W%': 'Win %',
-                    'RS_W%': 'Win %',
-                    'PO_W%': 'Win %',
-                    'PF': 'Points',
-                    'RS_PF': 'Points',
-                    'PO_PF': 'Points',
-                    'W Streak RS': 'Games',
-                    'W Streak Total': 'Games',
-                    'L Streak RS': 'Games',
-                    'L Streak Total': 'Games',
-                    'Playoff Apps': 'Apps',
-                    'Finals': 'Finals',
-                    'Titles': 'Titles',
-                  }
-
-                  const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
-                  const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
-                  const avatar = getTeamAvatar(team.team)
-
-                  return (
-                    <a
-                      key={`${team.team}-${globalIndex}`}
-                      href={`/teams?team=${encodeURIComponent(team.team)}`}
-                      className="group flex items-center gap-3 rounded-[22px] border border-white/[0.06] bg-white/[0.03] px-4 py-3 transition-all hover:border-white/10 hover:bg-white/[0.05]"
-                    >
-                      <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border border-cyan-300/20 bg-cyan-300/10 font-black text-cyan-200"
-                        style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '18px' }}
-                      >
-                        {globalIndex + 1}
-                      </div>
-
-                      {avatar ? (
-                        <img
-                          src={avatar}
-                          alt={team.team}
-                          className="h-9 w-9 flex-shrink-0 rounded-[14px] object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/[0.05] text-[10px] font-black text-slate-300">
-                          {team.team.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-lg font-black text-white transition-colors group-hover:text-cyan-200">
-                          {team.team}
-                        </div>
-
-                        {(sub?.key === 'W Streak RS' ||
-                          sub?.key === 'W Streak Total' ||
-                          sub?.key === 'L Streak RS' ||
-                          sub?.key === 'L Streak Total') ? (() => {
-                            const kl = {
-                              'W Streak RS': 'streakRS',
-                              'W Streak Total': 'streakTotal',
-                              'L Streak RS': 'lStreakRS',
-                              'L Streak Total': 'lStreakTotal',
-                            }
-                            const si = streakMap[team.team]?.[kl[sub.key]]
-                            if (!si) return null
-
-                            return (
-                              <div className="text-[10px] font-bold text-slate-400">
-                                W{si.startWeek}, {si.startSeason} → W{si.endWeek}, {si.endSeason}
-                                {si.active && <span className="ml-1 text-cyan-300">(active)</span>}
-                              </div>
-                            )
-                          })() : (
-                          <div className="text-[10px] font-bold text-slate-400">
-                            {team.wins}W · {team.losses}L · {Math.round(team.pf)} pts
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-shrink-0 text-right">
-                        <div
-                          className="font-black leading-none text-cyan-200"
-                          style={{ fontSize: 'clamp(24px,4vw,36px)' }}
-                        >
-                          {displayValue}
-                        </div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">
-                          {shortLabel}
-                        </div>
-                      </div>
-                    </a>
-                  )
-                })}
-              </div>
-            </div>
-          </motion.div>
-        </div>
+        </motion.div>
 
       </section>
 
