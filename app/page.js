@@ -2944,12 +2944,12 @@ export default function TapitasLeagueHomepage() {
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="truncate text-[16px] font-black tracking-[0.01em] text-white">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div className="truncate text-[15px] font-black tracking-[0.01em] text-white sm:text-[16px]">
                         {prLeader.team}
                       </div>
 
-                      <span className="rounded-full border border-emerald-500 bg-emerald-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white">
+                      <span className="hidden rounded-full border border-emerald-500 bg-emerald-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white sm:inline-flex">
                         Leader
                       </span>
                     </div>
@@ -2957,9 +2957,26 @@ export default function TapitasLeagueHomepage() {
                     <div className="mt-1 text-[11px] font-bold text-emerald-100/90">
                       {getPrLeaderMessage(prLeader)}
                     </div>
+
+                    <div className="mt-2 sm:hidden">
+                      <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white">
+                        {prLeader.delta > 0 ? (
+                          <TrendingUp className="h-3.5 w-3.5 text-emerald-300" />
+                        ) : prLeader.delta < 0 ? (
+                          <TrendingDown className="h-3.5 w-3.5 text-rose-300" />
+                        ) : (
+                          <Minus className="h-3.5 w-3.5 text-slate-300" />
+                        )}
+                        {prLeader.delta > 0
+                          ? `+${Math.abs(prLeader.delta)}`
+                          : prLeader.delta < 0
+                            ? `-${Math.abs(prLeader.delta)}`
+                            : '0'}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white">
+                  <div className="hidden flex-shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white sm:inline-flex">
                     {prLeader.delta > 0 ? (
                       <TrendingUp className="h-3.5 w-3.5 text-emerald-300" />
                     ) : prLeader.delta < 0 ? (
