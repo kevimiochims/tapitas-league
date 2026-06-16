@@ -3197,12 +3197,12 @@ export default function TapitasLeagueHomepage() {
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="truncate text-[16px] font-black tracking-[0.01em] text-white">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="truncate text-[15px] font-black tracking-[0.01em] text-white sm:text-[16px]">
                       {standingsLeader.team}
                     </div>
 
-                    <span className="rounded-full border border-cyan-500 bg-cyan-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white">
+                    <span className="hidden rounded-full border border-cyan-500 bg-cyan-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-white sm:inline-flex">
                       Best record
                     </span>
                   </div>
@@ -3210,15 +3210,29 @@ export default function TapitasLeagueHomepage() {
                   <div className="mt-1 text-[11px] font-bold text-cyan-100/90">
                     {getStandingsLeaderMessage(standingsLeader)}
                   </div>
-                </div>
 
-                <div className="flex flex-shrink-0 flex-col items-end text-right">
-                  <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                    <span className="text-sm font-black text-emerald-400 sm:text-lg">
+                  <div className="mt-2 flex items-center gap-1.5 whitespace-nowrap sm:hidden">
+                    <span className="text-sm font-black text-emerald-400">
                       {parseNumber(standingsLeader.w)}W
                     </span>
                     <span className="text-xs text-white/25">·</span>
-                    <span className="text-sm font-black text-rose-400 sm:text-lg">
+                    <span className="text-sm font-black text-rose-400">
+                      {parseNumber(standingsLeader.l)}L
+                    </span>
+                    <span className="text-xs text-white/25">·</span>
+                    <span className="text-sm font-bold text-slate-200">
+                      {Math.round(Number(standingsLeader?.pf ?? 0))} pts
+                    </span>
+                  </div>
+                </div>
+
+                <div className="hidden flex-shrink-0 flex-col items-end text-right sm:flex">
+                  <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                    <span className="text-sm font-black text-emerald-400 sm:text-base">
+                      {parseNumber(standingsLeader.w)}W
+                    </span>
+                    <span className="text-xs text-white/25">·</span>
+                    <span className="text-sm font-black text-rose-400 sm:text-base">
                       {parseNumber(standingsLeader.l)}L
                     </span>
                   </div>
