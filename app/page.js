@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Header from './components/Header'
 
 
@@ -961,7 +961,6 @@ export default function TapitasLeagueHomepage() {
 
   // ── NEW STATE ──────────────────────────────────────────────────────────────
   const [newsPage, setNewsPage] = useState(0)
-  const [newsDirection, setNewsDirection] = useState(0)
   const newsTouchStartX = useRef(null)
   const [newsPosts, setNewsPosts] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
@@ -1021,15 +1020,10 @@ export default function TapitasLeagueHomepage() {
 
   useEffect(() => {
     setNewsPage(0)
-    setNewsDirection(0)
   }, [newsPosts])
 
   function goNewsPage(step) {
-    setNewsPage((current) => {
-      const next = Math.max(0, Math.min(newsTotalPages - 1, current + step))
-      if (next !== current) setNewsDirection(step > 0 ? 1 : -1)
-      return next
-    })
+    setNewsPage((current) => Math.max(0, Math.min(newsTotalPages - 1, current + step)))
   }
 
   function handleNewsTouchStart(e) {
@@ -1046,10 +1040,8 @@ export default function TapitasLeagueHomepage() {
     const threshold = 45
 
     if (deltaX <= -threshold && newsPage < newsTotalPages - 1) {
-      setNewsDirection(1)
       setNewsPage((p) => Math.min(newsTotalPages - 1, p + 1))
     } else if (deltaX >= threshold && newsPage > 0) {
-      setNewsDirection(-1)
       setNewsPage((p) => Math.max(0, p - 1))
     }
 
@@ -3486,67 +3478,71 @@ export default function TapitasLeagueHomepage() {
                 onTouchStart={handleNewsTouchStart}
                 onTouchEnd={handleNewsTouchEnd}
               >
-                <AnimatePresence mode="wait" initial={false}>
-                  {featuredNewsPosts[newsPage] && (() => {
-                    const post = featuredNewsPosts[newsPage]
-                    const s = CATEGORY_STYLE[post.category]
-                    const Icon = s?.icon || Newspaper
+                {featuredNewsPosts[newsPage] && (() => {
+                  const post = featuredNewsPosts[newsPage]
+                  const s = CATEGORY_STYLE[post.category]
+                  const Icon = s?.icon || Newspaper
 
-                    return (
-                      <motion.a
-                        key={post.id || `${post.slug}-${newsPage}`}
-                        href={`/news/${post.slug}`}
-                        initial={{
-                          opacity: 0,
-                          x: newsDirection > 0 ? 28 : -28,
-                          scale: 0.98,
-                        }}
-                        animate={{
-                          opacity: 1,
-                          x: 0,
-                          scale: 1,
-                        }}
-                        exit={{
-                          opacity: 0,
-                          x: newsDirection > 0 ? -28 : 28,
-                          scale: 0.98,
-                        }}
-                        transition={{
-                          duration: 0.26,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
-                        className="group block overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:bg-white/[0.05] hover:border-white/12"
-                      >
-                        {post.imageUrl && (
-                          <div className="h-44 w-full overflow-hidden rounded-t-[24px]">
-                            <img
-                              src={post.imageUrl.split('|')[0]}
-                              alt={post.title}
-                              className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                            />
-                          </div>
-                        )}
+                  return (
+                    <a
+                      href={`/news/${post.slug}`}
+                      className="group block overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:bg-white/[0.05] hover:border-white/12"
+                    >
+                      {post.imageUrl && (
+                        <div className="h-44 w-full overflow-hidden rounded-t-[24px]">
+                          <motion.img
+                            key={post.imageUrl}
+                            src={post.imageUrl.split('|')[0]}
+                            alt={post.title}
+                            initial={{ scale: 1.03, opacity: 0.92 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                            className="h-full w-full object-cover object-top"
+                          />
+                        </div>
+                      )}
 
-                        <div className="p-4">
+                      <div className="p-4">
+                        <motion.div
+                          key={`${post.id || post.slug || newsPage}-content`}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                        >
                           {post.category && s && (
-                            <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}>
+                            <motion.div
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2, delay: 0.02, ease: [0.22, 1, 0.36, 1] }}
+                              className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}
+                            >
                               <Icon className="h-3 w-3" />
                               {post.category}
-                            </div>
+                            </motion.div>
                           )}
 
-                          <h3 className="text-[16px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300">
+                          <motion.h3
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.24, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+                            className="text-[16px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300"
+                          >
                             {post.title}
-                          </h3>
+                          </motion.h3>
 
-                          <div className="mt-2 text-[12px] font-bold text-slate-400">
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.24, delay: 0.09, ease: [0.22, 1, 0.36, 1] }}
+                            className="mt-2 text-[12px] font-bold text-slate-400"
+                          >
                             {formatDate(post.date)}
-                          </div>
-                        </div>
-                      </motion.a>
-                    )
-                  })()}
-                </AnimatePresence>
+                          </motion.div>
+                        </motion.div>
+                      </div>
+                    </a>
+                  )
+                })()}
               </div>
 
               {newsTotalPages > 1 && (
@@ -3555,14 +3551,11 @@ export default function TapitasLeagueHomepage() {
                     <button
                       key={i}
                       type="button"
-                      onClick={() => {
-                        setNewsDirection(i > newsPage ? 1 : -1)
-                        setNewsPage(i)
-                      }}
+                      onClick={() => setNewsPage(i)}
                       aria-label={`Go to newsletter item ${i + 1}`}
                       className={`h-2.5 rounded-full transition-all ${i === newsPage
-                          ? 'w-6 bg-sky-300'
-                          : 'w-2.5 bg-white/20 hover:bg-white/35'
+                        ? 'w-6 bg-sky-300'
+                        : 'w-2.5 bg-white/20 hover:bg-white/35'
                         }`}
                     />
                   ))}
