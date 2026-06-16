@@ -2853,9 +2853,9 @@ export default function TapitasLeagueHomepage() {
           <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
             <div className="flex h-full flex-col">
               <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                    <TrendingUp className="h-5 w-5 text-emerald-300" />
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                    <TrendingUp className="h-4.5 w-4.5 text-emerald-300 sm:h-5 sm:w-5" />
                   </div>
 
                   <div className="min-w-0">
@@ -2863,15 +2863,15 @@ export default function TapitasLeagueHomepage() {
                       className="truncate uppercase leading-none text-emerald-300"
                       style={{
                         fontFamily: '"Bebas Neue", sans-serif',
-                        fontSize: '24px',
-                        letterSpacing: '0.075em',
+                        fontSize: '20px',
+                        letterSpacing: '0.06em',
                         fontWeight: 900,
                       }}
                     >
                       Power Rankings
                     </div>
 
-                    <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                    <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                       {currentSeason ? `${currentSeason} · Latest week` : 'Carregando...'}
                     </div>
                   </div>
