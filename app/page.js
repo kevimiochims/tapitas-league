@@ -3985,425 +3985,434 @@ export default function TapitasLeagueHomepage() {
           </motion.div>
 
           {/* RIVALRY SPOTLIGHT */}
-<motion.div
-  initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
-  whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-  viewport={{ once: true, amount: 0.08 }}
-  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-  className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[1.15]"
->
-  <div className="flex h-full flex-col">
-    <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
-      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
-          <Swords className="h-4.5 w-4.5 text-rose-300 sm:h-5 sm:w-5" />
-        </div>
-
-        <div className="min-w-0">
-          <div
-            className="truncate uppercase leading-none text-rose-300"
-            style={{
-              fontFamily: '"Bebas Neue", sans-serif',
-              fontSize: '20px',
-              letterSpacing: '0.06em',
-              fontWeight: 900,
-            }}
+          <motion.div
+            initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            viewport={{ once: true, amount: 0.08 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[1.15]"
           >
-            Rivalry Spotlight
-          </div>
+            <div className="flex h-full flex-col">
+              <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                    <Swords className="h-4.5 w-4.5 text-rose-300 sm:h-5 sm:w-5" />
+                  </div>
 
-          <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
-            All-time H2H
-          </div>
-        </div>
-      </div>
-
-      <a
-        href="/rivalries"
-        className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
-      >
-        Ver tudo
-        <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-      </a>
-    </div>
-
-    <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-5">
-      <div className="min-w-0">
-        <TeamSelect
-          value={selectedTeamA}
-          onChange={(val) => {
-            setSelectedTeamA(val)
-            setSelectedTeamB('')
-          }}
-          options={allTeams}
-          placeholder="Time A..."
-        />
-      </div>
-
-      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-xs font-black text-white">
-        vs
-      </div>
-
-      <div className="min-w-0">
-        <TeamSelect
-          value={selectedTeamB}
-          onChange={setSelectedTeamB}
-          options={teamsForB}
-          placeholder="Time B..."
-          disabled={!selectedTeamA}
-        />
-      </div>
-    </div>
-
-    {!selectedRivalry ? (
-      <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] py-10 text-center sm:mx-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/10 bg-white/[0.05]">
-          <Swords className="h-5 w-5 text-slate-200" />
-        </div>
-        <p className="text-xs font-bold text-slate-300">
-          Selecione dois times para ver o confronto
-        </p>
-      </div>
-    ) : (() => {
-      const bigA = parseBiggestWin(selectedRivalry.biggestA)
-      const bigB = parseBiggestWin(selectedRivalry.biggestB)
-      const strA = parseBestStreak(selectedRivalry.bestStreakA)
-      const strB = parseBestStreak(selectedRivalry.bestStreakB)
-      const wA = selectedRivalry.winsA
-      const wB = selectedRivalry.winsB
-      const aLeads = wA > wB
-      const bLeads = wB > wA
-
-      const lastMeetingRaw = String(selectedRivalry.lastMeeting?.score || '').trim()
-      const lastMeetingParts = lastMeetingRaw
-        ? lastMeetingRaw.split(/[-–—]|vs/i).map(part => part.trim()).filter(Boolean)
-        : []
-
-      const leftLastMeeting = lastMeetingParts[0] || '—'
-      const rightLastMeeting = lastMeetingParts[1] || '—'
-
-      const leftLastMeetingNum = parseNumber(leftLastMeeting)
-      const rightLastMeetingNum = parseNumber(rightLastMeeting)
-      const leftLastMeetingLead = leftLastMeetingNum > rightLastMeetingNum
-      const rightLastMeetingLead = rightLastMeetingNum > leftLastMeetingNum
-
-      const rawStreak = String(selectedRivalry.streak || '').trim()
-      const streakToken = rawStreak.match(/\b([WL])\s*(\d+)\b/i)
-
-      let leftStreak = '—'
-      let rightStreak = '—'
-      let leftStreakScore = null
-      let rightStreakScore = null
-
-      if (streakToken) {
-        const result = streakToken[1].toUpperCase()
-        const count = Number(streakToken[2])
-        leftStreak = `${result}${count}`
-        rightStreak = `${result === 'W' ? 'L' : 'W'}${count}`
-        leftStreakScore = result === 'W' ? count : -count
-        rightStreakScore = result === 'W' ? -count : count
-      }
-
-      const leftStreakLead =
-        leftStreakScore !== null && rightStreakScore !== null && leftStreakScore > rightStreakScore
-      const rightStreakLead =
-        leftStreakScore !== null && rightStreakScore !== null && rightStreakScore > leftStreakScore
-
-      const avgMarginValue = parseNumber(selectedRivalry.avgMargin)
-      const hasAvgMargin =
-        selectedRivalry.avgMargin !== null &&
-        selectedRivalry.avgMargin !== undefined &&
-        String(selectedRivalry.avgMargin).trim() !== ''
-
-      const leftAvgMarginRaw = hasAvgMargin ? avgMarginValue : null
-      const rightAvgMarginRaw = hasAvgMargin ? avgMarginValue * -1 : null
-
-      const leftAvgMargin =
-        leftAvgMarginRaw === null
-          ? '—'
-          : `${leftAvgMarginRaw > 0 ? '+' : leftAvgMarginRaw < 0 ? '' : ''}${leftAvgMarginRaw}`
-
-      const rightAvgMargin =
-        rightAvgMarginRaw === null
-          ? '—'
-          : `${rightAvgMarginRaw > 0 ? '+' : rightAvgMarginRaw < 0 ? '' : ''}${rightAvgMarginRaw}`
-
-      const leftAvgMarginLead =
-        leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && leftAvgMarginRaw > rightAvgMarginRaw
-      const rightAvgMarginLead =
-        leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && rightAvgMarginRaw > leftAvgMarginRaw
-
-      const playoffLeft = parseNumber(selectedRivalry.playoffRecord?.split('-')[0] ?? '')
-      const playoffRight = parseNumber(selectedRivalry.playoffRecord?.split('-')[1] ?? '')
-      const leftPlayoffLead = playoffLeft > playoffRight
-      const rightPlayoffLead = playoffRight > playoffLeft
-
-      const bestStreakLeftScore =
-        strA?.count ? (String(strA.result).toUpperCase() === 'W' ? Number(strA.count) : -Number(strA.count)) : null
-      const bestStreakRightScore =
-        strB?.count ? (String(strB.result).toUpperCase() === 'W' ? Number(strB.count) : -Number(strB.count)) : null
-
-      const leftBestStreakLead =
-        bestStreakLeftScore !== null &&
-        bestStreakRightScore !== null &&
-        bestStreakLeftScore > bestStreakRightScore
-
-      const rightBestStreakLead =
-        bestStreakLeftScore !== null &&
-        bestStreakRightScore !== null &&
-        bestStreakRightScore > bestStreakLeftScore
-
-      const formatRangeWithResponsiveBreak = (text) => {
-        if (!text) return ''
-        const parts = String(text).split(/\s*→\s*/)
-        if (parts.length < 2) return text
-
-        return (
-          <>
-            <span>{parts[0]}</span>
-            <span className="inline sm:hidden">
-              {' '}→
-              <br />
-            </span>
-            <span className="hidden sm:inline">{' → '}</span>
-            <span>{parts.slice(1).join(' → ')}</span>
-          </>
-        )
-      }
-
-      return (
-        <div className="flex flex-col gap-4 px-4 pb-4 sm:px-5 sm:pb-5">
-          <div className="overflow-hidden rounded-[26px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
-            <div className="flex items-center justify-between gap-4">
-              <a
-                href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
-                className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
-              >
-                {(() => {
-                  const av = getTeamAvatar(selectedRivalry.teamA)
-                  return av ? (
-                    <img
-                      src={av}
-                      alt={selectedRivalry.teamA}
-                      className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-white/20"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
-                      {selectedRivalry.teamA.slice(0, 2).toUpperCase()}
-                    </div>
-                  )
-                })()}
-
-                <span className="max-w-full truncate text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
-                  {shortTeamName(selectedRivalry.teamA)}
-                </span>
-
-                <span
-                  className="text-3xl font-black leading-none"
-                  style={{
-                    fontFamily: '"Bebas Neue",sans-serif',
-                    color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0',
-                  }}
-                >
-                  {wA}
-                </span>
-              </a>
-
-              <div className="flex flex-shrink-0 flex-col items-center gap-1">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  All-Time
-                </div>
-                <div className="h-px w-6 bg-white/10" />
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Record
-                </div>
-              </div>
-
-              <a
-                href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`}
-                className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
-              >
-                {(() => {
-                  const av = getTeamAvatar(selectedRivalry.teamB)
-                  return av ? (
-                    <img
-                      src={av}
-                      alt={selectedRivalry.teamB}
-                      className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-white/20"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
-                      {selectedRivalry.teamB.slice(0, 2).toUpperCase()}
-                    </div>
-                  )
-                })()}
-
-                <span className="max-w-full truncate text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
-                  {shortTeamName(selectedRivalry.teamB)}
-                </span>
-
-                <span
-                  className="text-3xl font-black leading-none"
-                  style={{
-                    fontFamily: '"Bebas Neue",sans-serif',
-                    color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0',
-                  }}
-                >
-                  {wB}
-                </span>
-              </a>
-            </div>
-
-            <div className="mt-3 flex justify-center">
-              <div
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
-                  selectedRivalry.heat === 'Legendary'
-                    ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
-                    : selectedRivalry.heat === 'Elite'
-                      ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
-                      : selectedRivalry.heat === 'High'
-                        ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
-                        : 'border-white/10 bg-white/[0.04] text-slate-300'
-                }`}
-              >
-                <Flame className="h-3 w-3" />
-                {selectedRivalry.heat} Rivalry
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 px-1 pt-2 sm:px-2 sm:pt-3">
-            {[
-              {
-                label: 'Playoff Record',
-                left: selectedRivalry.playoffRecord?.split('-')[0] ?? '—',
-                right: selectedRivalry.playoffRecord?.split('-')[1] ?? '—',
-                subLeft: '',
-                subRight: '',
-                leftLead: leftPlayoffLead,
-                rightLead: rightPlayoffLead,
-                breakAfterArrowLeft: false,
-                breakAfterArrowRight: false,
-              },
-              {
-                label: 'Biggest Win',
-                left: bigA ? `${bigA.scoreA} vs ${bigA.scoreB}` : '—',
-                right: bigB ? `${bigB.scoreA} vs ${bigB.scoreB}` : '—',
-                subLeft: bigA?.label || '',
-                subRight: bigB?.label || '',
-                leftLead: false,
-                rightLead: false,
-                breakAfterArrowLeft: false,
-                breakAfterArrowRight: false,
-                compactCenter: true,
-              },
-              {
-                label: 'Best Streak',
-                left: strA?.count ? `${strA.result}${strA.count}` : '—',
-                right: strB?.count ? `${strB.result}${strB.count}` : '—',
-                subLeft: strA?.start ? `${strA.start}${strA.end ? ` → ${strA.end}` : ''}` : '',
-                subRight: strB?.start ? `${strB.start}${strB.end ? ` → ${strB.end}` : ''}` : '',
-                leftLead: leftBestStreakLead,
-                rightLead: rightBestStreakLead,
-                breakAfterArrowLeft: true,
-                breakAfterArrowRight: true,
-              },
-              {
-                label: 'Last Meeting',
-                left: leftLastMeeting,
-                right: rightLastMeeting,
-                subLeft: selectedRivalry.lastMeeting?.meta || '',
-                subRight: selectedRivalry.lastMeeting?.meta || '',
-                leftLead: leftLastMeetingLead,
-                rightLead: rightLastMeetingLead,
-                breakAfterArrowLeft: false,
-                breakAfterArrowRight: false,
-              },
-              {
-                label: 'Current Streak',
-                left: leftStreak,
-                right: rightStreak,
-                subLeft: '',
-                subRight: '',
-                leftLead: leftStreakLead,
-                rightLead: rightStreakLead,
-                breakAfterArrowLeft: false,
-                breakAfterArrowRight: false,
-              },
-              {
-                label: 'Avg Margin',
-                left: leftAvgMargin,
-                right: rightAvgMargin,
-                subLeft: '',
-                subRight: '',
-                leftLead: leftAvgMarginLead,
-                rightLead: rightAvgMarginLead,
-                breakAfterArrowLeft: false,
-                breakAfterArrowRight: false,
-              },
-            ].map((item, idx, arr) => (
-              <div key={item.label}>
-                <div
-                  className={`grid items-start gap-2 sm:gap-4 ${
-                    item.compactCenter
-                      ? 'grid-cols-[minmax(0,1fr)_60px_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_64px_minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)]'
-                      : 'grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)]'
-                  }`}
-                >
-                  <div className="min-w-0 text-left">
+                  <div className="min-w-0">
                     <div
-                      className={`whitespace-nowrap text-[22px] leading-none sm:text-[30px] ${
-                        item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
-                      }`}
-                      style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                      className="truncate uppercase leading-none text-rose-300"
+                      style={{
+                        fontFamily: '"Bebas Neue", sans-serif',
+                        fontSize: '20px',
+                        letterSpacing: '0.06em',
+                        fontWeight: 900,
+                      }}
                     >
-                      {item.left}
+                      Rivalry Spotlight
                     </div>
-                    {item.subLeft ? (
-                      <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
-                        {item.breakAfterArrowLeft ? formatRangeWithResponsiveBreak(item.subLeft) : item.subLeft}
-                      </div>
-                    ) : null}
-                  </div>
 
-                  <div
-                    className={`w-full justify-self-center pt-1 text-center ${
-                      item.compactCenter ? 'max-w-[60px] sm:max-w-[64px] md:max-w-[72px]' : 'max-w-[72px] sm:max-w-[88px]'
-                    }`}
-                  >
-                    <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
-                      {item.label}
+                    <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                      All-time H2H
                     </div>
-                  </div>
-
-                  <div className="min-w-0 text-right">
-                    <div
-                      className={`whitespace-nowrap text-[22px] leading-none sm:text-[30px] ${
-                        item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
-                      }`}
-                      style={{ fontFamily: '"Bebas Neue", sans-serif' }}
-                    >
-                      {item.right}
-                    </div>
-                    {item.subRight ? (
-                      <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
-                        {item.breakAfterArrowRight ? formatRangeWithResponsiveBreak(item.subRight) : item.subRight}
-                      </div>
-                    ) : null}
                   </div>
                 </div>
 
-                {idx < arr.length - 1 ? (
-                  <div className="mt-4 h-px w-full bg-white/6" />
-                ) : null}
+                <a
+                  href="/rivalries"
+                  className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+                >
+                  Ver tudo
+                  <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                </a>
               </div>
-            ))}
-          </div>
-        </div>
-      )
-    })()}
-  </div>
-</motion.div>
+
+              <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-5">
+                <div className="min-w-0">
+                  <TeamSelect
+                    value={selectedTeamA}
+                    onChange={(val) => {
+                      setSelectedTeamA(val)
+                      setSelectedTeamB('')
+                    }}
+                    options={allTeams}
+                    placeholder="Time A..."
+                  />
+                </div>
+
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-xs font-black text-white">
+                  vs
+                </div>
+
+                <div className="min-w-0">
+                  <TeamSelect
+                    value={selectedTeamB}
+                    onChange={setSelectedTeamB}
+                    options={teamsForB}
+                    placeholder="Time B..."
+                    disabled={!selectedTeamA}
+                  />
+                </div>
+              </div>
+
+              {!selectedRivalry ? (
+                <div className="mx-4 mb-2 flex flex-1 flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] py-10 text-center sm:mx-5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/10 bg-white/[0.05]">
+                    <Swords className="h-5 w-5 text-slate-200" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-300">
+                    Selecione dois times para ver o confronto
+                  </p>
+                </div>
+              ) : (() => {
+                const bigA = parseBiggestWin(selectedRivalry.biggestA)
+                const bigB = parseBiggestWin(selectedRivalry.biggestB)
+                const strA = parseBestStreak(selectedRivalry.bestStreakA)
+                const strB = parseBestStreak(selectedRivalry.bestStreakB)
+                const wA = selectedRivalry.winsA
+                const wB = selectedRivalry.winsB
+                const aLeads = wA > wB
+                const bLeads = wB > wA
+
+                const lastMeetingRaw = String(selectedRivalry.lastMeeting?.score || '').trim()
+                const lastMeetingParts = lastMeetingRaw
+                  ? lastMeetingRaw.split(/[-–—]|vs/i).map(part => part.trim()).filter(Boolean)
+                  : []
+
+                const leftLastMeeting = lastMeetingParts[0] || '—'
+                const rightLastMeeting = lastMeetingParts[1] || '—'
+
+                const leftLastMeetingNum = parseNumber(leftLastMeeting)
+                const rightLastMeetingNum = parseNumber(rightLastMeeting)
+                const leftLastMeetingLead = leftLastMeetingNum > rightLastMeetingNum
+                const rightLastMeetingLead = rightLastMeetingNum > leftLastMeetingNum
+
+                const rawStreak = String(selectedRivalry.streak || '').trim()
+                const streakToken = rawStreak.match(/\b([WL])\s*(\d+)\b/i)
+
+                let leftStreak = '—'
+                let rightStreak = '—'
+                let leftStreakScore = null
+                let rightStreakScore = null
+
+                if (streakToken) {
+                  const result = streakToken[1].toUpperCase()
+                  const count = Number(streakToken[2])
+                  leftStreak = `${result}${count}`
+                  rightStreak = `${result === 'W' ? 'L' : 'W'}${count}`
+                  leftStreakScore = result === 'W' ? count : -count
+                  rightStreakScore = result === 'W' ? -count : count
+                }
+
+                const leftStreakLead =
+                  leftStreakScore !== null && rightStreakScore !== null && leftStreakScore > rightStreakScore
+                const rightStreakLead =
+                  leftStreakScore !== null && rightStreakScore !== null && rightStreakScore > leftStreakScore
+
+                const avgMarginValue = parseNumber(selectedRivalry.avgMargin)
+                const hasAvgMargin =
+                  selectedRivalry.avgMargin !== null &&
+                  selectedRivalry.avgMargin !== undefined &&
+                  String(selectedRivalry.avgMargin).trim() !== ''
+
+                const leftAvgMarginRaw = hasAvgMargin ? avgMarginValue : null
+                const rightAvgMarginRaw = hasAvgMargin ? avgMarginValue * -1 : null
+
+                const leftAvgMargin =
+                  leftAvgMarginRaw === null
+                    ? '—'
+                    : `${leftAvgMarginRaw > 0 ? '+' : leftAvgMarginRaw < 0 ? '' : ''}${leftAvgMarginRaw}`
+
+                const rightAvgMargin =
+                  rightAvgMarginRaw === null
+                    ? '—'
+                    : `${rightAvgMarginRaw > 0 ? '+' : rightAvgMarginRaw < 0 ? '' : ''}${rightAvgMarginRaw}`
+
+                const leftAvgMarginLead =
+                  leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && leftAvgMarginRaw > rightAvgMarginRaw
+                const rightAvgMarginLead =
+                  leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && rightAvgMarginRaw > leftAvgMarginRaw
+
+                const playoffLeft = parseNumber(selectedRivalry.playoffRecord?.split('-')[0] ?? '')
+                const playoffRight = parseNumber(selectedRivalry.playoffRecord?.split('-')[1] ?? '')
+                const leftPlayoffLead = playoffLeft > playoffRight
+                const rightPlayoffLead = playoffRight > playoffLeft
+
+                const bestStreakLeftScore =
+                  strA?.count ? (String(strA.result).toUpperCase() === 'W' ? Number(strA.count) : -Number(strA.count)) : null
+                const bestStreakRightScore =
+                  strB?.count ? (String(strB.result).toUpperCase() === 'W' ? Number(strB.count) : -Number(strB.count)) : null
+
+                const leftBestStreakLead =
+                  bestStreakLeftScore !== null &&
+                  bestStreakRightScore !== null &&
+                  bestStreakLeftScore > bestStreakRightScore
+
+                const rightBestStreakLead =
+                  bestStreakLeftScore !== null &&
+                  bestStreakRightScore !== null &&
+                  bestStreakRightScore > bestStreakLeftScore
+
+                const formatRangeWithResponsiveBreak = (text) => {
+                  if (!text) return ''
+                  const parts = String(text).split(/\s*→\s*/)
+                  if (parts.length < 2) return text
+
+                  return (
+                    <>
+                      <span>{parts[0]}</span>
+                      <span className="inline sm:hidden">
+                        {' '}→
+                        <br />
+                      </span>
+                      <span className="hidden sm:inline">{' → '}</span>
+                      <span>{parts.slice(1).join(' → ')}</span>
+                    </>
+                  )
+                }
+
+                const formatBiggestWinResponsive = (text) => {
+                  if (!text || !String(text).includes(' vs ')) return text
+                  const parts = String(text).split(' vs ')
+                  if (parts.length !== 2) return text
+
+                  return (
+                    <>
+                      <span className="sm:hidden">{text}</span>
+                      <span className="hidden sm:inline md:block lg:inline">
+                        {parts[0]}
+                        <span className="inline md:block lg:inline"> vs </span>
+                        {parts[1]}
+                      </span>
+                    </>
+                  )
+                }
+
+                return (
+                  <div className="flex flex-col gap-4 px-4 pb-4 sm:px-5 sm:pb-5">
+                    <div className="overflow-hidden rounded-[26px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
+                      <div className="flex items-center justify-between gap-4">
+                        <a
+                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
+                          className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                        >
+                          {(() => {
+                            const av = getTeamAvatar(selectedRivalry.teamA)
+                            return av ? (
+                              <img
+                                src={av}
+                                alt={selectedRivalry.teamA}
+                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-white/20"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
+                                {selectedRivalry.teamA.slice(0, 2).toUpperCase()}
+                              </div>
+                            )
+                          })()}
+
+                          <span className="max-w-full truncate text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
+                            {shortTeamName(selectedRivalry.teamA)}
+                          </span>
+
+                          <span
+                            className="text-3xl font-black leading-none"
+                            style={{
+                              fontFamily: '"Bebas Neue",sans-serif',
+                              color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0',
+                            }}
+                          >
+                            {wA}
+                          </span>
+                        </a>
+
+                        <div className="flex flex-shrink-0 flex-col items-center gap-1">
+                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            All-Time
+                          </div>
+                          <div className="h-px w-6 bg-white/10" />
+                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            Record
+                          </div>
+                        </div>
+
+                        <a
+                          href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`}
+                          className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                        >
+                          {(() => {
+                            const av = getTeamAvatar(selectedRivalry.teamB)
+                            return av ? (
+                              <img
+                                src={av}
+                                alt={selectedRivalry.teamB}
+                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-white/20"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
+                                {selectedRivalry.teamB.slice(0, 2).toUpperCase()}
+                              </div>
+                            )
+                          })()}
+
+                          <span className="max-w-full truncate text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
+                            {shortTeamName(selectedRivalry.teamB)}
+                          </span>
+
+                          <span
+                            className="text-3xl font-black leading-none"
+                            style={{
+                              fontFamily: '"Bebas Neue",sans-serif',
+                              color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0',
+                            }}
+                          >
+                            {wB}
+                          </span>
+                        </a>
+                      </div>
+
+                      <div className="mt-3 flex justify-center">
+                        <div
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
+                              ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
+                              : selectedRivalry.heat === 'Elite'
+                                ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
+                                : selectedRivalry.heat === 'High'
+                                  ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                                  : 'border-white/10 bg-white/[0.04] text-slate-300'
+                            }`}
+                        >
+                          <Flame className="h-3 w-3" />
+                          {selectedRivalry.heat} Rivalry
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 px-1 pt-2 sm:px-2 sm:pt-3">
+                      {[
+                        {
+                          label: 'Playoff Record',
+                          left: selectedRivalry.playoffRecord?.split('-')[0] ?? '—',
+                          right: selectedRivalry.playoffRecord?.split('-')[1] ?? '—',
+                          subLeft: '',
+                          subRight: '',
+                          leftLead: leftPlayoffLead,
+                          rightLead: rightPlayoffLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: false,
+                        },
+                        {
+                          label: 'Biggest Win',
+                          left: bigA ? `${bigA.scoreA} vs ${bigA.scoreB}` : '—',
+                          right: bigB ? `${bigB.scoreA} vs ${bigB.scoreB}` : '—',
+                          subLeft: bigA?.label || '',
+                          subRight: bigB?.label || '',
+                          leftLead: false,
+                          rightLead: false,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: true,
+                        },
+                        {
+                          label: 'Best Streak',
+                          left: strA?.count ? `${strA.result}${strA.count}` : '—',
+                          right: strB?.count ? `${strB.result}${strB.count}` : '—',
+                          subLeft: strA?.start ? `${strA.start}${strA.end ? ` → ${strA.end}` : ''}` : '',
+                          subRight: strB?.start ? `${strB.start}${strB.end ? ` → ${strB.end}` : ''}` : '',
+                          leftLead: leftBestStreakLead,
+                          rightLead: rightBestStreakLead,
+                          breakAfterArrowLeft: true,
+                          breakAfterArrowRight: true,
+                          biggestWinWrap: false,
+                        },
+                        {
+                          label: 'Last Meeting',
+                          left: leftLastMeeting,
+                          right: rightLastMeeting,
+                          subLeft: selectedRivalry.lastMeeting?.meta || '',
+                          subRight: selectedRivalry.lastMeeting?.meta || '',
+                          leftLead: leftLastMeetingLead,
+                          rightLead: rightLastMeetingLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: false,
+                        },
+                        {
+                          label: 'Current Streak',
+                          left: leftStreak,
+                          right: rightStreak,
+                          subLeft: '',
+                          subRight: '',
+                          leftLead: leftStreakLead,
+                          rightLead: rightStreakLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: false,
+                        },
+                        {
+                          label: 'Avg Margin',
+                          left: leftAvgMargin,
+                          right: rightAvgMargin,
+                          subLeft: '',
+                          subRight: '',
+                          leftLead: leftAvgMarginLead,
+                          rightLead: rightAvgMarginLead,
+                          breakAfterArrowLeft: false,
+                          breakAfterArrowRight: false,
+                          biggestWinWrap: false,
+                        },
+                      ].map((item, idx, arr) => (
+                        <div key={item.label}>
+                          <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
+                            <div className="min-w-0 text-left">
+                              <div
+                                className={`text-[22px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                  } ${item.biggestWinWrap ? 'whitespace-normal md:whitespace-normal lg:whitespace-nowrap' : 'whitespace-nowrap'}`}
+                                style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                              >
+                                {item.biggestWinWrap ? formatBiggestWinResponsive(item.left) : item.left}
+                              </div>
+                              {item.subLeft ? (
+                                <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                  {item.breakAfterArrowLeft ? formatRangeWithResponsiveBreak(item.subLeft) : item.subLeft}
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div className="w-full max-w-[72px] justify-self-center pt-1 text-center sm:max-w-[88px]">
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                                {item.label}
+                              </div>
+                            </div>
+
+                            <div className="min-w-0 text-right">
+                              <div
+                                className={`text-[22px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                  } ${item.biggestWinWrap ? 'whitespace-normal md:whitespace-normal lg:whitespace-nowrap' : 'whitespace-nowrap'}`}
+                                style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                              >
+                                {item.biggestWinWrap ? formatBiggestWinResponsive(item.right) : item.right}
+                              </div>
+                              {item.subRight ? (
+                                <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                  {item.breakAfterArrowRight ? formatRangeWithResponsiveBreak(item.subRight) : item.subRight}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          {idx < arr.length - 1 ? (
+                            <div className="mt-4 h-px w-full bg-white/6" />
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          </motion.div>
 
 
         </motion.div>
