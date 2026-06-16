@@ -2762,10 +2762,10 @@ export default function TapitasLeagueHomepage() {
           className="mb-4"
         >
           <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-            <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                  <ScrollText className="h-5 w-5 text-pink-300" />
+            <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                  <ScrollText className="h-4.5 w-4.5 text-pink-300 sm:h-5 sm:w-5" />
                 </div>
 
                 <div className="min-w-0">
@@ -2773,27 +2773,27 @@ export default function TapitasLeagueHomepage() {
                     className="truncate uppercase leading-none text-pink-300"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
+                      fontSize: '20px',
+                      letterSpacing: '0.06em',
                       fontWeight: 900,
                     }}
                   >
                     Last Draft
                   </div>
 
-                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                  <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                     Draft {draftSeason}
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
+              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
                 <a
                   href="/draft"
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                  className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
                 >
                   Ver tudo
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 </a>
 
                 {draftRounds.length > 1 && (
@@ -2802,12 +2802,12 @@ export default function TapitasLeagueHomepage() {
                       type="button"
                       onClick={() => goDraftRound(-1)}
                       disabled={!canGoDraftPrev}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                      className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
                     >
                       <ChevronLeft className="h-3 w-3" />
                     </button>
 
-                    <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-pink-300">
+                    <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-pink-300 sm:min-w-[42px] sm:text-[10px]">
                       R{selectedDraftRound}
                     </div>
 
@@ -2815,7 +2815,7 @@ export default function TapitasLeagueHomepage() {
                       type="button"
                       onClick={() => goDraftRound(1)}
                       disabled={!canGoDraftNext}
-                      className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                      className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
                     >
                       <ChevronRight className="h-3 w-3" />
                     </button>
@@ -2852,7 +2852,8 @@ export default function TapitasLeagueHomepage() {
           {/* Power Rankings */}
           <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1">
             <div className="flex h-full flex-col">
-              <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3.5 sm:px-5 sm:pb-1 sm:pt-4">
+              {/* Header */}
+              <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
                     <TrendingUp className="h-4.5 w-4.5 text-emerald-300 sm:h-5 sm:w-5" />
@@ -2877,13 +2878,13 @@ export default function TapitasLeagueHomepage() {
                   </div>
                 </div>
 
-                <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2 self-center">
+                <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
                   <a
                     href="/powerrankings"
-                    className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                    className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
                   >
                     Ver tudo
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   </a>
 
                   {prTotalPages > 1 && (
@@ -2892,12 +2893,12 @@ export default function TapitasLeagueHomepage() {
                         type="button"
                         onClick={() => setPrPage((p) => Math.max(0, p - 1))}
                         disabled={prPage === 0}
-                        className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                        className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
                       >
                         <ChevronLeft className="h-3 w-3" />
                       </button>
 
-                      <div className="min-w-[42px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-emerald-300">
+                      <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-emerald-300 sm:min-w-[42px] sm:text-[10px]">
                         {prPage + 1}/{prTotalPages}
                       </div>
 
@@ -2905,7 +2906,7 @@ export default function TapitasLeagueHomepage() {
                         type="button"
                         onClick={() => setPrPage((p) => Math.min(prTotalPages - 1, p + 1))}
                         disabled={prPage >= prTotalPages - 1}
-                        className="flex h-7 w-7 items-center justify-center rounded-[10px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                        className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
                       >
                         <ChevronRight className="h-3 w-3" />
                       </button>
