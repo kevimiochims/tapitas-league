@@ -1078,6 +1078,7 @@ export default function TapitasLeagueHomepage() {
     return (currentStandings || [])[0] || null
   }, [currentStandings])
 
+
   const visibleStandingsRows = useMemo(() => {
     const base = (currentStandings || []).slice(
       standingsPage * standingsPageSize,
@@ -1105,6 +1106,10 @@ export default function TapitasLeagueHomepage() {
     setStandingsPage(0)
   }, [currentStandings])
 
+  useEffect(() => {
+    setStandingsPage(0)
+  }, [sortCategory, sortSub])
+
   function getStandingsLeaderMessage(row) {
     if (!row) return ''
 
@@ -1118,6 +1123,8 @@ export default function TapitasLeagueHomepage() {
 
     return 'Abriu a temporada na liderança'
   }
+
+
 
   // ===== CHAMPIONS WALL =====
 
@@ -1686,6 +1693,20 @@ export default function TapitasLeagueHomepage() {
       return b.pf - a.pf
     })
   }, [rawData, sortCategory, sortSub])
+
+  const [leadersPage, setLeadersPage] = useState(0)
+
+  useEffect(() => {
+    setLeadersPage(0)
+  }, [sortCategory, sortSub])
+
+  const topLeader = standings[0] ?? null
+  const leadersTotalPages = standings.length <= 5 ? 1 : 2
+
+  const pagedLeaders =
+    leadersPage === 0
+      ? standings.slice(1, 5)
+      : standings.slice(5, 10)
 
   // Lista única de times extraída do h2h
   const allTeams = useMemo(() => {
@@ -2526,7 +2547,7 @@ export default function TapitasLeagueHomepage() {
                     fill="#22d3ee"
                     opacity="0.18"
                   >
-                    #1
+                    1
                   </text>
 
                   {/* Rankings secundários */}
@@ -2756,49 +2777,87 @@ export default function TapitasLeagueHomepage() {
 
         {/* ── STAT STRIP ─────────────────────────────────────────────────── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.5 }}
           className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
         >
           {[
-            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'Current', color: 'cyan' },
-            { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple' },
-            { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-time', color: 'emerald' },
-            { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, color: 'orange' },
-          ].map(({ icon: Icon, label, value, sub, color }) => {
+            { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'Current', color: 'cyan', href: '/teams' },
+            { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), color: 'purple', href: '/history' },
+            { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-time', color: 'emerald', href: '/matchups' },
+            { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, color: 'orange', href: '/records' },
+          ].map(({ icon: Icon, label, value, sub, color, href }) => {
             const c = {
-              cyan: { icon: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300', val: 'text-cyan-300', border: 'border-cyan-400/10 hover:border-cyan-400/25' },
-              purple: { icon: 'border-purple-400/20 bg-purple-400/10 text-purple-300', val: 'text-purple-300', border: 'border-purple-400/10 hover:border-purple-400/25' },
-              emerald: { icon: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300', val: 'text-emerald-300', border: 'border-emerald-400/10 hover:border-emerald-400/25' },
-              orange: { icon: 'border-orange-400/20 bg-orange-400/10 text-orange-300', val: 'text-orange-300', border: 'border-orange-400/10 hover:border-orange-400/25' },
+              cyan: {
+                icon: 'border-cyan-400/18 bg-cyan-400/8 text-cyan-300',
+                val: 'text-cyan-300',
+              },
+              purple: {
+                icon: 'border-purple-400/18 bg-purple-400/8 text-purple-300',
+                val: 'text-purple-300',
+              },
+              emerald: {
+                icon: 'border-emerald-400/18 bg-emerald-400/8 text-emerald-300',
+                val: 'text-emerald-300',
+              },
+              orange: {
+                icon: 'border-orange-400/18 bg-orange-400/8 text-orange-300',
+                val: 'text-orange-300',
+              },
             }[color]
+
             return (
-              <div key={label} className={`flex items-center gap-4 rounded-[22px] border ${c.border} bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-5 py-4 transition-all`}>
-                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border ${c.icon}`}>
+              <a
+                key={label}
+                href={href}
+                className="flex items-center gap-3 rounded-[22px] border border-white/8 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] px-4 py-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.10)] transition-all hover:-translate-y-[1px] hover:border-white/12 sm:gap-4 sm:px-5 sm:py-4"
+              >
+                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border ${c.icon} sm:h-10 sm:w-10 sm:rounded-xl`}>
                   <Icon className="h-4 w-4" />
                 </div>
+
                 <div className="min-w-0 flex-1">
-                  <div className="mb-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
-                  <div className={`text-2xl font-black leading-none ${c.val}`}>{value}</div>
-                  <div className="mt-0.5 truncate text-[10px] font-bold text-slate-600">{sub}</div>
+                  <div className="mb-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-slate-500 sm:text-[10px]">
+                    {label}
+                  </div>
+
+                  <div className={`text-[22px] font-black leading-none sm:text-2xl ${c.val}`}>
+                    {value}
+                  </div>
+
+                  <div className="mt-0.5 truncate text-[10px] font-bold text-slate-500 sm:text-[10px]">
+                    {sub}
+                  </div>
                 </div>
-              </div>
+              </a>
             )
           })}
         </motion.div>
 
         {/* ── QUICK NAV ──────────────────────────────────────────────────── */}
         <motion.div
-          initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.4 }}
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.4 }}
           className="mb-4 mt-4"
         >
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
-              <a key={label} href={href}
-                className={`group flex flex-col items-center gap-1.5 rounded-[18px] border ${border} ${bg} px-2 py-3 text-center transition-all hover:scale-[1.05] hover:brightness-125`}>
-                <Icon className={`h-4 w-4 ${color}`} />
-                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>{label}</span>
+              <a
+                key={label}
+                href={href}
+                className={`group flex flex-col items-center justify-center gap-2 rounded-[18px] border ${border} ${bg} px-2.5 py-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.10)] transition-all hover:-translate-y-[1px] hover:border-white/12 sm:px-3 sm:py-3.5`}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-[12px] transition-all group-hover:bg-white/[0.05]">
+                  <Icon className={`h-4 w-4 ${color}`} />
+                </div>
+
+                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${color}`}>
+                  {label}
+                </span>
               </a>
             ))}
           </div>
@@ -2979,7 +3038,7 @@ export default function TapitasLeagueHomepage() {
                         lineHeight: 1,
                       }}
                     >
-                      #1
+                      1
                     </span>
                   </div>
 
@@ -2987,7 +3046,7 @@ export default function TapitasLeagueHomepage() {
                     <img
                       src={getTeamAvatar(prLeader.team)}
                       alt={prLeader.team}
-                      className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover ring-1 ring-white/10"
+                      className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover"
                     />
                   ) : (
                     <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
@@ -3240,7 +3299,7 @@ export default function TapitasLeagueHomepage() {
                   <img
                     src={getTeamAvatar(standingsLeader.team)}
                     alt={standingsLeader.team}
-                    className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover ring-1 ring-white/10"
+                    className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover"
                   />
                 ) : (
                   <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
@@ -3611,7 +3670,7 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
           whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.06 }}
+          viewport={{ once: true, amount: 0.06 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
@@ -3619,62 +3678,75 @@ export default function TapitasLeagueHomepage() {
           <motion.div
             initial={{ opacity: 0, y: 50, filter: 'blur(10px)' }}
             whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            viewport={{ once: false, amount: 0.08 }}
+            viewport={{ once: true, amount: 0.08 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-[0.85]"
           >
             <div className="flex h-full flex-col">
-              <div className="mb-4 flex items-start justify-between gap-4 px-4 pb-1 pt-3 sm:px-5 sm:pt-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                    <Medal className="h-5 w-5 text-yellow-300" />
+              {/* Header */}
+              <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                    <Medal className="h-4.5 w-4.5 text-yellow-300 sm:h-5 sm:w-5" />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <div
-                      className="uppercase leading-none text-white"
+                      className="truncate uppercase leading-none text-yellow-300"
                       style={{
                         fontFamily: '"Bebas Neue", sans-serif',
-                        fontSize: '24px',
-                        letterSpacing: '0.075em',
+                        fontSize: '20px',
+                        letterSpacing: '0.06em',
                         fontWeight: 900,
                       }}
                     >
                       Franchise Leaders
                     </div>
 
-                    <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                      League Rankings
+                    <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                      League rankings
                     </div>
                   </div>
                 </div>
 
-                {standings.length > 5 && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setStandingsPage(p => Math.max(0, p - 1))}
-                      disabled={standingsPage === 0}
-                      className="flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                    </button>
+                <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
+                  <a
+                    href="/standings"
+                    className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+                  >
+                    Ver tudo
+                    <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  </a>
 
-                    <span className="text-[10px] font-black text-slate-400">
-                      {standingsPage + 1}/{Math.ceil(standings.length / 5)}
-                    </span>
+                  {leadersTotalPages > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setLeadersPage((p) => Math.max(0, p - 1))}
+                        disabled={leadersPage === 0}
+                        className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                      </button>
 
-                    <button
-                      onClick={() => setStandingsPage(p => Math.min(Math.ceil(standings.length / 5) - 1, p + 1))}
-                      disabled={standingsPage >= Math.ceil(standings.length / 5) - 1}
-                      className="flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
-                    >
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
+                      <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-yellow-300 sm:min-w-[42px] sm:text-[10px]">
+                        {leadersPage + 1}/{leadersTotalPages}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setLeadersPage((p) => Math.min(leadersTotalPages - 1, p + 1))}
+                        disabled={leadersPage >= leadersTotalPages - 1}
+                        className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="mb-4 flex flex-col gap-2 px-4 sm:flex-row sm:px-5">
+              <div className="mb-4 flex flex-col gap-2 px-4 sm:flex-row sm:gap-3 sm:px-5">
                 <TeamSelect
                   value={sortCategory}
                   onChange={setSortCategory}
@@ -3692,9 +3764,117 @@ export default function TapitasLeagueHomepage() {
                 )}
               </div>
 
-              <div className="space-y-2 px-4 pb-4 sm:px-5 sm:pb-5">
-                {standings.slice(standingsPage * 5, standingsPage * 5 + 5).map((team, index) => {
-                  const globalIndex = standingsPage * 5 + index
+              {topLeader && (() => {
+                const cat = SORT_OPTIONS.find(o => o.label === sortCategory)
+                const sub = cat?.subs.find(s => s.label === sortSub) ?? cat?.subs[0]
+
+                const keyMap = {
+                  'W': t => t.wins,
+                  'RS_W': t => t.rsW,
+                  'PO_W': t => t.poW,
+                  'L': t => t.losses,
+                  'RS_L': t => t.rsL,
+                  'PO_L': t => t.poL,
+                  'W%': t => `${Math.round(t.winPct)}%`,
+                  'RS_W%': t => `${Math.round(t.rsWinPct)}%`,
+                  'PO_W%': t => `${Math.round(t.poWinPct)}%`,
+                  'PF': t => Math.round(t.pf),
+                  'RS_PF': t => Math.round(t.rsPF),
+                  'PO_PF': t => Math.round(t.poPF),
+                  'W Streak RS': t => t.wStreakRS,
+                  'W Streak Total': t => t.wStreakTotal,
+                  'L Streak RS': t => t.lStreakRS,
+                  'L Streak Total': t => t.lStreakTotal,
+                  'Playoff Apps': t => t.playoffApps,
+                  'Finals': t => t.finals,
+                  'Titles': t => t.titles,
+                }
+
+                const shortLabelMap = {
+                  'W': 'Wins',
+                  'RS_W': 'Wins',
+                  'PO_W': 'Wins',
+                  'L': 'Losses',
+                  'RS_L': 'Losses',
+                  'PO_L': 'Losses',
+                  'W%': 'Win %',
+                  'RS_W%': 'Win %',
+                  'PO_W%': 'Win %',
+                  'PF': 'Points',
+                  'RS_PF': 'Points',
+                  'PO_PF': 'Points',
+                  'W Streak RS': 'Games',
+                  'W Streak Total': 'Games',
+                  'L Streak RS': 'Games',
+                  'L Streak Total': 'Games',
+                  'Playoff Apps': 'Apps',
+                  'Finals': 'Finals',
+                  'Titles': 'Titles',
+                }
+
+                const displayValue = sub ? keyMap[sub.key]?.(topLeader) ?? '—' : topLeader.wins
+                const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
+                const avatar = getTeamAvatar(topLeader.team)
+
+                return (
+                  <a
+                    href={`/teams?team=${encodeURIComponent(topLeader.team)}`}
+                    className="mx-4 mb-4 flex items-center gap-4 rounded-[26px] border border-yellow-300/16 bg-[linear-gradient(135deg,rgba(54,43,20,0.62),rgba(10,18,35,0.99))] px-4 py-4 text-white shadow-[0_12px_28px_rgba(245,158,11,0.08)] transition-all hover:-translate-y-[1px] sm:mx-5"
+                  >
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-yellow-300/20 bg-yellow-300/10 font-black text-yellow-200">
+                      <span
+                        style={{
+                          fontFamily: '"Bebas Neue", sans-serif',
+                          fontSize: '28px',
+                          lineHeight: 1,
+                        }}
+                      >
+                        1
+                      </span>
+                    </div>
+
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt={topLeader.team}
+                        className="h-14 w-14 flex-shrink-0 rounded-[18px] object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/8 text-sm font-black text-white">
+                        {topLeader.team.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="truncate text-[15px] font-black tracking-[0.01em] text-white sm:text-[16px]">
+                          {topLeader.team}
+                        </div>
+
+                        <span className="hidden rounded-full border border-yellow-500/80 bg-yellow-500/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 sm:inline-flex">
+                          Leader
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0 text-right">
+                      <div
+                        className="font-black leading-none text-yellow-200"
+                        style={{ fontSize: 'clamp(28px,5vw,40px)' }}
+                      >
+                        {displayValue}
+                      </div>
+
+                      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-yellow-200/75 sm:text-[11px]">
+                        {shortLabel}
+                      </div>
+                    </div>
+                  </a>
+                )
+              })()}
+
+              <div className="space-y-2.5 px-4 pb-4 sm:space-y-3 sm:px-5 sm:pb-5">
+                {pagedLeaders.map((team, index) => {
                   const cat = SORT_OPTIONS.find(o => o.label === sortCategory)
                   const sub = cat?.subs.find(s => s.label === sortSub) ?? cat?.subs[0]
 
@@ -3745,16 +3925,24 @@ export default function TapitasLeagueHomepage() {
                   const displayValue = sub ? keyMap[sub.key]?.(team) ?? '—' : team.wins
                   const shortLabel = sub ? shortLabelMap[sub.key] ?? sortCategory : sortCategory
                   const avatar = getTeamAvatar(team.team)
+                  const globalIndex = leadersPage === 0 ? index + 1 : index + 5
+                  const isTop3 = globalIndex < 3
 
                   return (
                     <a
                       key={`${team.team}-${globalIndex}`}
                       href={`/teams?team=${encodeURIComponent(team.team)}`}
-                      className="group flex items-center gap-3 rounded-[22px] border border-white/[0.06] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 transition-all hover:border-white/10 hover:bg-white/[0.05]"
+                      className={`group flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] ${isTop3
+                          ? 'border-yellow-300/10 bg-[linear-gradient(160deg,rgba(36,31,20,0.52),rgba(10,18,35,0.99))]'
+                          : 'border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
+                        }`}
                     >
                       <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border border-cyan-300/20 bg-cyan-300/10 font-black text-cyan-200"
-                        style={{ fontFamily: '"Bebas Neue",sans-serif', fontSize: '18px' }}
+                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border font-black ${isTop3
+                            ? 'border-yellow-300/14 bg-yellow-300/[0.06] text-yellow-100'
+                            : 'border-white/10 bg-white/5 text-slate-200'
+                          }`}
+                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px' }}
                       >
                         {globalIndex + 1}
                       </div>
@@ -3763,53 +3951,29 @@ export default function TapitasLeagueHomepage() {
                         <img
                           src={avatar}
                           alt={team.team}
-                          className="h-9 w-9 flex-shrink-0 rounded-[14px] object-cover"
+                          className="h-10 w-10 flex-shrink-0 rounded-[16px] object-cover"
                         />
                       ) : (
-                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/[0.05] text-[10px] font-black text-slate-300">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/8 text-[10px] font-black text-cyan-50">
                           {team.team.slice(0, 2).toUpperCase()}
                         </div>
                       )}
 
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-lg font-black text-white transition-colors group-hover:text-cyan-200">
+                        <div className={`truncate text-[15px] font-black tracking-[0.01em] ${isTop3 ? 'text-yellow-50' : 'text-white'}`}>
                           {team.team}
                         </div>
-
-                        {(sub?.key === 'W Streak RS' ||
-                          sub?.key === 'W Streak Total' ||
-                          sub?.key === 'L Streak RS' ||
-                          sub?.key === 'L Streak Total') ? (() => {
-                            const kl = {
-                              'W Streak RS': 'streakRS',
-                              'W Streak Total': 'streakTotal',
-                              'L Streak RS': 'lStreakRS',
-                              'L Streak Total': 'lStreakTotal',
-                            }
-                            const si = streakMap[team.team]?.[kl[sub.key]]
-                            if (!si) return null
-
-                            return (
-                              <div className="text-[11px] font-bold text-slate-400">
-                                W{si.startWeek}, {si.startSeason} → W{si.endWeek}, {si.endSeason}
-                                {si.active && <span className="ml-1 text-cyan-300">(active)</span>}
-                              </div>
-                            )
-                          })() : (
-                          <div className="text-[11px] font-bold text-slate-400">
-                            {team.wins}W · {team.losses}L · {Math.round(team.pf)} pts
-                          </div>
-                        )}
                       </div>
 
                       <div className="flex-shrink-0 text-right">
                         <div
-                          className="font-black leading-none text-cyan-200"
+                          className={`font-black leading-none ${isTop3 ? 'text-yellow-100' : 'text-slate-200'}`}
                           style={{ fontSize: 'clamp(24px,4vw,36px)' }}
                         >
                           {displayValue}
                         </div>
-                        <div className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500">
+
+                        <div className={`text-[11px] font-black uppercase tracking-[0.15em] ${isTop3 ? 'text-yellow-200/55' : 'text-slate-500'}`}>
                           {shortLabel}
                         </div>
                       </div>
