@@ -4029,25 +4029,31 @@ export default function TapitasLeagueHomepage() {
               </div>
 
               <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-5">
-                <TeamSelect
-                  value={selectedTeamA}
-                  onChange={(val) => {
-                    setSelectedTeamA(val)
-                    setSelectedTeamB('')
-                  }}
-                  options={allTeams}
-                  placeholder="Time A..."
-                />
+                <div className="min-w-0">
+                  <TeamSelect
+                    value={selectedTeamA}
+                    onChange={(val) => {
+                      setSelectedTeamA(val)
+                      setSelectedTeamB('')
+                    }}
+                    options={allTeams}
+                    placeholder="Time A..."
+                  />
+                </div>
+
                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/12 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-xs font-black text-white">
                   vs
                 </div>
-                <TeamSelect
-                  value={selectedTeamB}
-                  onChange={setSelectedTeamB}
-                  options={teamsForB}
-                  placeholder="Time B..."
-                  disabled={!selectedTeamA}
-                />
+
+                <div className="min-w-0">
+                  <TeamSelect
+                    value={selectedTeamB}
+                    onChange={setSelectedTeamB}
+                    options={teamsForB}
+                    placeholder="Time B..."
+                    disabled={!selectedTeamA}
+                  />
+                </div>
               </div>
 
               {!selectedRivalry ? (
@@ -4077,18 +4083,32 @@ export default function TapitasLeagueHomepage() {
                 const leftLastMeeting = lastMeetingParts[0] || '—'
                 const rightLastMeeting = lastMeetingParts[1] || '—'
 
+                const leftLastMeetingNum = parseNumber(leftLastMeeting)
+                const rightLastMeetingNum = parseNumber(rightLastMeeting)
+                const leftLastMeetingLead = leftLastMeetingNum > rightLastMeetingNum
+                const rightLastMeetingLead = rightLastMeetingNum > leftLastMeetingNum
+
                 const rawStreak = String(selectedRivalry.streak || '').trim()
                 const streakToken = rawStreak.match(/\b([WL])\s*(\d+)\b/i)
 
                 let leftStreak = '—'
                 let rightStreak = '—'
+                let leftStreakScore = null
+                let rightStreakScore = null
 
                 if (streakToken) {
                   const result = streakToken[1].toUpperCase()
-                  const count = streakToken[2]
+                  const count = Number(streakToken[2])
                   leftStreak = `${result}${count}`
                   rightStreak = `${result === 'W' ? 'L' : 'W'}${count}`
+                  leftStreakScore = result === 'W' ? count : -count
+                  rightStreakScore = result === 'W' ? -count : count
                 }
+
+                const leftStreakLead =
+                  leftStreakScore !== null && rightStreakScore !== null && leftStreakScore > rightStreakScore
+                const rightStreakLead =
+                  leftStreakScore !== null && rightStreakScore !== null && rightStreakScore > leftStreakScore
 
                 const avgMarginValue = parseNumber(selectedRivalry.avgMargin)
                 const hasAvgMargin =
@@ -4096,14 +4116,43 @@ export default function TapitasLeagueHomepage() {
                   selectedRivalry.avgMargin !== undefined &&
                   String(selectedRivalry.avgMargin).trim() !== ''
 
-                const leftAvgMargin = hasAvgMargin
-                  ? `${avgMarginValue > 0 ? '+' : avgMarginValue < 0 ? '' : ''}${avgMarginValue}`
-                  : '—'
+                const leftAvgMarginRaw = hasAvgMargin ? avgMarginValue : null
+                const rightAvgMarginRaw = hasAvgMargin ? avgMarginValue * -1 : null
 
-                const invertedAvgMargin = avgMarginValue * -1
-                const rightAvgMargin = hasAvgMargin
-                  ? `${invertedAvgMargin > 0 ? '+' : invertedAvgMargin < 0 ? '' : ''}${invertedAvgMargin}`
-                  : '—'
+                const leftAvgMargin =
+                  leftAvgMarginRaw === null
+                    ? '—'
+                    : `${leftAvgMarginRaw > 0 ? '+' : leftAvgMarginRaw < 0 ? '' : ''}${leftAvgMarginRaw}`
+
+                const rightAvgMargin =
+                  rightAvgMarginRaw === null
+                    ? '—'
+                    : `${rightAvgMarginRaw > 0 ? '+' : rightAvgMarginRaw < 0 ? '' : ''}${rightAvgMarginRaw}`
+
+                const leftAvgMarginLead =
+                  leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && leftAvgMarginRaw > rightAvgMarginRaw
+                const rightAvgMarginLead =
+                  leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && rightAvgMarginRaw > leftAvgMarginRaw
+
+                const playoffLeft = parseNumber(selectedRivalry.playoffRecord?.split('-')[0] ?? '')
+                const playoffRight = parseNumber(selectedRivalry.playoffRecord?.split('-')[1] ?? '')
+                const leftPlayoffLead = playoffLeft > playoffRight
+                const rightPlayoffLead = playoffRight > playoffLeft
+
+                const bestStreakLeftScore =
+                  strA?.count ? (String(strA.result).toUpperCase() === 'W' ? Number(strA.count) : -Number(strA.count)) : null
+                const bestStreakRightScore =
+                  strB?.count ? (String(strB.result).toUpperCase() === 'W' ? Number(strB.count) : -Number(strB.count)) : null
+
+                const leftBestStreakLead =
+                  bestStreakLeftScore !== null &&
+                  bestStreakRightScore !== null &&
+                  bestStreakLeftScore > bestStreakRightScore
+
+                const rightBestStreakLead =
+                  bestStreakLeftScore !== null &&
+                  bestStreakRightScore !== null &&
+                  bestStreakRightScore > bestStreakLeftScore
 
                 return (
                   <div className="flex flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
@@ -4112,7 +4161,7 @@ export default function TapitasLeagueHomepage() {
                       <div className="flex items-center justify-between gap-4">
                         <a
                           href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`}
-                          className="group flex flex-1 flex-col items-center gap-1.5"
+                          className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
                         >
                           {(() => {
                             const av = getTeamAvatar(selectedRivalry.teamA)
@@ -4129,7 +4178,7 @@ export default function TapitasLeagueHomepage() {
                             )
                           })()}
 
-                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
+                          <span className="max-w-full truncate text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
                             {shortTeamName(selectedRivalry.teamA)}
                           </span>
 
@@ -4156,7 +4205,7 @@ export default function TapitasLeagueHomepage() {
 
                         <a
                           href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`}
-                          className="group flex flex-1 flex-col items-center gap-1.5"
+                          className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
                         >
                           {(() => {
                             const av = getTeamAvatar(selectedRivalry.teamB)
@@ -4173,7 +4222,7 @@ export default function TapitasLeagueHomepage() {
                             )
                           })()}
 
-                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
+                          <span className="max-w-full truncate text-center text-xs font-black text-white transition-colors group-hover:text-slate-200">
                             {shortTeamName(selectedRivalry.teamB)}
                           </span>
 
@@ -4206,8 +4255,8 @@ export default function TapitasLeagueHomepage() {
                       </div>
                     </div>
 
-                    {/* STATS BOARD */}
-                    <div className="space-y-2.5">
+                    {/* CLEAN STATS */}
+                    <div className="space-y-3">
                       {[
                         {
                           label: 'Playoff Record',
@@ -4215,6 +4264,8 @@ export default function TapitasLeagueHomepage() {
                           right: selectedRivalry.playoffRecord?.split('-')[1] ?? '—',
                           subLeft: '',
                           subRight: '',
+                          leftLead: leftPlayoffLead,
+                          rightLead: rightPlayoffLead,
                         },
                         {
                           label: 'Biggest Win',
@@ -4222,6 +4273,8 @@ export default function TapitasLeagueHomepage() {
                           right: bigB ? `${bigB.scoreA} vs ${bigB.scoreB}` : '—',
                           subLeft: bigA?.label || '',
                           subRight: bigB?.label || '',
+                          leftLead: false,
+                          rightLead: false,
                         },
                         {
                           label: 'Best Streak',
@@ -4229,6 +4282,8 @@ export default function TapitasLeagueHomepage() {
                           right: strB?.count ? `${strB.result}${strB.count}` : '—',
                           subLeft: strA?.start ? `${strA.start}${strA.end ? ` → ${strA.end}` : ''}` : '',
                           subRight: strB?.start ? `${strB.start}${strB.end ? ` → ${strB.end}` : ''}` : '',
+                          leftLead: leftBestStreakLead,
+                          rightLead: rightBestStreakLead,
                         },
                         {
                           label: 'Last Meeting',
@@ -4236,6 +4291,8 @@ export default function TapitasLeagueHomepage() {
                           right: rightLastMeeting,
                           subLeft: selectedRivalry.lastMeeting?.meta || '',
                           subRight: selectedRivalry.lastMeeting?.meta || '',
+                          leftLead: leftLastMeetingLead,
+                          rightLead: rightLastMeetingLead,
                         },
                         {
                           label: 'Current Streak',
@@ -4243,6 +4300,8 @@ export default function TapitasLeagueHomepage() {
                           right: rightStreak,
                           subLeft: '',
                           subRight: '',
+                          leftLead: leftStreakLead,
+                          rightLead: rightStreakLead,
                         },
                         {
                           label: 'Avg Margin',
@@ -4250,45 +4309,52 @@ export default function TapitasLeagueHomepage() {
                           right: rightAvgMargin,
                           subLeft: '',
                           subRight: '',
+                          leftLead: leftAvgMarginLead,
+                          rightLead: rightAvgMarginLead,
                         },
-                      ].map((item) => (
-                        <div
-                          key={item.label}
-                          className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-[22px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3.5 shadow-[0_8px_18px_rgba(15,23,42,0.12)] sm:gap-3"
-                        >
-                          <div className="min-w-0 text-left">
-                            <div
-                              className="truncate text-[24px] font-black leading-none text-white sm:text-[30px]"
-                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
-                            >
-                              {item.left}
-                            </div>
-                            {item.subLeft ? (
-                              <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
-                                {item.subLeft}
+                      ].map((item, idx, arr) => (
+                        <div key={item.label}>
+                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                            <div className="min-w-0 text-left">
+                              <div
+                                className={`truncate text-[24px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                  }`}
+                                style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                              >
+                                {item.left}
                               </div>
-                            ) : null}
+                              {item.subLeft ? (
+                                <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                                  {item.subLeft}
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div className="px-2 text-center">
+                              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 sm:text-[11px]">
+                                {item.label}
+                              </div>
+                            </div>
+
+                            <div className="min-w-0 text-right">
+                              <div
+                                className={`truncate text-[24px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                  }`}
+                                style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                              >
+                                {item.right}
+                              </div>
+                              {item.subRight ? (
+                                <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                                  {item.subRight}
+                                </div>
+                              ) : null}
+                            </div>
                           </div>
 
-                          <div className="min-w-[128px] rounded-[16px] border border-white/10 bg-white/[0.06] px-3 py-2 text-center sm:min-w-[156px]">
-                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-200 sm:text-[11px]">
-                              {item.label}
-                            </div>
-                          </div>
-
-                          <div className="min-w-0 text-right">
-                            <div
-                              className="truncate text-[24px] font-black leading-none text-white sm:text-[30px]"
-                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
-                            >
-                              {item.right}
-                            </div>
-                            {item.subRight ? (
-                              <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
-                                {item.subRight}
-                              </div>
-                            ) : null}
-                          </div>
+                          {idx < arr.length - 1 ? (
+                            <div className="mt-3 h-px w-full bg-white/6" />
+                          ) : null}
                         </div>
                       ))}
                     </div>
