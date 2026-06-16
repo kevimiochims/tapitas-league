@@ -3933,14 +3933,14 @@ export default function TapitasLeagueHomepage() {
                       key={`${team.team}-${globalIndex}`}
                       href={`/teams?team=${encodeURIComponent(team.team)}`}
                       className={`group flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] ${isTop3
-                          ? 'border-yellow-300/10 bg-[linear-gradient(160deg,rgba(36,31,20,0.52),rgba(10,18,35,0.99))]'
-                          : 'border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
+                        ? 'border-yellow-300/10 bg-[linear-gradient(160deg,rgba(36,31,20,0.52),rgba(10,18,35,0.99))]'
+                        : 'border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
                         }`}
                     >
                       <div
                         className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border font-black ${isTop3
-                            ? 'border-yellow-300/14 bg-yellow-300/[0.06] text-yellow-100'
-                            : 'border-white/10 bg-white/5 text-slate-200'
+                          ? 'border-yellow-300/14 bg-yellow-300/[0.06] text-yellow-100'
+                          : 'border-white/10 bg-white/5 text-slate-200'
                           }`}
                         style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '22px' }}
                       >
@@ -4067,9 +4067,46 @@ export default function TapitasLeagueHomepage() {
                 const aLeads = wA > wB
                 const bLeads = wB > wA
 
+                const lastMeetingRaw = String(selectedRivalry.lastMeeting?.score || '').trim()
+                const lastMeetingParts = lastMeetingRaw
+                  ? lastMeetingRaw.split(/[-–—]|vs/i).map(part => part.trim()).filter(Boolean)
+                  : []
+
+                const leftLastMeeting = lastMeetingParts[0] || '—'
+                const rightLastMeeting = lastMeetingParts[1] || '—'
+
+                const rawStreak = String(selectedRivalry.streak || '').trim()
+                const streakToken = rawStreak.match(/\b([WL])\s*(\d+)\b/i)
+
+                let leftStreak = '—'
+                let rightStreak = '—'
+
+                if (streakToken) {
+                  const result = streakToken[1].toUpperCase()
+                  const count = streakToken[2]
+                  leftStreak = `${result}${count}`
+                  rightStreak = `${result === 'W' ? 'L' : 'W'}${count}`
+                }
+
+                const avgMarginValue = parseNumber(selectedRivalry.avgMargin)
+                const leftAvgMargin =
+                  selectedRivalry.avgMargin !== null &&
+                    selectedRivalry.avgMargin !== undefined &&
+                    String(selectedRivalry.avgMargin).trim() !== ''
+                    ? `${avgMarginValue > 0 ? '+' : avgMarginValue < 0 ? '' : ''}${avgMarginValue}`
+                    : '—'
+
+                const invertedAvgMargin = avgMarginValue * -1
+                const rightAvgMargin =
+                  selectedRivalry.avgMargin !== null &&
+                    selectedRivalry.avgMargin !== undefined &&
+                    String(selectedRivalry.avgMargin).trim() !== ''
+                    ? `${invertedAvgMargin > 0 ? '+' : invertedAvgMargin < 0 ? '' : ''}${invertedAvgMargin}`
+                    : '—'
+
                 return (
                   <div className="flex flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
-                    {/* VS strip */}
+                    {/* VS STRIP */}
                     <div className="overflow-hidden rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_8px_18px_rgba(15,23,42,0.12)]">
                       <div className="flex items-center justify-between gap-4">
                         <a
@@ -4082,7 +4119,7 @@ export default function TapitasLeagueHomepage() {
                               <img
                                 src={av}
                                 alt={selectedRivalry.teamA}
-                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-cyan-200/45"
+                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-yellow-200/35"
                               />
                             ) : (
                               <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
@@ -4090,14 +4127,16 @@ export default function TapitasLeagueHomepage() {
                               </div>
                             )
                           })()}
-                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-cyan-200">
+
+                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-yellow-100">
                             {shortTeamName(selectedRivalry.teamA)}
                           </span>
+
                           <span
                             className="text-3xl font-black leading-none"
                             style={{
                               fontFamily: '"Bebas Neue",sans-serif',
-                              color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0',
+                              color: aLeads ? '#fde68a' : bLeads ? '#fca5a5' : '#e2e8f0',
                             }}
                           >
                             {wA}
@@ -4124,7 +4163,7 @@ export default function TapitasLeagueHomepage() {
                               <img
                                 src={av}
                                 alt={selectedRivalry.teamB}
-                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-cyan-200/45"
+                                className="h-14 w-14 rounded-[18px] object-cover transition-all group-hover:ring-2 group-hover:ring-yellow-200/35"
                               />
                             ) : (
                               <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
@@ -4132,14 +4171,16 @@ export default function TapitasLeagueHomepage() {
                               </div>
                             )
                           })()}
-                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-cyan-200">
+
+                          <span className="text-center text-xs font-black text-white transition-colors group-hover:text-yellow-100">
                             {shortTeamName(selectedRivalry.teamB)}
                           </span>
+
                           <span
                             className="text-3xl font-black leading-none"
                             style={{
                               fontFamily: '"Bebas Neue",sans-serif',
-                              color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0',
+                              color: bLeads ? '#fde68a' : aLeads ? '#fca5a5' : '#e2e8f0',
                             }}
                           >
                             {wB}
@@ -4150,12 +4191,12 @@ export default function TapitasLeagueHomepage() {
                       <div className="mt-3 flex justify-center">
                         <div
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
-                            ? 'border-yellow-300/30 bg-yellow-300/10 text-yellow-200'
-                            : selectedRivalry.heat === 'Elite'
-                              ? 'border-orange-300/30 bg-orange-300/10 text-orange-200'
-                              : selectedRivalry.heat === 'High'
-                                ? 'border-rose-300/30 bg-rose-300/10 text-rose-200'
-                                : 'border-white/10 bg-white/[0.04] text-cyan-50/75'
+                              ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
+                              : selectedRivalry.heat === 'Elite'
+                                ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
+                                : selectedRivalry.heat === 'High'
+                                  ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                                  : 'border-white/10 bg-white/[0.04] text-cyan-50/75'
                             }`}
                         >
                           <Flame className="h-3 w-3" />
@@ -4164,128 +4205,212 @@ export default function TapitasLeagueHomepage() {
                       </div>
                     </div>
 
-                    {/* Stats grid */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Trophy className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Playoffs
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.playoffRecord}</span>
-                      </div>
+                    {/* MATCHUP BOARD */}
+                    <div className="overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(12,18,32,0.98),rgba(7,12,24,0.99))] p-3 shadow-[0_18px_36px_rgba(6,12,24,0.24)] sm:p-4">
+                      <div className="space-y-3">
+                        {/* PLAYOFF RECORD */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                          <div className="text-left">
+                            <div
+                              className="text-[34px] font-black leading-none text-white sm:text-[42px]"
+                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                            >
+                              {selectedRivalry.playoffRecord?.split('-')[0] ?? '—'}
+                            </div>
+                          </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Activity className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Avg Margin
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.avgMargin} pts</span>
-                      </div>
+                          <div className="min-w-[132px] rounded-[18px] border border-white/10 bg-white text-center shadow-[0_8px_18px_rgba(255,255,255,0.06)] sm:min-w-[168px]">
+                            <div className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950 sm:text-[11px]">
+                              Playoff Record
+                            </div>
+                          </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Stars className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Último Jogo{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}
-                          </span>
+                          <div className="text-right">
+                            <div
+                              className="text-[34px] font-black leading-none text-white sm:text-[42px]"
+                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                            >
+                              {selectedRivalry.playoffRecord?.split('-')[1] ?? '—'}
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.lastMeeting.score}</span>
-                      </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Radar className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Current Streak
-                          </span>
-                        </div>
-                        <span className="text-base font-black text-white">{selectedRivalry.streak}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Flame className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Biggest Win · {shortTeamName(selectedRivalry.teamA)}
-                          </span>
-                        </div>
-                        {bigA ? (
-                          <>
-                            <span className="text-base font-black text-white">
-                              {bigA.scoreA} – {bigA.scoreB}
-                              {bigA.margin ? <span className="text-emerald-300"> (+{bigA.margin})</span> : ''}
-                            </span>
-                            {bigA.label && <span className="text-[11px] text-cyan-50/60">{bigA.label}</span>}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Flame className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Biggest Win · {shortTeamName(selectedRivalry.teamB)}
-                          </span>
-                        </div>
-                        {bigB ? (
-                          <>
-                            <span className="text-base font-black text-white">
-                              {bigB.scoreA} – {bigB.scoreB}
-                              {bigB.margin ? <span className="text-emerald-300"> (+{bigB.margin})</span> : ''}
-                            </span>
-                            {bigB.label && <span className="text-[11px] text-cyan-50/60">{bigB.label}</span>}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <TrendingUp className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Best Streak · {shortTeamName(selectedRivalry.teamA)}
-                          </span>
-                        </div>
-                        {strA?.count ? (
-                          <>
-                            <span className="text-base font-black text-white">{strA.result}{strA.count}</span>
-                            {strA.start && (
-                              <span className="text-[11px] text-cyan-50/60">
-                                {strA.start}{strA.end ? ` → ${strA.end}` : ''}
-                              </span>
+                        {/* BIGGEST WIN */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                          <div className="min-w-0 text-left">
+                            {bigA ? (
+                              <>
+                                <div
+                                  className="truncate text-[26px] font-black leading-none text-white sm:text-[32px]"
+                                  style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                                >
+                                  {bigA.scoreA} vs {bigA.scoreB}
+                                </div>
+                                <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                                  {bigA.label || '—'}
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-sm font-bold text-slate-500">—</div>
                             )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
-                      </div>
+                          </div>
 
-                      <div className="flex flex-col gap-1 rounded-[18px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-3">
-                        <div className="flex items-center gap-1.5">
-                          <TrendingUp className="h-3 w-3 text-cyan-200/75" />
-                          <span className="text-xs font-black uppercase tracking-[0.1em] text-cyan-50/70">
-                            Best Streak · {shortTeamName(selectedRivalry.teamB)}
-                          </span>
-                        </div>
-                        {strB?.count ? (
-                          <>
-                            <span className="text-base font-black text-white">{strB.result}{strB.count}</span>
-                            {strB.start && (
-                              <span className="text-[11px] text-cyan-50/60">
-                                {strB.start}{strB.end ? ` → ${strB.end}` : ''}
-                              </span>
+                          <div className="min-w-[132px] rounded-[18px] border border-white/10 bg-white text-center shadow-[0_8px_18px_rgba(255,255,255,0.06)] sm:min-w-[168px]">
+                            <div className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950 sm:text-[11px]">
+                              Biggest Win
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 text-right">
+                            {bigB ? (
+                              <>
+                                <div
+                                  className="truncate text-[26px] font-black leading-none text-white sm:text-[32px]"
+                                  style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                                >
+                                  {bigB.scoreA} vs {bigB.scoreB}
+                                </div>
+                                <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                                  {bigB.label || '—'}
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-sm font-bold text-slate-500">—</div>
                             )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-cyan-50/45">—</span>
-                        )}
+                          </div>
+                        </div>
+
+                        {/* BEST STREAK */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                          <div className="min-w-0 text-left">
+                            {strA?.count ? (
+                              <>
+                                <div
+                                  className="truncate text-[28px] font-black leading-none text-white sm:text-[34px]"
+                                  style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                                >
+                                  {strA.result}{strA.count}
+                                </div>
+                                <div className="mt-1 text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                                  {strA.start}{strA.end ? ` → ${strA.end}` : ''}
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-sm font-bold text-slate-500">—</div>
+                            )}
+                          </div>
+
+                          <div className="min-w-[132px] rounded-[18px] border border-white/10 bg-white text-center shadow-[0_8px_18px_rgba(255,255,255,0.06)] sm:min-w-[168px]">
+                            <div className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950 sm:text-[11px]">
+                              Best Streak
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 text-right">
+                            {strB?.count ? (
+                              <>
+                                <div
+                                  className="truncate text-[28px] font-black leading-none text-white sm:text-[34px]"
+                                  style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                                >
+                                  {strB.result}{strB.count}
+                                </div>
+                                <div className="mt-1 text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                                  {strB.start}{strB.end ? ` → ${strB.end}` : ''}
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-sm font-bold text-slate-500">—</div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* LAST MEETING */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                          <div className="min-w-0 text-left">
+                            <div
+                              className="truncate text-[24px] font-black leading-none text-white sm:text-[30px]"
+                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                            >
+                              {leftLastMeeting}
+                            </div>
+                            <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                              {selectedRivalry.lastMeeting?.meta || '—'}
+                            </div>
+                          </div>
+
+                          <div className="min-w-[132px] rounded-[18px] border border-white/10 bg-white text-center shadow-[0_8px_18px_rgba(255,255,255,0.06)] sm:min-w-[168px]">
+                            <div className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950 sm:text-[11px]">
+                              Last Meeting
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 text-right">
+                            <div
+                              className="truncate text-[24px] font-black leading-none text-white sm:text-[30px]"
+                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                            >
+                              {rightLastMeeting}
+                            </div>
+                            <div className="mt-1 truncate text-[11px] font-bold text-slate-400 sm:text-[12px]">
+                              {selectedRivalry.lastMeeting?.meta || '—'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* CURRENT STREAK */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                          <div className="min-w-0 text-left">
+                            <div
+                              className="truncate text-[24px] font-black leading-none text-white sm:text-[30px]"
+                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                            >
+                              {leftStreak}
+                            </div>
+                          </div>
+
+                          <div className="min-w-[132px] rounded-[18px] border border-white/10 bg-white text-center shadow-[0_8px_18px_rgba(255,255,255,0.06)] sm:min-w-[168px]">
+                            <div className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950 sm:text-[11px]">
+                              Current Streak
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 text-right">
+                            <div
+                              className="truncate text-[24px] font-black leading-none text-white sm:text-[30px]"
+                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                            >
+                              {rightStreak}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* AVG MARGIN */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                          <div className="min-w-0 text-left">
+                            <div
+                              className="truncate text-[24px] font-black leading-none text-white sm:text-[30px]"
+                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                            >
+                              {leftAvgMargin}
+                            </div>
+                          </div>
+
+                          <div className="min-w-[132px] rounded-[18px] border border-white/10 bg-white text-center shadow-[0_8px_18px_rgba(255,255,255,0.06)] sm:min-w-[168px]">
+                            <div className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950 sm:text-[11px]">
+                              Avg Margin
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 text-right">
+                            <div
+                              className="truncate text-[24px] font-black leading-none text-white sm:text-[30px]"
+                              style={{ fontFamily: '"Bebas Neue", sans-serif' }}
+                            >
+                              {rightAvgMargin}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
