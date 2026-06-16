@@ -4344,10 +4344,10 @@ export default function TapitasLeagueHomepage() {
                         },
                       ].map((item, idx, arr) => (
                         <div key={item.label}>
-                          <div className="grid grid-cols-[minmax(0,1fr)_minmax(62px,max-content)_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(84px,max-content)_minmax(0,1fr)] sm:gap-4">
+                          <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
                             <div className="min-w-0 text-left">
                               <div
-                                className={`whitespace-nowrap text-[24px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                className={`whitespace-nowrap text-[22px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
                                   }`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
@@ -4360,15 +4360,15 @@ export default function TapitasLeagueHomepage() {
                               ) : null}
                             </div>
 
-                            <div className="pt-1 text-center">
-                              <div className="break-words text-[10px] font-black uppercase leading-[1.15] tracking-[0.14em] text-slate-500 sm:text-[11px]">
+                            <div className="w-full max-w-[72px] justify-self-center pt-1 text-center sm:max-w-[88px]">
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
                                 {item.label}
                               </div>
                             </div>
 
                             <div className="min-w-0 text-right">
                               <div
-                                className={`whitespace-nowrap text-[24px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                className={`whitespace-nowrap text-[22px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
                                   }`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
