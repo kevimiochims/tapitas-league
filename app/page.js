@@ -74,14 +74,14 @@ function TeamSelect({ value, onChange, options, placeholder, disabled }) {
       <button
         onClick={() => !disabled && setOpen((p) => !p)}
         disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-[12px] font-bold transition-all duration-300 ${disabled
+        className={`flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-[12px] font-bold transition-all duration-300 ${disabled
           ? 'cursor-not-allowed border-white/5 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-600'
           : open
             ? 'border-cyan-400 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-white shadow-[0_0_15px_rgba(34,211,238,0.15)]'
             : 'border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-white hover:border-white/20 hover:bg-[linear-gradient(160deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
           }`}
       >
-        <span className={value ? 'text-white' : 'text-slate-500'}>
+        <span className="block min-w-0 flex-1 truncate whitespace-nowrap text-left">
           {selected || placeholder}
         </span>
         <ChevronRight
@@ -4241,12 +4241,12 @@ export default function TapitasLeagueHomepage() {
                       <div className="mt-3 flex justify-center">
                         <div
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
-                              ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
-                              : selectedRivalry.heat === 'Elite'
-                                ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
-                                : selectedRivalry.heat === 'High'
-                                  ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
-                                  : 'border-white/10 bg-white/[0.04] text-slate-300'
+                            ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
+                            : selectedRivalry.heat === 'Elite'
+                              ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
+                              : selectedRivalry.heat === 'High'
+                                ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                                : 'border-white/10 bg-white/[0.04] text-slate-300'
                             }`}
                         >
                           <Flame className="h-3 w-3" />
