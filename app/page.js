@@ -960,6 +960,7 @@ export default function TapitasLeagueHomepage() {
   const [currentSlide, setCurrentSlide] = useState(0)
 
   // ── NEW STATE ──────────────────────────────────────────────────────────────
+  const [newsPage, setNewsPage] = useState(0)
   const [newsPosts, setNewsPosts] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
   const [prData, setPrData] = useState([])
@@ -1007,6 +1008,20 @@ export default function TapitasLeagueHomepage() {
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % 3);
   };
+
+  // ===== NEWS =====
+
+  const featuredNewsPosts = useMemo(() => {
+    return (newsPosts || []).slice(0, 4)
+  }, [newsPosts])
+
+  const newsTotalPages = featuredNewsPosts.length
+
+  useEffect(() => {
+    setNewsPage(0)
+  }, [newsPosts])
+
+  // =============
 
   useEffect(() => {
     const timer = setTimeout(nextSlide, 10000);
@@ -3333,7 +3348,7 @@ export default function TapitasLeagueHomepage() {
           </div>
         </motion.div>
 
-        {/* ── NEWS PREVIEW ───────────────────────────────────────────────── */}
+        {/* ── NEWS PREVIEW ────── */}
         <motion.div
           initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
           whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -3341,38 +3356,67 @@ export default function TapitasLeagueHomepage() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
         >
-          <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                <Newspaper className="h-5 w-5 text-sky-300" />
+          {/* ── HEADER───────── */}
+          <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                <Newspaper className="h-4.5 w-4.5 text-sky-300 sm:h-5 sm:w-5" />
               </div>
 
               <div className="min-w-0">
                 <div
-                  className="uppercase leading-none text-white"
+                  className="truncate uppercase leading-none text-sky-300"
                   style={{
                     fontFamily: '"Bebas Neue", sans-serif',
-                    fontSize: '24px',
-                    letterSpacing: '0.075em',
+                    fontSize: '20px',
+                    letterSpacing: '0.06em',
                     fontWeight: 900,
                   }}
                 >
                   Newsletter
                 </div>
 
-                <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                   Memes, recaps and news
                 </div>
               </div>
             </div>
 
-            <a
-              href="/news"
-              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-            >
-              Ver tudo
-              <ChevronRight className="h-3.5 w-3.5" />
-            </a>
+            <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
+              <a
+                href="/news"
+                className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+              >
+                Ver tudo
+                <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              </a>
+
+              {newsTotalPages > 1 && (
+                <div className="flex items-center gap-1 sm:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setNewsPage((p) => Math.max(0, p - 1))}
+                    disabled={newsPage === 0}
+                    className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </button>
+
+                  <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-sky-300">
+                    {newsPage + 1}/{newsTotalPages}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setNewsPage((p) => Math.min(newsTotalPages - 1, p + 1))}
+                    disabled={newsPage >= newsTotalPages - 1}
+                    className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20"
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {newsLoading ? (
@@ -3384,47 +3428,91 @@ export default function TapitasLeagueHomepage() {
               Nenhum post ainda.
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {newsPosts.map((post, i) => {
-                const s = CATEGORY_STYLE[post.category]
-                const Icon = s?.icon || Newspaper
+            <>
+              <div className="block sm:hidden px-4 pb-4">
+                {featuredNewsPosts[newsPage] && (() => {
+                  const post = featuredNewsPosts[newsPage]
+                  const s = CATEGORY_STYLE[post.category]
+                  const Icon = s?.icon || Newspaper
 
-                return (
-                  <a
-                    key={post.id || i}
-                    href={`/news/${post.slug}`}
-                    className="group overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-white/[0.05] hover:border-white/12"
-                  >
-                    {post.imageUrl && (
-                      <div className="h-36 w-full overflow-hidden rounded-t-[24px]">
-                        <img
-                          src={post.imageUrl.split('|')[0]}
-                          alt={post.title}
-                          className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                    )}
-
-                    <div className="p-4">
-                      {post.category && s && (
-                        <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}>
-                          <Icon className="h-3 w-3" />
-                          {post.category}
+                  return (
+                    <a
+                      href={`/news/${post.slug}`}
+                      className="group block overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:bg-white/[0.05] hover:border-white/12"
+                    >
+                      {post.imageUrl && (
+                        <div className="h-44 w-full overflow-hidden rounded-t-[24px]">
+                          <img
+                            src={post.imageUrl.split('|')[0]}
+                            alt={post.title}
+                            className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                          />
                         </div>
                       )}
 
-                      <h3 className="line-clamp-2 text-[14px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300 sm:text-[15px]">
-                        {post.title}
-                      </h3>
+                      <div className="p-4">
+                        {post.category && s && (
+                          <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}>
+                            <Icon className="h-3 w-3" />
+                            {post.category}
+                          </div>
+                        )}
 
-                      <div className="mt-2 text-[12px] font-bold text-slate-400">
-                        {formatDate(post.date)}
+                        <h3 className="text-[16px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300">
+                          {post.title}
+                        </h3>
+
+                        <div className="mt-2 text-[12px] font-bold text-slate-400">
+                          {formatDate(post.date)}
+                        </div>
                       </div>
-                    </div>
-                  </a>
-                )
-              })}
-            </div>
+                    </a>
+                  )
+                })()}
+              </div>
+
+              <div className="hidden grid-cols-2 gap-3 px-4 pb-4 sm:grid lg:grid-cols-4 sm:px-5 sm:pb-5">
+                {featuredNewsPosts.map((post, i) => {
+                  const s = CATEGORY_STYLE[post.category]
+                  const Icon = s?.icon || Newspaper
+
+                  return (
+                    <a
+                      key={post.id || i}
+                      href={`/news/${post.slug}`}
+                      className="group overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:bg-white/[0.05] hover:border-white/12"
+                    >
+                      {post.imageUrl && (
+                        <div className="h-36 w-full overflow-hidden rounded-t-[24px]">
+                          <img
+                            src={post.imageUrl.split('|')[0]}
+                            alt={post.title}
+                            className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </div>
+                      )}
+
+                      <div className="p-4">
+                        {post.category && s && (
+                          <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${s.border} ${s.bg} ${s.color}`}>
+                            <Icon className="h-3 w-3" />
+                            {post.category}
+                          </div>
+                        )}
+
+                        <h3 className="line-clamp-2 text-[14px] font-black leading-[1.15] text-white transition-colors group-hover:text-cyan-300 sm:text-[15px]">
+                          {post.title}
+                        </h3>
+
+                        <div className="mt-2 text-[12px] font-bold text-slate-400">
+                          {formatDate(post.date)}
+                        </div>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            </>
           )}
         </motion.div>
 
