@@ -171,8 +171,8 @@ function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide, t
                 const showAvatar = !Array.isArray(item.label) && !String(labelText).includes(' vs ')
 
                 return (
-                  <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-white/[0.04] last:border-0">
-                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                  <div key={i} className="flex items-center justify-between gap-3 py-2 border-b border-white/[0.04] last:border-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span className={`text-sm font-black flex-shrink-0 w-5 ${i === 0 ? a.text : 'text-slate-600'}`}>
                         {i + 1}
                       </span>
