@@ -1919,24 +1919,82 @@ export default function TapitasLeagueHomepage() {
 
     const shortName = (name) => {
       const mappings = {
-        'i am megatron': 'Megatron', 'h-lera do mahl': 'H-Lera',
-        'peytão da massa': 'Peytao', 'peytao da massa': 'Peytao',
-        'ocupa meu slot': 'Ocupa', 'green bay pequers': 'Pequers',
-        'settlers of rincão': 'Rincão', 'settlers of rincao': 'Rincão',
-        'old brady bunch': 'OldBrady', 'moneyball fc': 'Moneyball',
-        'patrolão': 'Patrolao', 'patrolao': 'Patrolao',
+        'i am megatron': 'Megatron',
+        'h-lera do mahl': 'H-Lera',
+        'peyto da massa': 'Peytao',
+        'peytao da massa': 'Peytao',
+        'ocupa meu slot': 'Ocupa',
+        'ocupa e resiste': 'Ocupa',
+        'green bay pequers': 'Pequers',
+        'pequers verde': 'Pequers',
+        'settlers of rinco': 'Rinco',
+        'settlers of rincao': 'Rinco',
+        'rincao settlers': 'Rinco',
+        'old brady bunch': 'OldBrady',
+        'moneyball fc': 'Moneyball',
+        'moneyball': 'Moneyball',
+        'patrolo': 'Patrolao',
+        'patrolao squad': 'Patrolao',
+        'patrolao': 'Patrolao',
         'how much is the fish': 'Howmuch',
       }
+
       const n = normalizeString(name)
       return mappings[n] || String(name).split(' ')[0]
     }
 
-    const formattedStreak = streak
-      .replace(selectedTeamA, shortName(selectedTeamA))
-      .replace(selectedTeamB, shortName(selectedTeamB))
-    const streakParts = formattedStreak.split(' ')
-    const streakVal = streakParts.pop()
-    const streakTeam = streakParts.join(' ')
+    const parseCurrentStreak = (rawStreak, teamA, teamB) => {
+      const raw = String(rawStreak || '').trim()
+      if (!raw) {
+        return { streakA: '—', streakB: '—', streakCount: null, winner: null }
+      }
+
+      const match = raw.match(/\bW\s*(\d+)\b|\bW(\d+)\b/i)
+      const count = match?.[1] || match?.[2]
+
+      if (!count) {
+        return { streakA: '—', streakB: '—', streakCount: null, winner: null }
+      }
+
+      const normRaw = normalizeString(raw)
+      const normA = normalizeString(teamA)
+      const normB = normalizeString(teamB)
+      const normShortA = normalizeString(shortName(teamA))
+      const normShortB = normalizeString(shortName(teamB))
+
+      const mentionsA =
+        normRaw.includes(normA) || normRaw.includes(normShortA)
+
+      const mentionsB =
+        normRaw.includes(normB) || normRaw.includes(normShortB)
+
+      if (mentionsA && !mentionsB) {
+        return {
+          streakA: `W${count}`,
+          streakB: `L${count}`,
+          streakCount: Number(count),
+          winner: 'A',
+        }
+      }
+
+      if (mentionsB && !mentionsA) {
+        return {
+          streakA: `L${count}`,
+          streakB: `W${count}`,
+          streakCount: Number(count),
+          winner: 'B',
+        }
+      }
+
+      return {
+        streakA: '—',
+        streakB: '—',
+        streakCount: Number(count),
+        winner: null,
+      }
+    }
+
+    const currentStreak = parseCurrentStreak(streak, selectedTeamA, selectedTeamB)
 
     return {
       teamA: selectedTeamA,
@@ -1947,7 +2005,10 @@ export default function TapitasLeagueHomepage() {
       playoffRecord: `${poWinsA}-${poWinsB}`,
       avgMargin,
       heat,
-      streak: `${streakTeam} ${streakVal}`,
+      streakA: currentStreak.streakA,
+      streakB: currentStreak.streakB,
+      streakWinner: currentStreak.winner,
+      streakCount: currentStreak.streakCount,
       lastMeeting: {
         score: scoreMatch ? `${scoreMatch[1]} vs ${scoreMatch[2]}` : '-- vs --',
         meta: (weekMatch || yearMatch)
@@ -3497,7 +3558,7 @@ export default function TapitasLeagueHomepage() {
                 visibleStandingsRows.map((row, i) => {
                   const avatar = getTeamAvatar(row.team)
                   const globalIndex = standingsPage * standingsPageSize + i + (standingsPage === 0 && standingsLeader ? 1 : 0)
-                  const isPlayoffRange = globalIndex < 6
+                  const isPlayoffRange = globalIndex < 5
 
                   return (
                     <a
@@ -4210,22 +4271,18 @@ export default function TapitasLeagueHomepage() {
                 const leftLastMeetingLead = leftLastMeetingNum > rightLastMeetingNum
                 const rightLastMeetingLead = rightLastMeetingNum > leftLastMeetingNum
 
-                const rawStreak = String(selectedRivalry.streak || '').trim()
-                const streakToken = rawStreak.match(/\b([WL])\s*(\d+)\b/i)
+                const leftStreak = String(selectedRivalry.streakA || '—').trim()
+                const rightStreak = String(selectedRivalry.streakB || '—').trim()
 
-                let leftStreak = '—'
-                let rightStreak = '—'
-                let leftStreakScore = null
-                let rightStreakScore = null
+                const leftStreakScore =
+                  leftStreak === '—'
+                    ? null
+                    : (leftStreak.startsWith('W') ? 1 : -1) * parseNumber(leftStreak.replace(/[^\d-]/g, ''))
 
-                if (streakToken) {
-                  const result = streakToken[1].toUpperCase()
-                  const count = Number(streakToken[2])
-                  leftStreak = `${result}${count}`
-                  rightStreak = `${result === 'W' ? 'L' : 'W'}${count}`
-                  leftStreakScore = result === 'W' ? count : -count
-                  rightStreakScore = result === 'W' ? -count : count
-                }
+                const rightStreakScore =
+                  rightStreak === '—'
+                    ? null
+                    : (rightStreak.startsWith('W') ? 1 : -1) * parseNumber(rightStreak.replace(/[^\d-]/g, ''))
 
                 const leftStreakLead =
                   leftStreakScore !== null && rightStreakScore !== null && leftStreakScore > rightStreakScore
@@ -4397,12 +4454,12 @@ export default function TapitasLeagueHomepage() {
                       <div className="mt-3 flex justify-center">
                         <div
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
-                            ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
-                            : selectedRivalry.heat === 'Elite'
-                              ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
-                              : selectedRivalry.heat === 'High'
-                                ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
-                                : 'border-white/10 bg-white/[0.04] text-slate-300'
+                              ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
+                              : selectedRivalry.heat === 'Elite'
+                                ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
+                                : selectedRivalry.heat === 'High'
+                                  ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                                  : 'border-white/10 bg-white/[0.04] text-slate-300'
                             }`}
                         >
                           <Flame className="h-3 w-3" />
@@ -4600,8 +4657,8 @@ export default function TapitasLeagueHomepage() {
                         type="button"
                         onClick={() => setSelectedMatchupKey(option.key)}
                         className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-all sm:px-3.5 sm:py-2 ${active
-                            ? 'border-emerald-300/30 bg-emerald-300/10 text-emerald-200'
-                            : 'border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.07] hover:text-white'
+                          ? 'border-emerald-300/30 bg-emerald-300/10 text-emerald-200'
+                          : 'border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.07] hover:text-white'
                           }`}
                       >
                         {`W${option.week}`}
