@@ -224,8 +224,9 @@ function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false })
   const [photoFailed, setPhotoFailed] = useState(false)
   const [logoFailed, setLogoFailed] = useState(false)
 
-  const isDefense = pos === 'DEF'
   const data = getPlayerData(name, pos, playerLookup)
+  const resolvedPos = getDisplayPlayerPos(name, pos, playerLookup)
+  const isDefense = resolvedPos === 'DEF'
   const playerId = data?.playerId
   const nflTeam = data?.team
 
@@ -251,14 +252,15 @@ function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false })
     ? getNFLTeamLogo(nflTeam)
     : null
 
-  const initials = String(name || '?')
+  const ring = POS_RING[resolvedPos] || POS_RING[pos] || '#475569'
+
+    const initials = String(name || '?')
     .split(' ')
     .map(p => p[0])
     .join('')
     .slice(0, 2)
     .toUpperCase()
 
-  const ring = POS_RING[pos] || '#475569'
   const badgeSize = Math.round(size * 0.56)
   const ringWidth = 2
 
