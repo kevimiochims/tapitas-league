@@ -18,6 +18,63 @@ import { useDrawer } from '../context/DrawerContext'
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
+function normalizeString(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+const TEAM_AVATARS = {
+  'howmuch': '/images/howmuch.png',
+  'i am megatron': '/images/megatron.png',
+  'moneyball': '/images/moneyball.png',
+  'ocupa e resiste': '/images/ocupa.png',
+  'oldbrady': '/images/oldbrady.png',
+  'patrolao squad': '/images/patrolao.png',
+  'pequers verde': '/images/pequers.png',
+  'peytao da massa': '/images/peytao.png',
+  'rincao settlers': '/images/rincao.png',
+  'h-lera do mahl': '/images/hlera.png',
+}
+
+function getTeamAvatar(name) {
+  return TEAM_AVATARS[normalizeString(name)] || null
+}
+
+function TeamAvatar({ team, size = 'md' }) {
+  const avatar = getTeamAvatar(team)
+
+  const sizeClass =
+    size === 'sm'
+      ? 'h-8 w-8 rounded-lg'
+      : size === 'lg'
+        ? 'h-14 w-14 rounded-2xl'
+        : 'h-10 w-10 rounded-xl'
+
+  if (avatar) {
+    return (
+      <img
+        src={avatar}
+        alt={team}
+        className={`${sizeClass} flex-shrink-0 object-cover`}
+      />
+    )
+  }
+
+  return (
+    <div
+      className={`${sizeClass} flex flex-shrink-0 items-center justify-center text-[10px] font-black text-white uppercase`}
+      style={{
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))',
+      }}
+    >
+      {String(team || '').slice(0, 2)}
+    </div>
+  )
+}
+
 function parseNumber(value) {
   if (value === null || value === undefined || value === '') return 0
 
@@ -931,15 +988,18 @@ export default function PowerRankingsPage() {
 
                       {/* TOP */}
 
-                      <div className="flex gap-4">
+                      <div className="flex gap-4 md:gap-5 items-start">
 
-                        <div className="w-12 flex-shrink-0 text-center">
+                        <div className="flex-shrink-0 pt-0.5">
+                          <TeamAvatar team={team.team} size="lg" />
+                        </div>
 
+                        <div className="w-[52px] flex-shrink-0 text-center pt-0.5">
                           <div
-                            className={`text-4xl font-black leading-none ${tierColor}`}
+                            className={`text-[42px] font-black leading-none ${tierColor}`}
                             style={{
-                              fontFamily:
-                                '"Bebas Neue", sans-serif'
+                              fontFamily: '"Bebas Neue", sans-serif',
+                              letterSpacing: '-0.02em',
                             }}
                           >
                             {team.rank}
@@ -1061,81 +1121,90 @@ export default function PowerRankingsPage() {
 
                     <div className="border-t border-white/5 px-5 pb-10 pt-3">
 
-                      {/* THIS WEEK */}
-                      <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-4">
+                      {/* THIS WEEK / NEXT WEEK */}
+                      <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 mb-5">
 
-                        <div className="rounded-2xl border border-white/5 bg-black/20 p-3">
-
+                        <div className="rounded-2xl border border-white/5 bg-black/20 p-3 min-w-0">
                           <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
                             This Week
                           </div>
 
-                          <div className="text-sm font-black leading-tight">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <TeamAvatar team={team.opponent} size="sm" />
 
-                            <span className={
-                              team.result === 'W'
-                                ? 'text-emerald-400'
-                                : 'text-red-400'
-                            }>
-                              {team.result}
-                            </span>
+                            <div className="min-w-0">
+                              <div className="text-sm font-black leading-tight uppercase truncate">
+                                <span className={
+                                  team.result === 'W'
+                                    ? 'text-emerald-400'
+                                    : 'text-red-400'
+                                }>
+                                  {team.result}
+                                </span>
 
-                            <span className="ml-1 text-white uppercase">
-                              vs {team.opponent}
-                            </span>
+                                <span className="ml-1 text-white">
+                                  vs {team.opponent}
+                                </span>
 
-                            <span className="ml-1 text-slate-400">
-                              {opponentRecord
-                                ? `(${opponentRecord.wins}-${opponentRecord.losses})`
-                                : ''
-                              }
-                            </span>
-                          </div>
+                                <span className="ml-1 text-slate-400">
+                                  {opponentRecord
+                                    ? `(${opponentRecord.wins}-${opponentRecord.losses})`
+                                    : ''
+                                  }
+                                </span>
+                              </div>
 
-                          <div className="mt-2 text-sm font-semibold text-slate-400">
-                            {team.pf.toFixed(1)} - {team.pa.toFixed(1)}
+                              <div className="mt-2 text-sm font-semibold text-slate-400">
+                                {team.pf.toFixed(1)} - {team.pa.toFixed(1)}
+                              </div>
+                            </div>
                           </div>
                         </div>
 
-                        {/* NEXT WEEK */}
-                        {nextOpponent && h2h && (
-
-                          <div className="mt-2 rounded-2xl border border-white/5 bg-black/20 p-3 mb-5">
-
-                            <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
-                              Next Week
-                            </div>
-
-                            <div className="text-sm font-black leading-tight text-white uppercase">
-
-                              <span>
-                                vs {nextOpponent.team}
-                              </span>
-
-                              <span className="ml-1 text-slate-400">
-                                ({nextOpponent.wins}-{nextOpponent.losses})
-                              </span>
-                            </div>
-
-                            <div className="mt-2 text-sm font-semibold leading-tight">
-
-                              <span className="text-slate-500">
-                                H2H:
-                              </span>
-
-                              <span className="ml-1 text-white">
-                                ({h2h.aWins}-{h2h.bWins})
-                              </span>
-
-                              <span className={`ml-2 font-black ${h2h.streak.startsWith('W')
-                                ? 'text-emerald-400'
-                                : 'text-red-400'
-                                }`}>
-                                {h2h.streak}
-                              </span>
-                            </div>
+                        <div className="rounded-2xl border border-white/5 bg-black/20 p-3 min-w-0">
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+                            Next Week
                           </div>
-                        )}
+
+                          {nextOpponent && h2h ? (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <TeamAvatar team={nextOpponent.team} size="sm" />
+
+                              <div className="min-w-0">
+                                <div className="text-sm font-black leading-tight text-white uppercase truncate">
+                                  <span>
+                                    vs {nextOpponent.team}
+                                  </span>
+
+                                  <span className="ml-1 text-slate-400">
+                                    ({nextOpponent.wins}-{nextOpponent.losses})
+                                  </span>
+                                </div>
+
+                                <div className="mt-2 text-sm font-semibold leading-tight">
+                                  <span className="text-slate-500">
+                                    H2H:
+                                  </span>
+
+                                  <span className="ml-1 text-white">
+                                    ({h2h.aWins}-{h2h.bWins})
+                                  </span>
+
+                                  <span className={`ml-2 font-black ${h2h.streak.startsWith('W')
+                                    ? 'text-emerald-400'
+                                    : 'text-red-400'
+                                    }`}>
+                                    {h2h.streak}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-sm font-semibold text-slate-500">
+                              No upcoming matchup available
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* EDITORIAL */}
