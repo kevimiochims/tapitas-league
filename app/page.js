@@ -4454,12 +4454,12 @@ export default function TapitasLeagueHomepage() {
                       <div className="mt-3 flex justify-center">
                         <div
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selectedRivalry.heat === 'Legendary'
-                              ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
-                              : selectedRivalry.heat === 'Elite'
-                                ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
-                                : selectedRivalry.heat === 'High'
-                                  ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
-                                  : 'border-white/10 bg-white/[0.04] text-slate-300'
+                            ? 'border-yellow-300/25 bg-yellow-300/10 text-yellow-200'
+                            : selectedRivalry.heat === 'Elite'
+                              ? 'border-orange-300/25 bg-orange-300/10 text-orange-200'
+                              : selectedRivalry.heat === 'High'
+                                ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                                : 'border-white/10 bg-white/[0.04] text-slate-300'
                             }`}
                         >
                           <Flame className="h-3 w-3" />
@@ -4778,28 +4778,28 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
 
-          {/* RECORDS — leaders per category with tied display */}
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
-            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/14 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                  <Zap className="h-5 w-5 text-white" />
+          {/* RECORDS — redesigned */}
+          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
+            <div className="flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                  <Zap className="h-4.5 w-4.5 text-yellow-300 sm:h-5 sm:w-5" />
                 </div>
 
                 <div className="min-w-0">
                   <div
-                    className="uppercase leading-none text-white"
+                    className="truncate uppercase leading-none text-yellow-300"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
+                      fontSize: '20px',
+                      letterSpacing: '0.06em',
                       fontWeight: 900,
                     }}
                   >
                     All-Time Records
                   </div>
 
-                  <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-cyan-50/85 sm:text-sm">
+                  <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                     Best of the best
                   </div>
                 </div>
@@ -4807,71 +4807,228 @@ export default function TapitasLeagueHomepage() {
 
               <a
                 href="/records"
-                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+                className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
               >
                 Ver tudo
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </a>
             </div>
 
-            <div className="space-y-2.5 sm:space-y-3">
-              {[
-                { emoji: '🏆', label: 'Most Titles', getter: t => t.titles, fmt: v => v, color: 'text-yellow-300' },
-                { emoji: '📈', label: 'Most Wins', getter: t => t.wins, fmt: v => v, color: 'text-emerald-300' },
-                { emoji: '🔥', label: 'Top Scorer', getter: t => t.pf, fmt: v => Math.round(v) + ' pts', color: 'text-orange-300' },
-                { emoji: '🎯', label: 'Best Win%', getter: t => t.winPct, fmt: v => v + '%', color: 'text-cyan-200' },
-                { emoji: '🏅', label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => v, color: 'text-violet-300' },
-                { emoji: '⚔️', label: 'Finals Apps', getter: t => t.finals, fmt: v => v, color: 'text-rose-300' },
-              ].map(({ emoji, label, getter, fmt, color }) => {
-                const leaders = topNTeams(standings, getter, 3)
-                const topVal = leaders[0] ? getter(leaders[0]) : 0
+            {(() => {
+              const recordGroups = [
+                {
+                  label: 'Most Titles',
+                  getter: t => t.titles,
+                  fmt: v => v,
+                  accent: 'yellow',
+                  icon: Trophy,
+                },
+                {
+                  label: 'Most Wins',
+                  getter: t => t.wins,
+                  fmt: v => v,
+                  accent: 'emerald',
+                  icon: TrendingUp,
+                },
+                {
+                  label: 'Top Scorer',
+                  getter: t => t.pf,
+                  fmt: v => `${Math.round(v)} pts`,
+                  accent: 'orange',
+                  icon: Flame,
+                },
+                {
+                  label: 'Best Win%',
+                  getter: t => t.winPct,
+                  fmt: v => `${Math.round(v)}%`,
+                  accent: 'cyan',
+                  icon: Target,
+                },
+                {
+                  label: 'Playoff Apps',
+                  getter: t => t.playoffApps,
+                  fmt: v => v,
+                  accent: 'violet',
+                  icon: Medal,
+                },
+                {
+                  label: 'Finals Apps',
+                  getter: t => t.finals,
+                  fmt: v => v,
+                  accent: 'rose',
+                  icon: Swords,
+                },
+              ]
 
-                return (
-                  <div
-                    key={label}
-                    className="flex items-center gap-3 rounded-[24px] border border-white/9 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
-                  >
+              const mainRecord = recordGroups[0]
+              const sideRecords = recordGroups.slice(1)
 
+              const accentMap = {
+                yellow: {
+                  soft: 'border-yellow-300/12 bg-[linear-gradient(135deg,rgba(54,43,20,0.40),rgba(10,18,35,0.99))]',
+                  value: 'text-yellow-200',
+                  sub: 'text-yellow-200/70',
+                  iconWrap: 'border-yellow-300/18 bg-yellow-300/10',
+                  icon: 'text-yellow-300',
+                  chip: 'hover:bg-yellow-300/10',
+                },
+                emerald: {
+                  soft: 'border-emerald-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  value: 'text-emerald-300',
+                  sub: 'text-slate-400',
+                  iconWrap: 'border-emerald-300/16 bg-emerald-300/10',
+                  icon: 'text-emerald-300',
+                  chip: 'hover:bg-white/10',
+                },
+                orange: {
+                  soft: 'border-orange-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  value: 'text-orange-300',
+                  sub: 'text-slate-400',
+                  iconWrap: 'border-orange-300/16 bg-orange-300/10',
+                  icon: 'text-orange-300',
+                  chip: 'hover:bg-white/10',
+                },
+                cyan: {
+                  soft: 'border-cyan-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  value: 'text-cyan-200',
+                  sub: 'text-slate-400',
+                  iconWrap: 'border-cyan-300/16 bg-cyan-300/10',
+                  icon: 'text-cyan-200',
+                  chip: 'hover:bg-white/10',
+                },
+                violet: {
+                  soft: 'border-violet-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  value: 'text-violet-300',
+                  sub: 'text-slate-400',
+                  iconWrap: 'border-violet-300/16 bg-violet-300/10',
+                  icon: 'text-violet-300',
+                  chip: 'hover:bg-white/10',
+                },
+                rose: {
+                  soft: 'border-rose-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  value: 'text-rose-300',
+                  sub: 'text-slate-400',
+                  iconWrap: 'border-rose-300/16 bg-rose-300/10',
+                  icon: 'text-rose-300',
+                  chip: 'hover:bg-white/10',
+                },
+              }
 
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 text-[12px] font-black uppercase tracking-[0.15em] text-cyan-50/72">
-                        {label}
+              const renderLeaders = (leaders, compact = false, hoverClass = 'hover:bg-white/10') => (
+                <div className={`flex flex-wrap ${compact ? 'gap-1.5' : 'gap-2'}`}>
+                  {leaders.map(t => {
+                    const av = getTeamAvatar(t.team)
+                    return (
+                      <a
+                        key={t.team}
+                        href={`/teams?team=${encodeURIComponent(t.team)}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 transition-all ${hoverClass}`}
+                      >
+                        {av ? (
+                          <img
+                            src={av}
+                            alt={t.team}
+                            className={compact ? 'h-6 w-6 rounded-full object-cover flex-shrink-0' : 'h-7 w-7 rounded-full object-cover flex-shrink-0'}
+                          />
+                        ) : (
+                          <div className={compact
+                            ? 'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[9px] font-black text-slate-300'
+                            : 'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[9px] font-black text-slate-300'
+                          }>
+                            {t.team.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+
+                        <span className={`${compact ? 'max-w-[76px] text-[11px]' : 'max-w-[96px] text-xs'} truncate font-black text-white`}>
+                          {shortTeamName(t.team)}
+                        </span>
+                      </a>
+                    )
+                  })}
+                </div>
+              )
+
+              const mainLeaders = topNTeams(standings, mainRecord.getter, 3)
+              const mainTopVal = mainLeaders[0] ? mainRecord.getter(mainLeaders[0]) : 0
+              const MainIcon = mainRecord.icon
+              const mainAccent = accentMap[mainRecord.accent]
+
+              return (
+                <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+                  <div className={`mb-3 overflow-hidden rounded-[26px] border p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)] sm:p-5 ${mainAccent.soft}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-2 flex items-center gap-2">
+                          <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border ${mainAccent.iconWrap}`}>
+                            <MainIcon className={`h-4 w-4 ${mainAccent.icon}`} />
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                              Signature record
+                            </div>
+                            <div className="truncate text-sm font-black text-white sm:text-[15px]">
+                              {mainRecord.label}
+                            </div>
+                          </div>
+                        </div>
+
+                        {renderLeaders(mainLeaders, false, mainAccent.chip)}
                       </div>
 
-                      <div className="flex flex-wrap gap-1.5">
-                        {leaders.map(t => {
-                          const av = getTeamAvatar(t.team)
+                      <div className="flex-shrink-0 text-right">
+                        <div
+                          className={`font-black leading-none ${mainAccent.value}`}
+                          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px,6vw,52px)' }}
+                        >
+                          {mainLeaders[0] ? mainRecord.fmt(mainTopVal) : '—'}
+                        </div>
 
-                          return (
-                            <a
-                              key={t.team}
-                              href={`/teams?team=${encodeURIComponent(t.team)}`}
-                              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-all hover:bg-white/12"
-                            >
-                              {av ? (
-                                <img
-                                  src={av}
-                                  alt={t.team}
-                                  className="h-7 w-7 rounded-full object-cover flex-shrink-0"
-                                />
-                              ) : null}
-
-                              <span className="max-w-[88px] truncate text-xs font-black text-white">
-                                {shortTeamName(t.team)}
-                              </span>
-                            </a>
-                          )
-                        })}
+                        <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.14em] ${mainAccent.sub}`}>
+                          All-time mark
+                        </div>
                       </div>
                     </div>
-
-                    <span className={`flex-shrink-0 text-lg font-black leading-none ${color}`}>
-                      {leaders[0] ? fmt(topVal) : '—'}
-                    </span>
                   </div>
-                )
-              })}
-            </div>
+
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
+                    {sideRecords.map((item) => {
+                      const leaders = topNTeams(standings, item.getter, 3)
+                      const topVal = leaders[0] ? item.getter(leaders[0]) : 0
+                      const Icon = item.icon
+                      const accent = accentMap[item.accent]
+
+                      return (
+                        <div
+                          key={item.label}
+                          className={`rounded-[22px] border p-3.5 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] ${accent.soft}`}
+                        >
+                          <div className="mb-3 flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="mb-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                                {item.label}
+                              </div>
+                              <div
+                                className={`font-black leading-none ${accent.value}`}
+                                style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px,4vw,34px)' }}
+                              >
+                                {leaders[0] ? item.fmt(topVal) : '—'}
+                              </div>
+                            </div>
+
+                            <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[12px] border ${accent.iconWrap}`}>
+                              <Icon className={`h-3.5 w-3.5 ${accent.icon}`} />
+                            </div>
+                          </div>
+
+                          {renderLeaders(leaders, true, accent.chip)}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
 
           {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
