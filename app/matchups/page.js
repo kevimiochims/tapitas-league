@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useState, useMemo, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { ChevronRight, ChevronLeft, Swords, Activity } from 'lucide-react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -406,6 +406,9 @@ export default function MatchupsPage() {
   const activeGameRef = useRef(null)
   const searchParams = useSearchParams()
 
+  const router = useRouter()
+  const searchParamsAppliedRef = useRef(false)
+
 
   // Efeito para rolar até a Semana Ativa
   useEffect(() => {
@@ -485,6 +488,63 @@ export default function MatchupsPage() {
     load()
   }, [])
 
+  useEffect(() => {
+    if (!games.length) return
+    if (searchParamsAppliedRef.current) return
+
+    const urlSeason = String(searchParams.get('season') || '').trim()
+    const urlWeek = String(searchParams.get('week') || '').trim()
+    const urlTeam = String(searchParams.get('team') || '').trim()
+    const urlOpp = String(searchParams.get('opp') || '').trim()
+
+    if (!urlSeason || !urlWeek) {
+      searchParamsAppliedRef.current = true
+      return
+    }
+
+    const hasSeason = games.some(
+      (g) => String(g?.Season || '').trim() === urlSeason
+    )
+
+    if (!hasSeason) {
+      searchParamsAppliedRef.current = true
+      router.replace('/matchups')
+      return
+    }
+
+    setSeason(urlSeason)
+    setWeek(urlWeek)
+
+    let targetGame = null
+
+    if (urlTeam && urlOpp) {
+      targetGame =
+        games.find((g) => {
+          return (
+            String(g?.Season || '').trim() === urlSeason &&
+            String(g?.Week || '').trim() === urlWeek &&
+            String(g?.Team || '').trim() === urlTeam &&
+            String(g?.Opponent || '').trim() === urlOpp
+          )
+        }) ||
+        games.find((g) => {
+          return (
+            String(g?.Season || '').trim() === urlSeason &&
+            String(g?.Week || '').trim() === urlWeek &&
+            String(g?.Team || '').trim() === urlOpp &&
+            String(g?.Opponent || '').trim() === urlTeam
+          )
+        })
+    }
+
+    if (!targetGame) {
+      targetGame = firstGameOfWeek(games, urlSeason, urlWeek)
+    }
+
+    setSelected(targetGame || null)
+    searchParamsAppliedRef.current = true
+    router.replace('/matchups')
+  }, [games, searchParams, router])
 
 
   const seasons = useMemo(() => {
