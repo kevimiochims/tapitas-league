@@ -225,12 +225,16 @@ function PosBadge({ pos }) {
     )
 }
 
-function PlayerAvatar({ player, playerLookup, size = 'md', className = '' }) {
+function PlayerAvatar({ player, pick, playerLookup, size = 'md', className = '' }) {
     const [photoFailed, setPhotoFailed] = useState(false)
 
-    const data = getPlayerDataByFullName(player, playerLookup)
+    const rawName = player || pick?.player || ''
+    const data =
+        getPlayerDataByFullName(rawName, playerLookup) ||
+        getPlayerDataByFullName(String(pick?.player || '').trim(), playerLookup)
+
     const playerId = data?.playerId
-    const shortName = data?.shortName || player
+    const shortName = data?.shortName || rawName
 
     const photoSrc =
         !photoFailed && playerId
@@ -239,7 +243,7 @@ function PlayerAvatar({ player, playerLookup, size = 'md', className = '' }) {
 
     useEffect(() => {
         setPhotoFailed(false)
-    }, [player, playerId])
+    }, [rawName, playerId])
 
     const sizeClass =
         size === 'sm'
@@ -263,9 +267,9 @@ function PlayerAvatar({ player, playerLookup, size = 'md', className = '' }) {
                         .split(' ')
                         .filter(Boolean)
                         .slice(0, 2)
-                        .map(part => part[0])
+                        .map((part) => part[0])
                         .join('')
-                        .toUpperCase()}
+                        .toUpperCase() || '?'}
                 </div>
             )}
         </div>
@@ -941,12 +945,7 @@ export default function DraftPage() {
                                                                             </div>
 
                                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                                <PlayerAvatar
-                                                                                    player={pick.player}
-                                                                                    playerLookup={playerLookup}
-                                                                                    size="sm"
-                                                                                    className="flex-shrink-0"
-                                                                                />
+                                                                                <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
                                                                                 <div className="min-w-0">
                                                                                     <div className="truncate text-xs font-black text-white leading-tight">
                                                                                         {pick.player}
@@ -1044,11 +1043,7 @@ export default function DraftPage() {
                                                     </td>
                                                     <td className="px-6 py-3">
                                                         <div className="flex items-center gap-3 min-w-0">
-                                                            <PlayerAvatar
-                                                                player={pick.player}
-                                                                playerLookup={playerLookup}
-                                                                className="flex-shrink-0"
-                                                            />
+                                                           <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} className="flex-shrink-0" />
                                                             <div className="truncate text-sm font-bold text-slate-300">{pick.player}</div>
                                                         </div>
                                                     </td>
