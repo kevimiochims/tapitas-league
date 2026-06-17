@@ -149,17 +149,23 @@ function normalizeTeam(team, index) {
 
 async function safeSheetFetch(url) {
   try {
-    const response = await fetch(url)
+    const response = await fetch(url, { cache: 'no-store' })
 
     if (!response.ok) {
+      console.error('safeSheetFetch non-ok:', url, response.status)
       return []
     }
 
     const json = await response.json()
 
-    return Array.isArray(json) ? json : []
+    if (!Array.isArray(json)) {
+      console.error('safeSheetFetch non-array:', url, json)
+      return []
+    }
+
+    return json
   } catch (error) {
-    console.error(error)
+    console.error('safeSheetFetch error:', url, error)
     return []
   }
 }
@@ -976,6 +982,7 @@ export default function TapitasLeagueHomepage() {
   const [selectedDraftRound, setSelectedDraftRound] = useState(1)
   const [selectedMatchupKey, setSelectedMatchupKey] = useState('')
   const [prPage, setPrPage] = useState(0)
+  const [recordsPage, setRecordsPage] = useState(0)
   const draftScrollRef = useRef(null)
   const touchStartX = useRef(null);
   const totalSlides = 3;
@@ -4778,28 +4785,35 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
 
-          {/* RECORDS — editorial gallery */}
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
-            <div className="flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
-                  <Zap className="h-4.5 w-4.5 text-yellow-300 sm:h-5 sm:w-5" />
+          {/* All-Time Records */}
+          <motion.div
+            initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            viewport={{ once: true, amount: 0.08 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.98),rgba(2,6,23,1))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1"
+          >
+            {/* HEADER */}
+            <div className="mb-4 flex items-center justify-between gap-4 px-4 pb-1 pt-3 sm:px-5 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-3.5 sm:gap-4">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                  <Zap className="h-5 w-5 text-yellow-300" />
                 </div>
 
                 <div className="min-w-0">
                   <div
-                    className="truncate uppercase leading-none text-yellow-300"
+                    className="truncate uppercase leading-none text-white"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '20px',
-                      letterSpacing: '0.06em',
+                      fontSize: '24px',
+                      letterSpacing: '0.075em',
                       fontWeight: 900,
                     }}
                   >
                     All-Time Records
                   </div>
 
-                  <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
                     Best of the best
                   </div>
                 </div>
@@ -4807,208 +4821,369 @@ export default function TapitasLeagueHomepage() {
 
               <a
                 href="/records"
-                className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+                className="inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
               >
                 Ver tudo
-                <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </a>
             </div>
 
             {(() => {
-              const records = [
-                { label: 'Most Titles', getter: t => t.titles, fmt: v => `${v}`, accent: 'yellow', Icon: Trophy },
-                { label: 'Most Wins', getter: t => t.wins, fmt: v => `${v}`, accent: 'emerald', Icon: TrendingUp },
-                { label: 'Top Scorer', getter: t => t.pf, fmt: v => `${Math.round(v)} pts`, accent: 'orange', Icon: Flame },
-                { label: 'Best Win%', getter: t => t.winPct, fmt: v => `${Math.round(v)}%`, accent: 'cyan', Icon: Target },
-                { label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => `${v}`, accent: 'violet', Icon: Medal },
-                { label: 'Finals Apps', getter: t => t.finals, fmt: v => `${v}`, accent: 'rose', Icon: Swords },
+              const recordCards = [
+                {
+                  label: 'Most Wins',
+                  statLabel: 'Wins',
+                  getter: t => t.wins,
+                  fmt: v => v,
+                  tone: 'cyan',
+                },
+                {
+                  label: 'Most Titles',
+                  statLabel: 'Titles',
+                  getter: t => t.titles,
+                  fmt: v => v,
+                  tone: 'gold',
+                },
+                {
+                  label: 'Top Scorer',
+                  statLabel: 'Points',
+                  getter: t => t.pf,
+                  fmt: v => Math.round(v),
+                  tone: 'emerald',
+                },
+                {
+                  label: 'Best Win %',
+                  statLabel: 'Win %',
+                  getter: t => t.winPct,
+                  fmt: v => `${Math.round(v)}%`,
+                  tone: 'violet',
+                },
+                {
+                  label: 'Finals Apps',
+                  statLabel: 'Apps',
+                  getter: t => t.finals,
+                  fmt: v => v,
+                  tone: 'orange',
+                },
+                {
+                  label: 'Playoff Apps',
+                  statLabel: 'Apps',
+                  getter: t => t.playoffApps,
+                  fmt: v => v,
+                  tone: 'slate',
+                },
               ]
 
-              const accentMap = {
-                yellow: {
-                  shell: 'border-yellow-300/14 bg-[linear-gradient(135deg,rgba(54,43,20,0.45),rgba(10,18,35,0.99))]',
-                  panel: 'bg-yellow-300/[0.07]',
-                  iconWrap: 'border-yellow-300/16 bg-yellow-300/10',
-                  icon: 'text-yellow-300',
-                  value: 'text-yellow-200',
-                  meta: 'text-yellow-200/70',
-                  overlay: 'from-yellow-950/35 via-slate-950/12 to-transparent',
+              const toneMap = {
+                cyan: {
+                  shell: 'border-cyan-300/14 bg-[linear-gradient(160deg,rgba(16,38,60,0.96),rgba(10,18,35,0.99))]',
+                  chip: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200',
+                  value: 'text-cyan-100',
+                  meta: 'text-cyan-100/62',
+                },
+                gold: {
+                  shell: 'border-yellow-300/14 bg-[linear-gradient(160deg,rgba(40,32,18,0.58),rgba(10,18,35,0.99))]',
+                  chip: 'border-yellow-400/20 bg-yellow-400/10 text-yellow-200',
+                  value: 'text-yellow-100',
+                  meta: 'text-yellow-100/62',
                 },
                 emerald: {
-                  shell: 'border-emerald-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  panel: 'bg-emerald-300/[0.05]',
-                  iconWrap: 'border-emerald-300/16 bg-emerald-300/10',
-                  icon: 'text-emerald-300',
-                  value: 'text-emerald-300',
-                  meta: 'text-slate-400',
-                  overlay: 'from-emerald-950/35 via-slate-950/12 to-transparent',
-                },
-                orange: {
-                  shell: 'border-orange-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  panel: 'bg-orange-300/[0.05]',
-                  iconWrap: 'border-orange-300/16 bg-orange-300/10',
-                  icon: 'text-orange-300',
-                  value: 'text-orange-300',
-                  meta: 'text-slate-400',
-                  overlay: 'from-orange-950/35 via-slate-950/12 to-transparent',
-                },
-                cyan: {
-                  shell: 'border-cyan-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  panel: 'bg-cyan-300/[0.05]',
-                  iconWrap: 'border-cyan-300/16 bg-cyan-300/10',
-                  icon: 'text-cyan-200',
-                  value: 'text-cyan-200',
-                  meta: 'text-slate-400',
-                  overlay: 'from-cyan-950/35 via-slate-950/12 to-transparent',
+                  shell: 'border-emerald-300/14 bg-[linear-gradient(160deg,rgba(16,42,35,0.62),rgba(10,18,35,0.99))]',
+                  chip: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
+                  value: 'text-emerald-100',
+                  meta: 'text-emerald-100/62',
                 },
                 violet: {
-                  shell: 'border-violet-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  panel: 'bg-violet-300/[0.05]',
-                  iconWrap: 'border-violet-300/16 bg-violet-300/10',
-                  icon: 'text-violet-300',
-                  value: 'text-violet-300',
-                  meta: 'text-slate-400',
-                  overlay: 'from-violet-950/35 via-slate-950/12 to-transparent',
+                  shell: 'border-fuchsia-300/12 bg-[linear-gradient(160deg,rgba(37,25,56,0.62),rgba(10,18,35,0.99))]',
+                  chip: 'border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-200',
+                  value: 'text-fuchsia-100',
+                  meta: 'text-fuchsia-100/62',
                 },
-                rose: {
-                  shell: 'border-rose-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  panel: 'bg-rose-300/[0.05]',
-                  iconWrap: 'border-rose-300/16 bg-rose-300/10',
-                  icon: 'text-rose-300',
-                  value: 'text-rose-300',
+                orange: {
+                  shell: 'border-orange-300/12 bg-[linear-gradient(160deg,rgba(43,28,16,0.60),rgba(10,18,35,0.99))]',
+                  chip: 'border-orange-400/20 bg-orange-400/10 text-orange-200',
+                  value: 'text-orange-100',
+                  meta: 'text-orange-100/62',
+                },
+                slate: {
+                  shell: 'border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  chip: 'border-white/10 bg-white/5 text-slate-200',
+                  value: 'text-slate-100',
                   meta: 'text-slate-400',
-                  overlay: 'from-rose-950/35 via-slate-950/12 to-transparent',
                 },
               }
 
+              const TeamAvatar = ({ team, size = 'md' }) => {
+                const avatar = getTeamAvatar(team)
+
+                const sizeMap = {
+                  sm: 'h-8 w-8 sm:h-9 sm:w-9',
+                  md: 'h-10 w-10 sm:h-11 sm:w-11',
+                }
+
+                const textMap = {
+                  sm: 'text-[10px]',
+                  md: 'text-[11px]',
+                }
+
+                if (avatar) {
+                  return (
+                    <img
+                      src={avatar}
+                      alt={team}
+                      className={`${sizeMap[size]} rounded-full object-cover flex-shrink-0`}
+                    />
+                  )
+                }
+
+                return (
+                  <div
+                    className={`flex items-center justify-center rounded-full bg-white/8 font-black text-white flex-shrink-0 ${sizeMap[size]} ${textMap[size]}`}
+                  >
+                    {team.slice(0, 2).toUpperCase()}
+                  </div>
+                )
+              }
+
+              const renderLeaderStack = (leaders, compact = false) => {
+                if (!leaders?.length) return null
+
+                return (
+                  <div className={`flex flex-col ${compact ? 'gap-2.5' : 'gap-2.5'}`}>
+                    {leaders.slice(0, 3).map(team => (
+                      <a
+                        key={team.team}
+                        href={`/teams?team=${encodeURIComponent(team.team)}`}
+                        className="group flex min-w-0 items-center gap-3 transition-all hover:-translate-y-[1px]"
+                      >
+                        <TeamAvatar team={team.team} size={compact ? 'sm' : 'md'} />
+
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className={`truncate font-black text-white transition-colors group-hover:text-cyan-100 ${compact ? 'text-[12px]' : 'text-[13px] sm:text-[14px]'
+                              }`}
+                          >
+                            {compact ? shortTeamName(team.team) : team.team}
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )
+              }
+
+              const renderMiniLeaderStack = leaders => {
+                if (!leaders?.length) return null
+
+                return (
+                  <div className="flex flex-col gap-2.5">
+                    {leaders.slice(0, 3).map(team => (
+                      <a
+                        key={team.team}
+                        href={`/teams?team=${encodeURIComponent(team.team)}`}
+                        className="group flex min-w-0 items-center gap-3 transition-all hover:-translate-y-[1px]"
+                      >
+                        <TeamAvatar team={team.team} size="sm" />
+
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[12px] font-black text-white transition-colors group-hover:text-cyan-100">
+                            {shortTeamName(team.team)}
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )
+              }
+
+              const hero = recordCards[0]
+              const rowTwo = recordCards.slice(1, 3)
+              const rowThree = recordCards.slice(3, 6)
+
               return (
-                <div className="flex flex-col gap-2.5 px-4 pb-4 pt-4 sm:gap-3 sm:px-5 sm:pb-5">
-                  {records.map((item, idx) => {
-                    const leaders = topNTeams(standings, item.getter, 3)
-                    const topTeam = leaders[0]
-                    const topVal = topTeam ? item.getter(topTeam) : 0
-                    const topAvatar = topTeam ? getTeamAvatar(topTeam.team) : null
-                    const Accent = accentMap[item.accent]
-                    const Icon = item.Icon
+                <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+                  {/* HERO */}
+                  {(() => {
+                    const leaders = topNTeams(standings, hero.getter, 3)
+                    const topVal = leaders[0] ? hero.getter(leaders[0]) : null
+                    const tone = toneMap[hero.tone]
 
                     return (
                       <div
-                        key={item.label}
-                        className={`group relative overflow-hidden rounded-[26px] border shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] ${Accent.shell}`}
+                        className={`relative mb-3 overflow-hidden rounded-[28px] border p-5 sm:p-6 ${tone.shell} shadow-[0_16px_34px_rgba(15,23,42,0.18)]`}
                       >
-                        <div className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${Accent.overlay} opacity-70`} />
+                        <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-cyan-300/6 blur-3xl" />
+                        <div className="absolute -bottom-8 left-10 h-24 w-24 rounded-full bg-white/4 blur-3xl" />
 
-                        <div className="relative flex min-h-[132px] flex-col sm:min-h-[148px] sm:flex-row">
-                          <a
-                            href={topTeam ? `/teams?team=${encodeURIComponent(topTeam.team)}` : '/records'}
-                            className={`relative flex min-h-[132px] items-center justify-center overflow-hidden border-b border-white/8 sm:min-h-0 sm:w-[148px] sm:flex-shrink-0 sm:border-b-0 sm:border-r ${Accent.panel}`}
-                          >
-                            {topAvatar ? (
-                              <img
-                                src={topAvatar}
-                                alt={topTeam?.team ?? item.label}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center text-[42px] font-black text-white/80 sm:text-[48px]">
-                                {topTeam?.team?.slice(0, 2).toUpperCase() ?? '—'}
-                              </div>
-                            )}
-
-                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.04),rgba(2,6,23,0.42))]" />
-
-                            <div className="absolute left-3 top-3">
-                              <div className={`flex h-9 w-9 items-center justify-center rounded-[14px] border backdrop-blur-sm ${Accent.iconWrap}`}>
-                                <Icon className={`h-4 w-4 ${Accent.icon}`} />
-                              </div>
-                            </div>
-                          </a>
-
-                          <div className="flex min-w-0 flex-1 flex-col justify-between px-4 py-4 sm:px-5 sm:py-4.5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="min-w-0">
-                                <div className="mb-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-                                  {idx === 0 ? 'Signature record' : 'All-time mark'}
-                                </div>
-
-                                <div className="truncate text-[15px] font-black text-white sm:text-[17px]">
-                                  {item.label}
-                                </div>
-
-                                <a
-                                  href={topTeam ? `/teams?team=${encodeURIComponent(topTeam.team)}` : '/records'}
-                                  className="mt-1 block truncate text-[12px] font-bold text-slate-300 transition-colors group-hover:text-white sm:text-[13px]"
-                                >
-                                  {topTeam ? topTeam.team : '—'}
-                                </a>
-                              </div>
-
-                              <div className="flex-shrink-0 text-right">
-                                <div
-                                  className={`font-black leading-none ${Accent.value}`}
-                                  style={{
-                                    fontFamily: '"Bebas Neue", sans-serif',
-                                    fontSize: 'clamp(28px,5vw,42px)',
-                                  }}
-                                >
-                                  {topTeam ? item.fmt(topVal) : '—'}
-                                </div>
-
-                                <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.14em] ${Accent.meta}`}>
-                                  Record
-                                </div>
-                              </div>
+                        <div className="relative flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                          <div className="min-w-0">
+                            <div className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${tone.chip}`}>
+                              Record
                             </div>
 
-                            <div className="mt-4 flex flex-wrap items-center gap-2">
-                              {leaders.map((team, i) => {
-                                const av = getTeamAvatar(team.team)
-                                return (
-                                  <a
-                                    key={team.team}
-                                    href={`/teams?team=${encodeURIComponent(team.team)}`}
-                                    className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.045] px-2.5 py-1.5 transition-all hover:bg-white/[0.09]"
-                                  >
-                                    {av ? (
-                                      <img
-                                        src={av}
-                                        alt={team.team}
-                                        className="h-8 w-8 flex-shrink-0 rounded-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[9px] font-black text-slate-300">
-                                        {team.team.slice(0, 2).toUpperCase()}
-                                      </div>
-                                    )}
+                            <div
+                              className="mt-3 text-white"
+                              style={{
+                                fontFamily: '"Bebas Neue", sans-serif',
+                                fontSize: 'clamp(32px,4.8vw,52px)',
+                                letterSpacing: '0.02em',
+                                lineHeight: 0.95,
+                              }}
+                            >
+                              {hero.label}
+                            </div>
 
-                                    <div className="min-w-0">
-                                      <div className="max-w-[92px] truncate text-[11px] font-black text-white">
-                                        {shortTeamName(team.team)}
-                                      </div>
-                                      {i === 0 && (
-                                        <div className={`text-[9px] font-black uppercase tracking-[0.12em] ${Accent.meta}`}>
-                                          Holder
-                                        </div>
-                                      )}
-                                      {i > 0 && (
-                                        <div className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">
-                                          Tied
-                                        </div>
-                                      )}
-                                    </div>
-                                  </a>
-                                )
-                              })}
+                            <div className="mt-2 text-[13px] font-bold text-white/70">
+                              Franchises tied at the top of league history
+                            </div>
+
+                            <div className="mt-4 max-w-[520px]">
+                              {renderLeaderStack(leaders, false)}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-start lg:items-end">
+                            <div
+                              className={`leading-none ${tone.value}`}
+                              style={{
+                                fontFamily: '"Bebas Neue", sans-serif',
+                                fontSize: 'clamp(74px,11vw,120px)',
+                                letterSpacing: '-0.04em',
+                                fontWeight: 900,
+                              }}
+                            >
+                              {topVal !== null ? hero.fmt(topVal) : '—'}
+                            </div>
+
+                            <div className={`mt-1 text-[11px] font-black uppercase tracking-[0.18em] ${tone.meta}`}>
+                              {hero.statLabel}
                             </div>
                           </div>
                         </div>
                       </div>
                     )
-                  })}
+                  })()}
+
+                  {/* ROW 2 */}
+                  <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    {rowTwo.map(item => {
+                      const leaders = topNTeams(standings, item.getter, 3)
+                      const topVal = leaders[0] ? item.getter(leaders[0]) : null
+                      const tone = toneMap[item.tone]
+
+                      return (
+                        <div
+                          key={item.label}
+                          className={`flex h-full flex-col rounded-[24px] border p-4 sm:p-5 ${tone.shell} shadow-[0_12px_26px_rgba(15,23,42,0.14)]`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 pr-3">
+                              <div className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${tone.chip}`}>
+                                Record
+                              </div>
+
+                              <div
+                                className="mt-3 text-white"
+                                style={{
+                                  fontFamily: '"Bebas Neue", sans-serif',
+                                  fontSize: 'clamp(24px,3vw,34px)',
+                                  letterSpacing: '0.02em',
+                                  lineHeight: 0.95,
+                                }}
+                              >
+                                {item.label}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col items-end">
+                              <div
+                                className={`leading-none ${tone.value}`}
+                                style={{
+                                  fontFamily: '"Bebas Neue", sans-serif',
+                                  fontSize: 'clamp(50px,7vw,78px)',
+                                  letterSpacing: '-0.03em',
+                                  fontWeight: 900,
+                                }}
+                              >
+                                {topVal !== null ? item.fmt(topVal) : '—'}
+                              </div>
+
+                              <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.16em] ${tone.meta}`}>
+                                {item.statLabel}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex-1">
+                            {renderLeaderStack(leaders, true)}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* ROW 3 */}
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    {rowThree.map(item => {
+                      const leaders = topNTeams(standings, item.getter, 3)
+                      const topVal = leaders[0] ? item.getter(leaders[0]) : null
+                      const tone = toneMap[item.tone]
+                      const tied = leaders.length > 1
+
+                      return (
+                        <div
+                          key={item.label}
+                          className={`flex h-full flex-col rounded-[22px] border p-4 ${tone.shell} shadow-[0_10px_22px_rgba(15,23,42,0.12)]`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 pr-2">
+                              <div
+                                className="text-white"
+                                style={{
+                                  fontFamily: '"Bebas Neue", sans-serif',
+                                  fontSize: 'clamp(20px,2.2vw,28px)',
+                                  letterSpacing: '0.02em',
+                                  lineHeight: 0.95,
+                                }}
+                              >
+                                {item.label}
+                              </div>
+
+                              <div className={`mt-1 text-[10px] font-bold uppercase tracking-[0.15em] ${tone.meta}`}>
+                                {tied ? 'Co-leaders' : 'Leader'}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col items-end">
+                              <div
+                                className={`flex-shrink-0 leading-none ${tone.value}`}
+                                style={{
+                                  fontFamily: '"Bebas Neue", sans-serif',
+                                  fontSize: 'clamp(40px,7vw,56px)',
+                                  letterSpacing: '-0.025em',
+                                  fontWeight: 900,
+                                }}
+                              >
+                                {topVal !== null ? item.fmt(topVal) : '—'}
+                              </div>
+
+                              <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.16em] ${tone.meta}`}>
+                                {item.statLabel}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex-1">
+                            {renderMiniLeaderStack(leaders)}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )
             })()}
-          </div>
+          </motion.div>
 
           {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
           {championsData.length > 0 && (
