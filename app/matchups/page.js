@@ -508,7 +508,9 @@ function MatchupsPageContent() {
 
     if (!hasSeason) {
       searchParamsAppliedRef.current = true
-      router.replace('/matchups')
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', '/matchups')
+      }
       return
     }
 
@@ -543,8 +545,11 @@ function MatchupsPageContent() {
 
     setSelected(targetGame || null)
     searchParamsAppliedRef.current = true
-    router.replace('/matchups')
-  }, [games, searchParams, router])
+
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', '/matchups')
+    }
+  }, [games, searchParams])
 
 
   const seasons = useMemo(() => {
