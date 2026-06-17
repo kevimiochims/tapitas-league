@@ -373,7 +373,7 @@ export default function DraftPage() {
                 safeFetch(`${BASE_URL}/DRAFT_BOARD`),
                 safeFetch(`${BASE_URL}/DRAFT_NOTES`),
                 safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-                safeFetch(`${BASE_URL}/PLAYER_CACHE`),
+                safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
             ])
 
             setDraftData(draft)
@@ -422,6 +422,19 @@ export default function DraftPage() {
             }))
             .sort((a, b) => a.pick - b.pick)
     }, [draftData, season])
+
+    useEffect(() => {
+    console.log('playerCacheData sample', playerCacheData.slice(0, 5))
+    console.log('playerLookup size', playerLookup.size)
+    console.log('sample pick', seasonPicks[0])
+    if (seasonPicks[0]) {
+        console.log(
+            'lookup first pick',
+            seasonPicks[0].player,
+            getPlayerDataByFullName(seasonPicks[0].player, playerLookup)
+        )
+    }
+}, [playerCacheData, playerLookup, seasonPicks])
 
     const teams = useMemo(() => {
         return [...new Set(seasonPicks.map((p) => p.team))].filter(Boolean)
