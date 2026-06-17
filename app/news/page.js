@@ -52,40 +52,160 @@ export default function NewsPage() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
       {/* Header */}
-      <Header/>
+      <Header />
 
-      <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+      <section className="mx-auto max-w-[1680px] px-3 md:px-6 pb-20">
 
         {/* Hero */}
-        <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10" style={{ background: '#020617', minHeight: '220px' }}>
-          <div className="absolute inset-0 overflow-hidden rounded-[38px]">
-            <svg width="100%" height="100%" viewBox="0 0 900 220" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <div className="relative mb-8 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl md:rounded-[38px]">
+            <svg
+              className="absolute inset-y-0 left-12 -translate-x-60 h-full w-[140%] max-w-none"
+              viewBox="0 0 900 340"
+              preserveAspectRatio="xMidYMid slice"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
               <g opacity="0.09">
                 {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="380" fill="#22d3ee" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 110)`} />
+                  <rect
+                    key={i}
+                    x={x}
+                    y="-80"
+                    width={i % 2 === 0 ? 55 : 22}
+                    height="520"
+                    fill="#22d3ee"
+                    transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`}
+                  />
                 ))}
               </g>
+
               <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
-                {["M380 -30 L460 70 L380 170 L300 70 Z", "M540 -30 L620 70 L540 170 L460 70 Z", "M700 -30 L780 70 L700 170 L620 70 Z", "M860 -30 L940 70 L860 170 L780 70 Z"].map((d, i) => <path key={i} d={d} />)}
+                {[
+                  'M380 -30 L460 85 L380 200 L300 85 Z',
+                  'M460 85 L540 200 L460 315 L380 200 Z',
+                  'M540 -30 L620 85 L540 200 L460 85 Z',
+                  'M620 85 L700 200 L620 315 L540 200 Z',
+                  'M700 -30 L780 85 L700 200 L620 85 Z',
+                  'M780 85 L860 200 L780 315 L700 200 Z',
+                ].map((d, i) => (
+                  <path key={i} d={d} />
+                ))}
               </g>
+
+              <g opacity="0.08" fill="#22d3ee">
+                {[
+                  'M420 30 L440 58 L420 86 L400 58 Z',
+                  'M500 120 L520 148 L500 176 L480 148 Z',
+                  'M580 30 L600 58 L580 86 L560 58 Z',
+                  'M660 120 L680 148 L660 176 L640 148 Z',
+                  'M740 30 L760 58 L740 86 L720 58 Z',
+                ].map((d, i) => (
+                  <path key={i} d={d} />
+                ))}
+              </g>
+
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round">
+                {[520, 600, 680].map((x, i) => (
+                  <polyline key={i} points={`${x},0 ${x + 160},170 ${x},340`} />
+                ))}
+              </g>
+
               <g opacity="0.07" fill="#22d3ee">
-                <polygon points="900,0 900,100 800,0" />
-                <polygon points="900,220 900,120 800,220" />
+                <polygon points="900,0 900,140 760,0" />
+                <polygon points="900,340 900,200 760,340" />
               </g>
-              <text x="820" y="210" fontFamily="'Bebas Neue',sans-serif" fontSize="220" fill="#22d3ee" opacity="0.025" textAnchor="middle">LOL</text>
+
+              <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
+                {[30, 50, 70].map((r) => (
+                  <circle key={r} cx="870" cy="60" r={r} />
+                ))}
+              </g>
+
+              <g opacity="0.09" fill="#22d3ee">
+                {[40, 60, 80, 100].map((y) =>
+                  [310, 330, 350].map((x) => (
+                    <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
+                  ))
+                )}
+              </g>
+
+              <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
+                {[56, 113, 226, 284].map((y) => (
+                  <line key={y} x1="0" y1={y} x2="900" y2={y} />
+                ))}
+              </g>
+
+              <text
+                x="820"
+                y="310"
+                fontFamily="'Bebas Neue', sans-serif"
+                fontSize="340"
+                fill="#22d3ee"
+                opacity="0.02"
+                textAnchor="middle"
+              >
+                12
+              </text>
             </svg>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.9) 48%, rgba(2,6,23,0.15) 100%)' }} />
+
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)',
+              }}
+            />
           </div>
-          <div className="relative z-10 p-10 md:p-12">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 px-4 py-2">
-              <Laugh className="h-4 w-4 text-yellow-300" />
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-yellow-300">Portal da Liga</span>
+
+          <div className="relative z-10 p-6 sm:p-8 md:p-10">
+            <div className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 sm:px-4 sm:py-2">
+              <Newspaper className="h-3 w-3 sm:h-4 sm:w-4 text-cyan-300 shrink-0" />
+              <span
+                className="font-black uppercase tracking-[0.25em] text-cyan-300 whitespace-nowrap"
+                style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+              >
+                League Newsroom
+              </span>
             </div>
-            <h1 className="leading-[0.88]"
-              style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(48px, 7vw, 88px)', letterSpacing: '0.02em' }}>
-              <span style={{ display: 'block', background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>MEMES &</span>
-              <span style={{ display: 'block', background: 'linear-gradient(160deg, #fbbf24 0%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>NOTÍCIAS</span>
+
+            <h1
+              className="leading-[0.9] tracking-[-0.02em]"
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: 'clamp(48px, 7vw, 96px)',
+              }}
+            >
+              <span
+                style={{
+                  display: 'block',
+                  background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                News &
+              </span>
+              <span
+                style={{
+                  display: 'block',
+                  background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                Memes
+              </span>
             </h1>
+
+            <p
+              className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-slate-400"
+              style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+            >
+              Every headline. Every recap. Every joke from around the league.
+            </p>
           </div>
         </div>
 

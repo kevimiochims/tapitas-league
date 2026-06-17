@@ -504,6 +504,43 @@ const TEAM_AVATARS = {
   'h-lera do mahl': '/images/hlera.png',
 }
 
+const NFL_TEAM_NAME_MAP = {
+  'cardinals': 'ari', 'arizona': 'ari', 'arizona cardinals': 'ari',
+  'falcons': 'atl', 'atlanta': 'atl', 'atlanta falcons': 'atl',
+  'ravens': 'bal', 'baltimore': 'bal', 'baltimore ravens': 'bal',
+  'bills': 'buf', 'buffalo': 'buf', 'buffalo bills': 'buf',
+  'panthers': 'car', 'carolina': 'car', 'carolina panthers': 'car',
+  'bears': 'chi', 'chicago': 'chi', 'chicago bears': 'chi',
+  'bengals': 'cin', 'cincinnati': 'cin', 'cincinnati bengals': 'cin',
+  'browns': 'cle', 'cleveland': 'cle', 'cleveland browns': 'cle',
+  'cowboys': 'dal', 'dallas': 'dal', 'dallas cowboys': 'dal',
+  'broncos': 'den', 'denver': 'den', 'denver broncos': 'den',
+  'lions': 'det', 'detroit': 'det', 'detroit lions': 'det',
+  'packers': 'gb', 'green bay': 'gb', 'green bay packers': 'gb',
+  'texans': 'hou', 'houston': 'hou', 'houston texans': 'hou',
+  'colts': 'ind', 'indianapolis': 'ind', 'indianapolis colts': 'ind',
+  'jaguars': 'jax', 'jacksonville': 'jax', 'jacksonville jaguars': 'jax',
+  'chiefs': 'kc', 'kansas city': 'kc', 'kansas city chiefs': 'kc',
+  'chargers': 'lac', 'los angeles chargers': 'lac', 'la chargers': 'lac',
+  'rams': 'lar', 'los angeles rams': 'lar', 'la rams': 'lar',
+  'raiders': 'lv', 'las vegas': 'lv', 'las vegas raiders': 'lv', 'oakland': 'lv', 'oakland raiders': 'lv',
+  'dolphins': 'mia', 'miami': 'mia', 'miami dolphins': 'mia',
+  'vikings': 'min', 'minnesota': 'min', 'minnesota vikings': 'min',
+  'patriots': 'ne', 'new england': 'ne', 'new england patriots': 'ne',
+  'saints': 'no', 'new orleans': 'no', 'new orleans saints': 'no',
+  'giants': 'nyg', 'new york giants': 'nyg', 'ny giants': 'nyg',
+  'jets': 'nyj', 'new york jets': 'nyj', 'ny jets': 'nyj',
+  'eagles': 'phi', 'philadelphia': 'phi', 'philadelphia eagles': 'phi',
+  'steelers': 'pit', 'pittsburgh': 'pit', 'pittsburgh steelers': 'pit',
+  'seahawks': 'sea', 'seattle': 'sea', 'seattle seahawks': 'sea',
+  '49ers': 'sf', 'san francisco': 'sf', 'san francisco 49ers': 'sf',
+  'buccaneers': 'tb', 'tampa bay': 'tb', 'tampa bay buccaneers': 'tb',
+  'titans': 'ten', 'tennessee': 'ten', 'tennessee titans': 'ten',
+  'commanders': 'wsh', 'washington': 'wsh', 'washington commanders': 'wsh',
+  'redskins': 'wsh', 'washington redskins': 'wsh',
+  'football team': 'wsh', 'washington football team': 'wsh',
+}
+
 function getTeamAvatar(name) {
   return TEAM_AVATARS[normalizeString(name)] || null
 }
@@ -556,20 +593,38 @@ function getPlayerDataByFullName(name, playerLookup) {
   return playerLookup.get(key) || null
 }
 
+
+
+function getNFLTeamLogo(nameOrAbbr) {
+  if (!nameOrAbbr || nameOrAbbr === '--') return null
+  const raw = String(nameOrAbbr).toLowerCase().trim()
+  const mapped = NFL_TEAM_NAME_MAP[raw]
+  if (mapped) return `https://a.espncdn.com/i/teamlogos/nfl/500/${mapped}.png`
+  const abbr = raw === 'was' ? 'wsh' : raw
+  return `https://a.espncdn.com/i/teamlogos/nfl/500/${abbr}.png`
+}
+
 function DraftPickTile({ pick, playerLookup }) {
   const [photoFailed, setPhotoFailed] = useState(false)
 
   const data = getPlayerDataByFullName(pick.player, playerLookup)
   const playerId = data?.playerId
   const shortName = data?.shortName || pick.player
-  const photoSrc =
-    !photoFailed && playerId
-      ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
-      : null
+  const isDefense = String(pick?.position || '').toUpperCase() === 'DEF'
+
+  const photoSrc = !photoFailed
+    ? (
+      isDefense
+        ? getNFLTeamLogo(pick.player)
+        : (playerId
+          ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
+          : null)
+    )
+    : null
 
   useEffect(() => {
     setPhotoFailed(false)
-  }, [pick.player, playerId])
+  }, [pick.player, playerId, pick.position])
 
   const posColor =
     POS_COLORS[pick.position] || 'text-slate-200 border-white/10 bg-white/8'
