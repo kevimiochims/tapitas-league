@@ -1536,27 +1536,6 @@ export default function TapitasLeagueHomepage() {
             const pa = parseNumber(g?.OpponentScore || g?.PA || g?.opponent_score || g?.pa || 0)
             return pf > 0 && pa > 0
           })
-
-          // Sort weeks numerically (handle "15-16" → 15, "17" → 17)
-          const allWeeksSorted2 = [...new Set(
-            allNewestGames2.map(g => String(g?.Week || '').trim()).filter(Boolean)
-          )].sort((a, b) => parseFloat(a) - parseFloat(b))
-          const lastWeek2 = allWeeksSorted2[allWeeksSorted2.length - 1]
-
-          const seen2 = new Set()
-          const matchups2 = []
-          for (const g of allNewestGames2.filter(g => String(g?.Week || '').trim() === lastWeek2)) {
-            const team = String(g?.Team || '').trim()
-            const opp = String(g?.Opponent || '').trim()
-            const key = [team, opp].sort().join('|')
-            if (seen2.has(key)) continue
-            seen2.add(key)
-            const score = parseNumber(g?.Score || g?.PF || g?.score || g?.pf || 0)
-            const oppScore = parseNumber(g?.OpponentScore || g?.PA || g?.opponent_score || g?.pa || 0)
-            const stage = String(g?.gameStage || g?.GameStage || g?.Stage || '').trim()
-            matchups2.push({ team, opp, score, oppScore, week: lastWeek2, season: newestSeason2, stage })
-          }
-          if (mounted) setRecentMatchups(matchups2.slice(0, 6))
         }
 
         // ── Draft picks ───────────────────────────────────────────────────────
@@ -1713,20 +1692,25 @@ export default function TapitasLeagueHomepage() {
 
   // ===== Recent matchups dropdown logic =====
 
+  const weeksScrollRef = useRef(null)
+
   const recentMatchups = useMemo(() => {
     if (!Array.isArray(gameFactsData) || !gameFactsData.length || !currentSeason) return []
 
     const seasonGames = gameFactsData.filter((row) => {
-      const season = Number(row?.Season || row?.season || row?.Year || 0)
-      const week = Number(String(row?.Week || row?.week || '').replace(/[^0-9]/g, ''))
+      const season = Number(row?.Season || row?.season || row?.Year || currentSeason)
+      const rawWeek = String(row?.Week || row?.week || '').trim()
+      const week = Number(rawWeek.replace(/[^0-9]/g, ''))
+      const team = String(row?.Team || row?.team || '').trim()
+      const opp = String(row?.Opponent || row?.opponent || '').trim()
       const score = parseNumber(row?.Score || row?.score || row?.PF || row?.pf)
-      const oppScore = parseNumber(
-        row?.OpponentScore || row?.opponentScore || row?.PA || row?.pa
-      )
+      const oppScore = parseNumber(row?.OpponentScore || row?.opponentScore || row?.PA || row?.pa)
 
       return (
         season === Number(currentSeason) &&
         week > 0 &&
+        team &&
+        opp &&
         score > 0 &&
         oppScore > 0
       )
@@ -1741,25 +1725,28 @@ export default function TapitasLeagueHomepage() {
 
     seasonGames.forEach((row) => {
       const season = Number(row?.Season || row?.season || row?.Year || currentSeason)
-      const rawWeek = String(row?.Week || row?.week || '')
+      const rawWeek = String(row?.Week || row?.week || '').trim()
       const week = Number(rawWeek.replace(/[^0-9]/g, ''))
       const team = String(row?.Team || row?.team || '').trim()
       const opp = String(row?.Opponent || row?.opponent || '').trim()
       const score = parseNumber(row?.Score || row?.score || row?.PF || row?.pf)
-      const oppScore = parseNumber(
-        row?.OpponentScore || row?.opponentScore || row?.PA || row?.pa
-      )
+      const oppScore = parseNumber(row?.OpponentScore || row?.opponentScore || row?.PA || row?.pa)
 
-      if (!team || !opp || !week || week > latestWeek || score <= 0 || oppScore <= 0) {
-        return
-      }
+      if (!team || !opp || !week || week > latestWeek || score <= 0 || oppScore <= 0) return
 
-      const gameType = String(
+      const rawGameType = String(
         row?.gameType ||
         row?.GameType ||
         row?.GAME_TYPE ||
+        row?.GameStage ||
+        row?.gameStage ||
         ''
-      ).trim() || 'Regular Season'
+      ).trim()
+
+      const gameType =
+        rawGameType === 'Consolation Bracket'
+          ? 'Consolation'
+          : rawGameType || 'Regular Season'
 
       const teamA = [team, opp].sort()[0]
       const teamB = [team, opp].sort()[1]
@@ -1781,7 +1768,7 @@ export default function TapitasLeagueHomepage() {
     })
 
     return Array.from(dedupedGames.values()).sort((a, b) => {
-      if ((b.week ?? 0) !== (a.week ?? 0)) return (b.week ?? 0) - (a.week ?? 0)
+      if ((a.week ?? 0) !== (b.week ?? 0)) return (a.week ?? 0) - (b.week ?? 0)
       return String(a.team).localeCompare(String(b.team))
     })
   }, [gameFactsData, currentSeason])
@@ -1791,7 +1778,6 @@ export default function TapitasLeagueHomepage() {
 
     recentMatchups.forEach((m) => {
       const key = `${m.season}-${m.week}`
-
       if (!map.has(key)) {
         map.set(key, {
           key,
@@ -1802,20 +1788,24 @@ export default function TapitasLeagueHomepage() {
     })
 
     return Array.from(map.values()).sort((a, b) => {
-      if ((b.season ?? 0) !== (a.season ?? 0)) return (b.season ?? 0) - (a.season ?? 0)
-      return (b.week ?? 0) - (a.week ?? 0)
+      if ((a.season ?? 0) !== (b.season ?? 0)) return (a.season ?? 0) - (b.season ?? 0)
+      return (a.week ?? 0) - (b.week ?? 0)
     })
   }, [recentMatchups])
+
 
   useEffect(() => {
     if (!matchupOptions.length) return
     setSelectedMatchupKey((prev) =>
-      matchupOptions.some((option) => option.key === prev) ? prev : matchupOptions[0].key
+      matchupOptions.some((option) => option.key === prev)
+        ? prev
+        : matchupOptions[matchupOptions.length - 1].key
     )
   }, [matchupOptions])
 
   const selectedMatchupOption =
-    matchupOptions.find((option) => option.key === selectedMatchupKey) ?? matchupOptions[0]
+    matchupOptions.find((option) => option.key === selectedMatchupKey) ??
+    matchupOptions[matchupOptions.length - 1]
 
   const visibleMatchups = useMemo(() => {
     if (!selectedMatchupOption) return recentMatchups
@@ -1827,6 +1817,19 @@ export default function TapitasLeagueHomepage() {
       )
     })
   }, [recentMatchups, selectedMatchupOption])
+
+  useEffect(() => {
+    const el = weeksScrollRef.current
+    if (!el || !matchupOptions.length) return
+
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches
+
+    if (isDesktop) {
+      el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2)
+    } else {
+      el.scrollLeft = el.scrollWidth
+    }
+  }, [matchupOptions.length, selectedMatchupKey])
 
   // Lista única de times extraída do h2h
   const allTeams = useMemo(() => {
@@ -4584,7 +4587,10 @@ export default function TapitasLeagueHomepage() {
 
             {matchupOptions.length > 1 && (
               <div className="mb-4 px-4 sm:px-5">
-                <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div
+                  ref={weeksScrollRef}
+                  className="flex justify-start md:justify-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                >
                   {matchupOptions.map((option) => {
                     const active = option.key === selectedMatchupKey
 
@@ -4613,12 +4619,14 @@ export default function TapitasLeagueHomepage() {
                   const avB = getTeamAvatar(m.opp)
                   const winA = m.score > m.oppScore
                   const margin = Math.abs((m.score ?? 0) - (m.oppScore ?? 0))
-                  const gameLabel = m.gameType || 'Regular Season'
+                  const gameLabel = m.gameType === 'Consolation Bracket' ? 'Consolation' : m.gameType
+                  const matchupHref = `/matchups?season=${encodeURIComponent(m.season)}&week=${encodeURIComponent(m.week)}&team=${encodeURIComponent(m.team)}&opp=${encodeURIComponent(m.opp)}`
 
                   return (
-                    <div
+                    <a
                       key={`${m.team}-${m.opp}-${m.week}-${m.gameType}-${i}`}
-                      className="snap-start flex w-[280px] flex-shrink-0 flex-col rounded-[24px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(7,28,45,0.14)] sm:w-[300px]"
+                      href={matchupHref}
+                      className="snap-start flex w-[280px] flex-shrink-0 flex-col rounded-[24px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(7,28,45,0.14)] transition-all hover:-translate-y-[1px] hover:border-white/12 hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:w-[300px]"
                     >
                       <div className="mb-3 flex items-center justify-between gap-2">
                         <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
@@ -4631,10 +4639,7 @@ export default function TapitasLeagueHomepage() {
                       </div>
 
                       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                        <a
-                          href={`/teams?team=${encodeURIComponent(m.team)}`}
-                          className="group flex min-w-0 flex-col items-center gap-1.5"
-                        >
+                        <div className="flex min-w-0 flex-col items-center gap-1.5">
                           {avA ? (
                             <img
                               src={avA}
@@ -4647,7 +4652,7 @@ export default function TapitasLeagueHomepage() {
                             </div>
                           )}
 
-                          <span className="line-clamp-1 max-w-full text-center text-[11px] font-black leading-tight text-white transition-colors group-hover:text-slate-200">
+                          <span className="line-clamp-1 max-w-full text-center text-[11px] font-black leading-tight text-white">
                             {m.team}
                           </span>
 
@@ -4658,7 +4663,7 @@ export default function TapitasLeagueHomepage() {
                           >
                             {m.score.toFixed(1)}
                           </span>
-                        </a>
+                        </div>
 
                         <div className="flex flex-col items-center gap-1 text-center">
                           <div
@@ -4673,10 +4678,7 @@ export default function TapitasLeagueHomepage() {
                           </div>
                         </div>
 
-                        <a
-                          href={`/teams?team=${encodeURIComponent(m.opp)}`}
-                          className="group flex min-w-0 flex-col items-center gap-1.5"
-                        >
+                        <div className="flex min-w-0 flex-col items-center gap-1.5">
                           {avB ? (
                             <img
                               src={avB}
@@ -4689,7 +4691,7 @@ export default function TapitasLeagueHomepage() {
                             </div>
                           )}
 
-                          <span className="line-clamp-1 max-w-full text-center text-[11px] font-black leading-tight text-white transition-colors group-hover:text-slate-200">
+                          <span className="line-clamp-1 max-w-full text-center text-[11px] font-black leading-tight text-white">
                             {m.opp}
                           </span>
 
@@ -4700,9 +4702,9 @@ export default function TapitasLeagueHomepage() {
                           >
                             {m.oppScore.toFixed(1)}
                           </span>
-                        </a>
+                        </div>
                       </div>
-                    </div>
+                    </a>
                   )
                 })}
               </div>

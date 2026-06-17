@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useState, useMemo, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ChevronRight, ChevronLeft, Swords, Activity } from 'lucide-react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -403,6 +404,7 @@ export default function MatchupsPage() {
   const activeSeasonRef = useRef(null)
   const activeWeekRef = useRef(null)
   const activeGameRef = useRef(null)
+  const searchParams = useSearchParams()
 
 
   // Efeito para rolar até a Semana Ativa
@@ -576,6 +578,55 @@ export default function MatchupsPage() {
       }
     }
   }
+
+  useEffect(() => {
+    if (!games.length) return
+
+    const urlSeason = String(searchParams.get('season') || '').trim()
+    const urlWeek = String(searchParams.get('week') || '').trim()
+    const urlTeam = String(searchParams.get('team') || '').trim()
+    const urlOpp = String(searchParams.get('opp') || '').trim()
+
+    if (!urlSeason || !urlWeek) return
+
+    const hasSeason = games.some((g) => String(g?.Season || '').trim() === urlSeason)
+    if (hasSeason && season !== urlSeason) {
+      setSeason(urlSeason)
+    }
+
+    if (week !== urlWeek) {
+      setWeek(urlWeek)
+    }
+
+    if (!urlTeam || !urlOpp) return
+
+    const targetGame = games.find((g) => {
+      return (
+        String(g?.Season || '').trim() === urlSeason &&
+        String(g?.Week || '').trim() === urlWeek &&
+        String(g?.Team || '').trim() === urlTeam &&
+        String(g?.Opponent || '').trim() === urlOpp
+      )
+    })
+
+    if (targetGame) {
+      setSelected(targetGame)
+      return
+    }
+
+    const reverseGame = games.find((g) => {
+      return (
+        String(g?.Season || '').trim() === urlSeason &&
+        String(g?.Week || '').trim() === urlWeek &&
+        String(g?.Team || '').trim() === urlOpp &&
+        String(g?.Opponent || '').trim() === urlTeam
+      )
+    })
+
+    if (reverseGame) {
+      setSelected(reverseGame)
+    }
+  }, [games, searchParams, season, week])
 
   const teamPF = selected ? parseNumber(selected?.PF) : 0
   const teamPA = selected ? parseNumber(selected?.PA) : 0
