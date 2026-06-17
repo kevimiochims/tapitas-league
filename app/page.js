@@ -11,6 +11,7 @@ import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
 import { motion } from 'framer-motion'
 import Header from './components/Header'
+import Link from 'next/link'
 
 
 const FALLBACK_TEAMS = [
@@ -4794,37 +4795,34 @@ export default function TapitasLeagueHomepage() {
             className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.98),rgba(2,6,23,1))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)] xl:flex-1"
           >
             {/* HEADER */}
-            <div className="mb-4 flex items-center justify-between gap-4 px-4 pb-1 pt-3 sm:px-5 sm:pt-4">
-              <div className="flex min-w-0 items-center gap-3.5 sm:gap-4">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[18px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
-                  <Zap className="h-5 w-5 text-yellow-300" />
+            <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                  <Zap className="h-4.5 w-4.5 text-yellow-300 sm:h-5 sm:w-5" />
                 </div>
-
                 <div className="min-w-0">
                   <div
-                    className="truncate uppercase leading-none text-white"
+                    className="truncate uppercase leading-none text-yellow-300"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
-                      fontSize: '24px',
-                      letterSpacing: '0.075em',
+                      fontSize: '20px',
+                      letterSpacing: '0.06em',
                       fontWeight: 900,
                     }}
                   >
                     All-Time Records
                   </div>
-
-                  <div className="mt-1.5 truncate text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                  <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                     Best of the best
                   </div>
                 </div>
               </div>
 
-              <a
-                href="/records"
-                className="inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]"
+              <a href="/records"
+                className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
               >
                 Ver tudo
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </a>
             </div>
 
@@ -4832,42 +4830,41 @@ export default function TapitasLeagueHomepage() {
               const recordCards = [
                 {
                   label: 'Most Wins',
-                  statLabel: 'Wins',
                   getter: t => t.wins,
                   fmt: v => v,
                   tone: 'cyan',
                 },
                 {
                   label: 'Most Titles',
-                  statLabel: 'Titles',
+                  desktopLabel: ['Most', 'Titles'],
                   getter: t => t.titles,
                   fmt: v => v,
                   tone: 'gold',
                 },
                 {
                   label: 'Top Scorer',
-                  statLabel: 'Points',
+                  desktopLabel: ['Top', 'Scorer'],
                   getter: t => t.pf,
                   fmt: v => Math.round(v),
                   tone: 'emerald',
                 },
                 {
-                  label: 'Best Win %',
-                  statLabel: 'Win %',
+                  label: 'Best Win%',
+                  desktopLabel: ['Best', 'Win%'],
                   getter: t => t.winPct,
                   fmt: v => `${Math.round(v)}%`,
                   tone: 'violet',
                 },
                 {
                   label: 'Finals Apps',
-                  statLabel: 'Apps',
+                  desktopLabel: ['Finals', 'Apps'],
                   getter: t => t.finals,
                   fmt: v => v,
                   tone: 'orange',
                 },
                 {
                   label: 'Playoff Apps',
-                  statLabel: 'Apps',
+                  desktopLabel: ['Playoff', 'Apps'],
                   getter: t => t.playoffApps,
                   fmt: v => v,
                   tone: 'slate',
@@ -4915,17 +4912,8 @@ export default function TapitasLeagueHomepage() {
 
               const TeamAvatar = ({ team, size = 'md' }) => {
                 const avatar = getTeamAvatar(team)
-
-                const sizeMap = {
-                  sm: 'h-8 w-8 sm:h-9 sm:w-9',
-                  md: 'h-10 w-10 sm:h-11 sm:w-11',
-                }
-
-                const textMap = {
-                  sm: 'text-[10px]',
-                  md: 'text-[11px]',
-                }
-
+                const sizeMap = { sm: 'h-8 w-8 sm:h-9 sm:w-9', md: 'h-10 w-10 sm:h-11 sm:w-11' }
+                const textMap = { sm: 'text-[10px]', md: 'text-[11px]' }
                 if (avatar) {
                   return (
                     <img
@@ -4935,7 +4923,6 @@ export default function TapitasLeagueHomepage() {
                     />
                   )
                 }
-
                 return (
                   <div
                     className={`flex items-center justify-center rounded-full bg-white/8 font-black text-white flex-shrink-0 ${sizeMap[size]} ${textMap[size]}`}
@@ -4947,17 +4934,15 @@ export default function TapitasLeagueHomepage() {
 
               const renderLeaderStack = (leaders, compact = false) => {
                 if (!leaders?.length) return null
-
                 return (
-                  <div className={`flex flex-col ${compact ? 'gap-2.5' : 'gap-2.5'}`}>
+                  <div className="flex flex-col gap-2.5">
                     {leaders.slice(0, 3).map(team => (
-                      <a
-                        key={team.team}
-                        href={`/teams?team=${encodeURIComponent(team.team)}`}
+
+                      <a key={team.team}
+                        href="/records"
                         className="group flex min-w-0 items-center gap-3 transition-all hover:-translate-y-[1px]"
                       >
                         <TeamAvatar team={team.team} size={compact ? 'sm' : 'md'} />
-
                         <div className="min-w-0 flex-1">
                           <div
                             className={`truncate font-black text-white transition-colors group-hover:text-cyan-100 ${compact ? 'text-[12px]' : 'text-[13px] sm:text-[14px]'
@@ -4974,17 +4959,15 @@ export default function TapitasLeagueHomepage() {
 
               const renderMiniLeaderStack = leaders => {
                 if (!leaders?.length) return null
-
                 return (
                   <div className="flex flex-col gap-2.5">
                     {leaders.slice(0, 3).map(team => (
-                      <a
-                        key={team.team}
-                        href={`/teams?team=${encodeURIComponent(team.team)}`}
+
+                      <a key={team.team}
+                        href="/records"
                         className="group flex min-w-0 items-center gap-3 transition-all hover:-translate-y-[1px]"
                       >
                         <TeamAvatar team={team.team} size="sm" />
-
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-[12px] font-black text-white transition-colors group-hover:text-cyan-100">
                             {shortTeamName(team.team)}
@@ -4993,6 +4976,24 @@ export default function TapitasLeagueHomepage() {
                       </a>
                     ))}
                   </div>
+                )
+              }
+
+              const renderResponsiveRecordTitle = (item, titleStyle, desktopBreakpoint = 'lg') => {
+                if (!item.desktopLabel?.length) {
+                  return <div className="text-white" style={titleStyle}>{item.label}</div>
+                }
+                const mobileClass = desktopBreakpoint === 'lg' ? 'lg:hidden' : 'sm:hidden'
+                const desktopClass = desktopBreakpoint === 'lg' ? 'hidden lg:block' : 'hidden sm:block'
+                return (
+                  <>
+                    <div className={`${mobileClass} text-white`} style={titleStyle}>{item.label}</div>
+                    <div className={`${desktopClass} text-white`} style={titleStyle}>
+                      {item.desktopLabel.map((line, index) => (
+                        <div key={`${item.label}-${index}`}>{line}</div>
+                      ))}
+                    </div>
+                  </>
                 )
               }
 
@@ -5009,58 +5010,56 @@ export default function TapitasLeagueHomepage() {
                     const tone = toneMap[hero.tone]
 
                     return (
-                      <div
-                        className={`relative mb-3 overflow-hidden rounded-[28px] border p-5 sm:p-6 ${tone.shell} shadow-[0_16px_34px_rgba(15,23,42,0.18)]`}
+
+                      <a href="/records"
+                        className={`relative mb-3 block overflow-hidden rounded-[28px] border p-5 sm:p-6 ${tone.shell} shadow-[0_16px_34px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-[1px]`
+                        }
                       >
                         <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-cyan-300/6 blur-3xl" />
                         <div className="absolute -bottom-8 left-10 h-24 w-24 rounded-full bg-white/4 blur-3xl" />
-
-                        <div className="relative flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-                          <div className="min-w-0">
-                            <div className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${tone.chip}`}>
-                              Record
+                        <div className="relative">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${tone.chip}`}>
+                                Record
+                              </div>
+                              <div
+                                className="mt-3 text-white"
+                                style={{
+                                  fontFamily: '"Bebas Neue", sans-serif',
+                                  fontSize: 'clamp(32px,4.8vw,52px)',
+                                  letterSpacing: '0.02em',
+                                  lineHeight: 0.95,
+                                }}
+                              >
+                                {hero.label}
+                              </div>
+                              <div className="mt-2 text-[13px] font-bold text-white/70">
+                                Franchises tied at the top of league history
+                              </div>
                             </div>
-
-                            <div
-                              className="mt-3 text-white"
-                              style={{
-                                fontFamily: '"Bebas Neue", sans-serif',
-                                fontSize: 'clamp(32px,4.8vw,52px)',
-                                letterSpacing: '0.02em',
-                                lineHeight: 0.95,
-                              }}
-                            >
-                              {hero.label}
-                            </div>
-
-                            <div className="mt-2 text-[13px] font-bold text-white/70">
-                              Franchises tied at the top of league history
-                            </div>
-
-                            <div className="mt-4 max-w-[520px]">
-                              {renderLeaderStack(leaders, false)}
+                            <div className="flex flex-shrink-0 flex-col items-end text-right">
+                              <div
+                                className={`leading-none ${tone.value}`}
+                                style={{
+                                  fontFamily: '"Bebas Neue", sans-serif',
+                                  fontSize: 'clamp(74px,11vw,120px)',
+                                  letterSpacing: '-0.04em',
+                                  fontWeight: 900,
+                                }}
+                              >
+                                {topVal !== null ? hero.fmt(topVal) : '—'}
+                              </div>
+                              <div className={`mt-1 text-[11px] font-black uppercase tracking-[0.18em] ${tone.meta}`}>
+                                {hero.statLabel}
+                              </div>
                             </div>
                           </div>
-
-                          <div className="flex flex-col items-start lg:items-end">
-                            <div
-                              className={`leading-none ${tone.value}`}
-                              style={{
-                                fontFamily: '"Bebas Neue", sans-serif',
-                                fontSize: 'clamp(74px,11vw,120px)',
-                                letterSpacing: '-0.04em',
-                                fontWeight: 900,
-                              }}
-                            >
-                              {topVal !== null ? hero.fmt(topVal) : '—'}
-                            </div>
-
-                            <div className={`mt-1 text-[11px] font-black uppercase tracking-[0.18em] ${tone.meta}`}>
-                              {hero.statLabel}
-                            </div>
+                          <div className="mt-5 max-w-[520px]">
+                            {renderLeaderStack(leaders, false)}
                           </div>
                         </div>
-                      </div>
+                      </a>
                     )
                   })()}
 
@@ -5072,29 +5071,26 @@ export default function TapitasLeagueHomepage() {
                       const tone = toneMap[item.tone]
 
                       return (
-                        <div
+                        <a
                           key={item.label}
-                          className={`flex h-full flex-col rounded-[24px] border p-4 sm:p-5 ${tone.shell} shadow-[0_12px_26px_rgba(15,23,42,0.14)]`}
+                          href="/records"
+                          className={`flex h-full flex-col rounded-[24px] border p-4 sm:p-5 ${tone.shell} shadow-[0_12px_26px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px]`
+                          }
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 pr-3">
                               <div className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${tone.chip}`}>
                                 Record
                               </div>
-
-                              <div
-                                className="mt-3 text-white"
-                                style={{
+                              <div className="mt-3">
+                                {renderResponsiveRecordTitle(item, {
                                   fontFamily: '"Bebas Neue", sans-serif',
                                   fontSize: 'clamp(24px,3vw,34px)',
                                   letterSpacing: '0.02em',
                                   lineHeight: 0.95,
-                                }}
-                              >
-                                {item.label}
+                                })}
                               </div>
                             </div>
-
                             <div className="flex flex-col items-end">
                               <div
                                 className={`leading-none ${tone.value}`}
@@ -5107,17 +5103,15 @@ export default function TapitasLeagueHomepage() {
                               >
                                 {topVal !== null ? item.fmt(topVal) : '—'}
                               </div>
-
                               <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.16em] ${tone.meta}`}>
                                 {item.statLabel}
                               </div>
                             </div>
                           </div>
-
                           <div className="mt-4 flex-1">
                             {renderLeaderStack(leaders, true)}
                           </div>
-                        </div>
+                        </a>
                       )
                     })}
                   </div>
@@ -5131,29 +5125,26 @@ export default function TapitasLeagueHomepage() {
                       const tied = leaders.length > 1
 
                       return (
-                        <div
-                          key={item.label}
-                          className={`flex h-full flex-col rounded-[22px] border p-4 ${tone.shell} shadow-[0_10px_22px_rgba(15,23,42,0.12)]`}
+
+                        <a key={item.label}
+                          href="/records"
+                          className={`flex h-full flex-col rounded-[22px] border p-4 ${tone.shell} shadow-[0_10px_22px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px]`
+                          }
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 pr-2">
-                              <div
-                                className="text-white"
-                                style={{
+                              <div>
+                                {renderResponsiveRecordTitle(item, {
                                   fontFamily: '"Bebas Neue", sans-serif',
                                   fontSize: 'clamp(20px,2.2vw,28px)',
                                   letterSpacing: '0.02em',
                                   lineHeight: 0.95,
-                                }}
-                              >
-                                {item.label}
+                                })}
                               </div>
-
                               <div className={`mt-1 text-[10px] font-bold uppercase tracking-[0.15em] ${tone.meta}`}>
                                 {tied ? 'Co-leaders' : 'Leader'}
                               </div>
                             </div>
-
                             <div className="flex flex-col items-end">
                               <div
                                 className={`flex-shrink-0 leading-none ${tone.value}`}
@@ -5166,70 +5157,70 @@ export default function TapitasLeagueHomepage() {
                               >
                                 {topVal !== null ? item.fmt(topVal) : '—'}
                               </div>
-
                               <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.16em] ${tone.meta}`}>
                                 {item.statLabel}
                               </div>
                             </div>
                           </div>
-
                           <div className="mt-4 flex-1">
                             {renderMiniLeaderStack(leaders)}
                           </div>
-                        </div>
+                        </a>
                       )
                     })}
-                  </div>
-                </div>
+                  </div >
+                </div >
               )
             })()}
-          </motion.div>
+          </motion.div >
 
           {/* ── CHAMPIONS WALL ──────────────────────────────────────────────── */}
-          {championsData.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
-              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              viewport={{ once: false, amount: 0.06 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
-            >
-              <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
-                    <Trophy className="h-5 w-5 text-yellow-300" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div
-                      className="uppercase leading-none text-white"
-                      style={{
-                        fontFamily: '"Bebas Neue", sans-serif',
-                        fontSize: '24px',
-                        letterSpacing: '0.075em',
-                        fontWeight: 900,
-                      }}
-                    >
-                      Champions Wall
+          {
+            championsData.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 36, filter: 'blur(8px)' }}
+                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                viewport={{ once: false, amount: 0.06 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="mb-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]"
+              >
+                <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+                  <div className="flex min-w-0 items-center gap-4">
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border border-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                      <Trophy className="h-5 w-5 text-yellow-300" />
                     </div>
 
-                    <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
-                      Every title. Every campaign.
+                    <div className="min-w-0">
+                      <div
+                        className="uppercase leading-none text-white"
+                        style={{
+                          fontFamily: '"Bebas Neue", sans-serif',
+                          fontSize: '24px',
+                          letterSpacing: '0.075em',
+                          fontWeight: 900,
+                        }}
+                      >
+                        Champions Wall
+                      </div>
+
+                      <div className="mt-1.5 text-[13px] font-bold tracking-[0.02em] text-slate-300 sm:text-sm">
+                        Every title. Every campaign.
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <ChampionsWallInline champions={championsData} />
-            </motion.div>
-          )}
+                <ChampionsWallInline champions={championsData} />
+              </motion.div>
+            )
+          }
 
-        </motion.div>
+        </motion.div >
 
-      </section>
+      </section >
 
       {/* FOOTER */}
-      <footer className="relative z-10 mx-auto max-w-[16100px] px-3 pb-8 pt-0">
+      < footer className="relative z-10 mx-auto max-w-[16100px] px-3 pb-8 pt-0" >
         <div className="flex flex-col items-center gap-8 rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] px-8 py-16 text-center">
 
           {/* Frase */}
@@ -5281,17 +5272,19 @@ export default function TapitasLeagueHomepage() {
           </p>
 
         </div>
-      </footer>
+      </footer >
 
       {/* DRAWER — Season Summary */}
       <>
         {/* Overlay */}
-        {drawerOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-            onClick={() => setDrawerOpen(false)}
-          />
-        )}
+        {
+          drawerOpen && (
+            <div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setDrawerOpen(false)}
+            />
+          )
+        }
 
         {/* Drawer */}
         <div
@@ -5478,6 +5471,6 @@ export default function TapitasLeagueHomepage() {
           </div>
         </div>
       </>
-    </main>
+    </main >
   )
 }
