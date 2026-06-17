@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ChevronRight, ChevronLeft, Swords, Activity } from 'lucide-react'
 import React from 'react'
@@ -391,7 +391,7 @@ function firstGameOfWeek(data, seasonVal, weekVal) {
   return null
 }
 
-export default function MatchupsPage() {
+function MatchupsPageContent() {
   const [games, setGames] = useState([])
   const [playerLookup, setPlayerLookup] = useState(new Map())
   const [loading, setLoading] = useState(true)
@@ -1444,5 +1444,24 @@ export default function MatchupsPage() {
       </footer>
 
     </main>
+  )
+}
+
+export default function MatchupsPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#020617] text-white">
+          <Header />
+          <section className="px-3 md:px-6 mx-auto">
+            <div className="flex items-center justify-center py-20 text-slate-500 font-bold">
+              Loading...
+            </div>
+          </section>
+        </main>
+      }
+    >
+      <MatchupsPageContent />
+    </Suspense>
   )
 }
