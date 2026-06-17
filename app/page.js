@@ -4778,7 +4778,7 @@ export default function TapitasLeagueHomepage() {
           className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2"
         >
 
-          {/* RECORDS — redesigned */}
+          {/* RECORDS — editorial gallery */}
           <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(2,6,23,0.9))] p-3 shadow-[0_24px_56px_rgba(7,28,45,0.20)]">
             <div className="flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
               <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -4815,217 +4815,196 @@ export default function TapitasLeagueHomepage() {
             </div>
 
             {(() => {
-              const recordGroups = [
-                {
-                  label: 'Most Titles',
-                  getter: t => t.titles,
-                  fmt: v => v,
-                  accent: 'yellow',
-                  icon: Trophy,
-                },
-                {
-                  label: 'Most Wins',
-                  getter: t => t.wins,
-                  fmt: v => v,
-                  accent: 'emerald',
-                  icon: TrendingUp,
-                },
-                {
-                  label: 'Top Scorer',
-                  getter: t => t.pf,
-                  fmt: v => `${Math.round(v)} pts`,
-                  accent: 'orange',
-                  icon: Flame,
-                },
-                {
-                  label: 'Best Win%',
-                  getter: t => t.winPct,
-                  fmt: v => `${Math.round(v)}%`,
-                  accent: 'cyan',
-                  icon: Target,
-                },
-                {
-                  label: 'Playoff Apps',
-                  getter: t => t.playoffApps,
-                  fmt: v => v,
-                  accent: 'violet',
-                  icon: Medal,
-                },
-                {
-                  label: 'Finals Apps',
-                  getter: t => t.finals,
-                  fmt: v => v,
-                  accent: 'rose',
-                  icon: Swords,
-                },
+              const records = [
+                { label: 'Most Titles', getter: t => t.titles, fmt: v => `${v}`, accent: 'yellow', Icon: Trophy },
+                { label: 'Most Wins', getter: t => t.wins, fmt: v => `${v}`, accent: 'emerald', Icon: TrendingUp },
+                { label: 'Top Scorer', getter: t => t.pf, fmt: v => `${Math.round(v)} pts`, accent: 'orange', Icon: Flame },
+                { label: 'Best Win%', getter: t => t.winPct, fmt: v => `${Math.round(v)}%`, accent: 'cyan', Icon: Target },
+                { label: 'Playoff Apps', getter: t => t.playoffApps, fmt: v => `${v}`, accent: 'violet', Icon: Medal },
+                { label: 'Finals Apps', getter: t => t.finals, fmt: v => `${v}`, accent: 'rose', Icon: Swords },
               ]
-
-              const mainRecord = recordGroups[0]
-              const sideRecords = recordGroups.slice(1)
 
               const accentMap = {
                 yellow: {
-                  soft: 'border-yellow-300/12 bg-[linear-gradient(135deg,rgba(54,43,20,0.40),rgba(10,18,35,0.99))]',
-                  value: 'text-yellow-200',
-                  sub: 'text-yellow-200/70',
-                  iconWrap: 'border-yellow-300/18 bg-yellow-300/10',
+                  shell: 'border-yellow-300/14 bg-[linear-gradient(135deg,rgba(54,43,20,0.45),rgba(10,18,35,0.99))]',
+                  panel: 'bg-yellow-300/[0.07]',
+                  iconWrap: 'border-yellow-300/16 bg-yellow-300/10',
                   icon: 'text-yellow-300',
-                  chip: 'hover:bg-yellow-300/10',
+                  value: 'text-yellow-200',
+                  meta: 'text-yellow-200/70',
+                  overlay: 'from-yellow-950/35 via-slate-950/12 to-transparent',
                 },
                 emerald: {
-                  soft: 'border-emerald-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  value: 'text-emerald-300',
-                  sub: 'text-slate-400',
+                  shell: 'border-emerald-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  panel: 'bg-emerald-300/[0.05]',
                   iconWrap: 'border-emerald-300/16 bg-emerald-300/10',
                   icon: 'text-emerald-300',
-                  chip: 'hover:bg-white/10',
+                  value: 'text-emerald-300',
+                  meta: 'text-slate-400',
+                  overlay: 'from-emerald-950/35 via-slate-950/12 to-transparent',
                 },
                 orange: {
-                  soft: 'border-orange-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  value: 'text-orange-300',
-                  sub: 'text-slate-400',
+                  shell: 'border-orange-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  panel: 'bg-orange-300/[0.05]',
                   iconWrap: 'border-orange-300/16 bg-orange-300/10',
                   icon: 'text-orange-300',
-                  chip: 'hover:bg-white/10',
+                  value: 'text-orange-300',
+                  meta: 'text-slate-400',
+                  overlay: 'from-orange-950/35 via-slate-950/12 to-transparent',
                 },
                 cyan: {
-                  soft: 'border-cyan-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  value: 'text-cyan-200',
-                  sub: 'text-slate-400',
+                  shell: 'border-cyan-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  panel: 'bg-cyan-300/[0.05]',
                   iconWrap: 'border-cyan-300/16 bg-cyan-300/10',
                   icon: 'text-cyan-200',
-                  chip: 'hover:bg-white/10',
+                  value: 'text-cyan-200',
+                  meta: 'text-slate-400',
+                  overlay: 'from-cyan-950/35 via-slate-950/12 to-transparent',
                 },
                 violet: {
-                  soft: 'border-violet-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  value: 'text-violet-300',
-                  sub: 'text-slate-400',
+                  shell: 'border-violet-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  panel: 'bg-violet-300/[0.05]',
                   iconWrap: 'border-violet-300/16 bg-violet-300/10',
                   icon: 'text-violet-300',
-                  chip: 'hover:bg-white/10',
+                  value: 'text-violet-300',
+                  meta: 'text-slate-400',
+                  overlay: 'from-violet-950/35 via-slate-950/12 to-transparent',
                 },
                 rose: {
-                  soft: 'border-rose-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
-                  value: 'text-rose-300',
-                  sub: 'text-slate-400',
+                  shell: 'border-rose-300/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]',
+                  panel: 'bg-rose-300/[0.05]',
                   iconWrap: 'border-rose-300/16 bg-rose-300/10',
                   icon: 'text-rose-300',
-                  chip: 'hover:bg-white/10',
+                  value: 'text-rose-300',
+                  meta: 'text-slate-400',
+                  overlay: 'from-rose-950/35 via-slate-950/12 to-transparent',
                 },
               }
 
-              const renderLeaders = (leaders, compact = false, hoverClass = 'hover:bg-white/10') => (
-                <div className={`flex flex-wrap ${compact ? 'gap-1.5' : 'gap-2'}`}>
-                  {leaders.map(t => {
-                    const av = getTeamAvatar(t.team)
-                    return (
-                      <a
-                        key={t.team}
-                        href={`/teams?team=${encodeURIComponent(t.team)}`}
-                        className={`inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 transition-all ${hoverClass}`}
-                      >
-                        {av ? (
-                          <img
-                            src={av}
-                            alt={t.team}
-                            className={compact ? 'h-6 w-6 rounded-full object-cover flex-shrink-0' : 'h-7 w-7 rounded-full object-cover flex-shrink-0'}
-                          />
-                        ) : (
-                          <div className={compact
-                            ? 'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[9px] font-black text-slate-300'
-                            : 'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[9px] font-black text-slate-300'
-                          }>
-                            {t.team.slice(0, 2).toUpperCase()}
-                          </div>
-                        )}
+              return (
+                <div className="flex flex-col gap-2.5 px-4 pb-4 pt-4 sm:gap-3 sm:px-5 sm:pb-5">
+                  {records.map((item, idx) => {
+                    const leaders = topNTeams(standings, item.getter, 3)
+                    const topTeam = leaders[0]
+                    const topVal = topTeam ? item.getter(topTeam) : 0
+                    const topAvatar = topTeam ? getTeamAvatar(topTeam.team) : null
+                    const Accent = accentMap[item.accent]
+                    const Icon = item.Icon
 
-                        <span className={`${compact ? 'max-w-[76px] text-[11px]' : 'max-w-[96px] text-xs'} truncate font-black text-white`}>
-                          {shortTeamName(t.team)}
-                        </span>
-                      </a>
+                    return (
+                      <div
+                        key={item.label}
+                        className={`group relative overflow-hidden rounded-[26px] border shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] ${Accent.shell}`}
+                      >
+                        <div className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${Accent.overlay} opacity-70`} />
+
+                        <div className="relative flex min-h-[132px] flex-col sm:min-h-[148px] sm:flex-row">
+                          <a
+                            href={topTeam ? `/teams?team=${encodeURIComponent(topTeam.team)}` : '/records'}
+                            className={`relative flex min-h-[132px] items-center justify-center overflow-hidden border-b border-white/8 sm:min-h-0 sm:w-[148px] sm:flex-shrink-0 sm:border-b-0 sm:border-r ${Accent.panel}`}
+                          >
+                            {topAvatar ? (
+                              <img
+                                src={topAvatar}
+                                alt={topTeam?.team ?? item.label}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[42px] font-black text-white/80 sm:text-[48px]">
+                                {topTeam?.team?.slice(0, 2).toUpperCase() ?? '—'}
+                              </div>
+                            )}
+
+                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.04),rgba(2,6,23,0.42))]" />
+
+                            <div className="absolute left-3 top-3">
+                              <div className={`flex h-9 w-9 items-center justify-center rounded-[14px] border backdrop-blur-sm ${Accent.iconWrap}`}>
+                                <Icon className={`h-4 w-4 ${Accent.icon}`} />
+                              </div>
+                            </div>
+                          </a>
+
+                          <div className="flex min-w-0 flex-1 flex-col justify-between px-4 py-4 sm:px-5 sm:py-4.5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <div className="mb-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                                  {idx === 0 ? 'Signature record' : 'All-time mark'}
+                                </div>
+
+                                <div className="truncate text-[15px] font-black text-white sm:text-[17px]">
+                                  {item.label}
+                                </div>
+
+                                <a
+                                  href={topTeam ? `/teams?team=${encodeURIComponent(topTeam.team)}` : '/records'}
+                                  className="mt-1 block truncate text-[12px] font-bold text-slate-300 transition-colors group-hover:text-white sm:text-[13px]"
+                                >
+                                  {topTeam ? topTeam.team : '—'}
+                                </a>
+                              </div>
+
+                              <div className="flex-shrink-0 text-right">
+                                <div
+                                  className={`font-black leading-none ${Accent.value}`}
+                                  style={{
+                                    fontFamily: '"Bebas Neue", sans-serif',
+                                    fontSize: 'clamp(28px,5vw,42px)',
+                                  }}
+                                >
+                                  {topTeam ? item.fmt(topVal) : '—'}
+                                </div>
+
+                                <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.14em] ${Accent.meta}`}>
+                                  Record
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                              {leaders.map((team, i) => {
+                                const av = getTeamAvatar(team.team)
+                                return (
+                                  <a
+                                    key={team.team}
+                                    href={`/teams?team=${encodeURIComponent(team.team)}`}
+                                    className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.045] px-2.5 py-1.5 transition-all hover:bg-white/[0.09]"
+                                  >
+                                    {av ? (
+                                      <img
+                                        src={av}
+                                        alt={team.team}
+                                        className="h-8 w-8 flex-shrink-0 rounded-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[9px] font-black text-slate-300">
+                                        {team.team.slice(0, 2).toUpperCase()}
+                                      </div>
+                                    )}
+
+                                    <div className="min-w-0">
+                                      <div className="max-w-[92px] truncate text-[11px] font-black text-white">
+                                        {shortTeamName(team.team)}
+                                      </div>
+                                      {i === 0 && (
+                                        <div className={`text-[9px] font-black uppercase tracking-[0.12em] ${Accent.meta}`}>
+                                          Holder
+                                        </div>
+                                      )}
+                                      {i > 0 && (
+                                        <div className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">
+                                          Tied
+                                        </div>
+                                      )}
+                                    </div>
+                                  </a>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )
                   })}
-                </div>
-              )
-
-              const mainLeaders = topNTeams(standings, mainRecord.getter, 3)
-              const mainTopVal = mainLeaders[0] ? mainRecord.getter(mainLeaders[0]) : 0
-              const MainIcon = mainRecord.icon
-              const mainAccent = accentMap[mainRecord.accent]
-
-              return (
-                <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
-                  <div className={`mb-3 overflow-hidden rounded-[26px] border p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)] sm:p-5 ${mainAccent.soft}`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-2 flex items-center gap-2">
-                          <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[14px] border ${mainAccent.iconWrap}`}>
-                            <MainIcon className={`h-4 w-4 ${mainAccent.icon}`} />
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                              Signature record
-                            </div>
-                            <div className="truncate text-sm font-black text-white sm:text-[15px]">
-                              {mainRecord.label}
-                            </div>
-                          </div>
-                        </div>
-
-                        {renderLeaders(mainLeaders, false, mainAccent.chip)}
-                      </div>
-
-                      <div className="flex-shrink-0 text-right">
-                        <div
-                          className={`font-black leading-none ${mainAccent.value}`}
-                          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px,6vw,52px)' }}
-                        >
-                          {mainLeaders[0] ? mainRecord.fmt(mainTopVal) : '—'}
-                        </div>
-
-                        <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.14em] ${mainAccent.sub}`}>
-                          All-time mark
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
-                    {sideRecords.map((item) => {
-                      const leaders = topNTeams(standings, item.getter, 3)
-                      const topVal = leaders[0] ? item.getter(leaders[0]) : 0
-                      const Icon = item.icon
-                      const accent = accentMap[item.accent]
-
-                      return (
-                        <div
-                          key={item.label}
-                          className={`rounded-[22px] border p-3.5 shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] ${accent.soft}`}
-                        >
-                          <div className="mb-3 flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="mb-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-                                {item.label}
-                              </div>
-                              <div
-                                className={`font-black leading-none ${accent.value}`}
-                                style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px,4vw,34px)' }}
-                              >
-                                {leaders[0] ? item.fmt(topVal) : '—'}
-                              </div>
-                            </div>
-
-                            <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[12px] border ${accent.iconWrap}`}>
-                              <Icon className={`h-3.5 w-3.5 ${accent.icon}`} />
-                            </div>
-                          </div>
-
-                          {renderLeaders(leaders, true, accent.chip)}
-                        </div>
-                      )
-                    })}
-                  </div>
                 </div>
               )
             })()}
