@@ -990,11 +990,10 @@ export default function PowerRankingsPage() {
 
                       <div className="flex gap-4 md:gap-5 items-start">
 
-                        <div className="flex-shrink-0 pt-0.5">
+                        <div className="w-[52px] flex-shrink-0 text-center pt-0.5">
+                          <div className="flex-shrink-0 pt-0.5 pb-2">
                           <TeamAvatar team={team.team} size="lg" />
                         </div>
-
-                        <div className="w-[52px] flex-shrink-0 text-center pt-0.5">
                           <div
                             className={`text-[42px] font-black leading-none ${tierColor}`}
                             style={{
