@@ -3558,7 +3558,7 @@ export default function TapitasLeagueHomepage() {
                 visibleStandingsRows.map((row, i) => {
                   const avatar = getTeamAvatar(row.team)
                   const globalIndex = standingsPage * standingsPageSize + i + (standingsPage === 0 && standingsLeader ? 1 : 0)
-                  const isPlayoffRange = globalIndex < 5
+                  const isPlayoffRange = globalIndex < 6
 
                   return (
                     <a
