@@ -25,6 +25,55 @@ function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
 
+const TEAM_AVATARS = {
+  'howmuch': '/images/howmuch.png',
+  'i am megatron': '/images/megatron.png',
+  'moneyball': '/images/moneyball.png',
+  'ocupa e resiste': '/images/ocupa.png',
+  'oldbrady': '/images/oldbrady.png',
+  'patrolao squad': '/images/patrolao.png',
+  'pequers verde': '/images/pequers.png',
+  'peytao da massa': '/images/peytao.png',
+  'rincao settlers': '/images/rincao.png',
+  'h-lera do mahl': '/images/hlera.png',
+}
+
+function getTeamAvatar(name) {
+  return TEAM_AVATARS[normalizeString(name)] || null
+}
+
+function TeamAvatar({ team, size = 'md' }) {
+  const avatar = getTeamAvatar(team)
+
+  const sizeClass =
+    size === 'sm'
+      ? 'h-8 w-8 rounded-lg'
+      : size === 'lg'
+        ? 'h-12 w-12 rounded-xl'
+        : 'h-10 w-10 rounded-xl'
+
+  if (avatar) {
+    return (
+      <img
+        src={avatar}
+        alt={team}
+        className={`${sizeClass} object-cover flex-shrink-0`}
+      />
+    )
+  }
+
+  return (
+    <div
+      className={`${sizeClass} flex flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white`}
+      style={{
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))',
+      }}
+    >
+      {String(team || '').slice(0, 2)}
+    </div>
+  )
+}
+
 async function safeFetch(url) {
   try {
     const res = await fetch(url)
@@ -34,7 +83,7 @@ async function safeFetch(url) {
   } catch { return [] }
 }
 
-function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide }) {
+function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide, team }) {
   const [expanded, setExpanded] = useState(false)
 
   const accents = {
@@ -49,27 +98,57 @@ function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide })
   const a = accents[accent] || accents.slate
 
   const subArr = Array.isArray(sub) ? sub : sub ? [sub] : []
+  const teamArr = Array.isArray(team) ? team.filter(Boolean) : team ? [team] : []
 
   return (
     <div className={`rounded-[24px] border transition-all ${a.border} ${a.bg} ${wide ? 'col-span-2' : ''}`}>
       <div className="p-5 md:p-6">
-        {Icon && (
-          <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl border ${a.icon}`}>
-            <Icon className={`h-5 w-5 ${a.text}`} />
-          </div>
-        )}
+        <div className="mb-4 flex items-start justify-between gap-3">
+          {Icon ? (
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${a.icon}`}>
+              <Icon className={`h-5 w-5 ${a.text}`} />
+            </div>
+          ) : (
+            <div />
+          )}
+
+          {teamArr.length > 0 && (
+            <div className="flex items-center flex-wrap justify-end">
+              {teamArr.map((teamName, i) => (
+                <div
+                  key={`${teamName}-${i}`}
+                  className={i > 0 ? '-ml-2' : ''}
+                >
+                  <TeamAvatar team={teamName} size="md" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
-        <div className={`font-black leading-none ${a.text}`}
-          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(38px, 8vw, 56px)' }}>
+
+        <div
+          className={`font-black leading-none ${a.text}`}
+          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(38px, 8vw, 56px)' }}
+        >
           {value}
         </div>
+
         {subArr.length > 0 && (
           <div className="mt-3 flex flex-col gap-0.5">
             {subArr.map((s, i) => (
-              <div key={i} className="font-black text-white" style={{ fontSize: 'clamp(14px, 3vw, 16px)' }}>{s}</div>
+              <div
+                key={i}
+                className="font-black text-white"
+                style={{ fontSize: 'clamp(14px, 3vw, 16px)' }}
+              >
+                {s}
+              </div>
             ))}
           </div>
         )}
+
         {sub2 && <div className="mt-1 text-xs text-slate-500">{sub2}</div>}
       </div>
 
@@ -84,22 +163,36 @@ function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide })
             </span>
             {expanded ? <ChevronUp className="h-3.5 w-3.5 text-slate-600" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-600" />}
           </button>
+
           {expanded && (
             <div className="border-t border-white/5 px-5 pb-4">
-              {top5.slice(0, 5).map((item, i) => (
-                <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-white/[0.04] last:border-0">
-                  <div className="flex items-start gap-2 min-w-0 flex-1">
-                    <span className={`text-sm font-black flex-shrink-0 w-5 ${i === 0 ? a.text : 'text-slate-600'}`}>{i + 1}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-bold text-white leading-tight">
-                        {Array.isArray(item.label) ? item.label.join(', ') : item.label}
+              {top5.slice(0, 5).map((item, i) => {
+                const labelText = Array.isArray(item.label) ? item.label.join(', ') : item.label
+                const showAvatar = !Array.isArray(item.label) && !String(labelText).includes(' vs ')
+
+                return (
+                  <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-white/[0.04] last:border-0">
+                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                      <span className={`text-sm font-black flex-shrink-0 w-5 ${i === 0 ? a.text : 'text-slate-600'}`}>
+                        {i + 1}
+                      </span>
+
+                      {showAvatar && <TeamAvatar team={labelText} size="sm" />}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-bold text-white leading-tight">
+                          {labelText}
+                        </div>
+                        {item.sub && <div className="text-xs text-slate-500 leading-tight mt-0.5">{item.sub}</div>}
                       </div>
-                      {item.sub && <div className="text-xs text-slate-500 leading-tight mt-0.5">{item.sub}</div>}
                     </div>
+
+                    <span className={`text-base font-black flex-shrink-0 ${i === 0 ? a.text : 'text-slate-400'}`}>
+                      {item.value}
+                    </span>
                   </div>
-                  <span className={`text-base font-black flex-shrink-0 ${i === 0 ? a.text : 'text-slate-400'}`}>{item.value}</span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </>
@@ -924,166 +1017,158 @@ export default function RecordsPage() {
           <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] p-8">
 
             {/* FRANCHISE */}
-            {tab === 'franchise' && (
-              <>
-                <RecordSection title="All-Time Wins & Losses">
-                  <RecordCard label="Most Wins All-Time" value={franchiseRecords.mostWins?.value} sub={franchiseRecords.mostWins?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostWins?.top5} />
-                  <RecordCard label="Most Losses All-Time" value={franchiseRecords.mostLosses?.value} sub={franchiseRecords.mostLosses?.teams} accent="red" icon={TrendingDown} top5={franchiseRecords.mostLosses?.top5} />
-                  <RecordCard label="Best Win % All-Time" value={franchiseRecords.bestWinPct?.value} sub={franchiseRecords.bestWinPct?.teams} accent="cyan" icon={Target} top5={franchiseRecords.bestWinPct?.top5} />
-                  <RecordCard label="Most Points All-Time" value={franchiseRecords.mostPF?.value} sub={franchiseRecords.mostPF?.teams} accent="emerald" icon={Activity} top5={franchiseRecords.mostPF?.top5} />
-                </RecordSection>
-                <RecordSection title="Playoff Dominance">
-                  <RecordCard label="Most Playoff Apps" value={franchiseRecords.mostPoApps?.value} sub={franchiseRecords.mostPoApps?.teams} accent="purple" icon={Star} top5={franchiseRecords.mostPoApps?.top5} />
-                  <RecordCard label="Most Finals Apps" value={franchiseRecords.mostFinals?.value} sub={franchiseRecords.mostFinals?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostFinals?.top5} />
-                  <RecordCard label="Most Titles" value={franchiseRecords.mostTitles?.value} sub={franchiseRecords.mostTitles?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostTitles?.top5} />
-                  <RecordCard label="Most Playoff Wins" value={franchiseRecords.mostPoW?.value} sub={franchiseRecords.mostPoW?.teams} accent="cyan" icon={TrendingUp} top5={franchiseRecords.mostPoW?.top5} />
-                </RecordSection>
-                <RecordSection title="10-Win Seasons">
-                  <RecordCard label="Most 10W Seasons (RS)" value={franchiseRecords.topTenRS?.value} sub={franchiseRecords.topTenRS?.teams} accent="emerald" icon={Star} top5={franchiseRecords.topTenRS?.top5} />
-                  <RecordCard label="Most 10W Seasons (Total)" value={franchiseRecords.topTenTot?.value} sub={franchiseRecords.topTenTot?.teams} accent="cyan" icon={Star} top5={franchiseRecords.topTenTot?.top5} />
-                </RecordSection>
-                <RecordSection title="Power Rankings — Most Weeks at #1">
-                  <RecordCard label="All-Time" value={franchiseRecords.pr1All?.value} sub={franchiseRecords.pr1All?.teams} sub2="All seasons" accent="gold" icon={Zap} top5={franchiseRecords.pr1All?.top5} />
-                  <RecordCard label="Since 2021" value={franchiseRecords.pr1from21?.value} sub={franchiseRecords.pr1from21?.teams} sub2="From 2021 on" accent="orange" icon={Zap} top5={franchiseRecords.pr1from21?.top5} />
-                  <RecordCard label="Since 2023" value={franchiseRecords.pr1from23?.value} sub={franchiseRecords.pr1from23?.teams} sub2="New era (2023+)" accent="cyan" icon={Zap} top5={franchiseRecords.pr1from23?.top5} />
-                </RecordSection>
-              </>
-            )}
+{tab === 'franchise' && (
+  <>
+    <RecordSection title="All-Time Wins & Losses">
+      <RecordCard label="Most Wins All-Time" value={franchiseRecords.mostWins?.value} sub={franchiseRecords.mostWins?.teams} team={franchiseRecords.mostWins?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostWins?.top5} />
+      <RecordCard label="Most Losses All-Time" value={franchiseRecords.mostLosses?.value} sub={franchiseRecords.mostLosses?.teams} team={franchiseRecords.mostLosses?.teams} accent="red" icon={TrendingDown} top5={franchiseRecords.mostLosses?.top5} />
+      <RecordCard label="Best Win % All-Time" value={franchiseRecords.bestWinPct?.value} sub={franchiseRecords.bestWinPct?.teams} team={franchiseRecords.bestWinPct?.teams} accent="cyan" icon={Target} top5={franchiseRecords.bestWinPct?.top5} />
+      <RecordCard label="Most Points All-Time" value={franchiseRecords.mostPF?.value} sub={franchiseRecords.mostPF?.teams} team={franchiseRecords.mostPF?.teams} accent="emerald" icon={Activity} top5={franchiseRecords.mostPF?.top5} />
+    </RecordSection>
 
-            {/* STREAKS */}
-            {tab === 'streaks' && (
-              <>
-                <RecordSection title="All-Time Win Streaks">
-                  <RecordCard label="Best Winning Streak (Total)" value={streakRecords.bestWTotal?.value} sub={streakRecords.bestWTotal?.teams} accent="gold" icon={Flame} top5={streakRecords.bestWTotal?.top5} />
-                  <RecordCard label="Best Winning Streak (Reg Season)" value={streakRecords.bestWRS?.value} sub={streakRecords.bestWRS?.teams} accent="emerald" icon={Flame} top5={streakRecords.bestWRS?.top5} />
-                </RecordSection>
-                <RecordSection title="All-Time Loss Streaks">
-                  <RecordCard label="Worst Losing Streak (Total)" value={streakRecords.bestLTotal?.value} sub={streakRecords.bestLTotal?.teams} accent="red" icon={TrendingDown} top5={streakRecords.bestLTotal?.top5} />
-                  <RecordCard label="Worst Losing Streak (Reg Season)" value={streakRecords.bestLRS?.value} sub={streakRecords.bestLRS?.teams} accent="orange" icon={TrendingDown} top5={streakRecords.bestLRS?.top5} />
-                </RecordSection>
-                <RecordSection title="Single Season Streaks">
-                  <RecordCard label="Best Win Streak in a Single Season" value={streakRecords.bestSeasonW?.value} sub={streakRecords.bestSeasonW?.teams} accent="gold" icon={Flame} top5={streakRecords.bestSeasonW?.top5} />
-                  <RecordCard label="Worst Loss Streak in a Single Season" value={streakRecords.bestSeasonL?.value} sub={streakRecords.bestSeasonL?.teams} accent="red" icon={TrendingDown} top5={streakRecords.bestSeasonL?.top5} />
-                </RecordSection>
-              </>
-            )}
+    <RecordSection title="Playoff Dominance">
+      <RecordCard label="Most Playoff Apps" value={franchiseRecords.mostPoApps?.value} sub={franchiseRecords.mostPoApps?.teams} team={franchiseRecords.mostPoApps?.teams} accent="purple" icon={Star} top5={franchiseRecords.mostPoApps?.top5} />
+      <RecordCard label="Most Finals Apps" value={franchiseRecords.mostFinals?.value} sub={franchiseRecords.mostFinals?.teams} team={franchiseRecords.mostFinals?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostFinals?.top5} />
+      <RecordCard label="Most Titles" value={franchiseRecords.mostTitles?.value} sub={franchiseRecords.mostTitles?.teams} team={franchiseRecords.mostTitles?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostTitles?.top5} />
+      <RecordCard label="Most Playoff Wins" value={franchiseRecords.mostPoW?.value} sub={franchiseRecords.mostPoW?.teams} team={franchiseRecords.mostPoW?.teams} accent="cyan" icon={TrendingUp} top5={franchiseRecords.mostPoW?.top5} />
+    </RecordSection>
 
-            {/* GAMES */}
-            {tab === 'games' && (
-              <>
-                <RecordSection title="Highest Scores — Including Double Weeks">
-                  <RecordCard label="All-Time" value={gameRecords.highAll?.value} sub={gameRecords.highAll?.teams} sub2={gameRecords.highAll?.sub2} accent="gold" icon={Flame} top5={gameRecords.highAll?.top5} />
-                  <RecordCard label="Reg Season" value={gameRecords.highReg?.value} sub={gameRecords.highReg?.teams} sub2={gameRecords.highReg?.sub2} accent="cyan" icon={Flame} top5={gameRecords.highReg?.top5} />
-                  <RecordCard label="Playoffs" value={gameRecords.highPO?.value} sub={gameRecords.highPO?.teams} sub2={gameRecords.highPO?.sub2} accent="purple" icon={Flame} top5={gameRecords.highPO?.top5} />
-                </RecordSection>
-                <RecordSection title="Highest Scores — Single Weeks Only">
-                  <RecordCard label="All-Time" value={gameRecords.highNoDouble?.value} sub={gameRecords.highNoDouble?.teams} sub2={gameRecords.highNoDouble?.sub2} accent="gold" icon={Flame} top5={gameRecords.highNoDouble?.top5} />
-                  <RecordCard label="Reg Season" value={gameRecords.highRegNoDb?.value} sub={gameRecords.highRegNoDb?.teams} sub2={gameRecords.highRegNoDb?.sub2} accent="cyan" icon={Flame} top5={gameRecords.highRegNoDb?.top5} />
-                  <RecordCard label="Playoffs" value={gameRecords.highPONoDb?.value} sub={gameRecords.highPONoDb?.teams} sub2={gameRecords.highPONoDb?.sub2} accent="purple" icon={Flame} top5={gameRecords.highPONoDb?.top5} />
-                  <RecordCard label="Most Games Over 200 pts" value={gameRecords.most200?.value} sub={gameRecords.most200?.teams} sub2="Single weeks only · all stages" accent="orange" icon={Zap} top5={gameRecords.most200?.top5} />
-                </RecordSection>
-                <RecordSection title="Lowest Scores">
-                  <RecordCard label="Lowest Score (inc. doubles)" value={gameRecords.lowAll?.value} sub={gameRecords.lowAll?.teams} sub2={gameRecords.lowAll?.sub2} accent="red" icon={TrendingDown} top5={gameRecords.lowAll?.top5} />
-                  <RecordCard label="Lowest Score (single weeks only)" value={gameRecords.lowNoDouble?.value} sub={gameRecords.lowNoDouble?.teams} sub2={gameRecords.lowNoDouble?.sub2} accent="orange" icon={TrendingDown} top5={gameRecords.lowNoDouble?.top5} />
-                </RecordSection>
-                <RecordSection title="Notable Games">
-                  <RecordCard label="Closest Game (inc. doubles)" value={gameRecords.closestAll?.value} sub={gameRecords.closestAll?.teams} sub2={gameRecords.closestAll?.sub2} accent="emerald" icon={Target} top5={gameRecords.closestAll?.top5} />
-                  <RecordCard label="Closest Game (single weeks only)" value={gameRecords.closestNoDouble?.value} sub={gameRecords.closestNoDouble?.teams} sub2={gameRecords.closestNoDouble?.sub2} accent="cyan" icon={Target} top5={gameRecords.closestNoDouble?.top5} />
-                  <RecordCard label="Biggest Win (inc. doubles)" value={gameRecords.biggestAll?.value} sub={gameRecords.biggestAll?.teams} sub2={gameRecords.biggestAll?.sub2} accent="gold" icon={Zap} top5={gameRecords.biggestAll?.top5} />
-                  <RecordCard label="Biggest Win (single weeks only)" value={gameRecords.biggestNoDouble?.value} sub={gameRecords.biggestNoDouble?.teams} sub2={gameRecords.biggestNoDouble?.sub2} accent="orange" icon={Zap} top5={gameRecords.biggestNoDouble?.top5} />
-                </RecordSection>
-              </>
-            )}
+    <RecordSection title="10-Win Seasons">
+      <RecordCard label="Most 10W Seasons (RS)" value={franchiseRecords.topTenRS?.value} sub={franchiseRecords.topTenRS?.teams} team={franchiseRecords.topTenRS?.teams} accent="emerald" icon={Star} top5={franchiseRecords.topTenRS?.top5} />
+      <RecordCard label="Most 10W Seasons (Total)" value={franchiseRecords.topTenTot?.value} sub={franchiseRecords.topTenTot?.teams} team={franchiseRecords.topTenTot?.teams} accent="cyan" icon={Star} top5={franchiseRecords.topTenTot?.top5} />
+    </RecordSection>
 
-            {/* SEASONS */}
-            {tab === 'seasons' && (
-              <>
-                <RecordSection title="Best & Worst Records">
-                  <RecordCard label="Best RS Record" value={`${parseNumber(seasonRecords.byWin?.value?.RS_W)}–${parseNumber(seasonRecords.byWin?.value?.RS_L)}`} sub={seasonRecords.byWin?.teams} accent="gold" icon={Trophy} top5={seasonRecords.byWin?.top5?.map(r => ({ ...r, value: `${r.value}W` }))} />
-                  <RecordCard label="Worst RS Record" value={`${parseNumber(seasonRecords.byLoss?.value?.RS_W)}–${parseNumber(seasonRecords.byLoss?.value?.RS_L)}`} sub={seasonRecords.byLoss?.teams} accent="red" icon={TrendingDown} top5={seasonRecords.byLoss?.top5?.map(r => ({ ...r, value: `${r.value}L` }))} />
-                  <RecordCard label="Best Overall Record" value={`${parseNumber(seasonRecords.byTotW?.value?.W)}–${parseNumber(seasonRecords.byTotW?.value?.L)}`} sub={seasonRecords.byTotW?.teams} accent="cyan" icon={Star} top5={seasonRecords.byTotW?.top5?.map(r => ({ ...r, value: `${r.value}W` }))} />
-                  <RecordCard label="Worst Overall Record" value={`${parseNumber(seasonRecords.byTotL?.value?.W)}–${parseNumber(seasonRecords.byTotL?.value?.L)}`} sub={seasonRecords.byTotL?.teams} accent="orange" icon={TrendingDown} top5={seasonRecords.byTotL?.top5?.map(r => ({ ...r, value: `${r.value}L` }))} />
-                </RecordSection>
-                <RecordSection title="Most Points in a Season (RS)">
-                  <RecordCard label="All-Time" value={Math.round(parseNumber(seasonRecords.byPF?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byPF?.teams} accent="gold" icon={Flame} top5={seasonRecords.byPF?.top5} />
-                  <RecordCard label="Since 2021" value={Math.round(parseNumber(seasonRecords.byPF21?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byPF21?.teams} accent="cyan" icon={Flame} top5={seasonRecords.byPF21?.top5} />
-                  <RecordCard label="Since 2023" value={Math.round(parseNumber(seasonRecords.byPF23?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byPF23?.teams} accent="emerald" icon={Flame} top5={seasonRecords.byPF23?.top5} />
-                </RecordSection>
-                <RecordSection title="Fewest Points in a Season (RS)">
-                  <RecordCard label="All-Time" value={Math.round(parseNumber(seasonRecords.byLowPF?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byLowPF?.teams} accent="red" icon={TrendingDown} top5={seasonRecords.byLowPF?.top5} />
-                  <RecordCard label="Since 2021" value={Math.round(parseNumber(seasonRecords.byLow21?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byLow21?.teams} accent="orange" icon={TrendingDown} top5={seasonRecords.byLow21?.top5} />
-                  <RecordCard label="Since 2023" value={Math.round(parseNumber(seasonRecords.byLow23?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byLow23?.teams} accent="purple" icon={TrendingDown} top5={seasonRecords.byLow23?.top5} />
-                </RecordSection>
-                <RecordSection title="Best Avg Points/Week in a Season (RS)">
-                  <RecordCard label="All-Time" value={seasonRecords.avgHigh?.avgVal?.toFixed(2)} sub={seasonRecords.avgHigh?.teams} accent="gold" icon={Activity} top5={seasonRecords.avgHigh?.top5} />
-                  <RecordCard label="Since 2021" value={seasonRecords.avgHigh21?.avgVal?.toFixed(2)} sub={seasonRecords.avgHigh21?.teams} accent="cyan" icon={Activity} top5={seasonRecords.avgHigh21?.top5} />
-                  <RecordCard label="Since 2023" value={seasonRecords.avgHigh23?.avgVal?.toFixed(2)} sub={seasonRecords.avgHigh23?.teams} accent="emerald" icon={Activity} top5={seasonRecords.avgHigh23?.top5} />
-                </RecordSection>
-                <RecordSection title="Fewest Avg Points/Week in a Season (RS)">
-                  <RecordCard label="All-Time" value={seasonRecords.avgLow?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow?.teams} accent="red" icon={TrendingDown} top5={seasonRecords.avgLow?.top5} />
-                  <RecordCard label="Since 2021" value={seasonRecords.avgLow21?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow21?.teams} accent="orange" icon={TrendingDown} top5={seasonRecords.avgLow21?.top5} />
-                  <RecordCard label="Since 2023" value={seasonRecords.avgLow23?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow23?.teams} accent="purple" icon={TrendingDown} top5={seasonRecords.avgLow23?.top5} />
-                </RecordSection>
-              </>
-            )}
+    <RecordSection title="Power Rankings — Most Weeks at #1">
+      <RecordCard label="All-Time" value={franchiseRecords.pr1All?.value} sub={franchiseRecords.pr1All?.teams} team={franchiseRecords.pr1All?.teams} sub2="All seasons" accent="gold" icon={Zap} top5={franchiseRecords.pr1All?.top5} />
+      <RecordCard label="Since 2021" value={franchiseRecords.pr1from21?.value} sub={franchiseRecords.pr1from21?.teams} team={franchiseRecords.pr1from21?.teams} sub2="From 2021 on" accent="orange" icon={Zap} top5={franchiseRecords.pr1from21?.top5} />
+      <RecordCard label="Since 2023" value={franchiseRecords.pr1from23?.value} sub={franchiseRecords.pr1from23?.teams} team={franchiseRecords.pr1from23?.teams} sub2="New era (2023+)" accent="cyan" icon={Zap} top5={franchiseRecords.pr1from23?.top5} />
+    </RecordSection>
+  </>
+)}
 
-            {/* RIVALRY */}
-            {tab === 'rivalry' && (
-              <>
-                <RecordSection title="Most Played">
-                  <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} wide />
-                </RecordSection>
-                <RecordSection title="H2H Streaks">
-                  <RecordCard label="Longest H2H Winning Streak" value={rivalryRecords.bestH2HStreak?.value} sub={rivalryRecords.bestH2HStreak?.teams} accent="gold" icon={Flame} top5={rivalryRecords.bestH2HStreak?.top5} wide />
-                </RecordSection>
-                <RecordSection title="Dominance & Balance">
-                  <RecordCard label="Most Balanced Rivalry" value={rivalryRecords.mostBalanced?.value} sub={rivalryRecords.mostBalanced?.teams} accent="emerald" icon={Target} top5={rivalryRecords.mostBalanced?.top5} />
-                  <RecordCard label="Highest Avg Margin H2H" value={rivalryRecords.highestMargin?.value} sub={rivalryRecords.highestMargin?.teams} accent="red" icon={TrendingUp} top5={rivalryRecords.highestMargin?.top5} />
-                  <RecordCard label="Closest Avg Margin H2H" value={rivalryRecords.lowestMargin?.value} sub={rivalryRecords.lowestMargin?.teams} accent="cyan" icon={Target} top5={rivalryRecords.lowestMargin?.top5} />
-                </RecordSection>
-              </>
-            )}
+{/* STREAKS */}
+{tab === 'streaks' && (
+  <>
+    <RecordSection title="All-Time Win Streaks">
+      <RecordCard label="Best Winning Streak (Total)" value={streakRecords.bestWTotal?.value} sub={streakRecords.bestWTotal?.teams} team={streakRecords.bestWTotal?.teams} accent="gold" icon={Flame} top5={streakRecords.bestWTotal?.top5} />
+      <RecordCard label="Best Winning Streak (Reg Season)" value={streakRecords.bestWRS?.value} sub={streakRecords.bestWRS?.teams} team={streakRecords.bestWRS?.teams} accent="emerald" icon={Flame} top5={streakRecords.bestWRS?.top5} />
+    </RecordSection>
 
-            {/* GLORY */}
-            {tab === 'glory' && (
-              <>
-                <RecordSection title="Championship Leaders">
-                  <RecordCard label="Most Titles" value={gloryRecords.mostTitles?.value} sub={gloryRecords.mostTitles?.teams} accent="gold" icon={Trophy} top5={gloryRecords.mostTitles?.top5} />
-                  <RecordCard label="Most Finals Apps" value={gloryRecords.mostFinals?.value} sub={gloryRecords.mostFinals?.teams} accent="purple" icon={Star} top5={gloryRecords.mostFinals?.top5} />
-                </RecordSection>
+    <RecordSection title="All-Time Loss Streaks">
+      <RecordCard label="Worst Losing Streak (Total)" value={streakRecords.bestLTotal?.value} sub={streakRecords.bestLTotal?.teams} team={streakRecords.bestLTotal?.teams} accent="red" icon={TrendingDown} top5={streakRecords.bestLTotal?.top5} />
+      <RecordCard label="Worst Losing Streak (Reg Season)" value={streakRecords.bestLRS?.value} sub={streakRecords.bestLRS?.teams} team={streakRecords.bestLRS?.teams} accent="orange" icon={TrendingDown} top5={streakRecords.bestLRS?.top5} />
+    </RecordSection>
 
-                <div className="mb-4 text-xs font-black uppercase tracking-[0.3em] text-slate-500">Hall of Champions</div>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 mb-10">
-                  {gloryRecords.champions?.map((r, i) => (
-                    <div key={i} className="rounded-[20px] border border-yellow-400/20 bg-yellow-400/5 p-4">
-                      <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400">🏆 {String(r?.Season || '').trim()}</div>
-                      <div className="font-black text-white leading-tight" style={{ fontSize: 'clamp(14px, 2vw, 18px)' }}>{String(r?.Team || '').trim()}</div>
-                      <div className="mt-1 text-xs text-slate-500">{parseNumber(r?.W)}–{parseNumber(r?.L)} overall</div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+    <RecordSection title="Single Season Streaks">
+      <RecordCard label="Best Win Streak in a Single Season" value={streakRecords.bestSeasonW?.value} sub={streakRecords.bestSeasonW?.teams} team={streakRecords.bestSeasonW?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="gold" icon={Flame} top5={streakRecords.bestSeasonW?.top5} />
+      <RecordCard label="Worst Loss Streak in a Single Season" value={streakRecords.bestSeasonL?.value} sub={streakRecords.bestSeasonL?.teams} team={streakRecords.bestSeasonL?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="red" icon={TrendingDown} top5={streakRecords.bestSeasonL?.top5} />
+    </RecordSection>
+  </>
+)}
 
-            {/* SHAME */}
-            {tab === 'shame' && (
-              <>
-                <RecordSection title="Unicorn Leaders">
-                  <RecordCard label="Most Unicorn Years 🦄" value={gloryRecords.mostUnicorn?.value} sub={gloryRecords.mostUnicorn?.teams} accent="slate" icon={Skull} top5={gloryRecords.mostUnicorn?.top5} />
-                </RecordSection>
+{/* GAMES */}
+{tab === 'games' && (
+  <>
+    <RecordSection title="Highest Scores — Including Double Weeks">
+      <RecordCard label="All-Time" value={gameRecords.highAll?.value} sub={gameRecords.highAll?.teams} team={gameRecords.highAll?.teams} sub2={gameRecords.highAll?.sub2} accent="gold" icon={Flame} top5={gameRecords.highAll?.top5} />
+      <RecordCard label="Reg Season" value={gameRecords.highReg?.value} sub={gameRecords.highReg?.teams} team={gameRecords.highReg?.teams} sub2={gameRecords.highReg?.sub2} accent="cyan" icon={Flame} top5={gameRecords.highReg?.top5} />
+      <RecordCard label="Playoffs" value={gameRecords.highPO?.value} sub={gameRecords.highPO?.teams} team={gameRecords.highPO?.teams} sub2={gameRecords.highPO?.sub2} accent="purple" icon={Flame} top5={gameRecords.highPO?.top5} />
+    </RecordSection>
 
-                <div className="mb-4 text-xs font-black uppercase tracking-[0.3em] text-slate-500">Hall of Unicorns 🦄</div>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-                  {gloryRecords.unicorns?.map((r, i) => (
-                    <div key={i} className="rounded-[20px] border border-white/5 bg-white/[0.02] p-4">
-                      <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">🦄 {String(r?.Season || '').trim()}</div>
-                      <div className="font-black text-slate-400 leading-tight" style={{ fontSize: 'clamp(14px, 2vw, 18px)' }}>{String(r?.Team || '').trim()}</div>
-                      <div className="mt-1 text-xs text-slate-600">{parseNumber(r?.RS_W)}–{parseNumber(r?.RS_L)} reg season</div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+    <RecordSection title="Highest Scores — Single Weeks Only">
+      <RecordCard label="All-Time" value={gameRecords.highNoDouble?.value} sub={gameRecords.highNoDouble?.teams} team={gameRecords.highNoDouble?.teams} sub2={gameRecords.highNoDouble?.sub2} accent="gold" icon={Flame} top5={gameRecords.highNoDouble?.top5} />
+      <RecordCard label="Reg Season" value={gameRecords.highRegNoDb?.value} sub={gameRecords.highRegNoDb?.teams} team={gameRecords.highRegNoDb?.teams} sub2={gameRecords.highRegNoDb?.sub2} accent="cyan" icon={Flame} top5={gameRecords.highRegNoDb?.top5} />
+      <RecordCard label="Playoffs" value={gameRecords.highPONoDb?.value} sub={gameRecords.highPONoDb?.teams} team={gameRecords.highPONoDb?.teams} sub2={gameRecords.highPONoDb?.sub2} accent="purple" icon={Flame} top5={gameRecords.highPONoDb?.top5} />
+      <RecordCard label="Most Games Over 200 pts" value={gameRecords.most200?.value} sub={gameRecords.most200?.teams} team={gameRecords.most200?.teams} sub2="Single weeks only · all stages" accent="orange" icon={Zap} top5={gameRecords.most200?.top5} />
+    </RecordSection>
+
+    <RecordSection title="Lowest Scores">
+      <RecordCard label="Lowest Score (inc. doubles)" value={gameRecords.lowAll?.value} sub={gameRecords.lowAll?.teams} team={gameRecords.lowAll?.teams} sub2={gameRecords.lowAll?.sub2} accent="red" icon={TrendingDown} top5={gameRecords.lowAll?.top5} />
+      <RecordCard label="Lowest Score (single weeks only)" value={gameRecords.lowNoDouble?.value} sub={gameRecords.lowNoDouble?.teams} team={gameRecords.lowNoDouble?.teams} sub2={gameRecords.lowNoDouble?.sub2} accent="orange" icon={TrendingDown} top5={gameRecords.lowNoDouble?.top5} />
+    </RecordSection>
+
+    <RecordSection title="Notable Games">
+      <RecordCard label="Closest Game (inc. doubles)" value={gameRecords.closestAll?.value} sub={gameRecords.closestAll?.teams} sub2={gameRecords.closestAll?.sub2} accent="emerald" icon={Target} top5={gameRecords.closestAll?.top5} />
+      <RecordCard label="Closest Game (single weeks only)" value={gameRecords.closestNoDouble?.value} sub={gameRecords.closestNoDouble?.teams} sub2={gameRecords.closestNoDouble?.sub2} accent="cyan" icon={Target} top5={gameRecords.closestNoDouble?.top5} />
+      <RecordCard label="Biggest Win (inc. doubles)" value={gameRecords.biggestAll?.value} sub={gameRecords.biggestAll?.teams} sub2={gameRecords.biggestAll?.sub2} accent="gold" icon={Zap} top5={gameRecords.biggestAll?.top5} />
+      <RecordCard label="Biggest Win (single weeks only)" value={gameRecords.biggestNoDouble?.value} sub={gameRecords.biggestNoDouble?.teams} sub2={gameRecords.biggestNoDouble?.sub2} accent="orange" icon={Zap} top5={gameRecords.biggestNoDouble?.top5} />
+    </RecordSection>
+  </>
+)}
+
+{/* SEASONS */}
+{tab === 'seasons' && (
+  <>
+    <RecordSection title="Best & Worst Records">
+      <RecordCard label="Best RS Record" value={`${parseNumber(seasonRecords.byWin?.value?.RS_W)}–${parseNumber(seasonRecords.byWin?.value?.RS_L)}`} sub={seasonRecords.byWin?.teams} team={seasonRecords.byWin?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="gold" icon={Trophy} top5={seasonRecords.byWin?.top5?.map(r => ({ ...r, value: `${r.value}W` }))} />
+      <RecordCard label="Worst RS Record" value={`${parseNumber(seasonRecords.byLoss?.value?.RS_W)}–${parseNumber(seasonRecords.byLoss?.value?.RS_L)}`} sub={seasonRecords.byLoss?.teams} team={seasonRecords.byLoss?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="red" icon={TrendingDown} top5={seasonRecords.byLoss?.top5?.map(r => ({ ...r, value: `${r.value}L` }))} />
+      <RecordCard label="Best Overall Record" value={`${parseNumber(seasonRecords.byTotW?.value?.W)}–${parseNumber(seasonRecords.byTotW?.value?.L)}`} sub={seasonRecords.byTotW?.teams} team={seasonRecords.byTotW?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="cyan" icon={Star} top5={seasonRecords.byTotW?.top5?.map(r => ({ ...r, value: `${r.value}W` }))} />
+      <RecordCard label="Worst Overall Record" value={`${parseNumber(seasonRecords.byTotL?.value?.W)}–${parseNumber(seasonRecords.byTotL?.value?.L)}`} sub={seasonRecords.byTotL?.teams} team={seasonRecords.byTotL?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="orange" icon={TrendingDown} top5={seasonRecords.byTotL?.top5?.map(r => ({ ...r, value: `${r.value}L` }))} />
+    </RecordSection>
+
+    <RecordSection title="Most Points in a Season (RS)">
+      <RecordCard label="All-Time" value={Math.round(parseNumber(seasonRecords.byPF?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byPF?.teams} team={seasonRecords.byPF?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="gold" icon={Flame} top5={seasonRecords.byPF?.top5} />
+      <RecordCard label="Since 2021" value={Math.round(parseNumber(seasonRecords.byPF21?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byPF21?.teams} team={seasonRecords.byPF21?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="cyan" icon={Flame} top5={seasonRecords.byPF21?.top5} />
+      <RecordCard label="Since 2023" value={Math.round(parseNumber(seasonRecords.byPF23?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byPF23?.teams} team={seasonRecords.byPF23?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="emerald" icon={Flame} top5={seasonRecords.byPF23?.top5} />
+    </RecordSection>
+
+    <RecordSection title="Fewest Points in a Season (RS)">
+      <RecordCard label="All-Time" value={Math.round(parseNumber(seasonRecords.byLowPF?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byLowPF?.teams} team={seasonRecords.byLowPF?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="red" icon={TrendingDown} top5={seasonRecords.byLowPF?.top5} />
+      <RecordCard label="Since 2021" value={Math.round(parseNumber(seasonRecords.byLow21?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byLow21?.teams} team={seasonRecords.byLow21?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="orange" icon={TrendingDown} top5={seasonRecords.byLow21?.top5} />
+      <RecordCard label="Since 2023" value={Math.round(parseNumber(seasonRecords.byLow23?.value?.RS_PF)).toLocaleString()} sub={seasonRecords.byLow23?.teams} team={seasonRecords.byLow23?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="purple" icon={TrendingDown} top5={seasonRecords.byLow23?.top5} />
+    </RecordSection>
+
+    <RecordSection title="Best Avg Points/Week in a Season (RS)">
+      <RecordCard label="All-Time" value={seasonRecords.avgHigh?.avgVal?.toFixed(2)} sub={seasonRecords.avgHigh?.teams} team={seasonRecords.avgHigh?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="gold" icon={Activity} top5={seasonRecords.avgHigh?.top5} />
+      <RecordCard label="Since 2021" value={seasonRecords.avgHigh21?.avgVal?.toFixed(2)} sub={seasonRecords.avgHigh21?.teams} team={seasonRecords.avgHigh21?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="cyan" icon={Activity} top5={seasonRecords.avgHigh21?.top5} />
+      <RecordCard label="Since 2023" value={seasonRecords.avgHigh23?.avgVal?.toFixed(2)} sub={seasonRecords.avgHigh23?.teams} team={seasonRecords.avgHigh23?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="emerald" icon={Activity} top5={seasonRecords.avgHigh23?.top5} />
+    </RecordSection>
+
+    <RecordSection title="Fewest Avg Points/Week in a Season (RS)">
+      <RecordCard label="All-Time" value={seasonRecords.avgLow?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow?.teams} team={seasonRecords.avgLow?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="red" icon={TrendingDown} top5={seasonRecords.avgLow?.top5} />
+      <RecordCard label="Since 2021" value={seasonRecords.avgLow21?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow21?.teams} team={seasonRecords.avgLow21?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="orange" icon={TrendingDown} top5={seasonRecords.avgLow21?.top5} />
+      <RecordCard label="Since 2023" value={seasonRecords.avgLow23?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow23?.teams} team={seasonRecords.avgLow23?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="purple" icon={TrendingDown} top5={seasonRecords.avgLow23?.top5} />
+    </RecordSection>
+  </>
+)}
+
+{/* RIVALRY */}
+{tab === 'rivalry' && (
+  <>
+    <RecordSection title="Most Played">
+      <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} wide />
+    </RecordSection>
+
+    <RecordSection title="H2H Streaks">
+      <RecordCard label="Longest H2H Winning Streak" value={rivalryRecords.bestH2HStreak?.value} sub={rivalryRecords.bestH2HStreak?.teams} accent="gold" icon={Flame} top5={rivalryRecords.bestH2HStreak?.top5} wide />
+    </RecordSection>
+
+    <RecordSection title="Dominance & Balance">
+      <RecordCard label="Most Balanced Rivalry" value={rivalryRecords.mostBalanced?.value} sub={rivalryRecords.mostBalanced?.teams} accent="emerald" icon={Target} top5={rivalryRecords.mostBalanced?.top5} />
+      <RecordCard label="Highest Avg Margin H2H" value={rivalryRecords.highestMargin?.value} sub={rivalryRecords.highestMargin?.teams} accent="red" icon={TrendingUp} top5={rivalryRecords.highestMargin?.top5} />
+      <RecordCard label="Closest Avg Margin H2H" value={rivalryRecords.lowestMargin?.value} sub={rivalryRecords.lowestMargin?.teams} accent="cyan" icon={Target} top5={rivalryRecords.lowestMargin?.top5} />
+    </RecordSection>
+  </>
+)}
+
+{/* GLORY */}
+{tab === 'glory' && (
+  <>
+    <RecordSection title="Championship Leaders">
+      <RecordCard label="Most Titles" value={gloryRecords.mostTitles?.value} sub={gloryRecords.mostTitles?.teams} team={gloryRecords.mostTitles?.teams} accent="gold" icon={Trophy} top5={gloryRecords.mostTitles?.top5} />
+      <RecordCard label="Most Finals Apps" value={gloryRecords.mostFinals?.value} sub={gloryRecords.mostFinals?.teams} team={gloryRecords.mostFinals?.teams} accent="purple" icon={Star} top5={gloryRecords.mostFinals?.top5} />
+    </RecordSection>
+  </>
+)}
+
+{/* SHAME */}
+{tab === 'shame' && (
+  <>
+    <RecordSection title="Unicorn Leaders">
+      <RecordCard label="Most Unicorn Years 🦄" value={gloryRecords.mostUnicorn?.value} sub={gloryRecords.mostUnicorn?.teams} team={gloryRecords.mostUnicorn?.teams} accent="slate" icon={Skull} top5={gloryRecords.mostUnicorn?.top5} />
+    </RecordSection>
+  </>
+)}
           </div>
         )}
       </section>
