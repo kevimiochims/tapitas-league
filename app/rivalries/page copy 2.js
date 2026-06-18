@@ -6,9 +6,7 @@ import { motion } from 'framer-motion'
 import { Bebas_Neue } from 'next/font/google'
 import {
   Activity,
-  ChevronDown,
   Flame,
-  Stars,
   Swords
 } from 'lucide-react'
 import Header from '../components/Header'
@@ -478,10 +476,6 @@ export default function RivalriesPage() {
         }
 
         if (sortBy === 'CLOSEST') {
-          // =====================================================
-          // 1. MENOR DIFERENÇA DE VITÓRIAS
-          // =====================================================
-
           const diffA = Math.abs(
             a.aWins - a.bWins
           )
@@ -494,10 +488,6 @@ export default function RivalriesPage() {
             return diffA - diffB
           }
 
-          // =====================================================
-          // 2. MAIS JOGOS DISPUTADOS
-          // =====================================================
-
           const gamesA =
             a.aWins + a.bWins
 
@@ -507,10 +497,6 @@ export default function RivalriesPage() {
           if (gamesA !== gamesB) {
             return gamesB - gamesA
           }
-
-          // =====================================================
-          // 3. MENOR AVG MARGIN
-          // =====================================================
 
           const marginA = Math.abs(
             parseFloat(a.avgMargin)
@@ -528,7 +514,6 @@ export default function RivalriesPage() {
             heatRank[b.heat] -
             heatRank[a.heat]
 
-          // desempate por jogos
           if (heatDiff !== 0) {
             return heatDiff
           }
@@ -587,7 +572,6 @@ export default function RivalriesPage() {
 
       if (!isMatch) return false
 
-      // chave única da partida
       const key = [
         g.Season,
         g.Week,
@@ -597,7 +581,6 @@ export default function RivalriesPage() {
         .sort()
         .join('|')
 
-      // já existe
       if (seen.has(key)) {
         return false
       }
@@ -652,79 +635,179 @@ export default function RivalriesPage() {
       ? parsedBestB
       : parsedBestA
 
-  const parsedBiggestA = selected
+  const biggestA = selected
     ? parseBiggestWin(selected.biggestA)
     : null
 
-  const parsedBiggestB = selected
+  const biggestB = selected
     ? parseBiggestWin(selected.biggestB)
     : null
-
-  const biggestA = parsedBiggestA
-
-  const biggestB = parsedBiggestB
 
   const titleFont = {
     fontFamily: bebas.style.fontFamily
   }
 
-  const teamAColor =
-    'text-cyan-300'
+  const teamABg = 'bg-cyan-400'
+  const teamBBg = 'bg-purple-400'
 
-  const teamABg =
-    'bg-cyan-400'
+  const TEAM_AVATARS = {
+    'howmuch': '/images/howmuch.png',
+    'i am megatron': '/images/megatron.png',
+    'moneyball': '/images/moneyball.png',
+    'ocupa e resiste': '/images/ocupa.png',
+    'oldbrady': '/images/oldbrady.png',
+    'patrolao squad': '/images/patrolao.png',
+    'pequers verde': '/images/pequers.png',
+    'peytao da massa': '/images/peytao.png',
+    'rincao settlers': '/images/rincao.png',
+    'h-lera do mahl': '/images/hlera.png',
+  }
+  const getTeamAvatar = (name) =>
+    TEAM_AVATARS[normalizeString(name)] || null
 
-  const teamAAccent =
-    'border-cyan-400/20 bg-cyan-400/10'
+  /* =====================================================
+  DETAIL — stat rows (padrão Spotlight)
+  ===================================================== */
 
-  const teamBColor =
-    'text-purple-300'
+  const wA = selected?.aWins ?? 0
+  const wB = selected?.bWins ?? 0
+  const aLeads = wA > wB
+  const bLeads = wB > wA
 
-  const teamBBg =
-    'bg-purple-400'
+  // streak por lado — lado que tem a streak usa o resultado real, lado oposto recebe o inverso
+  const streakTeamIsA = selected
+    ? normalizeString(currentStreak?.team || '') === normalizeString(selected.teamA)
+    : false
 
-  const teamBAccent =
-    'border-purple-400/20 bg-purple-400/10'
+  const streakResult = currentStreak?.result ?? ''
+  const streakCount = currentStreak?.count ?? ''
+  const oppositeResult = streakResult.toUpperCase() === 'W' ? 'L' : 'W'
 
-  const streakCount = parseInt(
-    currentStreak?.count || 0
-  )
+  const leftStreak = currentStreak
+    ? streakTeamIsA
+      ? `${streakResult}${streakCount}`
+      : `${oppositeResult}${streakCount}`
+    : '—'
+  const rightStreak = currentStreak
+    ? !streakTeamIsA
+      ? `${streakResult}${streakCount}`
+      : `${oppositeResult}${streakCount}`
+    : '—'
 
-  const streakColors =
-    streakCount >= 8
-      ? {
-        border:
-          'border-red-400/30',
-        bg: 'bg-red-400/10',
-        text: 'text-red-300',
-        glow: 'shadow-red-500/20'
-      }
-      : streakCount >= 5
-        ? {
-          border:
-            'border-orange-400/30',
-          bg: 'bg-orange-400/10',
-          text: 'text-orange-300',
-          glow:
-            'shadow-orange-500/20'
-        }
-        : streakCount >= 3
-          ? {
-            border:
-              'border-yellow-400/30',
-            bg: 'bg-yellow-400/10',
-            text: 'text-yellow-300',
-            glow:
-              'shadow-yellow-500/20'
-          }
-          : {
-            border:
-              'border-cyan-400/20',
-            bg: 'bg-cyan-400/10',
-            text: 'text-cyan-300',
-            glow:
-              'shadow-cyan-500/10'
-          }
+  const leftStreakScore =
+    leftStreak === '—' ? null
+      : (leftStreak.startsWith('W') ? 1 : -1) * parseNumber(leftStreak.replace(/[^\d]/g, ''))
+  const rightStreakScore =
+    rightStreak === '—' ? null
+      : (rightStreak.startsWith('W') ? 1 : -1) * parseNumber(rightStreak.replace(/[^\d]/g, ''))
+
+  const leftStreakLead =
+    leftStreakScore !== null && rightStreakScore !== null && leftStreakScore > rightStreakScore
+  const rightStreakLead =
+    leftStreakScore !== null && rightStreakScore !== null && rightStreakScore > leftStreakScore
+
+  // best streak leads
+  const bestStreakLeftScore =
+    bestA?.count ? (String(bestA.result).toUpperCase() === 'W' ? Number(bestA.count) : -Number(bestA.count)) : null
+  const bestStreakRightScore =
+    bestB?.count ? (String(bestB.result).toUpperCase() === 'W' ? Number(bestB.count) : -Number(bestB.count)) : null
+
+  const leftBestStreakLead =
+    bestStreakLeftScore !== null && bestStreakRightScore !== null && bestStreakLeftScore > bestStreakRightScore
+  const rightBestStreakLead =
+    bestStreakLeftScore !== null && bestStreakRightScore !== null && bestStreakRightScore > bestStreakLeftScore
+
+  // avg margin
+  const avgMarginValue = parseNumber(selected?.avgMargin)
+  const hasAvgMargin =
+    selected?.avgMargin !== null &&
+    selected?.avgMargin !== undefined &&
+    String(selected?.avgMargin ?? '').trim() !== ''
+
+  const leftAvgMarginRaw = hasAvgMargin ? avgMarginValue : null
+  const rightAvgMarginRaw = hasAvgMargin ? avgMarginValue * -1 : null
+
+  const leftAvgMargin =
+    leftAvgMarginRaw === null
+      ? '—'
+      : `${leftAvgMarginRaw > 0 ? '+' : leftAvgMarginRaw < 0 ? '' : ''}${leftAvgMarginRaw}`
+  const rightAvgMargin =
+    rightAvgMarginRaw === null
+      ? '—'
+      : `${rightAvgMarginRaw > 0 ? '+' : rightAvgMarginRaw < 0 ? '' : ''}${rightAvgMarginRaw}`
+
+  const leftAvgMarginLead =
+    leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && leftAvgMarginRaw > rightAvgMarginRaw
+  const rightAvgMarginLead =
+    leftAvgMarginRaw !== null && rightAvgMarginRaw !== null && rightAvgMarginRaw > leftAvgMarginRaw
+
+  const formatMarginText = (scoreA, scoreB) => {
+    const a = Number(scoreA)
+    const b = Number(scoreB)
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return ''
+    return `+${Math.abs(a - b).toFixed(1).replace('.', ',')} pts`
+  }
+
+  const formatRangeWithBreak = (text) => {
+    if (!text) return ''
+    const parts = String(text).split(/\s*→\s*/)
+    if (parts.length < 2) return text
+    return (
+      <>
+        <span>{parts[0]}</span>
+        <span className="inline sm:hidden">{' '}→<br /></span>
+        <span className="hidden sm:inline">{' → '}</span>
+        <span>{parts.slice(1).join(' → ')}</span>
+      </>
+    )
+  }
+
+  const statRows = selected ? [
+    {
+      label: 'Biggest Win',
+      left: biggestA ? `${biggestA.scoreA}–${biggestA.scoreB}` : '—',
+      right: biggestB ? `${biggestB.scoreA}–${biggestB.scoreB}` : '—',
+      subLeft: biggestA ? `${biggestA.season} W${biggestA.week} · ${formatMarginText(biggestA.scoreA, biggestA.scoreB)}` : '',
+      subRight: biggestB ? `${biggestB.season} W${biggestB.week} · ${formatMarginText(biggestB.scoreA, biggestB.scoreB)}` : '',
+      leftLead: false,
+      rightLead: false,
+      breakArrow: false,
+      greenMargin: true,
+    },
+    {
+      label: 'Best Streak',
+      left: bestA?.count ? `${bestA.result}${bestA.count}` : '—',
+      right: bestB?.count ? `${bestB.result}${bestB.count}` : '—',
+      subLeft: bestA?.start ? `${bestA.start}${bestA.end ? ` → ${bestA.end}` : ''}` : '',
+      subRight: bestB?.start ? `${bestB.start}${bestB.end ? ` → ${bestB.end}` : ''}` : '',
+      leftLead: leftBestStreakLead,
+      rightLead: rightBestStreakLead,
+      breakArrow: true,
+      greenMargin: false,
+    },
+    {
+      label: 'Current Streak',
+      left: leftStreak,
+      right: rightStreak,
+      subLeft: '',
+      subRight: '',
+      leftLead: leftStreakLead,
+      rightLead: rightStreakLead,
+      breakArrow: false,
+      greenMargin: false,
+    },
+    {
+      label: 'Avg Margin',
+      left: leftAvgMargin,
+      right: rightAvgMargin,
+      subLeft: '',
+      subRight: '',
+      leftLead: leftAvgMarginLead,
+      rightLead: rightAvgMarginLead,
+      breakArrow: false,
+      greenMargin: false,
+    },
+  ] : []
 
   /* =====================================================
 RENDER
@@ -933,184 +1016,219 @@ RENDER
                 ← Voltar
               </button>
 
-              {/* HERO */}
-              <motion.section
+              {/* ── CARD PRINCIPAL — padrão Spotlight ── */}
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]"
+                transition={{ duration: 0.45 }}
+                className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.97),rgba(2,6,23,0.99))] p-3"
               >
-                <div className="absolute inset-0">
-                  <div className="absolute left-[-120px] top-[-120px] h-[360px] w-[360px] rounded-full bg-cyan-400/10 blur-3xl" />
-                  <div className="absolute bottom-[-140px] right-[-100px] h-[360px] w-[360px] rounded-full bg-purple-500/10 blur-3xl" />
+                {/* header do card */}
+                <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3 sm:px-5 sm:pb-1 sm:pt-4">
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                      <Swords className="h-5 w-5 text-rose-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <div
+                        className="truncate uppercase leading-none text-rose-300"
+                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', letterSpacing: '0.06em', fontWeight: 900 }}
+                      >
+                        Historic Rivalry
+                      </div>
+                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                        All-time H2H
+                      </div>
+                    </div>
+                  </div>
+                  <HeatBadge heat={selected.heat} />
                 </div>
 
-                <div className="relative z-10 px-5 py-5 md:px-10 md:py-8">
-                  <div className="mb-5 flex flex-wrap items-center gap-3">
-                    <HeatBadge heat={selected.heat} />
-                    <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
-                      Historic Rivalry
-                    </div>
-                  </div>
+                {/* placar */}
+                <div className="mb-4 px-4 sm:px-5">
+                  <div className="overflow-hidden rounded-[26px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
+                    <div className="flex items-center justify-between gap-4">
 
-                  <div
-                    className="mb-6 leading-[0.82] md:mb-8"
-                    style={{
-                      fontFamily: bebas.style.fontFamily,
-                      fontSize: 'clamp(38px,11vw,110px)'
-                    }}
-                  >
-                    <div>{selected.teamA}</div>
-                    <div className="text-cyan-400">vs</div>
-                    <div>{selected.teamB}</div>
-                  </div>
-
-                  <div className="flex items-end gap-3 overflow-hidden">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">
-                        Overall Record
+                      {/* Time A */}
+                      <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                        {(() => {
+                          const av = getTeamAvatar(selected.teamA)
+                          return av ? (
+                            <img src={av} alt={selected.teamA} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
+                          ) : (
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white" style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}>
+                              {selected.teamA.slice(0, 2).toUpperCase()}
+                            </div>
+                          )
+                        })()}
+                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-cyan-300">
+                          {selected.teamA}
+                        </span>
+                        <span
+                          className="text-[52px] font-black leading-none sm:text-[68px]"
+                          style={{ color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0', fontFamily: '"Bebas Neue", sans-serif' }}
+                        >
+                          {wA}
+                        </span>
                       </div>
-                      <div className="mt-2 flex items-end gap-1 whitespace-nowrap" style={{ flexShrink: 0 }}>
-                        <div className="shrink-0 text-[72px] font-black leading-none sm:text-[110px] md:text-[140px]">
-                          {selected.aWins}
-                        </div>
-                        <div className="shrink-0 pb-2 text-[42px] font-black text-cyan-400 sm:text-[72px] md:pb-5">
-                          —
-                        </div>
-                        <div className="shrink-0 text-[72px] font-black leading-none sm:text-[110px] md:text-[140px]">
-                          {selected.bWins}
-                        </div>
+
+                      {/* centro */}
+                      <div className="flex flex-shrink-0 flex-col items-center gap-1">
+                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">All-Time</div>
+                        <div className="h-px w-6 bg-white/10" />
+                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Record</div>
+                      </div>
+
+                      {/* Time B */}
+                      <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                        {(() => {
+                          const av = getTeamAvatar(selected.teamB)
+                          return av ? (
+                            <img src={av} alt={selected.teamB} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
+                          ) : (
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white" style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}>
+                              {selected.teamB.slice(0, 2).toUpperCase()}
+                            </div>
+                          )
+                        })()}
+                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-purple-300">
+                          {selected.teamB}
+                        </span>
+                        <span
+                          className="text-[52px] font-black leading-none sm:text-[68px]"
+                          style={{ color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0', fontFamily: '"Bebas Neue", sans-serif' }}
+                        >
+                          {wB}
+                        </span>
                       </div>
                     </div>
 
-                    <div className={`ml-auto shrink-0 w-[145px] sm:w-[210px] rounded-[20px] sm:rounded-[24px] border p-3 sm:p-4 shadow-2xl transition-all ${streakColors.border} ${streakColors.bg} ${streakColors.glow}`}>
-                      <div className="mb-2 flex items-center gap-2 sm:mb-3">
-                        <Flame className={`h-4 w-4 sm:h-5 sm:w-5 ${streakColors.text}`} />
-                        <div className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.25em] sm:tracking-[0.35em] ${streakColors.text}`}>
-                          Current Streak
+                    {/* streak badge */}
+                    {currentStreak && (
+                      <div className="mt-3 flex justify-center">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-1.5">
+                          <Flame className="h-3.5 w-3.5 text-orange-300" />
+                          <span className="text-[11px] font-black text-slate-300">
+                            {currentStreak.team}
+                          </span>
+                          <span className="text-[11px] font-black text-orange-300">
+                            {currentStreak.result}{currentStreak.count} streak
+                          </span>
                         </div>
                       </div>
-                      <div className={`text-[42px] sm:text-[64px] font-black leading-none ${streakColors.text}`}>
-                        {currentStreak?.result}{currentStreak?.count}
-                      </div>
-                      <div className="mt-2 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] sm:text-base font-black leading-tight">
-                        {currentStreak?.team}
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
-              </motion.section>
 
-              {/* BIGGEST WINS */}
-              <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-                {[{ data: biggestA, side: 'A' }, { data: biggestB, side: 'B' }].map((item, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.35 }}
-                    className="overflow-hidden rounded-[32px] border border-white/10 bg-[#071120]"
-                  >
-                    <div className="border-b border-white/5 p-6">
-                      <div className={`mb-6 flex items-center gap-2 ${item.side === 'A' ? teamAColor : teamBColor}`}>
-                        <Stars className="h-5 w-5" />
-                        <div className="text-[10px] font-black uppercase tracking-[0.35em]">Biggest Win</div>
-                      </div>
-                      <div style={{ fontFamily: bebas.style.fontFamily, fontSize: '54px', lineHeight: 0.9 }}>
-                        {item.side === 'A' ? selected.teamA : selected.teamB}
-                      </div>
-                    </div>
+                {/* tabela de stats */}
+                <div className="space-y-4 px-4 pb-4 sm:px-5 sm:pb-5">
+                  {statRows.map((row, idx, arr) => (
+                    <div key={row.label}>
+                      <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
 
-                    <div className="p-6">
-                      <div className="flex items-baseline gap-3">
-                        <div className={`sm:text-[72px] md:text-[92px] leading-none text-[52px] font-black ${item.side === 'A' ? 'text-cyan-300' : 'text-purple-300'}`}>
-                          {Math.max(item.data?.scoreA || 0, item.data?.scoreB || 0)}
+                        {/* esquerda */}
+                        <div className="min-w-0 text-left">
+                          <div
+                            className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
+                            style={{
+                              fontFamily: '"Bebas Neue", sans-serif',
+                              fontWeight: 900,
+                              color: row.leftLead ? '#6ee7b7' : '#f1f5f9',
+                            }}
+                          >
+                            {row.left}
+                          </div>
+                          {row.subLeft ? (
+                            <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                              {row.greenMargin ? (
+                                <>
+                                  <span>{row.subLeft.split('·')[0].trim()}</span>
+                                  {row.subLeft.includes('·') && (
+                                    <span className="text-emerald-400"> · {row.subLeft.split('·')[1].trim()}</span>
+                                  )}
+                                </>
+                              ) : row.breakArrow ? formatRangeWithBreak(row.subLeft) : row.subLeft}
+                            </div>
+                          ) : null}
                         </div>
-                        <div className="pb-3 text-4xl font-black text-slate-600">—</div>
-                        <div className="pb-3 text-4xl font-black text-slate-500">
-                          {Math.min(item.data?.scoreA || 0, item.data?.scoreB || 0)}
+
+                        {/* label central */}
+                        <div className="w-full justify-self-center pt-1 text-center">
+                          <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                            {row.label}
+                          </div>
+                        </div>
+
+                        {/* direita */}
+                        <div className="min-w-0 text-right">
+                          <div
+                            className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
+                            style={{
+                              fontFamily: '"Bebas Neue", sans-serif',
+                              fontWeight: 900,
+                              color: row.rightLead ? '#6ee7b7' : '#f1f5f9',
+                            }}
+                          >
+                            {row.right}
+                          </div>
+                          {row.subRight ? (
+                            <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                              {row.greenMargin ? (
+                                <>
+                                  <span>{row.subRight.split('·')[0].trim()}</span>
+                                  {row.subRight.includes('·') && (
+                                    <span className="text-emerald-400"> · {row.subRight.split('·')[1].trim()}</span>
+                                  )}
+                                </>
+                              ) : row.breakArrow ? formatRangeWithBreak(row.subRight) : row.subRight}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
 
-                      <div className="mt-6 grid grid-cols-3 gap-3 border-t border-white/5 pt-5">
-                        <div className="rounded-2xl bg-white/[0.03] p-3">
-                          <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">Season</div>
-                          <div className="mt-2 text-lg font-black">{item.data?.season}</div>
-                        </div>
-                        <div className="rounded-2xl bg-white/[0.03] p-3">
-                          <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">Week</div>
-                          <div className="mt-2 text-lg font-black">{item.data?.week}</div>
-                        </div>
-                        <div className="rounded-2xl border border-green-400/20 bg-green-400/10 p-3">
-                          <div className="text-[9px] uppercase tracking-[0.25em] text-green-200">Margin</div>
-                          <div className="mt-2 text-lg font-black text-green-300">+{item.data?.margin}</div>
-                        </div>
-                      </div>
+                      {idx < arr.length - 1 && (
+                        <div className="mt-4 h-px w-full bg-white/[0.06]" />
+                      )}
                     </div>
-                  </motion.div>
-                ))}
-              </section>
-
-              {/* BEST STREAKS */}
-              <section className="mb-6 mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-                {[{ data: bestA, side: 'A' }, { data: bestB, side: 'B' }].map((item, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.35 }}
-                    className="rounded-[32px] border border-white/10 bg-[#071120] p-6"
-                  >
-                    <div className={`mb-6 flex items-center gap-2 ${item.side === 'A' ? 'text-cyan-300' : 'text-purple-300'}`}>
-                      <Flame className="h-5 w-5" />
-                      <div className="text-[10px] font-black uppercase tracking-[0.35em]">Best Streak</div>
-                    </div>
-                    <div className="mt-4 leading-[0.9]" style={{ fontFamily: bebas.style.fontFamily, fontSize: '54px' }}>
-                      {item.data?.team}
-                    </div>
-                    <div className={`mt-6 text-7xl font-black ${item.side === 'A' ? 'text-cyan-300' : 'text-purple-300'}`}>
-                      {item.data?.result}{item.data?.count}
-                    </div>
-                    <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/5 pt-5">
-                      <div className="rounded-2xl bg-white/[0.03] p-4">
-                        <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Started</div>
-                        <div className="mt-2 text-sm font-bold">{item.data?.start}</div>
-                      </div>
-                      <div className="rounded-2xl bg-white/[0.03] p-4">
-                        <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Ended</div>
-                        <div className="mt-2 text-sm font-bold">{item.data?.end}</div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </section>
+                  ))}
+                </div>
+              </motion.div>
 
               {/* TIMELINE */}
-              <section className="mt-6 overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]">
-                <div className="border-b border-white/5 p-6 md:p-8">
-                  <div className="flex items-center gap-3">
-                    <Activity className="h-6 w-6 text-cyan-300" />
-                    <div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.35em] text-cyan-300">
+              <div className="mt-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.97),rgba(2,6,23,0.99))] p-3">
+
+                {/* header */}
+                <div className="mb-3 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3 sm:px-5">
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                      <Activity className="h-5 w-5 text-cyan-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <div
+                        className="truncate uppercase leading-none text-cyan-300"
+                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', letterSpacing: '0.06em', fontWeight: 900 }}
+                      >
                         Rivalry Timeline
                       </div>
-                      <div className="mt-2" style={{ ...titleFont, fontSize: 'clamp(42px,7vw,62px)', lineHeight: 0.9 }}>
+                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                         Every Chapter
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="px-5 pt-5 md:px-8">
-                  <div className="flex gap-2 overflow-x-auto pb-2">
+                {/* filtros de season */}
+                <div className="px-4 pb-3 sm:px-5">
+                  <div className="flex gap-2 overflow-x-auto pb-1">
                     {seasons.map((season) => (
                       <button
                         key={season}
                         onClick={() => setSeasonFilter(season)}
-                        className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-black transition-all ${seasonFilter === season ? 'bg-cyan-400 text-black' : 'bg-white/[0.03] text-slate-400'
-                          }`}
+                        className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-black transition-all ${
+                          seasonFilter === season
+                            ? 'bg-cyan-400 text-black'
+                            : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'
+                        }`}
                       >
                         {season}
                       </button>
@@ -1118,80 +1236,94 @@ RENDER
                   </div>
                 </div>
 
-                <div className="space-y-3 p-5 md:p-8">
-                  {filteredHistory.map((g, i) => {
-                    const won = g.Result === 'W'
-                    const winner = won ? g.Team : g.Opponent
-                    const loser = won ? g.Opponent : g.Team
-                    const winnerScore = won ? parseNumber(g.PF) : parseNumber(g.PA)
-                    const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
-                    const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
-                    const marginValue = Math.abs(winnerScore - loserScore)
-                    const marginStyle =
-                      marginValue >= 40
-                        ? { border: 'border-red-400/30', bg: 'bg-red-400/15', text: 'text-red-300', label: 'text-red-200' }
-                        : marginValue >= 25
-                          ? { border: 'border-orange-400/30', bg: 'bg-orange-400/15', text: 'text-orange-300', label: 'text-orange-200' }
-                          : marginValue >= 15
-                            ? { border: 'border-yellow-400/25', bg: 'bg-yellow-400/10', text: 'text-yellow-300', label: 'text-yellow-200' }
-                            : marginValue >= 8
-                              ? { border: 'border-cyan-400/20', bg: 'bg-cyan-400/10', text: 'text-cyan-300', label: 'text-cyan-200' }
-                              : { border: 'border-emerald-400/20', bg: 'bg-emerald-400/10', text: 'text-emerald-300', label: 'text-emerald-200' }
+                {/* lista de jogos */}
+                <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+                  <div className="overflow-hidden rounded-[26px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-1 sm:px-5">
+                    {filteredHistory.map((g, i) => {
+                      const won = g.Result === 'W'
+                      const winner = won ? g.Team : g.Opponent
+                      const loser = won ? g.Opponent : g.Team
+                      const winnerScore = won ? parseNumber(g.PF) : parseNumber(g.PA)
+                      const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
+                      const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
+                      const isPlayoff = g.GameStage && g.GameStage !== 'Reg Season'
+                      const matchupHref = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(g.Team)}&opp=${encodeURIComponent(g.Opponent)}`
 
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.35 }}
-                        className="rounded-[28px] border border-white/5 bg-white/[0.03] p-5"
-                      >
-                        <div className="mb-3 flex items-center gap-3">
-                          <div className={`h-3 w-3 rounded-full ${winnerIsA ? teamABg : teamBBg}`} />
-                          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
-                            {g.Season} · Week {g.Week}
-                          </div>
-                        </div>
-
-                        {g.GameStage && g.GameStage !== 'Reg Season' && (
-                          <div className={`mb-4 inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] ${g.GameStage === 'Playoffs'
-                            ? 'border-yellow-400/20 bg-yellow-400/10 text-yellow-300'
-                            : 'border-slate-400/20 bg-slate-400/10 text-slate-300'
-                            }`}>
-                            {g.GameStage === 'Playoffs' ? 'PLAYOFF' : 'CONSOLATION'}
-                          </div>
-                        )}
-
-                        <div className="text-xl font-black leading-tight">
-                          <span className={winnerIsA ? teamAColor : teamBColor}>{winner}</span>
-                          <span className="mx-2 text-slate-600">def.</span>
-                          <span>{loser}</span>
-                        </div>
-
-                        <div className="mt-5 flex items-end justify-between gap-3 overflow-hidden">
-                          <div className="min-w-0 flex flex-1 items-baseline gap-1.5">
-                            <div className="text-[44px] font-black leading-none sm:text-[62px]">
-                              {winnerScore.toFixed(1)}
+                      return (
+                        <div key={i}>
+                          <a
+                            href={matchupHref}
+                            className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 py-4 transition-opacity hover:opacity-70 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4"
+                          >
+                            {/* vencedor — esquerda */}
+                            <div className="min-w-0 text-left">
+                              <div
+                                className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
+                                style={{
+                                  fontFamily: '"Bebas Neue", sans-serif',
+                                  fontWeight: 900,
+                                  color: winnerIsA ? '#67e8f9' : '#c4b5fd',
+                                }}
+                              >
+                                {winnerScore.toFixed(1)}
+                              </div>
+                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                {winner}
+                              </div>
                             </div>
-                            <div className="pb-1 text-lg font-black text-slate-600 sm:text-2xl">—</div>
-                            <div className="pb-1 text-[30px] font-black text-slate-500 sm:text-[42px]">
-                              {loserScore.toFixed(1)}
-                            </div>
-                          </div>
 
-                          <div className={`shrink-0 rounded-xl border px-3 py-2 sm:px-4 sm:py-3 transition-all ${marginStyle.border} ${marginStyle.bg}`}>
-                            <div className={`text-[9px] uppercase tracking-[0.25em] ${marginStyle.label}`}>Margin</div>
-                            <div className={`mt-1 text-base sm:text-lg font-black ${marginStyle.text}`}>
-                              +{marginValue.toFixed(1)}
+                            {/* centro — semana */}
+                            <div className="w-full justify-self-center pt-1 text-center">
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                                {g.Season}
+                              </div>
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.3] tracking-[0.12em] text-slate-600 sm:text-[11px]">
+                                W{g.Week}
+                              </div>
+                              {isPlayoff && (
+                                <div className={`mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${
+                                  g.GameStage === 'Playoffs'
+                                    ? 'bg-yellow-400/15 text-yellow-300'
+                                    : 'bg-slate-400/10 text-slate-400'
+                                }`}>
+                                  {g.GameStage === 'Playoffs' ? 'PO' : 'CS'}
+                                </div>
+                              )}
                             </div>
-                          </div>
+
+                            {/* perdedor — direita */}
+                            <div className="min-w-0 text-right">
+                              <div
+                                className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
+                                style={{
+                                  fontFamily: '"Bebas Neue", sans-serif',
+                                  fontWeight: 900,
+                                  color: '#475569',
+                                }}
+                              >
+                                {loserScore.toFixed(1)}
+                              </div>
+                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-slate-600 sm:text-[12px]">
+                                {loser}
+                              </div>
+                            </div>
+                          </a>
+
+                          {i < filteredHistory.length - 1 && (
+                            <div className="h-px w-full bg-white/[0.06]" />
+                          )}
                         </div>
-                      </motion.div>
-                    )
-                  })}
+                      )
+                    })}
+
+                    {filteredHistory.length === 0 && (
+                      <div className="py-6 text-center text-sm font-black text-slate-600">
+                        No games found
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </section>
+              </div>
             </>
           ) : (
             <div className="flex min-h-[50vh] items-center justify-center rounded-[34px] border border-white/10 bg-[#071120]">

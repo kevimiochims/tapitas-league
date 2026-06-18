@@ -294,9 +294,6 @@ export default function RivalriesPage() {
   const [gamesData, setGamesData] =
     useState([])
 
-  const [teamsData, setTeamsData] =
-    useState([])
-
   const [selected, setSelected] =
     useState(null)
 
@@ -318,7 +315,7 @@ export default function RivalriesPage() {
 
   useEffect(() => {
     async function load() {
-      const [h2h, games, teams] =
+      const [h2h, games] =
         await Promise.all([
           safeFetch(
             `${BASE_URL}/HEAD_TO_HEAD_SORTED`
@@ -326,18 +323,12 @@ export default function RivalriesPage() {
 
           safeFetch(
             `${BASE_URL}/GAME_FACTS_ALL`
-          ),
-
-          safeFetch(
-            `${BASE_URL}/TEAMS`
           )
         ])
 
       setH2hData(h2h)
 
       setGamesData(games)
-
-      setTeamsData(teams)
     }
 
     load()
@@ -659,12 +650,20 @@ export default function RivalriesPage() {
   const teamABg = 'bg-cyan-400'
   const teamBBg = 'bg-purple-400'
 
-  const getTeamAvatar = (teamName) => {
-    const row = teamsData.find(
-      (t) => normalizeString(t.Team || t.Name || '') === normalizeString(teamName)
-    )
-    return row?.Avatar || row?.Photo || row?.Image || null
+  const TEAM_AVATARS = {
+    'howmuch': '/images/howmuch.png',
+    'i am megatron': '/images/megatron.png',
+    'moneyball': '/images/moneyball.png',
+    'ocupa e resiste': '/images/ocupa.png',
+    'oldbrady': '/images/oldbrady.png',
+    'patrolao squad': '/images/patrolao.png',
+    'pequers verde': '/images/pequers.png',
+    'peytao da massa': '/images/peytao.png',
+    'rincao settlers': '/images/rincao.png',
+    'h-lera do mahl': '/images/hlera.png',
   }
+  const getTeamAvatar = (name) =>
+    TEAM_AVATARS[normalizeString(name)] || null
 
   /* =====================================================
   DETAIL — stat rows (padrão Spotlight)
@@ -1055,9 +1054,9 @@ RENDER
                         {(() => {
                           const av = getTeamAvatar(selected.teamA)
                           return av ? (
-                            <img src={av} alt={selected.teamA} className="h-12 w-12 rounded-[16px] object-cover sm:h-14 sm:w-14 sm:rounded-[18px]" />
+                            <img src={av} alt={selected.teamA} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
                           ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white" style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}>
                               {selected.teamA.slice(0, 2).toUpperCase()}
                             </div>
                           )
@@ -1085,9 +1084,9 @@ RENDER
                         {(() => {
                           const av = getTeamAvatar(selected.teamB)
                           return av ? (
-                            <img src={av} alt={selected.teamB} className="h-12 w-12 rounded-[16px] object-cover sm:h-14 sm:w-14 sm:rounded-[18px]" />
+                            <img src={av} alt={selected.teamB} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
                           ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white" style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}>
                               {selected.teamB.slice(0, 2).toUpperCase()}
                             </div>
                           )
@@ -1196,7 +1195,7 @@ RENDER
               </motion.div>
 
               {/* TIMELINE */}
-              <div className="mt-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.97),rgba(2,6,23,0.99))] p-3">
+              <div className="mt-4 overflow-hidden rounded-[32px] border border-white/10 p-3">
 
                 {/* header */}
                 <div className="mb-3 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3 sm:px-5">
@@ -1239,7 +1238,7 @@ RENDER
 
                 {/* lista de jogos */}
                 <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                  <div className="overflow-hidden rounded-[26px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-1 sm:px-5">
+                  <div className="overflow-hidden rounded-[26px] border border-white/[0.07] px-4 py-1 sm:px-5">
                     {filteredHistory.map((g, i) => {
                       const won = g.Result === 'W'
                       const winner = won ? g.Team : g.Opponent
@@ -1248,11 +1247,16 @@ RENDER
                       const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
                       const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
                       const isPlayoff = g.GameStage && g.GameStage !== 'Reg Season'
+                      const gameType = String(g.GameType || g.GameStage || '').trim()
+                      const isConsolation = g.GameStage === 'Consolation Bracket'
+                      const matchupHref = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(g.Team)}&opp=${encodeURIComponent(g.Opponent)}`
 
                       return (
                         <div key={i}>
-                          <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 py-4 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
-
+                          <a
+                            href={matchupHref}
+                            className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 py-4 transition-opacity hover:opacity-70 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4"
+                          >
                             {/* vencedor — esquerda */}
                             <div className="min-w-0 text-left">
                               <div
@@ -1270,21 +1274,21 @@ RENDER
                               </div>
                             </div>
 
-                            {/* centro — semana */}
+                            {/* centro — semana + badge */}
                             <div className="w-full justify-self-center pt-1 text-center">
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-100 sm:text-[11px]">
                                 {g.Season}
                               </div>
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.3] tracking-[0.12em] text-slate-600 sm:text-[11px]">
-                                W{g.Week}
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.3] tracking-[0.12em] text-slate-300 sm:text-[11px]">
+                                Week {g.Week}
                               </div>
-                              {isPlayoff && (
+                              {isPlayoff && gameType && (
                                 <div className={`mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${
-                                  g.GameStage === 'Playoffs'
-                                    ? 'bg-yellow-400/15 text-yellow-300'
-                                    : 'bg-slate-400/10 text-slate-400'
+                                  isConsolation
+                                    ? 'bg-red-400/10 text-red-300'
+                                    : 'bg-yellow-400/15 text-yellow-400'
                                 }`}>
-                                  {g.GameStage === 'Playoffs' ? 'PO' : 'CS'}
+                                  {gameType}
                                 </div>
                               )}
                             </div>
@@ -1301,11 +1305,11 @@ RENDER
                               >
                                 {loserScore.toFixed(1)}
                               </div>
-                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-slate-600 sm:text-[12px]">
+                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
                                 {loser}
                               </div>
                             </div>
-                          </div>
+                          </a>
 
                           {i < filteredHistory.length - 1 && (
                             <div className="h-px w-full bg-white/[0.06]" />
