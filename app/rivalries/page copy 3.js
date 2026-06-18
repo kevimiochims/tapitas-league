@@ -6,7 +6,9 @@ import { motion } from 'framer-motion'
 import { Bebas_Neue } from 'next/font/google'
 import {
   Activity,
+  ChevronDown,
   Flame,
+  Stars,
   Swords
 } from 'lucide-react'
 import Header from '../components/Header'
@@ -294,9 +296,6 @@ export default function RivalriesPage() {
   const [gamesData, setGamesData] =
     useState([])
 
-  const [teamsData, setTeamsData] =
-    useState([])
-
   const [selected, setSelected] =
     useState(null)
 
@@ -318,7 +317,7 @@ export default function RivalriesPage() {
 
   useEffect(() => {
     async function load() {
-      const [h2h, games, teams] =
+      const [h2h, games] =
         await Promise.all([
           safeFetch(
             `${BASE_URL}/HEAD_TO_HEAD_SORTED`
@@ -326,18 +325,12 @@ export default function RivalriesPage() {
 
           safeFetch(
             `${BASE_URL}/GAME_FACTS_ALL`
-          ),
-
-          safeFetch(
-            `${BASE_URL}/TEAMS`
           )
         ])
 
       setH2hData(h2h)
 
       setGamesData(games)
-
-      setTeamsData(teams)
     }
 
     load()
@@ -659,13 +652,6 @@ export default function RivalriesPage() {
   const teamABg = 'bg-cyan-400'
   const teamBBg = 'bg-purple-400'
 
-  const getTeamAvatar = (teamName) => {
-    const row = teamsData.find(
-      (t) => normalizeString(t.Team || t.Name || '') === normalizeString(teamName)
-    )
-    return row?.Avatar || row?.Photo || row?.Image || null
-  }
-
   /* =====================================================
   DETAIL — stat rows (padrão Spotlight)
   ===================================================== */
@@ -675,24 +661,16 @@ export default function RivalriesPage() {
   const aLeads = wA > wB
   const bLeads = wB > wA
 
-  // streak por lado — lado que tem a streak usa o resultado real, lado oposto recebe o inverso
+  // streak por lado
   const streakTeamIsA = selected
     ? normalizeString(currentStreak?.team || '') === normalizeString(selected.teamA)
     : false
 
-  const streakResult = currentStreak?.result ?? ''
-  const streakCount = currentStreak?.count ?? ''
-  const oppositeResult = streakResult.toUpperCase() === 'W' ? 'L' : 'W'
-
-  const leftStreak = currentStreak
-    ? streakTeamIsA
-      ? `${streakResult}${streakCount}`
-      : `${oppositeResult}${streakCount}`
+  const leftStreak = streakTeamIsA
+    ? (currentStreak ? `${currentStreak.result}${currentStreak.count}` : '—')
     : '—'
-  const rightStreak = currentStreak
-    ? !streakTeamIsA
-      ? `${streakResult}${streakCount}`
-      : `${oppositeResult}${streakCount}`
+  const rightStreak = !streakTeamIsA && currentStreak
+    ? `${currentStreak.result}${currentStreak.count}`
     : '—'
 
   const leftStreakScore =
@@ -768,12 +746,11 @@ export default function RivalriesPage() {
       label: 'Biggest Win',
       left: biggestA ? `${biggestA.scoreA}–${biggestA.scoreB}` : '—',
       right: biggestB ? `${biggestB.scoreA}–${biggestB.scoreB}` : '—',
-      subLeft: biggestA ? `${biggestA.season} W${biggestA.week} · ${formatMarginText(biggestA.scoreA, biggestA.scoreB)}` : '',
-      subRight: biggestB ? `${biggestB.season} W${biggestB.week} · ${formatMarginText(biggestB.scoreA, biggestB.scoreB)}` : '',
+      subLeft: biggestA ? `S${biggestA.season} W${biggestA.week} · ${formatMarginText(biggestA.scoreA, biggestA.scoreB)}` : '',
+      subRight: biggestB ? `S${biggestB.season} W${biggestB.week} · ${formatMarginText(biggestB.scoreA, biggestB.scoreB)}` : '',
       leftLead: false,
       rightLead: false,
       breakArrow: false,
-      greenMargin: true,
     },
     {
       label: 'Best Streak',
@@ -784,7 +761,6 @@ export default function RivalriesPage() {
       leftLead: leftBestStreakLead,
       rightLead: rightBestStreakLead,
       breakArrow: true,
-      greenMargin: false,
     },
     {
       label: 'Current Streak',
@@ -795,7 +771,6 @@ export default function RivalriesPage() {
       leftLead: leftStreakLead,
       rightLead: rightStreakLead,
       breakArrow: false,
-      greenMargin: false,
     },
     {
       label: 'Avg Margin',
@@ -806,7 +781,6 @@ export default function RivalriesPage() {
       leftLead: leftAvgMarginLead,
       rightLead: rightAvgMarginLead,
       breakArrow: false,
-      greenMargin: false,
     },
   ] : []
 
@@ -1052,17 +1026,9 @@ RENDER
 
                       {/* Time A */}
                       <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                        {(() => {
-                          const av = getTeamAvatar(selected.teamA)
-                          return av ? (
-                            <img src={av} alt={selected.teamA} className="h-12 w-12 rounded-[16px] object-cover sm:h-14 sm:w-14 sm:rounded-[18px]" />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
-                              {selected.teamA.slice(0, 2).toUpperCase()}
-                            </div>
-                          )
-                        })()}
-                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-cyan-300">
+                        <span
+                          className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-cyan-300"
+                        >
                           {selected.teamA}
                         </span>
                         <span
@@ -1082,17 +1048,9 @@ RENDER
 
                       {/* Time B */}
                       <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                        {(() => {
-                          const av = getTeamAvatar(selected.teamB)
-                          return av ? (
-                            <img src={av} alt={selected.teamB} className="h-12 w-12 rounded-[16px] object-cover sm:h-14 sm:w-14 sm:rounded-[18px]" />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-sm font-black text-slate-300">
-                              {selected.teamB.slice(0, 2).toUpperCase()}
-                            </div>
-                          )
-                        })()}
-                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-purple-300">
+                        <span
+                          className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-purple-300"
+                        >
                           {selected.teamB}
                         </span>
                         <span
@@ -1141,14 +1099,7 @@ RENDER
                           </div>
                           {row.subLeft ? (
                             <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
-                              {row.greenMargin ? (
-                                <>
-                                  <span>{row.subLeft.split('·')[0].trim()}</span>
-                                  {row.subLeft.includes('·') && (
-                                    <span className="text-emerald-400"> · {row.subLeft.split('·')[1].trim()}</span>
-                                  )}
-                                </>
-                              ) : row.breakArrow ? formatRangeWithBreak(row.subLeft) : row.subLeft}
+                              {row.breakArrow ? formatRangeWithBreak(row.subLeft) : row.subLeft}
                             </div>
                           ) : null}
                         </div>
@@ -1174,14 +1125,7 @@ RENDER
                           </div>
                           {row.subRight ? (
                             <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
-                              {row.greenMargin ? (
-                                <>
-                                  <span>{row.subRight.split('·')[0].trim()}</span>
-                                  {row.subRight.includes('·') && (
-                                    <span className="text-emerald-400"> · {row.subRight.split('·')[1].trim()}</span>
-                                  )}
-                                </>
-                              ) : row.breakArrow ? formatRangeWithBreak(row.subRight) : row.subRight}
+                              {row.breakArrow ? formatRangeWithBreak(row.subRight) : row.subRight}
                             </div>
                           ) : null}
                         </div>
@@ -1196,40 +1140,29 @@ RENDER
               </motion.div>
 
               {/* TIMELINE */}
-              <div className="mt-4 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.97),rgba(2,6,23,0.99))] p-3">
-
-                {/* header */}
-                <div className="mb-3 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3 sm:px-5">
-                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] sm:h-14 sm:w-14 sm:rounded-[20px]">
-                      <Activity className="h-5 w-5 text-cyan-300" />
-                    </div>
-                    <div className="min-w-0">
-                      <div
-                        className="truncate uppercase leading-none text-cyan-300"
-                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', letterSpacing: '0.06em', fontWeight: 900 }}
-                      >
+              <section className="mt-6 overflow-hidden rounded-[34px] border border-white/10 bg-[#071120]">
+                <div className="border-b border-white/5 p-6 md:p-8">
+                  <div className="flex items-center gap-3">
+                    <Activity className="h-6 w-6 text-cyan-300" />
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.35em] text-cyan-300">
                         Rivalry Timeline
                       </div>
-                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                      <div className="mt-2" style={{ ...titleFont, fontSize: 'clamp(42px,7vw,62px)', lineHeight: 0.9 }}>
                         Every Chapter
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* filtros de season */}
-                <div className="px-4 pb-3 sm:px-5">
-                  <div className="flex gap-2 overflow-x-auto pb-1">
+                <div className="px-5 pt-5 md:px-8">
+                  <div className="flex gap-2 overflow-x-auto pb-2">
                     {seasons.map((season) => (
                       <button
                         key={season}
                         onClick={() => setSeasonFilter(season)}
-                        className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-black transition-all ${
-                          seasonFilter === season
-                            ? 'bg-cyan-400 text-black'
-                            : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'
-                        }`}
+                        className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-black transition-all ${seasonFilter === season ? 'bg-cyan-400 text-black' : 'bg-white/[0.03] text-slate-400'
+                          }`}
                       >
                         {season}
                       </button>
@@ -1237,90 +1170,80 @@ RENDER
                   </div>
                 </div>
 
-                {/* lista de jogos */}
-                <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                  <div className="overflow-hidden rounded-[22px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]">
-                    {filteredHistory.map((g, i) => {
-                      const won = g.Result === 'W'
-                      const winner = won ? g.Team : g.Opponent
-                      const loser = won ? g.Opponent : g.Team
-                      const winnerScore = won ? parseNumber(g.PF) : parseNumber(g.PA)
-                      const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
-                      const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
-                      const marginValue = Math.abs(winnerScore - loserScore)
-                      const isPlayoff = g.GameStage && g.GameStage !== 'Reg Season'
+                <div className="space-y-3 p-5 md:p-8">
+                  {filteredHistory.map((g, i) => {
+                    const won = g.Result === 'W'
+                    const winner = won ? g.Team : g.Opponent
+                    const loser = won ? g.Opponent : g.Team
+                    const winnerScore = won ? parseNumber(g.PF) : parseNumber(g.PA)
+                    const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
+                    const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
+                    const marginValue = Math.abs(winnerScore - loserScore)
+                    const marginStyle =
+                      marginValue >= 40
+                        ? { border: 'border-red-400/30', bg: 'bg-red-400/15', text: 'text-red-300', label: 'text-red-200' }
+                        : marginValue >= 25
+                          ? { border: 'border-orange-400/30', bg: 'bg-orange-400/15', text: 'text-orange-300', label: 'text-orange-200' }
+                          : marginValue >= 15
+                            ? { border: 'border-yellow-400/25', bg: 'bg-yellow-400/10', text: 'text-yellow-300', label: 'text-yellow-200' }
+                            : marginValue >= 8
+                              ? { border: 'border-cyan-400/20', bg: 'bg-cyan-400/10', text: 'text-cyan-300', label: 'text-cyan-200' }
+                              : { border: 'border-emerald-400/20', bg: 'bg-emerald-400/10', text: 'text-emerald-300', label: 'text-emerald-200' }
 
-                      return (
-                        <div
-                          key={i}
-                          className={`grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4 sm:px-5 ${
-                            i < filteredHistory.length - 1 ? 'border-b border-white/[0.06]' : ''
-                          }`}
-                        >
-                          {/* vencedor (lado A) */}
-                          <div className="min-w-0 text-left">
-                            <div
-                              className="truncate text-[18px] leading-none sm:text-[22px]"
-                              style={{
-                                fontFamily: '"Bebas Neue", sans-serif',
-                                fontWeight: 900,
-                                color: winnerIsA ? '#67e8f9' : '#c4b5fd',
-                              }}
-                            >
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.35 }}
+                        className="rounded-[28px] border border-white/5 bg-white/[0.03] p-5"
+                      >
+                        <div className="mb-3 flex items-center gap-3">
+                          <div className={`h-3 w-3 rounded-full ${winnerIsA ? teamABg : teamBBg}`} />
+                          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                            {g.Season} · Week {g.Week}
+                          </div>
+                        </div>
+
+                        {g.GameStage && g.GameStage !== 'Reg Season' && (
+                          <div className={`mb-4 inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] ${g.GameStage === 'Playoffs'
+                            ? 'border-yellow-400/20 bg-yellow-400/10 text-yellow-300'
+                            : 'border-slate-400/20 bg-slate-400/10 text-slate-300'
+                            }`}>
+                            {g.GameStage === 'Playoffs' ? 'PLAYOFF' : 'CONSOLATION'}
+                          </div>
+                        )}
+
+                        <div className="text-xl font-black leading-tight">
+                          <span className={winnerIsA ? 'text-cyan-300' : 'text-purple-300'}>{winner}</span>
+                          <span className="mx-2 text-slate-600">def.</span>
+                          <span>{loser}</span>
+                        </div>
+
+                        <div className="mt-5 flex items-end justify-between gap-3 overflow-hidden">
+                          <div className="min-w-0 flex flex-1 items-baseline gap-1.5">
+                            <div className="text-[44px] font-black leading-none sm:text-[62px]">
                               {winnerScore.toFixed(1)}
                             </div>
-                            <div className="mt-0.5 truncate text-[10px] font-bold text-slate-500">
-                              {winner}
-                            </div>
-                          </div>
-
-                          {/* centro — semana + stage */}
-                          <div className="justify-self-center text-center">
-                            <div className="text-[10px] font-black uppercase leading-[1.1] tracking-[0.1em] text-slate-500">
-                              {g.Season}
-                            </div>
-                            <div className="text-[10px] font-black uppercase leading-[1.1] tracking-[0.1em] text-slate-600">
-                              W{g.Week}
-                            </div>
-                            {isPlayoff && (
-                              <div className={`mt-1 rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${
-                                g.GameStage === 'Playoffs'
-                                  ? 'bg-yellow-400/15 text-yellow-300'
-                                  : 'bg-slate-400/10 text-slate-400'
-                              }`}>
-                                {g.GameStage === 'Playoffs' ? 'PO' : 'CS'}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* perdedor (lado B) — alinhado à direita */}
-                          <div className="min-w-0 text-right">
-                            <div
-                              className="truncate text-[18px] leading-none sm:text-[22px]"
-                              style={{
-                                fontFamily: '"Bebas Neue", sans-serif',
-                                fontWeight: 900,
-                                color: '#94a3b8',
-                              }}
-                            >
+                            <div className="pb-1 text-lg font-black text-slate-600 sm:text-2xl">—</div>
+                            <div className="pb-1 text-[30px] font-black text-slate-500 sm:text-[42px]">
                               {loserScore.toFixed(1)}
                             </div>
-                            <div className="mt-0.5 truncate text-[10px] font-bold text-slate-600">
-                              {loser}
+                          </div>
+
+                          <div className={`shrink-0 rounded-xl border px-3 py-2 sm:px-4 sm:py-3 transition-all ${marginStyle.border} ${marginStyle.bg}`}>
+                            <div className={`text-[9px] uppercase tracking-[0.25em] ${marginStyle.label}`}>Margin</div>
+                            <div className={`mt-1 text-base sm:text-lg font-black ${marginStyle.text}`}>
+                              +{marginValue.toFixed(1)}
                             </div>
                           </div>
                         </div>
-                      )
-                    })}
-
-                    {filteredHistory.length === 0 && (
-                      <div className="py-10 text-center text-sm font-black text-slate-600">
-                        No games found
-                      </div>
-                    )}
-                  </div>
+                      </motion.div>
+                    )
+                  })}
                 </div>
-              </div>
+              </section>
             </>
           ) : (
             <div className="flex min-h-[50vh] items-center justify-center rounded-[34px] border border-white/10 bg-[#071120]">
