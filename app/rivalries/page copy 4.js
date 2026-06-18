@@ -1239,7 +1239,7 @@ RENDER
 
                 {/* lista de jogos */}
                 <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                  <div className="overflow-hidden rounded-[26px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-4 py-1 sm:px-5">
+                  <div className="overflow-hidden rounded-[22px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))]">
                     {filteredHistory.map((g, i) => {
                       const won = g.Result === 'W'
                       const winner = won ? g.Team : g.Opponent
@@ -1247,75 +1247,74 @@ RENDER
                       const winnerScore = won ? parseNumber(g.PF) : parseNumber(g.PA)
                       const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
                       const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
+                      const marginValue = Math.abs(winnerScore - loserScore)
                       const isPlayoff = g.GameStage && g.GameStage !== 'Reg Season'
 
                       return (
-                        <div key={i}>
-                          <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 py-4 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
-
-                            {/* vencedor — esquerda */}
-                            <div className="min-w-0 text-left">
-                              <div
-                                className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
-                                style={{
-                                  fontFamily: '"Bebas Neue", sans-serif',
-                                  fontWeight: 900,
-                                  color: winnerIsA ? '#67e8f9' : '#c4b5fd',
-                                }}
-                              >
-                                {winnerScore.toFixed(1)}
-                              </div>
-                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
-                                {winner}
-                              </div>
+                        <div
+                          key={i}
+                          className={`grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4 sm:px-5 ${
+                            i < filteredHistory.length - 1 ? 'border-b border-white/[0.06]' : ''
+                          }`}
+                        >
+                          {/* vencedor (lado A) */}
+                          <div className="min-w-0 text-left">
+                            <div
+                              className="truncate text-[18px] leading-none sm:text-[22px]"
+                              style={{
+                                fontFamily: '"Bebas Neue", sans-serif',
+                                fontWeight: 900,
+                                color: winnerIsA ? '#67e8f9' : '#c4b5fd',
+                              }}
+                            >
+                              {winnerScore.toFixed(1)}
                             </div>
-
-                            {/* centro — semana */}
-                            <div className="w-full justify-self-center pt-1 text-center">
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
-                                {g.Season}
-                              </div>
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.3] tracking-[0.12em] text-slate-600 sm:text-[11px]">
-                                W{g.Week}
-                              </div>
-                              {isPlayoff && (
-                                <div className={`mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${
-                                  g.GameStage === 'Playoffs'
-                                    ? 'bg-yellow-400/15 text-yellow-300'
-                                    : 'bg-slate-400/10 text-slate-400'
-                                }`}>
-                                  {g.GameStage === 'Playoffs' ? 'PO' : 'CS'}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* perdedor — direita */}
-                            <div className="min-w-0 text-right">
-                              <div
-                                className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
-                                style={{
-                                  fontFamily: '"Bebas Neue", sans-serif',
-                                  fontWeight: 900,
-                                  color: '#475569',
-                                }}
-                              >
-                                {loserScore.toFixed(1)}
-                              </div>
-                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-slate-600 sm:text-[12px]">
-                                {loser}
-                              </div>
+                            <div className="mt-0.5 truncate text-[10px] font-bold text-slate-500">
+                              {winner}
                             </div>
                           </div>
 
-                          {i < filteredHistory.length - 1 && (
-                            <div className="h-px w-full bg-white/[0.06]" />
-                          )}
+                          {/* centro — semana + stage */}
+                          <div className="justify-self-center text-center">
+                            <div className="text-[10px] font-black uppercase leading-[1.1] tracking-[0.1em] text-slate-500">
+                              {g.Season}
+                            </div>
+                            <div className="text-[10px] font-black uppercase leading-[1.1] tracking-[0.1em] text-slate-600">
+                              W{g.Week}
+                            </div>
+                            {isPlayoff && (
+                              <div className={`mt-1 rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${
+                                g.GameStage === 'Playoffs'
+                                  ? 'bg-yellow-400/15 text-yellow-300'
+                                  : 'bg-slate-400/10 text-slate-400'
+                              }`}>
+                                {g.GameStage === 'Playoffs' ? 'PO' : 'CS'}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* perdedor (lado B) — alinhado à direita */}
+                          <div className="min-w-0 text-right">
+                            <div
+                              className="truncate text-[18px] leading-none sm:text-[22px]"
+                              style={{
+                                fontFamily: '"Bebas Neue", sans-serif',
+                                fontWeight: 900,
+                                color: '#94a3b8',
+                              }}
+                            >
+                              {loserScore.toFixed(1)}
+                            </div>
+                            <div className="mt-0.5 truncate text-[10px] font-bold text-slate-600">
+                              {loser}
+                            </div>
+                          </div>
                         </div>
                       )
                     })}
 
                     {filteredHistory.length === 0 && (
-                      <div className="py-6 text-center text-sm font-black text-slate-600">
+                      <div className="py-10 text-center text-sm font-black text-slate-600">
                         No games found
                       </div>
                     )}
