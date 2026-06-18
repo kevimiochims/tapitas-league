@@ -1248,14 +1248,14 @@ RENDER
                       const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
                       const isPlayoff = g.GameStage && g.GameStage !== 'Reg Season'
                       const gameType = String(g.GameType || g.GameStage || '').trim()
-                      const isConsolation = g.GameStage === 'Consolation Bracket'
+                      const isConsolation = g.GameStage === 'Consolation'
                       const matchupHref = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(g.Team)}&opp=${encodeURIComponent(g.Opponent)}`
 
                       return (
                         <div key={i}>
                           <a
                             href={matchupHref}
-                            className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 py-4 transition-opacity hover:opacity-70 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4"
+                            className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 rounded-2xl py-4 transition-colors hover:bg-white/[0.04] sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4"
                           >
                             {/* vencedor — esquerda */}
                             <div className="min-w-0 text-left">
@@ -1282,15 +1282,33 @@ RENDER
                               <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.3] tracking-[0.12em] text-slate-300 sm:text-[11px]">
                                 Week {g.Week}
                               </div>
-                              {isPlayoff && gameType && (
-                                <div className={`mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${
-                                  isConsolation
-                                    ? 'bg-red-400/10 text-red-300'
-                                    : 'bg-yellow-400/15 text-yellow-400'
-                                }`}>
-                                  {gameType}
-                                </div>
-                              )}
+                              {isPlayoff && gameType && (() => {
+                                const isUnicornio = normalizeString(gameType).includes('unicornio') || normalizeString(gameType).includes('unicórnio')
+                                const isTapitasBowl = normalizeString(gameType).includes('tapitas bowl')
+                                const isConsolationBracket = normalizeString(gameType) === 'consolation bracket'
+
+                                const badgeClass = isUnicornio
+                                  ? 'bg-pink-400/15 text-pink-300'
+                                  : isTapitasBowl
+                                    ? 'bg-yellow-400/15 text-yellow-400'
+                                    : isConsolation
+                                      ? 'bg-red-400/10 text-red-300'
+                                      : 'bg-cyan-400/15 text-cyan-300'
+
+                                const label = isUnicornio
+                                  ? `🦄 ${gameType}`
+                                  : isTapitasBowl
+                                    ? '🏆 Tapitas Bowl'
+                                    : isConsolationBracket
+                                      ? 'Consolation'
+                                      : gameType
+
+                                return (
+                                  <div className={`mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${badgeClass}`}>
+                                    {label}
+                                  </div>
+                                )
+                              })()}
                             </div>
 
                             {/* perdedor — direita */}
