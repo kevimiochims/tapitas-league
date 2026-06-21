@@ -21,22 +21,15 @@ const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
 const TEAM_LOGOS = {
   'howmuch': '/images/howmuch.png',
-  'how much is the fish': '/images/howmuch.png',
-  'i am megatron': '/images/megatron.png',
-  'moneyball': '/images/moneyball.png',
-  'moneyball fc': '/images/moneyball.png',
-  'ocupa e resiste': '/images/ocupa.png',
-  'ocupa meu slot': '/images/ocupa.png',
-  'oldbrady': '/images/oldbrady.png',
-  'old brady bunch': '/images/oldbrady.png',
-  'patrolao squad': '/images/patrolao.png',
-  'patrolao': '/images/patrolao.png',
-  'pequers verde': '/images/pequers.png',
-  'green bay pequers': '/images/pequers.png',
-  'peytao da massa': '/images/peytao.png',
-  'rincao settlers': '/images/rincao.png',
-  'settlers of rincao': '/images/rincao.png',
-  'h-lera do mahl': '/images/hlera.png',
+    'i am megatron': '/images/megatron.png',
+    'moneyball': '/images/moneyball.png',
+    'ocupa e resiste': '/images/ocupa.png',
+    'oldbrady': '/images/oldbrady.png',
+    'patrolao squad': '/images/patrolao.png',
+    'pequers verde': '/images/pequers.png',
+    'peytao da massa': '/images/peytao.png',
+    'rincao settlers': '/images/rincao.png',
+    'h-lera do mahl': '/images/hlera.png',
 }
 
 function normalizeString(value) {
@@ -134,6 +127,21 @@ function GameRow({ game }) {
   )
 }
 
+function getInitials(name) {
+  const words = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (words.length === 0) return '?'
+
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase()
+  }
+
+  return (words[0][0] + words[1][0]).toUpperCase()
+}
+
 function TeamAvatar({ name, size = 36, ringClass = '' }) {
   const logo = getTeamLogo(name)
 
@@ -143,12 +151,21 @@ function TeamAvatar({ name, size = 36, ringClass = '' }) {
       style={{ height: size, width: size }}
       title={name || ''}
     >
-      <Image
-        src={logo || '/images/teams/default.png'}
-        alt={name || 'Team'}
-        fill
-        className="object-cover"
-      />
+      {logo ? (
+        <Image
+          src={logo}
+          alt={name || 'Team'}
+          fill
+          className="object-cover"
+        />
+      ) : (
+        <div
+          className="flex h-full w-full items-center justify-center bg-white/[0.06] font-black text-slate-300"
+          style={{ fontSize: size * 0.32 }}
+        >
+          {getInitials(name)}
+        </div>
+      )}
     </div>
   )
 }
@@ -169,24 +186,23 @@ export default function HistoryPage() {
 
   function handleToggleSeason(season) {
     const willOpen = openSeason !== season
+    const el = cardRefs.current[season]
 
     setOpenSeason(willOpen ? season : null)
 
-    if (willOpen) {
-      // Wait a tick so the previous card's collapse animation has
-      // started before we scroll, avoiding a visual jump.
-      setTimeout(() => {
-        const el = cardRefs.current[season]
+    if (willOpen && el) {
+      // The collapsing/expanding cards keep shifting layout for the
+      // duration of their height animation (~350ms), which moves the
+      // target card while we're mid-scroll. Re-issue the scroll a few
+      // times across that window so we land in the right place instead
+      // of wherever the layout happened to settle when we first asked.
+      const reScroll = () =>
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-        if (el) {
-          const top =
-            el.getBoundingClientRect().top +
-            window.scrollY -
-            90 // offset for sticky header
+      requestAnimationFrame(reScroll)
 
-          window.scrollTo({ top, behavior: 'smooth' })
-        }
-      }, 50)
+      const delays = [100, 200, 320, 450]
+      delays.forEach(ms => setTimeout(reScroll, ms))
     }
   }
 
@@ -671,6 +687,7 @@ export default function HistoryPage() {
                     ref={(el) => {
                       cardRefs.current[s.season] = el
                     }}
+                    style={{ scrollMarginTop: 90 }}
                     initial={{
                       opacity: 0,
                       y: 50,
