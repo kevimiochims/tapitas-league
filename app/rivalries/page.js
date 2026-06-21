@@ -379,7 +379,7 @@ export default function RivalriesPage() {
 
       if (!a || !b) return
 
-      const key = `${normalizeString(a)}|${normalizeString(b)}`
+      const key = [normalizeString(a), normalizeString(b)].sort().join('|')
 
       if (seen.has(key)) return
 
@@ -962,41 +962,93 @@ RENDER
 
         {/* LISTA DE RIVALIDADES */}
         {!selected && (
-          <div className="flex flex-col gap-3 mb-6">
-            {rivalries.map((r, i) => (
-              <motion.button
-                key={i}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSelected(r)}
-                className="w-full rounded-[28px] border border-white/10 bg-[#071120] p-5 text-left transition-all hover:border-cyan-400/20 hover:bg-cyan-400/[0.03]"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <HeatBadge heat={r.heat} />
-                  <div className="text-slate-500 text-sm font-black">
-                    {r.aWins + r.bWins} jogos
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            {rivalries.map((r, i) => {
+              const rWA = r.aWins
+              const rWB = r.bWins
+              const rALeads = rWA > rWB
+              const rBLeads = rWB > rWA
+              const avA = getTeamAvatar(r.teamA)
+              const avB = getTeamAvatar(r.teamB)
+
+              return (
+                <motion.button
+                  key={i}
+                  whileHover={{ scale: 1.01, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelected(r)}
+                  className="w-full overflow-hidden rounded-[28px] border border-white/10 bg-[#071120] text-left transition-all hover:border-cyan-400/20 hover:bg-cyan-400/[0.03]"
+                >
+                  {/* header: heat + total de jogos */}
+                  <div className="flex items-center justify-between gap-2 px-5 pt-4">
+                    <HeatBadge heat={r.heat} />
+                    <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      {rWA + rWB} jogos
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ fontFamily: bebas.style.fontFamily, fontSize: '28px', lineHeight: 0.9 }}>
-                  {r.teamA}
-                </div>
+                  {/* placar com avatares */}
+                  <div className="flex items-center justify-between gap-3 px-5 pb-4 pt-3">
+                    {/* Time A */}
+                    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                      {avA ? (
+                        <img src={avA} alt={r.teamA} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
+                      ) : (
+                        <div
+                          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white"
+                          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}
+                        >
+                          {r.teamA.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-cyan-300">
+                        {r.teamA}
+                      </span>
+                      <span
+                        className="text-[40px] font-black leading-none"
+                        style={{
+                          color: rALeads ? '#86efac' : rBLeads ? '#fca5a5' : '#e2e8f0',
+                          fontFamily: '"Bebas Neue", sans-serif',
+                        }}
+                      >
+                        {rWA}
+                      </span>
+                    </div>
 
-                <div className="my-1 text-xs font-black uppercase tracking-[0.3em] text-cyan-400">
-                  vs
-                </div>
+                    {/* centro */}
+                    <div className="flex flex-shrink-0 flex-col items-center gap-1 pt-5">
+                      <Swords className="h-4 w-4 text-slate-600" />
+                    </div>
 
-                <div style={{ fontFamily: bebas.style.fontFamily, fontSize: '28px', lineHeight: 0.9 }}>
-                  {r.teamB}
-                </div>
-
-                <div className="mt-3 flex items-baseline gap-2">
-                  <div className="text-3xl font-black">{r.aWins}</div>
-                  <div className="text-3xl font-black text-slate-600">—</div>
-                  <div className="text-3xl font-black text-slate-600">{r.bWins}</div>
-                </div>
-              </motion.button>
-            ))}
+                    {/* Time B */}
+                    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                      {avB ? (
+                        <img src={avB} alt={r.teamB} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
+                      ) : (
+                        <div
+                          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white"
+                          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}
+                        >
+                          {r.teamB.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-purple-300">
+                        {r.teamB}
+                      </span>
+                      <span
+                        className="text-[40px] font-black leading-none"
+                        style={{
+                          color: rBLeads ? '#86efac' : rALeads ? '#fca5a5' : '#e2e8f0',
+                          fontFamily: '"Bebas Neue", sans-serif',
+                        }}
+                      >
+                        {rWB}
+                      </span>
+                    </div>
+                  </div>
+                </motion.button>
+              )
+            })}
           </div>
         )}
 
@@ -1224,11 +1276,10 @@ RENDER
                       <button
                         key={season}
                         onClick={() => setSeasonFilter(season)}
-                        className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-black transition-all ${
-                          seasonFilter === season
+                        className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-black transition-all ${seasonFilter === season
                             ? 'bg-cyan-400 text-black'
                             : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'
-                        }`}
+                          }`}
                       >
                         {season}
                       </button>

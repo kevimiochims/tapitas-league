@@ -3068,12 +3068,12 @@ export default function TapitasLeagueHomepage() {
           transition={{ duration: 0.4 }}
           className="mb-4 mt-4"
         >
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+          <div className="flex flex-wrap justify-center gap-2">
             {QUICK_NAV.map(({ label, href, icon: Icon, color, border, bg }) => (
               <a
                 key={label}
                 href={href}
-                className={`group flex flex-col items-center justify-center gap-2 rounded-[18px] border ${border} ${bg} px-2.5 py-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.10)] transition-all hover:-translate-y-[1px] hover:border-white/12 sm:px-3 sm:py-3.5`}
+                className={`group flex w-[calc(33.333%-0.34rem)] flex-col items-center justify-center gap-2 rounded-[18px] border ${border} ${bg} px-2.5 py-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.10)] transition-all hover:-translate-y-[1px] hover:border-white/12 sm:w-[calc(20%-0.4rem)] sm:px-3 sm:py-3.5 lg:w-[calc(11.111%-0.445rem)]`}
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-[12px] transition-all group-hover:bg-white/[0.05]">
                   <Icon className={`h-4 w-4 ${color}`} />
@@ -4082,7 +4082,7 @@ export default function TapitasLeagueHomepage() {
                           {topLeader.team}
                         </div>
 
-                        <span className="hidden rounded-full border border-yellow-500/80 bg-yellow-500/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 sm:inline-flex">
+                        <span className="hidden rounded-full border border-yellow-500/80 bg-yellow-500/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 lg:inline-flex">
                           Leader
                         </span>
                       </div>
@@ -4602,17 +4602,17 @@ export default function TapitasLeagueHomepage() {
                         },
                       ].map((item, idx, arr) => (
                         <div key={item.label}>
-                          <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
+                          <div className="grid grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)] items-start gap-1.5 sm:grid-cols-[minmax(0,1fr)_68px_minmax(0,1fr)] sm:gap-3 lg:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] lg:gap-4">
                             <div className="min-w-0 text-left">
                               <div
-                                className={`text-[22px] leading-none sm:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                className={`text-[18px] leading-none sm:text-[24px] lg:text-[30px] ${item.leftLead ? 'font-black text-emerald-300' : 'font-black text-white'
                                   } ${item.biggestWinWrap ? 'whitespace-normal md:whitespace-normal lg:whitespace-nowrap' : 'whitespace-nowrap'}`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
                                 {item.biggestWinWrap ? formatBiggestWinResponsive(item.left) : item.left}
                               </div>
                               {item.subLeft ? (
-                                <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                <div className="mt-1 text-[10px] font-bold leading-snug text-slate-400 sm:text-[11px] lg:text-[12px]">
                                   {item.subLeftMeta ? (
                                     <>
                                       <span className="text-emerald-300">{item.subLeftMeta}</span>
@@ -4624,22 +4624,22 @@ export default function TapitasLeagueHomepage() {
                               ) : null}
                             </div>
 
-                            <div className="w-full max-w-[72px] justify-self-center pt-1 text-center sm:max-w-[88px]">
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                            <div className="w-full max-w-[56px] justify-self-center pt-1 text-center sm:max-w-[68px] lg:max-w-[88px]">
+                              <div className="whitespace-normal break-words text-[9px] font-black uppercase leading-[1.1] tracking-[0.1em] text-slate-500 sm:text-[10px] sm:tracking-[0.12em] lg:text-[11px]">
                                 {item.label}
                               </div>
                             </div>
 
                             <div className="min-w-0 text-right">
                               <div
-                                className={`text-[22px] leading-none sm:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
+                                className={`text-[18px] leading-none sm:text-[24px] lg:text-[30px] ${item.rightLead ? 'font-black text-emerald-300' : 'font-black text-white'
                                   } ${item.biggestWinWrap ? 'whitespace-normal md:whitespace-normal lg:whitespace-nowrap' : 'whitespace-nowrap'}`}
                                 style={{ fontFamily: '"Bebas Neue", sans-serif' }}
                               >
                                 {item.biggestWinWrap ? formatBiggestWinResponsive(item.right) : item.right}
                               </div>
                               {item.subRight ? (
-                                <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
+                                <div className="mt-1 text-[10px] font-bold leading-snug text-slate-400 sm:text-[11px] lg:text-[12px]">
                                   {item.breakAfterArrowRight ? formatRangeWithResponsiveBreak(item.subRight) : item.subRight}
                                   {item.subRightMeta ? (
                                     <>
@@ -5179,16 +5179,18 @@ export default function TapitasLeagueHomepage() {
                   </div>
 
                   {/* ROW 3 */}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {rowThree.map(item => {
+                  <div className="flex flex-col gap-3">
+                    {/* Best Win% — sozinho em telas médias */}
+                    {(() => {
+                      const item = rowThree[0]
                       const leaders = topNTeams(standings, item.getter, 3)
                       const topVal = leaders[0] ? item.getter(leaders[0]) : null
                       const tone = toneMap[item.tone]
                       const tied = leaders.length > 1
 
                       return (
-
-                        <a key={item.label}
+                        <a
+                          key={item.label}
                           href="/records"
                           className={`flex h-full flex-col rounded-[22px] border p-4 ${tone.shell} shadow-[0_10px_22px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px]`
                           }
@@ -5229,8 +5231,62 @@ export default function TapitasLeagueHomepage() {
                           </div>
                         </a>
                       )
-                    })}
-                  </div >
+                    })()}
+
+                    {/* Finals Apps + Playoff Apps — duas colunas a partir de telas médias */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-2">
+                      {rowThree.slice(1).map(item => {
+                        const leaders = topNTeams(standings, item.getter, 3)
+                        const topVal = leaders[0] ? item.getter(leaders[0]) : null
+                        const tone = toneMap[item.tone]
+                        const tied = leaders.length > 1
+
+                        return (
+                          <a
+                            key={item.label}
+                            href="/records"
+                            className={`flex h-full flex-col rounded-[22px] border p-4 ${tone.shell} shadow-[0_10px_22px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px]`
+                            }
+                          >
+                            <div className="flex min-w-0 items-start justify-between gap-3">
+                              <div className="min-w-0 pr-2">
+                                <div>
+                                  {renderResponsiveRecordTitle(item, {
+                                    fontFamily: '"Bebas Neue", sans-serif',
+                                    fontSize: 'clamp(20px,2.2vw,28px)',
+                                    letterSpacing: '0.02em',
+                                    lineHeight: 0.95,
+                                  })}
+                                </div>
+                                <div className={`mt-1 text-[10px] font-bold uppercase tracking-[0.15em] ${tone.meta}`}>
+                                  {tied ? 'Co-leaders' : 'Leader'}
+                                </div>
+                              </div>
+                              <div className="flex flex-shrink-0 flex-col items-end">
+                                <div
+                                  className={`flex-shrink-0 leading-none ${tone.value}`}
+                                  style={{
+                                    fontFamily: '"Bebas Neue", sans-serif',
+                                    fontSize: 'clamp(40px,7vw,56px)',
+                                    letterSpacing: '-0.025em',
+                                    fontWeight: 900,
+                                  }}
+                                >
+                                  {topVal !== null ? item.fmt(topVal) : '—'}
+                                </div>
+                                <div className={`mt-1 text-[10px] font-black uppercase tracking-[0.16em] ${tone.meta}`}>
+                                  {item.statLabel}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex-1">
+                              {renderMiniLeaderStack(leaders)}
+                            </div>
+                          </a>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div >
               )
             })()}
