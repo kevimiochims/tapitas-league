@@ -5487,11 +5487,26 @@ export default function TapitasLeagueHomepage() {
                 {seasonSummary.champion && (
                   <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
                     <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
-                    <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
-                    <div className="mt-1 text-sm text-slate-400">
-                      {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
-                      {' • '}
-                      {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
+                    <div className="mt-2 flex items-center gap-3">
+                      {(() => {
+                        const team = seasonSummary.champion.Team || seasonSummary.champion.team
+                        const avatar = getTeamAvatar(team)
+                        return avatar ? (
+                          <img src={avatar} alt={team} className="h-12 w-12 flex-shrink-0 rounded-[14px] object-cover" />
+                        ) : (
+                          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-[11px] font-black text-white">
+                            {String(team || '').slice(0, 2).toUpperCase()}
+                          </div>
+                        )
+                      })()}
+                      <div className="min-w-0">
+                        <div className="truncate text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
+                        <div className="mt-1 text-sm text-slate-400">
+                          {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
+                          {' • '}
+                          {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -5500,11 +5515,26 @@ export default function TapitasLeagueHomepage() {
                 {seasonSummary.finalist && (
                   <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                     <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 2nd Place</div>
-                    <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
-                    <div className="mt-1 text-sm text-slate-400">
-                      {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
-                      {' • '}
-                      {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
+                    <div className="mt-2 flex items-center gap-3">
+                      {(() => {
+                        const team = seasonSummary.finalist.Team || seasonSummary.finalist.team
+                        const avatar = getTeamAvatar(team)
+                        return avatar ? (
+                          <img src={avatar} alt={team} className="h-10 w-10 flex-shrink-0 rounded-[14px] object-cover" />
+                        ) : (
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-[10px] font-black text-white">
+                            {String(team || '').slice(0, 2).toUpperCase()}
+                          </div>
+                        )
+                      })()}
+                      <div className="min-w-0">
+                        <div className="truncate text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
+                        <div className="mt-1 text-sm text-slate-400">
+                          {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
+                          {' • '}
+                          {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -5514,7 +5544,20 @@ export default function TapitasLeagueHomepage() {
                   {seasonSummary.bestRecord && (
                     <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🚀 Best Record</div>
-                      <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const team = seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team
+                          const avatar = getTeamAvatar(team)
+                          return avatar ? (
+                            <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
+                          ) : (
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/8 text-[9px] font-black text-white">
+                              {String(team || '').slice(0, 2).toUpperCase()}
+                            </div>
+                          )
+                        })()}
+                        <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
+                      </div>
                       <span className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</span>
                       <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                     </div>
@@ -5522,7 +5565,20 @@ export default function TapitasLeagueHomepage() {
                   {seasonSummary.worstRecord && (
                     <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💩 Worst Record</div>
-                      <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const team = seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team
+                          const avatar = getTeamAvatar(team)
+                          return avatar ? (
+                            <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
+                          ) : (
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/8 text-[9px] font-black text-white">
+                              {String(team || '').slice(0, 2).toUpperCase()}
+                            </div>
+                          )
+                        })()}
+                        <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
+                      </div>
                       <span className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</span>
                       <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                     </div>
@@ -5530,7 +5586,20 @@ export default function TapitasLeagueHomepage() {
                   {seasonSummary.highestScorer && (
                     <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💯 Top Scorer</div>
-                      <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const team = seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team
+                          const avatar = getTeamAvatar(team)
+                          return avatar ? (
+                            <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
+                          ) : (
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/8 text-[9px] font-black text-white">
+                              {String(team || '').slice(0, 2).toUpperCase()}
+                            </div>
+                          )
+                        })()}
+                        <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
+                      </div>
                       <span className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
                       <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                     </div>
@@ -5538,7 +5607,20 @@ export default function TapitasLeagueHomepage() {
                   {seasonSummary.lowestScorer && (
                     <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😵‍💫 Lowest Scorer</div>
-                      <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const team = seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team
+                          const avatar = getTeamAvatar(team)
+                          return avatar ? (
+                            <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
+                          ) : (
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/8 text-[9px] font-black text-white">
+                              {String(team || '').slice(0, 2).toUpperCase()}
+                            </div>
+                          )
+                        })()}
+                        <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
+                      </div>
                       <span className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</span>
                       <span className="mt-1 text-sm text-slate-400"> (reg season)</span>
                     </div>
@@ -5549,9 +5631,24 @@ export default function TapitasLeagueHomepage() {
                 {seasonSummary.unicorn && seasonSummary.champion && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
-                    <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
-                    <div className="text-sm text-slate-400">
-                      {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
+                    <div className="mt-2 flex items-center gap-3">
+                      {(() => {
+                        const team = seasonSummary.unicorn.Team || seasonSummary.unicorn.team
+                        const avatar = getTeamAvatar(team)
+                        return avatar ? (
+                          <img src={avatar} alt={team} className="h-9 w-9 flex-shrink-0 rounded-[12px] object-cover" />
+                        ) : (
+                          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-white">
+                            {String(team || '').slice(0, 2).toUpperCase()}
+                          </div>
+                        )
+                      })()}
+                      <div className="min-w-0">
+                        <div className="truncate text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
+                        <div className="text-sm text-slate-400">
+                          {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -5562,7 +5659,20 @@ export default function TapitasLeagueHomepage() {
                 {seasonSummary.highestGame && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🔥 Highest Score</div>
-                    <div className="text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const team = seasonSummary.highestGame.team
+                        const avatar = getTeamAvatar(team)
+                        return avatar ? (
+                          <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
+                        ) : (
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/8 text-[9px] font-black text-white">
+                            {String(team || '').slice(0, 2).toUpperCase()}
+                          </div>
+                        )
+                      })()}
+                      <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
+                    </div>
                     <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
                     <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · W{seasonSummary.highestGame.week}</div>
                   </div>
@@ -5571,7 +5681,20 @@ export default function TapitasLeagueHomepage() {
                 {seasonSummary.closestGame && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
-                    <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const team = seasonSummary.closestGame.team
+                        const avatar = getTeamAvatar(team)
+                        return avatar ? (
+                          <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
+                        ) : (
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/8 text-[9px] font-black text-white">
+                            {String(team || '').slice(0, 2).toUpperCase()}
+                          </div>
+                        )
+                      })()}
+                      <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
+                    </div>
                     <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
                     <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · W{seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
                   </div>
@@ -5580,7 +5703,20 @@ export default function TapitasLeagueHomepage() {
                 {seasonSummary.biggestWin && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
-                    <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const team = seasonSummary.biggestWin.team
+                        const avatar = getTeamAvatar(team)
+                        return avatar ? (
+                          <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
+                        ) : (
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/8 text-[9px] font-black text-white">
+                            {String(team || '').slice(0, 2).toUpperCase()}
+                          </div>
+                        )
+                      })()}
+                      <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
+                    </div>
                     <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
                     <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · W{seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
                   </div>
@@ -5589,7 +5725,20 @@ export default function TapitasLeagueHomepage() {
                 {seasonSummary.lowestGame && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Lowest Score</div>
-                    <div className="text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const team = seasonSummary.lowestGame.team
+                        const avatar = getTeamAvatar(team)
+                        return avatar ? (
+                          <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
+                        ) : (
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/8 text-[9px] font-black text-white">
+                            {String(team || '').slice(0, 2).toUpperCase()}
+                          </div>
+                        )
+                      })()}
+                      <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
+                    </div>
                     <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
                     <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · W{seasonSummary.lowestGame.week}</div>
                   </div>
