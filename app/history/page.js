@@ -612,6 +612,7 @@ export default function HistoryPage() {
                   s.season,
                   seasonData[0]?.season
                 )
+                const alignRight = i % 2 !== 0
 
                 return (
                   <motion.div
@@ -628,17 +629,27 @@ export default function HistoryPage() {
                     transition={{
                       duration: 0.7,
                     }}
-                    className={`relative flex ${i % 2 === 0
-                      ? 'md:justify-start'
-                      : 'md:justify-end'
-                      }`}
+                    className={`relative flex ${alignRight
+                      ? 'md:justify-end'
+                      : 'md:justify-start'
+                      } ${open ? 'z-30' : 'z-0'}`}
                   >
                     {/* DOT */}
                     <div className="absolute left-5 md:left-1/2 top-12 z-20 h-4 w-4 -translate-x-1/2 rounded-full border-4 border-[#020617] bg-cyan-300" />
                     {/* CARD */}
-                    <div className="w-full pl-14 pr-2 md:px-0 md:w-[calc(50%-40px)]">
+                    <motion.div
+                      layout
+                      transition={{
+                        layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+                      }}
+                      className={`relative pr-2 md:px-0 ${open
+                          ? 'w-[calc(100%-12px)] pl-3 md:w-[78%]'
+                          : 'w-full pl-14 md:w-[calc(50%-40px)]'
+                        }`}
+                    >
                       <div
-                        className={`relative overflow-hidden rounded-[32px] border bg-[linear-gradient(180deg,rgba(8,15,30,0.96),rgba(2,6,23,0.98))] ${theme.border}`}
+                        className={`relative overflow-hidden rounded-[32px] border bg-[linear-gradient(180deg,rgba(8,15,30,0.96),rgba(2,6,23,0.98))] ${theme.border} ${open ? 'shadow-2xl shadow-black/60' : ''
+                          }`}
                       >
                         {/* YEAR GHOST */}
                         <div
@@ -1311,7 +1322,7 @@ export default function HistoryPage() {
                           )}
                         </AnimatePresence>
                       </div>
-                    </div>
+                    </motion.div>
                   </motion.div>
                 )
               })}
