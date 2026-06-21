@@ -6,6 +6,51 @@ import { ChevronRight, X } from 'lucide-react'
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
+const TEAM_AVATARS = {
+  'howmuch': '/images/howmuch.png',
+  'i am megatron': '/images/megatron.png',
+  'moneyball': '/images/moneyball.png',
+  'ocupa e resiste': '/images/ocupa.png',
+  'oldbrady': '/images/oldbrady.png',
+  'patrolao squad': '/images/patrolao.png',
+  'pequers verde': '/images/pequers.png',
+  'peytao da massa': '/images/peytao.png',
+  'rincao settlers': '/images/rincao.png',
+  'h-lera do mahl': '/images/hlera.png',
+}
+
+function normalizeString(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function getTeamAvatar(name) {
+  return TEAM_AVATARS[normalizeString(name)] || null
+}
+
+function TeamAvatar({ team, size = 'h-8 w-8' }) {
+  const avatar = getTeamAvatar(team)
+
+  if (avatar) {
+    return (
+      <img
+        src={avatar}
+        alt={team}
+        className={`${size} flex-shrink-0 rounded-[12px] object-cover`}
+      />
+    )
+  }
+
+  return (
+    <div className={`flex ${size} flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-white`}>
+      {String(team || '').slice(0, 2).toUpperCase()}
+    </div>
+  )
+}
+
 function parseNumber(value) {
   if (value === null || value === undefined || value === '') return 0
   const text = String(value).replace(',', '.').trim()
@@ -241,11 +286,16 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
               {seasonSummary.champion && (
                 <div className="rounded-[24px] border border-cyan-400/30 bg-cyan-400/[0.06] p-5">
                   <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">🏆 Champion</div>
-                  <div className="text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
-                  <div className="mt-1 text-sm text-slate-400">
-                    {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
-                    {' • '}
-                    {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
+                  <div className="mt-2 flex items-center gap-3">
+                    <TeamAvatar team={seasonSummary.champion.Team || seasonSummary.champion.team} size="h-12 w-12" />
+                    <div className="min-w-0">
+                      <div className="truncate text-2xl font-black text-white">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
+                      <div className="mt-1 text-sm text-slate-400">
+                        {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
+                        {' • '}
+                        {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -253,11 +303,16 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
               {seasonSummary.finalist && (
                 <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                   <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">🥈 2nd Place</div>
-                  <div className="text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
-                  <div className="mt-1 text-sm text-slate-400">
-                    {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
-                    {' • '}
-                    {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
+                  <div className="mt-2 flex items-center gap-3">
+                    <TeamAvatar team={seasonSummary.finalist.Team || seasonSummary.finalist.team} size="h-10 w-10" />
+                    <div className="min-w-0">
+                      <div className="truncate text-xl font-black text-white">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
+                      <div className="mt-1 text-sm text-slate-400">
+                        {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
+                        {' • '}
+                        {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -266,7 +321,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
                 {seasonSummary.bestRecord && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🚀 Best Record</div>
-                    <div className="text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
+                    <div className="flex items-center gap-2">
+                      <TeamAvatar team={seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team} size="h-7 w-7" />
+                      <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
+                    </div>
                     <span className="text-sm text-cyan-300">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</span>
                     <span className="text-sm text-slate-400"> (reg season)</span>
                   </div>
@@ -274,7 +332,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
                 {seasonSummary.worstRecord && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💩 Worst Record</div>
-                    <div className="text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
+                    <div className="flex items-center gap-2">
+                      <TeamAvatar team={seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team} size="h-7 w-7" />
+                      <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
+                    </div>
                     <span className="text-sm text-red-400">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</span>
                     <span className="text-sm text-slate-400"> (reg season)</span>
                   </div>
@@ -282,7 +343,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
                 {seasonSummary.highestScorer && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💯 Top Scorer</div>
-                    <div className="text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
+                    <div className="flex items-center gap-2">
+                      <TeamAvatar team={seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team} size="h-7 w-7" />
+                      <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
+                    </div>
                     <span className="text-sm text-cyan-300">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
                     <span className="text-sm text-slate-400"> (reg season)</span>
                   </div>
@@ -290,7 +354,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
                 {seasonSummary.lowestScorer && (
                   <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😵‍💫 Lowest Scorer</div>
-                    <div className="text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
+                    <div className="flex items-center gap-2">
+                      <TeamAvatar team={seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team} size="h-7 w-7" />
+                      <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
+                    </div>
                     <span className="text-sm text-red-400">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</span>
                     <span className="text-sm text-slate-400"> (reg season)</span>
                   </div>
@@ -300,9 +367,14 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
               {seasonSummary.unicorn && seasonSummary.champion && (
                 <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🦄 Unicórnio</div>
-                  <div className="text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
-                  <div className="text-sm text-slate-400">
-                    {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
+                  <div className="mt-2 flex items-center gap-3">
+                    <TeamAvatar team={seasonSummary.unicorn.Team || seasonSummary.unicorn.team} size="h-9 w-9" />
+                    <div className="min-w-0">
+                      <div className="truncate text-xl font-black text-white">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
+                      <div className="text-sm text-slate-400">
+                        {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -312,7 +384,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
               {seasonSummary.highestGame && (
                 <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">🔥 Highest Score</div>
-                  <div className="text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
+                  <div className="flex items-center gap-2">
+                    <TeamAvatar team={seasonSummary.highestGame.team} size="h-7 w-7" />
+                    <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
+                  </div>
                   <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
                   <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · Week {seasonSummary.highestGame.week}</div>
                 </div>
@@ -321,7 +396,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
               {seasonSummary.closestGame && (
                 <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">⚔️ Closest Game</div>
-                  <div className="text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
+                  <div className="flex items-center gap-2">
+                    <TeamAvatar team={seasonSummary.closestGame.team} size="h-7 w-7" />
+                    <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
+                  </div>
                   <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
                   <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · Week {seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
                 </div>
@@ -330,7 +408,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
               {seasonSummary.biggestWin && (
                 <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">💥 Biggest Win</div>
-                  <div className="text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
+                  <div className="flex items-center gap-2">
+                    <TeamAvatar team={seasonSummary.biggestWin.team} size="h-7 w-7" />
+                    <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
+                  </div>
                   <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
                   <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · Week {seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
                 </div>
@@ -339,7 +420,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
               {seasonSummary.lowestGame && (
                 <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">😬 Lowest Score</div>
-                  <div className="text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
+                  <div className="flex items-center gap-2">
+                    <TeamAvatar team={seasonSummary.lowestGame.team} size="h-7 w-7" />
+                    <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
+                  </div>
                   <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
                   <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · Week {seasonSummary.lowestGame.week}</div>
                 </div>
