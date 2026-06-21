@@ -987,8 +987,8 @@ function getPrLeaderMessage(row) {
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [h2hData, setH2hData] = useState([])
-  const [selectedTeamA, setSelectedTeamA] = useState('I am Megatron')
-  const [selectedTeamB, setSelectedTeamB] = useState('Ocupa e Resiste')
+  const [selectedTeamA, setSelectedTeamA] = useState('Howmuch')
+  const [selectedTeamB, setSelectedTeamB] = useState('Patrolao Squad')
   const [sortCategory, setSortCategory] = useState('Wins')
   const [sortSub, setSortSub] = useState('Total')
   const [standingsPage, setStandingsPage] = useState(0)
