@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull } from 'lucide-react'
+import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull, Zap } from 'lucide-react'
 import Header from '../components/Header'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -68,19 +68,22 @@ export default function TeamsPage() {
   const [allTime, setAllTime] = useState([])
   const [history, setHistory] = useState([])
   const [h2hData, setH2hData] = useState([])
+  const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
     async function load() {
-      const [at, hi, h2h] = await Promise.all([
+      const [at, hi, h2h, ga] = await Promise.all([
         safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
         safeFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
         safeFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
+        safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
       ])
       setAllTime(at)
       setHistory(hi)
       setH2hData(h2h)
+      setGames(ga)
       setLoading(false)
 
       // Auto-select team from ?team= URL param
@@ -130,6 +133,24 @@ export default function TeamsPage() {
     }).sort((a, b) => b.games - a.games)
   }
 
+  // ── GAME_FACTS_ALL derived stats: 200+ pt games & PR #1 weeks ───────
+  const isDoubleWeek = g => { const w = String(g?.Week || ''); return w.includes('-') || w.includes('&') }
+
+  const getTeam200Games = (teamName) => {
+    const seen = new Set()
+    let count = 0
+    games.filter(g => String(g?.Team || '').trim() === teamName && !isDoubleWeek(g)).forEach(g => {
+      const key = `${String(g?.Season || '')}|${String(g?.Week || '')}`
+      if (seen.has(key)) return
+      seen.add(key)
+      if (parseNumber(g?.PF) >= 200) count++
+    })
+    return count
+  }
+
+  const getTeamPR1Weeks = (teamName) =>
+    games.filter(g => String(g?.Team || '').trim() === teamName && parseNumber(g?.['Power Ranking']) === 1).length
+
   if (selected) {
     const teamH = getTeamHistory(selected.team)
     const teamH2H = getTeamH2H(selected.team)
@@ -151,6 +172,8 @@ export default function TeamsPage() {
     const worstSeason = [...completedTeamH].sort((a, b) => parseNumber(a.RS_W) - parseNumber(b.RS_W))[0]
     const winPct = String(selected?.['W%'] || '').trim()
     const poWinPct = String(selected?.['PO_W%'] || '').trim()
+    const games200 = getTeam200Games(selected.team)
+    const pr1Weeks = getTeamPR1Weeks(selected.team)
 
     return (
       <main className="min-h-screen bg-[#020617] text-white">
@@ -228,15 +251,10 @@ export default function TeamsPage() {
               [Target, 'Wins', parseNumber(selected.RS_W), 'regular season', 'cyan'],
               [TrendingDown, 'Losses', parseNumber(selected.RS_L), 'regular season', 'red'],
               [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), 'all-time', 'orange'],
-              [Skull, 'Unicorns', unicorns.length, unicorns.length ? unicorns.map(u => u.Season).join(', ') : 'never', 'pink']
+              [Skull, 'Unicorns', unicorns.length, unicorns.length ? unicorns.map(u => u.Season).join(', ') : 'never', 'pink'],
+              [Zap, '200+ Pt Games', games200, 'single weeks only', 'orange'],
+              [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, 'power rankings', 'gold'],
             ].map(([Icon, label, value, sub, accent]) => {
-              console.log({
-                Icon,
-                label,
-                value,
-                sub,
-                accent
-              })
               const colors = {
                 gold: 'border-yellow-400/20 bg-yellow-400/5 text-yellow-400',
                 purple: 'border-purple-400/20 bg-purple-400/5 text-purple-400',
@@ -280,7 +298,7 @@ export default function TeamsPage() {
                   <thead>
                     <tr className="border-b border-white/5">
                       {['Season', 'Reg Season', 'Overall', 'PF', 'Playoffs', 'Result'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">{h}</th>
+                        <th key={h} className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -300,18 +318,18 @@ export default function TeamsPage() {
                       const isUnicorn = Number(r.Standing) === maxStanding
                       return (
                         <tr key={i} className={`border-b border-white/[0.03] transition-colors hover:bg-white/[0.02] ${isChamp ? 'bg-yellow-400/[0.03]' : ''}`}>
-                          <td className="px-4 py-3 text-sm font-black text-white">{r.Season}</td>
-                          <td className="px-4 py-3 text-sm text-slate-400">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</td>
-                          <td className="px-4 py-3 text-sm text-slate-400">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
-                          <td className="px-4 py-3 text-sm text-slate-400">{Math.round(parseNumber(r.RS_PF))}</td>
-                          <td className="px-4 py-3">
-                            {isChamp ? <span className="text-[9px] font-black text-yellow-400 border border-yellow-400/20 bg-yellow-400/10 rounded-lg px-2 py-0.5">🏆 Champion</span>
-                              : isUnicorn ? <span className="text-[9px] font-black text-pink-400 border border-pink-400/20 bg-pink-400/10 rounded-lg px-2 py-0.5">🦄 Unicorn</span>
-                                : isFinal ? <span className="text-[9px] font-black text-purple-400 border border-purple-400/20 bg-purple-400/10 rounded-lg px-2 py-0.5">Final</span>
-                                  : isPlayoff ? <span className="text-[9px] font-black text-cyan-400 border border-cyan-400/20 bg-cyan-400/10 rounded-lg px-2 py-0.5">Playoffs</span>
+                          <td className="px-4 py-3 text-sm font-black text-white whitespace-nowrap">{r.Season}</td>
+                          <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</td>
+                          <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
+                          <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{Math.round(parseNumber(r.RS_PF))}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {isChamp ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-yellow-400 border border-yellow-400/20 bg-yellow-400/10 rounded-lg px-2 py-0.5">🏆 Champion</span>
+                              : isUnicorn ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-pink-400 border border-pink-400/20 bg-pink-400/10 rounded-lg px-2 py-0.5">🦄 Unicorn</span>
+                                : isFinal ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-purple-400 border border-purple-400/20 bg-purple-400/10 rounded-lg px-2 py-0.5">Final</span>
+                                  : isPlayoff ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-cyan-400 border border-cyan-400/20 bg-cyan-400/10 rounded-lg px-2 py-0.5">Playoffs</span>
                                     : <span className="text-[9px] text-slate-600">—</span>}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             {parseNumber(r.Standing) > 0 && (
                               <span className="text-xs font-black text-slate-500">#{parseNumber(r.Standing)}</span>
                             )}
