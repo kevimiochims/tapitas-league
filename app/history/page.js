@@ -134,6 +134,33 @@ function GameRow({ game }) {
   )
 }
 
+function TeamAvatar({ name, size = 36, ringClass = '' }) {
+  const logo = getTeamLogo(name)
+
+  return (
+    <div
+      className={`relative shrink-0 overflow-hidden rounded-full bg-white/[0.04] ${ringClass}`}
+      style={{ height: size, width: size }}
+      title={name || ''}
+    >
+      <Image
+        src={logo || '/images/teams/default.png'}
+        alt={name || 'Team'}
+        fill
+        className="object-cover"
+      />
+    </div>
+  )
+}
+
+function CardAvatars({ children }) {
+  return (
+    <div className="absolute right-5 top-5 z-10 flex items-center">
+      {children}
+    </div>
+  )
+}
+
 export default function HistoryPage() {
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
@@ -642,14 +669,16 @@ export default function HistoryPage() {
                       transition={{
                         layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
                       }}
-                      className={`relative pr-2 md:px-0 ${open
+                      className={`relative pr-2 md:px-0 ${
+                        open
                           ? 'w-[calc(100%-12px)] pl-3 md:w-[78%]'
                           : 'w-full pl-14 md:w-[calc(50%-40px)]'
-                        }`}
+                      }`}
                     >
                       <div
-                        className={`relative overflow-hidden rounded-[32px] border bg-[linear-gradient(180deg,rgba(8,15,30,0.96),rgba(2,6,23,0.98))] ${theme.border} ${open ? 'shadow-2xl shadow-black/60' : ''
-                          }`}
+                        className={`relative overflow-hidden rounded-[32px] border bg-[linear-gradient(180deg,rgba(8,15,30,0.96),rgba(2,6,23,0.98))] ${theme.border} ${
+                          open ? 'shadow-2xl shadow-black/60' : ''
+                        }`}
                       >
                         {/* YEAR GHOST */}
                         <div
@@ -784,7 +813,15 @@ export default function HistoryPage() {
                                 {/* STATS GRID */}
                                 <div className="grid gap-4 md:grid-cols-2">
                                   {/* CHAMP */}
-                                  <div className="rounded-3xl border border-amber-400/15 bg-amber-400/5 p-5">
+                                  <div className="relative rounded-3xl border border-amber-400/15 bg-amber-400/5 p-5">
+                                    {s.champion && (
+                                      <CardAvatars>
+                                        <TeamAvatar
+                                          name={s.champion}
+                                        />
+                                      </CardAvatars>
+                                    )}
+
                                     <div className="mb-4 flex items-center gap-2">
                                       <Crown className="h-4 w-4 text-amber-300" />
 
@@ -872,7 +909,7 @@ export default function HistoryPage() {
                                   </div>
 
                                   {/* UNICORN */}
-                                  <div className="rounded-3xl border border-pink-400/15 bg-pink-400/5 p-5">
+                                  <div className="relative rounded-3xl border border-pink-400/15 bg-pink-400/5 p-5">
                                     <div className="mb-4 flex items-center gap-2">
                                       🦄
                                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-pink-300">
@@ -953,6 +990,12 @@ export default function HistoryPage() {
 
                                       return (
                                         <>
+                                          <CardAvatars>
+                                            <TeamAvatar
+                                              name={unicornTeam}
+                                            />
+                                          </CardAvatars>
+
                                           <div className="text-2xl font-black text-white">
                                             {unicornTeam}
                                           </div>
@@ -988,7 +1031,15 @@ export default function HistoryPage() {
                                   </div>
 
                                   {/* HIGHEST SCORE */}
-                                  <div className="rounded-3xl border border-cyan-400/15 bg-cyan-400/5 p-5">
+                                  <div className="relative rounded-3xl border border-cyan-400/15 bg-cyan-400/5 p-5">
+                                    {s.highestScoreGame?.Team && (
+                                      <CardAvatars>
+                                        <TeamAvatar
+                                          name={s.highestScoreGame.Team}
+                                        />
+                                      </CardAvatars>
+                                    )}
+
                                     <div className="mb-4 flex items-center gap-2">
                                       <Flame className="h-4 w-4 text-cyan-300" />
 
@@ -1047,7 +1098,22 @@ export default function HistoryPage() {
                                   </div>
 
                                   {/* CLOSEST GAME */}
-                                  <div className="rounded-3xl border border-emerald-400/15 bg-emerald-400/5 p-5">
+                                  <div className="relative rounded-3xl border border-emerald-400/15 bg-emerald-400/5 p-5">
+                                    {s.closestGame?.Team && (
+                                      <CardAvatars>
+                                        <div className="flex items-center -space-x-3">
+                                          <TeamAvatar
+                                            name={s.closestGame.Team}
+                                            ringClass="ring-2 ring-[#0a1f17]"
+                                          />
+                                          <TeamAvatar
+                                            name={s.closestGame.Opponent}
+                                            ringClass="ring-2 ring-[#0a1f17]"
+                                          />
+                                        </div>
+                                      </CardAvatars>
+                                    )}
+
                                     <div className="mb-4 flex items-center gap-2">
                                       <Swords className="h-4 w-4 text-emerald-300" />
 
@@ -1107,7 +1173,15 @@ export default function HistoryPage() {
                                   </div>
 
                                   {/* BIGGEST WIN */}
-                                  <div className="rounded-3xl border border-violet-400/15 bg-violet-400/5 p-5 md:col-span-2">
+                                  <div className="relative rounded-3xl border border-violet-400/15 bg-violet-400/5 p-5 md:col-span-2">
+                                    {s.biggestBlowout?.Team && (
+                                      <CardAvatars>
+                                        <TeamAvatar
+                                          name={s.biggestBlowout.Team}
+                                        />
+                                      </CardAvatars>
+                                    )}
+
                                     <div className="mb-4 flex items-center gap-2">
                                       <Zap className="h-4 w-4 text-violet-300" />
 
@@ -1179,13 +1253,18 @@ export default function HistoryPage() {
                                       </span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-4">
+                                      {/* TITLES ROW */}
+                                      <div className="col-span-2 whitespace-nowrap text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
+                                        Reg Season
+                                      </div>
+
+                                      <div className="whitespace-nowrap text-[9px] font-black uppercase tracking-[0.15em] text-cyan-400">
+                                        Playoffs
+                                      </div>
+
                                       {/* REG SEASON COL 1 */}
 
                                       <div>
-                                        <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">
-                                          Reg Season
-                                        </div>
-
                                         {s.regCol1.map((g, i) => (
                                           <GameRow
                                             key={i}
@@ -1197,10 +1276,6 @@ export default function HistoryPage() {
                                       {/* REG SEASON COL 2 */}
 
                                       <div>
-                                        <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] opacity-0">
-                                          &nbsp;
-                                        </div>
-
                                         {s.regCol2.map((g, i) => (
                                           <GameRow
                                             key={i}
@@ -1212,10 +1287,6 @@ export default function HistoryPage() {
                                       {/* PLAYOFFS */}
 
                                       <div>
-                                        <div className="mb-3 text-[9px] font-black uppercase tracking-[0.15em] text-cyan-400">
-                                          Playoffs
-                                        </div>
-
                                         {s.playoffGames.length > 0 ? (
                                           s.playoffGames.map(
                                             (g, i) => (
