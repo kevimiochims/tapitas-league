@@ -737,7 +737,12 @@ export default function StandingsPage() {
                       </div>
                       {tabCols[tab].map(col => (
                         <div key={col} className="text-right">
-                          <span className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-400'}`}>
+                          <span
+                            className={`inline-block rounded-lg px-2 py-1 text-sm font-black transition-all ${sortCol === col
+                              ? 'border border-cyan-400/40 bg-cyan-400/10 text-cyan-300'
+                              : 'text-slate-400'
+                              }`}
+                          >
                             {getCol(row, col)}
                           </span>
                         </div>
@@ -766,8 +771,14 @@ export default function StandingsPage() {
                         style={{ gridTemplateColumns: `repeat(${Math.min(tabCols[tab].length, 4)}, 1fr)` }}
                       >
                         {tabCols[tab].map(col => (
-                          <div key={col} className="rounded-xl bg-white/[0.03] py-1.5 text-center">
-                            <div className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">{col}</div>
+                          <div
+                            key={col}
+                            className={`rounded-xl py-1.5 text-center transition-all ${sortCol === col
+                                ? 'border border-cyan-400/40 bg-cyan-400/10'
+                                : 'border border-transparent bg-white/[0.03]'
+                              }`}
+                          >
+                            <div className={`text-[9px] font-black uppercase tracking-[0.15em] ${sortCol === col ? 'text-cyan-300/70' : 'text-slate-500'}`}>{col}</div>
                             <div className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-300'}`}>
                               {getCol(row, col)}
                             </div>
