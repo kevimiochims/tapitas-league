@@ -20,7 +20,7 @@ function parseNumber(value) {
   if (String(value).includes(',')) console.log('parseNumber:', value, '->', cleaned, '->', parsed)
   return Number.isNaN(parsed) ? 0 : parsed
 }
-  
+
 function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
@@ -401,7 +401,7 @@ export default function StandingsPage() {
       setSortDir(d => d === 'desc' ? 'asc' : 'desc')
     } else {
       setSortCol(col)
-      setSortDir('desc')
+      setSortDir(col === 'Pos' ? 'asc' : 'desc')
     }
   }
 
@@ -657,8 +657,8 @@ export default function StandingsPage() {
             <div className="p-4 space-y-1.5">
               {/* Header row — desktop only */}
               <div
-                className="hidden md:grid items-center gap-x-3 gap-2 px-4 pb-1"
-                style={{ gridTemplateColumns: `2.5rem 1fr repeat(${tabCols[tab].length}, minmax(3.25rem, 1fr))` }}
+                className="hidden md:grid gap-2 px-4 pb-1"
+                style={{ gridTemplateColumns: `2rem 1fr ${tabCols[tab].map(() => '4rem').join(' ')}` }}
               >
                 <button
                   onClick={() => season !== 'All-Time' && handleSort('Pos')}
@@ -677,77 +677,103 @@ export default function StandingsPage() {
                 ))}
               </div>
 
+              {/* Sort bar — mobile only */}
+              <div className="md:hidden flex items-center gap-2 overflow-x-auto px-1 pb-2">
+                {season !== 'All-Time' && (
+                  <button
+                    onClick={() => handleSort('Pos')}
+                    className="flex-shrink-0 rounded-xl border px-3 py-1.5 text-xs font-black transition-all"
+                    style={{
+                      borderColor: sortCol === 'Pos' ? 'rgba(34,211,238,0.4)' : 'rgba(255,255,255,0.1)',
+                      color: sortCol === 'Pos' ? '#22d3ee' : '#64748b',
+                      background: sortCol === 'Pos' ? 'rgba(34,211,238,0.08)' : 'transparent',
+                    }}
+                  >
+                    #{sortCol === 'Pos' ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                  </button>
+                )}
+                {tabCols[tab].map(col => (
+                  <button
+                    key={col}
+                    onClick={() => handleSort(col)}
+                    className="flex-shrink-0 rounded-xl border px-3 py-1.5 text-xs font-black transition-all"
+                    style={{
+                      borderColor: sortCol === col ? 'rgba(34,211,238,0.4)' : 'rgba(255,255,255,0.1)',
+                      color: sortCol === col ? '#22d3ee' : '#64748b',
+                      background: sortCol === col ? 'rgba(34,211,238,0.08)' : 'transparent',
+                    }}
+                  >
+                    {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                  </button>
+                ))}
+              </div>
+
               {paged.map((row, i) => {
                 const rank = page * PER_PAGE + i + 1
                 const pos = season !== 'All-Time' && row.standing ? row.standing : rank
                 const avatar = getTeamAvatar(row.team)
                 return (
-                  <a
-                    key={row.team}
-                    href={`/teams?team=${encodeURIComponent(row.team)}`}
-                    className="block rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all hover:bg-white/[0.05] hover:border-white/10 hover:-translate-y-[1px]"
-                  >
-                    {/* Linha principal: posição + time */}
+                  <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
+                    className="block rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all hover:bg-white/[0.05] hover:border-white/10">
+
+                    {/* Desktop: linha única em grid, igual ao original */}
                     <div
-                      className="grid items-center gap-x-3 md:gap-2"
-                      style={{
-                        gridTemplateColumns: `2.5rem 1fr`,
-                      }}
+                      className="hidden md:grid items-center gap-2"
+                      style={{ gridTemplateColumns: `2rem 1fr ${tabCols[tab].map(() => '4rem').join(' ')}` }}
                     >
-                      <span
-                        className="font-black leading-none text-center"
-                        style={{
-                          fontFamily: '"Bebas Neue", sans-serif',
-                          fontSize: '18px',
-                          color: pos === 1 ? '#facc15' : pos <= 3 ? '#22d3ee' : '#475569',
-                        }}
-                      >
+                      <span className="font-black leading-none text-center"
+                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: pos === 1 ? '#facc15' : pos <= 3 ? '#22d3ee' : '#475569' }}>
                         {pos}
                       </span>
                       <div className="flex items-center gap-2.5 min-w-0">
-                        {avatar ? (
-                          <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-lg object-cover" />
-                        ) : (
-                          <div className="h-7 w-7 flex-shrink-0 rounded-lg bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">
-                            {row.team.slice(0, 2).toUpperCase()}
-                          </div>
-                        )}
+                        {avatar
+                          ? <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-lg object-cover" />
+                          : <div className="h-7 w-7 flex-shrink-0 rounded-lg bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">{row.team.slice(0, 2).toUpperCase()}</div>
+                        }
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-black text-white leading-snug whitespace-normal break-words md:truncate">
-                            {row.team}
-                          </div>
+                          <div className="truncate text-sm font-black text-white">{row.team}</div>
                         </div>
                         {row.champion && <span className="flex-shrink-0 text-sm">🏆</span>}
-
-                        {/* Stats inline — desktop only, na mesma linha */}
-                        <div
-                          className="hidden md:grid flex-shrink-0"
-                          style={{ gridTemplateColumns: `repeat(${tabCols[tab].length}, minmax(3.25rem, 1fr))` }}
-                        >
-                          {tabCols[tab].map(col => (
-                            <div key={col} className="text-right">
-                              <span className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-400'}`}>
-                                {getCol(row, col)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
                       </div>
-                    </div>
-
-                    {/* Stats — mobile only, em grid abaixo do nome */}
-                    <div
-                      className="md:hidden mt-3 grid gap-2 pl-[2.5rem]"
-                      style={{ gridTemplateColumns: `repeat(${Math.min(tabCols[tab].length, 4)}, 1fr)` }}
-                    >
                       {tabCols[tab].map(col => (
-                        <div key={col} className="rounded-xl bg-white/[0.03] py-1.5 text-center">
-                          <div className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">{col}</div>
-                          <div className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-300'}`}>
+                        <div key={col} className="text-right">
+                          <span className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-400'}`}>
                             {getCol(row, col)}
-                          </div>
+                          </span>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Mobile: nome completo + grid de stats abaixo */}
+                    <div className="md:hidden">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="font-black leading-none text-center w-7 flex-shrink-0"
+                          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: pos === 1 ? '#facc15' : pos <= 3 ? '#22d3ee' : '#475569' }}>
+                          {pos}
+                        </span>
+                        {avatar
+                          ? <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-lg object-cover" />
+                          : <div className="h-7 w-7 flex-shrink-0 rounded-lg bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">{row.team.slice(0, 2).toUpperCase()}</div>
+                        }
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-black text-white leading-snug whitespace-normal break-words">{row.team}</div>
+                        </div>
+                        {row.champion && <span className="flex-shrink-0 text-sm">🏆</span>}
+                      </div>
+
+                      <div
+                        className="mt-3 grid gap-2 pl-[2.375rem]"
+                        style={{ gridTemplateColumns: `repeat(${Math.min(tabCols[tab].length, 4)}, 1fr)` }}
+                      >
+                        {tabCols[tab].map(col => (
+                          <div key={col} className="rounded-xl bg-white/[0.03] py-1.5 text-center">
+                            <div className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">{col}</div>
+                            <div className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-300'}`}>
+                              {getCol(row, col)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </a>
                 )
