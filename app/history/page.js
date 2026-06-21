@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy,
@@ -165,6 +165,30 @@ export default function HistoryPage() {
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
   const [openSeason, setOpenSeason] = useState(null)
+  const cardRefs = useRef({})
+
+  function handleToggleSeason(season) {
+    const willOpen = openSeason !== season
+
+    setOpenSeason(willOpen ? season : null)
+
+    if (willOpen) {
+      // Wait a tick so the previous card's collapse animation has
+      // started before we scroll, avoiding a visual jump.
+      setTimeout(() => {
+        const el = cardRefs.current[season]
+
+        if (el) {
+          const top =
+            el.getBoundingClientRect().top +
+            window.scrollY -
+            90 // offset for sticky header
+
+          window.scrollTo({ top, behavior: 'smooth' })
+        }
+      }, 50)
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -644,6 +668,9 @@ export default function HistoryPage() {
                 return (
                   <motion.div
                     key={s.season}
+                    ref={(el) => {
+                      cardRefs.current[s.season] = el
+                    }}
                     initial={{
                       opacity: 0,
                       y: 50,
@@ -696,9 +723,7 @@ export default function HistoryPage() {
                         {/* HEADER */}
                         <button
                           onClick={() =>
-                            setOpenSeason(
-                              open ? null : s.season
-                            )
+                            handleToggleSeason(s.season)
                           }
                           className="relative z-10 w-full p-6 text-left"
                         >
