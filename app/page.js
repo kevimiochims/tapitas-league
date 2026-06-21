@@ -366,7 +366,7 @@ function ChampionsWallInline({ champions }) {
         })()}
 
         {otherChampions.length > 0 && (
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3">
             {otherChampions.map((champ, index) => {
               const actualIndex = index + 1
               const isOpen = openSet.has(actualIndex)
@@ -3605,14 +3605,14 @@ export default function TapitasLeagueHomepage() {
                 visibleStandingsRows.map((row, i) => {
                   const avatar = getTeamAvatar(row.team)
                   const globalIndex = standingsPage * standingsPageSize + i + (standingsPage === 0 && standingsLeader ? 1 : 0)
-                  const isPlayoffRange = globalIndex < 6
+                  const isTop3 = globalIndex < 3
 
                   return (
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className={`flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] ${isPlayoffRange
-                        ? 'border-cyan-300/12 bg-[linear-gradient(160deg,rgba(18,36,56,0.98),rgba(10,18,35,0.99))]'
+                      className={`flex items-center gap-3 rounded-[24px] border px-4 py-3.5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] ${isTop3
+                        ? 'border-cyan-300/30 bg-[linear-gradient(160deg,rgba(14,58,76,0.98),rgba(10,18,35,0.99))]'
                         : 'border-white/8 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))]'
                         }`}
                     >
@@ -3622,7 +3622,7 @@ export default function TapitasLeagueHomepage() {
                           style={{
                             fontFamily: '"Bebas Neue", sans-serif',
                             fontSize: '22px',
-                            color: isPlayoffRange ? '#a5f3fc' : '#cbd5e1',
+                            color: isTop3 ? '#67e8f9' : '#cbd5e1',
                           }}
                         >
                           {globalIndex + 1}
@@ -3648,10 +3648,10 @@ export default function TapitasLeagueHomepage() {
 
                         <div className="mt-0.5 text-[11px] font-bold text-slate-400">
                           {currentWeekLabel === '__final__'
-                            ? isPlayoffRange
+                            ? isTop3
                               ? 'The top teams'
                               : 'The other teams'
-                            : isPlayoffRange
+                            : isTop3
                               ? 'Playoff-bound team'
                               : 'Chasing the cut'}
                         </div>
