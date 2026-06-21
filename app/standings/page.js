@@ -655,9 +655,11 @@ export default function StandingsPage() {
             <div className="flex items-center justify-center py-20 text-slate-500 font-bold">Loading...</div>
           ) : (
             <div className="p-4 space-y-1.5">
-              {/* Header row */}
-              <div className="grid gap-2 px-4 pb-1"
-                style={{ gridTemplateColumns: `2rem 1fr ${tabCols[tab].map(() => '4rem').join(' ')}` }}>
+              {/* Header row — desktop only */}
+              <div
+                className="hidden md:grid items-center gap-x-3 gap-2 px-4 pb-1"
+                style={{ gridTemplateColumns: `2.5rem 1fr repeat(${tabCols[tab].length}, minmax(3.25rem, 1fr))` }}
+              >
                 <button
                   onClick={() => season !== 'All-Time' && handleSort('Pos')}
                   className={`text-[10px] font-black uppercase tracking-[0.2em] text-left ${season !== 'All-Time' ? 'cursor-pointer hover:text-cyan-300' : 'cursor-default text-slate-600'}`}
@@ -679,35 +681,74 @@ export default function StandingsPage() {
                 const rank = page * PER_PAGE + i + 1
                 const pos = season !== 'All-Time' && row.standing ? row.standing : rank
                 const avatar = getTeamAvatar(row.team)
-                const isTop3 = pos <= 3
                 return (
-                  <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                    className="grid items-center gap-2 rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all hover:bg-white/[0.05] hover:border-white/10"
-                    style={{ gridTemplateColumns: `2rem 1fr ${tabCols[tab].map(() => '4rem').join(' ')}` }}>
-                    {/* Rank */}
-                    <span className="font-black leading-none text-center"
-                      style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: pos === 1 ? '#facc15' : pos <= 3 ? '#22d3ee' : '#475569' }}>
-                      {pos}
-                    </span>
-                    {/* Team */}
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {avatar
-                        ? <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-lg object-cover" />
-                        : <div className="h-7 w-7 flex-shrink-0 rounded-lg bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">{row.team.slice(0, 2).toUpperCase()}</div>
-                      }
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-black text-white">{row.team}</div>
+                  <a
+                    key={row.team}
+                    href={`/teams?team=${encodeURIComponent(row.team)}`}
+                    className="block rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all hover:bg-white/[0.05] hover:border-white/10 hover:-translate-y-[1px]"
+                  >
+                    {/* Linha principal: posição + time */}
+                    <div
+                      className="grid items-center gap-x-3 md:gap-2"
+                      style={{
+                        gridTemplateColumns: `2.5rem 1fr`,
+                      }}
+                    >
+                      <span
+                        className="font-black leading-none text-center"
+                        style={{
+                          fontFamily: '"Bebas Neue", sans-serif',
+                          fontSize: '18px',
+                          color: pos === 1 ? '#facc15' : pos <= 3 ? '#22d3ee' : '#475569',
+                        }}
+                      >
+                        {pos}
+                      </span>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {avatar ? (
+                          <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-lg object-cover" />
+                        ) : (
+                          <div className="h-7 w-7 flex-shrink-0 rounded-lg bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">
+                            {row.team.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-black text-white leading-snug whitespace-normal break-words md:truncate">
+                            {row.team}
+                          </div>
+                        </div>
+                        {row.champion && <span className="flex-shrink-0 text-sm">🏆</span>}
+
+                        {/* Stats inline — desktop only, na mesma linha */}
+                        <div
+                          className="hidden md:grid flex-shrink-0"
+                          style={{ gridTemplateColumns: `repeat(${tabCols[tab].length}, minmax(3.25rem, 1fr))` }}
+                        >
+                          {tabCols[tab].map(col => (
+                            <div key={col} className="text-right">
+                              <span className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-400'}`}>
+                                {getCol(row, col)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      {row.champion && <span className="flex-shrink-0 text-sm">🏆</span>}
                     </div>
-                    {/* Stats */}
-                    {tabCols[tab].map(col => (
-                      <div key={col} className="text-right">
-                        <span className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-400'}`}>
-                          {getCol(row, col)}
-                        </span>
-                      </div>
-                    ))}
+
+                    {/* Stats — mobile only, em grid abaixo do nome */}
+                    <div
+                      className="md:hidden mt-3 grid gap-2 pl-[2.5rem]"
+                      style={{ gridTemplateColumns: `repeat(${Math.min(tabCols[tab].length, 4)}, 1fr)` }}
+                    >
+                      {tabCols[tab].map(col => (
+                        <div key={col} className="rounded-xl bg-white/[0.03] py-1.5 text-center">
+                          <div className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">{col}</div>
+                          <div className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-300'}`}>
+                            {getCol(row, col)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </a>
                 )
               })}
