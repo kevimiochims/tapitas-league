@@ -183,14 +183,14 @@ export default function TeamsPage() {
       const teamH = getTeamHistory(t.team)
       const titlesArr = teamH.filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE')
       const finalsArr = teamH.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE')
-      const poSeasonsArr = teamH.filter(r => parseNumber(r?.PO_W) + parseNumber(r?.PO_L) > 0)
+      const completedSeasonsArr = teamH.filter(r => parseNumber(r?.Standing) > 0)
       const unicornArr = getTeamUnicornSeasons(t.team)
 
       byTeam[t.team] = {
         titles: titlesArr.length,
         finals: finalsArr.length,
         playoffApps: parseNumber(t['Playoff Apps']),
-        playoffSeasons: poSeasonsArr.length,
+        completedSeasons: completedSeasonsArr.length,
         playoffWins: parseNumber(t.PO_W),
         playoffGames: parseNumber(t.PO_W) + parseNumber(t.PO_L),
         rsWins: parseNumber(t.RS_W),
@@ -245,9 +245,9 @@ export default function TeamsPage() {
       : 'never'
 
     const poApps = parseNumber(selected['Playoff Apps'])
-    const poSeasonsCount = teamH.filter(r => parseNumber(r?.PO_W) + parseNumber(r?.PO_L) > 0).length
+    const completedSeasonsCount = teamH.filter(r => parseNumber(r?.Standing) > 0).length
     const poAppsRank = leagueStats ? getOrdinalRankLabel(poApps, allValuesFor('playoffApps')) : null
-    const poAppsSub = `in ${poSeasonsCount} season${poSeasonsCount === 1 ? '' : 's'}${poAppsRank ? ` (${poAppsRank})` : ''}`
+    const poAppsSub = `in ${completedSeasonsCount} season${completedSeasonsCount === 1 ? '' : 's'}${poAppsRank ? ` (${poAppsRank})` : ''}`
 
     const poWins = parseNumber(selected.PO_W)
     const poGames = poWins + parseNumber(selected.PO_L)
@@ -347,14 +347,14 @@ export default function TeamsPage() {
               [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
-                gold: { border: 'border-yellow-400/30', bg: 'bg-yellow-400/10', text: 'text-yellow-300', iconBg: 'bg-yellow-400/15 border-yellow-400/30' },
-                purple: { border: 'border-purple-400/30', bg: 'bg-purple-400/10', text: 'text-purple-300', iconBg: 'bg-purple-400/15 border-purple-400/30' },
-                cyan: { border: 'border-cyan-400/30', bg: 'bg-cyan-400/10', text: 'text-cyan-300', iconBg: 'bg-cyan-400/15 border-cyan-400/30' },
-                emerald: { border: 'border-emerald-400/30', bg: 'bg-emerald-400/10', text: 'text-emerald-300', iconBg: 'bg-emerald-400/15 border-emerald-400/30' },
-                orange: { border: 'border-orange-400/30', bg: 'bg-orange-400/10', text: 'text-orange-300', iconBg: 'bg-orange-400/15 border-orange-400/30' },
-                slate: { border: 'border-white/15', bg: 'bg-white/[0.06]', text: 'text-slate-200', iconBg: 'bg-white/10 border-white/15' },
-                red: { border: 'border-red-400/30', bg: 'bg-red-400/10', text: 'text-red-300', iconBg: 'bg-red-400/15 border-red-400/30' },
-                pink: { border: 'border-pink-400/30', bg: 'bg-pink-400/10', text: 'text-pink-300', iconBg: 'bg-pink-400/15 border-pink-400/30' },
+                gold: { border: 'border-yellow-400/20', bg: 'bg-yellow-400/5', text: 'text-yellow-300', iconBg: 'bg-yellow-400/10 border-yellow-400/20' },
+                purple: { border: 'border-purple-400/20', bg: 'bg-purple-400/5', text: 'text-purple-300', iconBg: 'bg-purple-400/10 border-purple-400/20' },
+                cyan: { border: 'border-cyan-400/20', bg: 'bg-cyan-400/5', text: 'text-cyan-300', iconBg: 'bg-cyan-400/10 border-cyan-400/20' },
+                emerald: { border: 'border-emerald-400/20', bg: 'bg-emerald-400/5', text: 'text-emerald-300', iconBg: 'bg-emerald-400/10 border-emerald-400/20' },
+                orange: { border: 'border-orange-400/20', bg: 'bg-orange-400/5', text: 'text-orange-300', iconBg: 'bg-orange-400/10 border-orange-400/20' },
+                slate: { border: 'border-white/10', bg: 'bg-white/[0.03]', text: 'text-slate-200', iconBg: 'bg-white/[0.06] border-white/10' },
+                red: { border: 'border-red-400/20', bg: 'bg-red-400/5', text: 'text-red-300', iconBg: 'bg-red-400/10 border-red-400/20' },
+                pink: { border: 'border-pink-400/20', bg: 'bg-pink-400/5', text: 'text-pink-300', iconBg: 'bg-pink-400/10 border-pink-400/20' },
               }
               const c = colors[accent]
               return (
