@@ -599,7 +599,7 @@ export default function TeamsPage() {
                         <div className="font-black text-white leading-tight truncate" style={{ fontSize: 'clamp(13px, 1.8vw, 16px)' }}>
                           {team.team}
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5">{teamHistory.length} seasons</div>
+                        <div className="text-xs text-slate-300 mt-0.5">{teamHistory.length} seasons</div>
                       </div>
                     </div>
 
@@ -608,11 +608,11 @@ export default function TeamsPage() {
                       <span className="text-3xl font-black text-cyan-300" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                         {parseNumber(team.W)}
                       </span>
-                      <span className="text-slate-600 font-black">–</span>
-                      <span className="text-3xl font-black text-slate-500" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                      <span className="text-slate-400 font-black">–</span>
+                      <span className="text-3xl font-black text-slate-300" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                         {parseNumber(team.L)}
                       </span>
-                      <span className="text-xs font-bold text-slate-500 ml-1">{winPct}</span>
+                      <span className="text-xs font-bold text-slate-300 ml-1">{winPct}</span>
                     </div>
 
                     {/* Stats row */}
@@ -623,7 +623,7 @@ export default function TeamsPage() {
                         ['PO Apps', parseNumber(team['Playoff Apps']) || '—'],
                       ].map(([label, value]) => (
                         <div key={label} className="rounded-xl border border-white/5 bg-white/[0.03] p-2 text-center">
-                          <div className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-600">{label}</div>
+                          <div className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-300">{label}</div>
                           <div className="text-sm font-black text-white mt-0.5">{value}</div>
                         </div>
                       ))}
@@ -632,10 +632,10 @@ export default function TeamsPage() {
                     {/* Current season */}
                     {currentSeason && (
                       <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">
                           {currentSeason.Season}
                         </span>
-                        <span className="text-xs font-black text-slate-400">
+                        <span className="text-xs font-black text-slate-200">
                           {parseNumber(currentSeason.RS_W)}–{parseNumber(currentSeason.RS_L)}
                           {String(currentSeason?.Champion || '').toUpperCase() === 'TRUE' && ' 🏆'}
                           {String(currentSeason?.Reached_Final || '').toUpperCase() === 'TRUE' && String(currentSeason?.Champion || '').toUpperCase() !== 'TRUE' && ' 🥈'}
@@ -645,8 +645,8 @@ export default function TeamsPage() {
                   </div>
 
                   <div className="flex items-center justify-between border-t border-white/5 px-5 py-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">View Profile</span>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-600" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">View Profile</span>
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
                   </div>
                 </button>
               )
