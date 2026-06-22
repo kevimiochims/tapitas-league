@@ -45,6 +45,19 @@ async function safeFetch(url) {
   } catch { return [] }
 }
 
+// Returns an ordinal label like "most all-time", "2nd all-time", "3rd all-time"...
+// Ties share the same rank. Values <= 0 return null (no ranking shown).
+function getOrdinalRankLabel(value, allValues) {
+  if (!value || value <= 0) return null
+  const sorted = [...new Set(allValues.filter(v => v > 0))].sort((a, b) => b - a)
+  const rank = sorted.indexOf(value)
+  if (rank === -1) return null
+  if (rank === 0) return 'most all-time'
+  const n = rank + 1
+  const suffix = (n % 100 >= 11 && n % 100 <= 13) ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] || 'th')
+  return `${n}${suffix} all-time`
+}
+
 function TeamAvatar({ name, size = 'md' }) {
   const img = getTeamImage(name)
   const sizes = { sm: 40, md: 64, lg: 96, xl: 128 }
@@ -151,6 +164,48 @@ export default function TeamsPage() {
   const getTeamPR1Weeks = (teamName) =>
     games.filter(g => String(g?.Team || '').trim() === teamName && parseNumber(g?.['Power Ranking']) === 1).length
 
+  // Unicorn seasons for a given team (seasons where standing == max standing that season)
+  const getTeamUnicornSeasons = (teamName) => {
+    const teamH = getTeamHistory(teamName)
+    return teamH.filter(r => {
+      const seasonRows = history.filter(h => String(h.Season) === String(r.Season))
+      const maxStanding = Math.max(...seasonRows.map(s => Number(s.Standing) || 0))
+      return Number(r.Standing) === maxStanding
+    })
+  }
+
+  // ── League-wide values per stat, used to rank every team against all others ──
+  const leagueStats = useMemo(() => {
+    if (!allTime.length) return null
+
+    const byTeam = {}
+    teams.forEach(t => {
+      const teamH = getTeamHistory(t.team)
+      const titlesArr = teamH.filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE')
+      const finalsArr = teamH.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE')
+      const poSeasonsArr = teamH.filter(r => parseNumber(r?.PO_W) + parseNumber(r?.PO_L) > 0)
+      const unicornArr = getTeamUnicornSeasons(t.team)
+
+      byTeam[t.team] = {
+        titles: titlesArr.length,
+        finals: finalsArr.length,
+        playoffApps: parseNumber(t['Playoff Apps']),
+        playoffSeasons: poSeasonsArr.length,
+        playoffWins: parseNumber(t.PO_W),
+        playoffGames: parseNumber(t.PO_W) + parseNumber(t.PO_L),
+        rsWins: parseNumber(t.RS_W),
+        rsLosses: parseNumber(t.RS_L),
+        totalPoints: parseNumber(t.PF),
+        unicorns: unicornArr.length,
+        games200: getTeam200Games(t.team),
+        pr1Weeks: getTeamPR1Weeks(t.team),
+      }
+    })
+    return byTeam
+  }, [allTime, history, games, teams])
+
+  const allValuesFor = (key) => leagueStats ? Object.values(leagueStats).map(v => v[key]) : []
+
   if (selected) {
     const teamH = getTeamHistory(selected.team)
     const teamH2H = getTeamH2H(selected.team)
@@ -174,6 +229,42 @@ export default function TeamsPage() {
     const poWinPct = String(selected?.['PO_W%'] || '').trim()
     const games200 = getTeam200Games(selected.team)
     const pr1Weeks = getTeamPR1Weeks(selected.team)
+
+    // ── Build rank-aware subtitles ──────────────────────────────────
+    const fmtYears = (rows) => rows.map(r => `'${String(r.Season).slice(-2)}`).join(', ')
+
+    const titlesRank = leagueStats ? getOrdinalRankLabel(titles.length, allValuesFor('titles')) : null
+    const titlesSub = titles.length
+      ? `${fmtYears(titles)}${titlesRank === 'most all-time' ? ' (most all-time)' : ''}`
+      : 'never'
+
+    const finalsTeamH = teamH.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE')
+    const finalsRank = leagueStats ? getOrdinalRankLabel(finalsTeamH.length, allValuesFor('finals')) : null
+    const finalsSub = finalsTeamH.length
+      ? `${fmtYears(finalsTeamH)}${finalsRank === 'most all-time' ? ' (most all-time)' : ''}`
+      : 'never'
+
+    const poApps = parseNumber(selected['Playoff Apps'])
+    const poSeasonsCount = teamH.filter(r => parseNumber(r?.PO_W) + parseNumber(r?.PO_L) > 0).length
+    const poAppsRank = leagueStats ? getOrdinalRankLabel(poApps, allValuesFor('playoffApps')) : null
+    const poAppsSub = `in ${poSeasonsCount} season${poSeasonsCount === 1 ? '' : 's'}${poAppsRank ? ` (${poAppsRank})` : ''}`
+
+    const poWins = parseNumber(selected.PO_W)
+    const poGames = poWins + parseNumber(selected.PO_L)
+    const poWinsRank = leagueStats ? getOrdinalRankLabel(poWins, allValuesFor('playoffWins')) : null
+    const poWinsSub = `in ${poGames} game${poGames === 1 ? '' : 's'} · ${poWinPct}${poWinsRank ? ` (${poWinsRank})` : ''}`
+
+    const rsWinsRank = leagueStats ? getOrdinalRankLabel(parseNumber(selected.RS_W), allValuesFor('rsWins')) : null
+    const rsLossesRank = leagueStats ? getOrdinalRankLabel(parseNumber(selected.RS_L), allValuesFor('rsLosses')) : null
+    const totalPointsRank = leagueStats ? getOrdinalRankLabel(parseNumber(selected.PF), allValuesFor('totalPoints')) : null
+
+    const unicornsRank = leagueStats ? getOrdinalRankLabel(unicorns.length, allValuesFor('unicorns')) : null
+    const unicornsSub = unicorns.length
+      ? `${fmtYears(unicorns)}${unicornsRank === 'most all-time' ? ' (most all-time)' : ''}`
+      : 'never'
+
+    const games200Rank = leagueStats ? getOrdinalRankLabel(games200, allValuesFor('games200')) : null
+    const pr1Rank = leagueStats ? getOrdinalRankLabel(pr1Weeks, allValuesFor('pr1Weeks')) : null
 
     return (
       <main className="min-h-screen bg-[#020617] text-white">
@@ -244,41 +335,43 @@ export default function TeamsPage() {
           {/* Stats Grid */}
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              [Trophy, 'Titles', parseNumber(selected.Titles), 'championships', 'gold'],
-              [Star, 'Finals Apps', parseNumber(selected.Finals), 'tapitas bowl', 'purple'],
-              [Activity, 'Playoff Apps', parseNumber(selected['Playoff Apps']), 'appearances', 'cyan'],
-              [TrendingUp, 'Playoff Wins', parseNumber(selected.PO_W), `${poWinPct} rate`, 'emerald'],
-              [Target, 'Wins', parseNumber(selected.RS_W), 'regular season', 'cyan'],
-              [TrendingDown, 'Losses', parseNumber(selected.RS_L), 'regular season', 'red'],
-              [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), 'all-time', 'orange'],
-              [Skull, 'Unicorns', unicorns.length, unicorns.length ? unicorns.map(u => u.Season).join(', ') : 'never', 'pink'],
-              [Zap, '200+ Pt Games', games200, 'single weeks only', 'orange'],
-              [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, 'power rankings', 'gold'],
+              [Trophy, 'Titles', parseNumber(selected.Titles), titlesSub, 'gold'],
+              [Star, 'Finals Apps', parseNumber(selected.Finals), finalsSub, 'purple'],
+              [Activity, 'Playoff Apps', poApps, poAppsSub, 'cyan'],
+              [TrendingUp, 'Playoff Wins', poWins, poWinsSub, 'emerald'],
+              [Target, 'RS Wins', parseNumber(selected.RS_W), rsWinsRank || 'regular season', 'cyan'],
+              [TrendingDown, 'RS Losses', parseNumber(selected.RS_L), rsLossesRank || 'regular season', 'red'],
+              [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), totalPointsRank || 'all-time', 'orange'],
+              [Skull, 'Unicorns', unicorns.length, unicornsSub, 'pink'],
+              [Zap, '200+ Pt Games', games200, games200Rank || 'single weeks only', 'orange'],
+              [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
-                gold: 'border-yellow-400/20 bg-yellow-400/5 text-yellow-400',
-                purple: 'border-purple-400/20 bg-purple-400/5 text-purple-400',
-                cyan: 'border-cyan-400/20 bg-cyan-400/5 text-cyan-400',
-                emerald: 'border-emerald-400/20 bg-emerald-400/5 text-emerald-400',
-                orange: 'border-orange-400/20 bg-orange-400/5 text-orange-400',
-                slate: 'border-white/10 bg-white/[0.03] text-slate-300',
-                red: 'border-red-400/20 bg-red-400/5 text-red-400',
-                pink: 'border-pink-400/20 bg-pink-400/5 text-pink-300',
+                gold: { border: 'border-yellow-400/30', bg: 'bg-yellow-400/10', text: 'text-yellow-300', iconBg: 'bg-yellow-400/15 border-yellow-400/30' },
+                purple: { border: 'border-purple-400/30', bg: 'bg-purple-400/10', text: 'text-purple-300', iconBg: 'bg-purple-400/15 border-purple-400/30' },
+                cyan: { border: 'border-cyan-400/30', bg: 'bg-cyan-400/10', text: 'text-cyan-300', iconBg: 'bg-cyan-400/15 border-cyan-400/30' },
+                emerald: { border: 'border-emerald-400/30', bg: 'bg-emerald-400/10', text: 'text-emerald-300', iconBg: 'bg-emerald-400/15 border-emerald-400/30' },
+                orange: { border: 'border-orange-400/30', bg: 'bg-orange-400/10', text: 'text-orange-300', iconBg: 'bg-orange-400/15 border-orange-400/30' },
+                slate: { border: 'border-white/15', bg: 'bg-white/[0.06]', text: 'text-slate-200', iconBg: 'bg-white/10 border-white/15' },
+                red: { border: 'border-red-400/30', bg: 'bg-red-400/10', text: 'text-red-300', iconBg: 'bg-red-400/15 border-red-400/30' },
+                pink: { border: 'border-pink-400/30', bg: 'bg-pink-400/10', text: 'text-pink-300', iconBg: 'bg-pink-400/15 border-pink-400/30' },
               }
+              const c = colors[accent]
               return (
-                <div key={label} className={`rounded-[20px] border p-4 ${colors[accent]}`}>
-                  <div className={`mb-3 flex h-8 w-8 items-center justify-center rounded-xl border ${colors[accent]}`}>
-                    <Icon className="h-4 w-4" />
+                <div key={label} className={`rounded-[20px] border p-4 ${c.border} ${c.bg}`}>
+                  <div className={`mb-3 flex h-8 w-8 items-center justify-center rounded-xl border ${c.iconBg}`}>
+                    <Icon className={`h-4 w-4 ${c.text}`} />
                   </div>
-                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
-                  <div className="font-black leading-none" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px, 3vw, 40px)' }}>
+                  <div className={`mb-1 text-[9px] font-black uppercase tracking-[0.2em] ${c.text} opacity-80`}>{label}</div>
+                  <div className={`font-black leading-none ${c.text}`} style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px, 3vw, 40px)' }}>
                     {value}
                   </div>
-                  <div className="mt-1 text-[10px] text-slate-500">{sub}</div>
+                  <div className="mt-1 text-[11px] font-bold text-slate-200">{sub}</div>
                 </div>
               )
             })}
           </div>
+
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
