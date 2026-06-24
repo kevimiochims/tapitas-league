@@ -100,6 +100,31 @@ function getTeamAvatar(name) {
   return TEAM_AVATARS[normalizeString(name)] || null
 }
 
+function getInitials(name) {
+  return String(name || '?')
+    .trim()
+    .split(/\s+/)
+    .map(p => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+// Avatar de time com fallback de iniciais (mesmo tamanho dos outros avatares)
+function TeamAvatar({ name, className = '', textClassName = '' }) {
+  const avatarSrc = getTeamAvatar(name)
+  if (avatarSrc) {
+    return <img src={avatarSrc} alt={name} className={`${className} object-cover`} />
+  }
+  return (
+    <div className={`${className} bg-white/[0.06] flex items-center justify-center flex-shrink-0`}>
+      <span className={`font-black text-slate-400 ${textClassName}`}>
+        {getInitials(name)}
+      </span>
+    </div>
+  )
+}
+
 function normalizePlayerKey(value) {
   return String(value || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -708,6 +733,9 @@ function MatchupsPageContent() {
     ? String(selected?.['Recap da Partida'] || '').trim()
     : ''
 
+  // Anos sem dados de jogadores (ex: 2015/2016) — mostra apenas o recap
+  const hasPlayerData = starters.length > 0 || oppStarters.length > 0 || bench.length > 0 || oppBench.length > 0
+
   return (
     <main className="min-h-screen bg-[#020617] text-white">
       <style>{`
@@ -1061,10 +1089,7 @@ function MatchupsPageContent() {
                             onClick={e => e.stopPropagation()}
                             className="flex items-center gap-1.5 min-w-0 group"
                           >
-                            {getTeamAvatar(team)
-                              ? <img src={getTeamAvatar(team)} alt={team} className="h-5 w-5 rounded-lg object-cover flex-shrink-0" />
-                              : <div className="h-5 w-5 rounded-lg bg-white/[0.06] flex-shrink-0" />
-                            }
+                            <TeamAvatar name={team} className="h-5 w-5 rounded-lg flex-shrink-0" textClassName="text-[8px]" />
                             <span className={`text-sm font-black truncate max-w-[100px] group-hover:text-cyan-300 transition-colors ${won ? 'text-white' : 'text-slate-400'}`}>
                               {team}
                             </span>
@@ -1083,10 +1108,7 @@ function MatchupsPageContent() {
                             onClick={e => e.stopPropagation()}
                             className="flex items-center gap-1.5 min-w-0 group"
                           >
-                            {getTeamAvatar(opp)
-                              ? <img src={getTeamAvatar(opp)} alt={opp} className="h-5 w-5 rounded-lg object-cover flex-shrink-0" />
-                              : <div className="h-5 w-5 rounded-lg bg-white/[0.06] flex-shrink-0" />
-                            }
+                            <TeamAvatar name={opp} className="h-5 w-5 rounded-lg flex-shrink-0" textClassName="text-[8px]" />
                             <span className={`text-sm font-black truncate max-w-[100px] group-hover:text-cyan-300 transition-colors ${!won ? 'text-white' : 'text-slate-400'}`}>
                               {opp}
                             </span>
@@ -1180,9 +1202,7 @@ function MatchupsPageContent() {
 
                         {/* Time A */}
                         <div className="flex flex-col items-center gap-2">
-                          {getTeamAvatar(teamName) && (
-                            <img src={getTeamAvatar(teamName)} alt={teamName} className="h-14 w-14 rounded-2xl object-cover" />
-                          )}
+                          <TeamAvatar name={teamName} className="h-14 w-14 rounded-2xl" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(teamName)}`}
                             className={`text-center font-black leading-tight hover:text-cyan-300 transition-colors ${teamWon ? 'text-white' : 'text-slate-400'}`}
                             style={{ fontSize: 'clamp(14px, 2.5vw, 22px)' }}>
@@ -1221,9 +1241,7 @@ function MatchupsPageContent() {
 
                         {/* Time B */}
                         <div className="flex flex-col items-center gap-2">
-                          {getTeamAvatar(oppName) && (
-                            <img src={getTeamAvatar(oppName)} alt={oppName} className="h-14 w-14 rounded-2xl object-cover" />
-                          )}
+                          <TeamAvatar name={oppName} className="h-14 w-14 rounded-2xl" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(oppName)}`}
                             className={`text-center font-black leading-tight hover:text-cyan-300 transition-colors ${!teamWon ? 'text-white' : 'text-slate-400'}`}
                             style={{ fontSize: 'clamp(14px, 2.5vw, 22px)' }}>
@@ -1253,6 +1271,7 @@ function MatchupsPageContent() {
 
                 {/* Starters */}
                 {/* Ajustado: px-3 no mobile para economizar espaço nas bordas, px-8 no desktop */}
+                {hasPlayerData && (
                 <div className="px-3 md:px-8 py-6 border-b border-white/5">
                   <div className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300 mb-4">Starters</div>
 
@@ -1331,9 +1350,10 @@ function MatchupsPageContent() {
                     })
                   })()}
                 </div>
+                )}
 
                 {/* Bench */}
-                {(bench.length > 0 || oppBench.length > 0) && (
+                {hasPlayerData && (bench.length > 0 || oppBench.length > 0) && (
                   <div className="px-3 md:px-8 py-6 border-b border-white/5">
                     <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Bench</div>
 
