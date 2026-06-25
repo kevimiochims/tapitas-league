@@ -1263,7 +1263,7 @@ function MatchupsPageContent() {
                       </div>
 
                       {/* Confronto principal */}
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
 
                         {/* Time A */}
                         <div className="flex flex-col items-center gap-2">
@@ -1301,7 +1301,7 @@ function MatchupsPageContent() {
                         </div>
 
                         {/* VS central */}
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="flex flex-col items-center gap-1 self-center">
                           <div className="text-slate-600 font-black text-lg">VS</div>
                           <div className="text-[10px] font-bold text-slate-600">
                             {Math.abs(teamPF - teamPA).toFixed(2)}
