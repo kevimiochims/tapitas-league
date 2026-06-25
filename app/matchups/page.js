@@ -739,6 +739,16 @@ function MatchupsPageContent() {
   // Anos sem dados de jogadores (ex: 2015/2016) — mostra apenas o recap
   const hasPlayerData = starters.length > 0 || oppStarters.length > 0 || bench.length > 0 || oppBench.length > 0
 
+  // Semanas duplas (ex: "14-15") distorcem o total de pontos — destaque histórico só vale em semana simples
+  const isSingleWeek = selected ? !/[-–]/.test(String(selected?.Week || '').trim()) : false
+
+  // Um jogador é "histórico" se bateu o threshold E a semana é simples (não dupla)
+  const isHistoricPlayer = (player) => isSingleWeek && !!player && player.pts >= HISTORIC_PTS_THRESHOLD
+
+  // 200+ pts em semana simples também é feito histórico — para o time, não para o jogador
+  const HISTORIC_TEAM_PTS_THRESHOLD = 200
+  const isHistoricTeamScore = (pts) => isSingleWeek && (pts ?? 0) >= HISTORIC_TEAM_PTS_THRESHOLD
+
   return (
     <main className="min-h-screen bg-[#020617] text-white">
       <style>{`
@@ -1211,10 +1221,18 @@ function MatchupsPageContent() {
                             style={{ fontSize: 'clamp(14px, 2.5vw, 22px)' }}>
                             {teamName}
                           </a>
-                          <div className={`font-black leading-none ${teamWon ? 'text-cyan-300' : 'text-slate-500'}`}
+                          <div className={`font-black leading-none ${teamWon ? 'text-cyan-300' : 'text-slate-500'} ${
+                            isHistoricTeamScore(teamPF) ? 'text-amber-300 drop-shadow-[0_0_18px_rgba(251,191,36,0.45)]' : ''
+                            }`}
                             style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(42px, 7vw, 80px)' }}>
                             {teamPF.toFixed(2)}
                           </div>
+                          {isHistoricTeamScore(teamPF) && (
+                            <div className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-0.5">
+                              <span className="text-xs">🚀</span>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-300">200 Club</span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs font-black text-slate-500">
                               {teamRecord.w}–{teamRecord.l}
@@ -1250,10 +1268,18 @@ function MatchupsPageContent() {
                             style={{ fontSize: 'clamp(14px, 2.5vw, 22px)' }}>
                             {oppName}
                           </a>
-                          <div className={`font-black leading-none ${!teamWon ? 'text-cyan-300' : 'text-slate-500'}`}
+                          <div className={`font-black leading-none ${!teamWon ? 'text-cyan-300' : 'text-slate-500'} ${
+                            isHistoricTeamScore(teamPA) ? 'text-amber-300 drop-shadow-[0_0_18px_rgba(251,191,36,0.45)]' : ''
+                            }`}
                             style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(42px, 7vw, 80px)' }}>
                             {teamPA.toFixed(2)}
                           </div>
+                          {isHistoricTeamScore(teamPA) && (
+                            <div className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-0.5">
+                              <span className="text-xs">🚀</span>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-300">200 Club</span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs font-black text-slate-500">
                               {oppRecord.w}–{oppRecord.l}
@@ -1304,7 +1330,7 @@ function MatchupsPageContent() {
                             {/* Time A — Nome → Pts */}
                             <div className={`rounded-2xl px-2 md:px-3 py-2 min-w-0 ${
                               home
-                                ? (home.pts >= HISTORIC_PTS_THRESHOLD
+                                ? (isHistoricPlayer(home)
                                   ? 'bg-amber-400/10 border border-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
                                   : 'bg-white/[0.03] border border-white/5')
                                 : 'opacity-0'
@@ -1315,17 +1341,17 @@ function MatchupsPageContent() {
                                     <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={42} />
                                   </div>
                                   <span className={`text-[22px] md:text-[28px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
-                                    home && home.pts >= HISTORIC_PTS_THRESHOLD
+                                    isHistoricPlayer(home)
                                       ? 'text-amber-300'
                                       : ((home?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600')
                                     }`}>
-                                    {home && home.pts >= HISTORIC_PTS_THRESHOLD && <span className="text-base md:text-lg">🔥</span>}
+                                    {isHistoricPlayer(home) && <span className="text-base md:text-lg">🔥</span>}
                                     {home ? home.pts.toFixed(1) : '—'}
                                   </span>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5">
                                   <div className={`text-[15px] md:text-base font-black truncate leading-tight min-w-0 block ${
-                                    home && home.pts >= HISTORIC_PTS_THRESHOLD ? 'text-amber-200' : 'text-white'
+                                    isHistoricPlayer(home) ? 'text-amber-200' : 'text-white'
                                     }`}>
                                     {home?.name ?? ''}
                                   </div>
@@ -1342,7 +1368,7 @@ function MatchupsPageContent() {
                             {/* Time B — Pts → Nome (espelhado) */}
                             <div className={`rounded-2xl px-2 md:px-3 py-2 min-w-0 ${
                               away
-                                ? (away.pts >= HISTORIC_PTS_THRESHOLD
+                                ? (isHistoricPlayer(away)
                                   ? 'bg-amber-400/10 border border-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
                                   : 'bg-white/[0.03] border border-white/5')
                                 : 'opacity-0'
@@ -1350,12 +1376,12 @@ function MatchupsPageContent() {
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <span className={`text-[22px] md:text-[28px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
-                                    away && away.pts >= HISTORIC_PTS_THRESHOLD
+                                    isHistoricPlayer(away)
                                       ? 'text-amber-300'
                                       : ((away?.pts ?? 0) > 0 ? 'text-cyan-300' : 'text-slate-600')
                                     }`}>
                                     {away ? away.pts.toFixed(1) : '—'}
-                                    {away && away.pts >= HISTORIC_PTS_THRESHOLD && <span className="text-base md:text-lg">🔥</span>}
+                                    {isHistoricPlayer(away) && <span className="text-base md:text-lg">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
                                     <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={42} mirror />
@@ -1366,7 +1392,7 @@ function MatchupsPageContent() {
                                     {getDisplayPlayerPos(away?.name, pos, playerLookup)}
                                   </span>
                                   <div className={`text-[15px] md:text-base font-black truncate leading-tight text-right min-w-0 block ${
-                                    away && away.pts >= HISTORIC_PTS_THRESHOLD ? 'text-amber-200' : 'text-white'
+                                    isHistoricPlayer(away) ? 'text-amber-200' : 'text-white'
                                     }`}>
                                     {away?.name ?? ''}
                                   </div>
@@ -1405,7 +1431,7 @@ function MatchupsPageContent() {
 
                             <div className={`rounded-2xl px-2 md:px-3 py-2 min-w-0 ${
                               home
-                                ? (home.pts >= HISTORIC_PTS_THRESHOLD
+                                ? (isHistoricPlayer(home)
                                   ? 'bg-amber-400/10 border border-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
                                   : 'bg-white/[0.02] border border-white/[0.03]')
                                 : 'opacity-0'
@@ -1416,17 +1442,17 @@ function MatchupsPageContent() {
                                     <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={32} />
                                   </div>
                                   <span className={`text-[18px] md:text-[20px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
-                                    home && home.pts >= HISTORIC_PTS_THRESHOLD
+                                    isHistoricPlayer(home)
                                       ? 'text-amber-300'
                                       : ((home?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600')
                                     }`}>
-                                    {home && home.pts >= HISTORIC_PTS_THRESHOLD && <span className="text-sm md:text-base">🔥</span>}
+                                    {isHistoricPlayer(home) && <span className="text-sm md:text-base">🔥</span>}
                                     {home ? home.pts.toFixed(1) : '—'}
                                   </span>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5">
                                   <div className={`text-[13px] md:text-sm font-bold truncate leading-tight min-w-0 block ${
-                                    home && home.pts >= HISTORIC_PTS_THRESHOLD ? 'text-amber-200' : 'text-slate-300'
+                                    isHistoricPlayer(home) ? 'text-amber-200' : 'text-slate-300'
                                     }`}>
                                     {home?.name ?? ''}
                                   </div>
@@ -1442,7 +1468,7 @@ function MatchupsPageContent() {
 
                             <div className={`rounded-2xl px-2 md:px-3 py-2 min-w-0 ${
                               away
-                                ? (away.pts >= HISTORIC_PTS_THRESHOLD
+                                ? (isHistoricPlayer(away)
                                   ? 'bg-amber-400/10 border border-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
                                   : 'bg-white/[0.02] border border-white/[0.03]')
                                 : 'opacity-0'
@@ -1450,12 +1476,12 @@ function MatchupsPageContent() {
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <span className={`text-[18px] md:text-[20px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
-                                    away && away.pts >= HISTORIC_PTS_THRESHOLD
+                                    isHistoricPlayer(away)
                                       ? 'text-amber-300'
                                       : ((away?.pts ?? 0) > 0 ? 'text-slate-300' : 'text-slate-600')
                                     }`}>
                                     {away ? away.pts.toFixed(1) : '—'}
-                                    {away && away.pts >= HISTORIC_PTS_THRESHOLD && <span className="text-sm md:text-base">🔥</span>}
+                                    {isHistoricPlayer(away) && <span className="text-sm md:text-base">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
                                     <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={32} mirror />
@@ -1466,7 +1492,7 @@ function MatchupsPageContent() {
                                     {getDisplayPlayerPos(away?.name, 'BN', playerLookup)}
                                   </span>
                                   <div className={`text-[13px] md:text-sm font-bold truncate leading-tight text-right min-w-0 block ${
-                                    away && away.pts >= HISTORIC_PTS_THRESHOLD ? 'text-amber-200' : 'text-slate-300'
+                                    isHistoricPlayer(away) ? 'text-amber-200' : 'text-slate-300'
                                     }`}>
                                     {away?.name ?? ''}
                                   </div>
