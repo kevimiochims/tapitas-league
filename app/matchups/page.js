@@ -749,6 +749,58 @@ function MatchupsPageContent() {
   const HISTORIC_TEAM_PTS_THRESHOLD = 200
   const isHistoricTeamScore = (pts) => isSingleWeek && (pts ?? 0) >= HISTORIC_TEAM_PTS_THRESHOLD
 
+  // Conta qual é o Nº jogo de 200+ pts (em semana simples) na história de cada time.
+  // Ordena cronologicamente por Season + Week e localiza a posição do jogo atual na lista.
+  const team200Ordinal = useMemo(() => {
+    if (!selected) return { team: null, opp: null }
+
+    const sortKey = (g) => {
+      const s = parseNumber(g?.Season)
+      const w = parseFloat(String(g?.Week || '0').split(/[-–]/)[0]) || 0
+      return s * 100 + w
+    }
+
+    const buildOrdinalMap = (teamName) => {
+      const teamGames = games
+        .filter(g =>
+          String(g?.Team || '').trim() === teamName &&
+          !/[-–]/.test(String(g?.Week || '').trim()) &&
+          parseNumber(g?.PF) >= HISTORIC_TEAM_PTS_THRESHOLD
+        )
+        .sort((a, b) => sortKey(a) - sortKey(b))
+      return teamGames
+    }
+
+    const findOrdinal = (teamName, currentGame) => {
+      const list = buildOrdinalMap(teamName)
+      const idx = list.findIndex(g =>
+        String(g?.Season || '').trim() === String(currentGame?.Season || '').trim() &&
+        String(g?.Week || '').trim() === String(currentGame?.Week || '').trim() &&
+        String(g?.Team || '').trim() === String(currentGame?.Team || '').trim() &&
+        String(g?.Opponent || '').trim() === String(currentGame?.Opponent || '').trim()
+      )
+      return idx === -1 ? null : idx + 1
+    }
+
+    const teamName = String(selected?.Team || '').trim()
+    const oppName = String(selected?.Opponent || '').trim()
+
+    const oppGame = games.find(g =>
+      String(g?.Season || '').trim() === String(selected?.Season || '').trim() &&
+      String(g?.Week || '').trim() === String(selected?.Week || '').trim() &&
+      String(g?.Team || '').trim() === oppName &&
+      String(g?.Opponent || '').trim() === teamName
+    )
+
+    return {
+      team: isHistoricTeamScore(teamPF) ? findOrdinal(teamName, selected) : null,
+      opp: (oppGame && isHistoricTeamScore(parseNumber(oppGame?.PF))) ? findOrdinal(oppName, oppGame) : null,
+    }
+  }, [selected, games])
+
+  // Sufixo ordinal em português: 1º, 2º, 3º...
+  const ordinalLabel = (n) => `${n}º`
+
   return (
     <main className="min-h-screen bg-[#020617] text-white">
       <style>{`
@@ -1227,12 +1279,6 @@ function MatchupsPageContent() {
                             style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(42px, 7vw, 80px)' }}>
                             {teamPF.toFixed(2)}
                           </div>
-                          {isHistoricTeamScore(teamPF) && (
-                            <div className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-0.5">
-                              <span className="text-xs">🚀</span>
-                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-300">200 Club</span>
-                            </div>
-                          )}
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs font-black text-slate-500">
                               {teamRecord.w}–{teamRecord.l}
@@ -1244,6 +1290,14 @@ function MatchupsPageContent() {
                               {teamStreak}
                             </span>
                           </div>
+                          {isHistoricTeamScore(teamPF) && (
+                            <div className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-0.5">
+                              <span className="text-xs">🚀</span>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-300">
+                                {team200Ordinal.team ? `${ordinalLabel(team200Ordinal.team)} 200+` : '200+'}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* VS central */}
@@ -1274,12 +1328,6 @@ function MatchupsPageContent() {
                             style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(42px, 7vw, 80px)' }}>
                             {teamPA.toFixed(2)}
                           </div>
-                          {isHistoricTeamScore(teamPA) && (
-                            <div className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-0.5">
-                              <span className="text-xs">🚀</span>
-                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-300">200 Club</span>
-                            </div>
-                          )}
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs font-black text-slate-500">
                               {oppRecord.w}–{oppRecord.l}
@@ -1291,6 +1339,14 @@ function MatchupsPageContent() {
                               {oppStreak}
                             </span>
                           </div>
+                          {isHistoricTeamScore(teamPA) && (
+                            <div className="flex items-center gap-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-0.5">
+                              <span className="text-xs">🚀</span>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-300">
+                                {team200Ordinal.opp ? `${ordinalLabel(team200Ordinal.opp)} 200+` : '200+'}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                       </div>
