@@ -549,14 +549,27 @@ export default function RecordsPage() {
 
     const isDoubleWeek = g => { const w = String(g?.Week || ''); return w.includes('-') || w.includes('&') }
 
+    // Each game in GAME_FACTS_ALL has two rows (one per team's perspective),
+    // both sharing the same Season/Week/Team-Opponent pair once sorted.
+    // For matchup-level stats (margin, closest/biggest game) we want exactly
+    // one row per game — but it must be the WINNER's row (PF > PA), otherwise
+    // mkBiggest's `PF > PA` filter can drop the entire game if the loser's
+    // row happens to be the one that survives deduping.
     const dedup = arr => {
-      const seen = new Set()
-      return arr.filter(g => {
+      const byKey = new Map()
+      arr.forEach(g => {
         const key = [String(g?.Season || ''), String(g?.Week || ''), String(g?.Team || ''), String(g?.Opponent || '')].sort().join('|')
-        if (seen.has(key)) return false
-        seen.add(key)
-        return true
+        const existing = byKey.get(key)
+        if (!existing) {
+          byKey.set(key, g)
+          return
+        }
+        // Prefer the row with the higher PF (the winner's perspective)
+        if (parseNumber(g?.PF) > parseNumber(existing?.PF)) {
+          byKey.set(key, g)
+        }
       })
+      return Array.from(byKey.values())
     }
 
     const allDedup = dedup(games)
