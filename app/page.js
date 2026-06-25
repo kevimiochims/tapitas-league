@@ -989,7 +989,7 @@ export default function TapitasLeagueHomepage() {
   const [h2hData, setH2hData] = useState([])
   const [selectedTeamA, setSelectedTeamA] = useState('Howmuch')
   const [selectedTeamB, setSelectedTeamB] = useState('Patrolao Squad')
-  const [sortCategory, setSortCategory] = useState('Wins')
+  const [sortCategory, setSortCategory] = useState('Win Streak')
   const [sortSub, setSortSub] = useState('Total')
   const [standingsPage, setStandingsPage] = useState(0)
   const [gameFactsData, setGameFactsData] = useState([])
