@@ -283,6 +283,20 @@ function HeatBadge({ heat }) {
   )
 }
 
+function flipRivalry(r) {
+  return {
+    ...r,
+    teamA: r.teamB,
+    teamB: r.teamA,
+    aWins: r.bWins,
+    bWins: r.aWins,
+    biggestA: r.biggestB,
+    biggestB: r.biggestA,
+    bestA: r.bestB,
+    bestB: r.bestA
+  }
+}
+
 /* =====================================================
 PAGE
 ===================================================== */
@@ -385,27 +399,12 @@ export default function RivalriesPage() {
 
       seen.add(key)
 
-      let teamA = a
-      let teamB = b
-
-      let aWins = parseNumber(
-        r?.['A Wins']
-      )
-
-      let bWins = parseNumber(
-        r?.['B Wins']
-      )
-
-      const swapped =
-        teamFilterA !== 'ALL' &&
-        b === teamFilterA
-
       result.push({
-        teamA,
-        teamB,
+        teamA: a,
+        teamB: b,
 
-        aWins,
-        bWins,
+        aWins: parseNumber(r?.['A Wins']),
+        bWins: parseNumber(r?.['B Wins']),
 
         games: parseNumber(r?.Games),
 
@@ -417,37 +416,21 @@ export default function RivalriesPage() {
           r?.['Current Streak'] || '—'
         ),
 
-        biggestA: swapped
-          ? String(
-            r?.['Biggest Win Team B'] || '—'
-          )
-          : String(
-            r?.['Biggest Win Team A'] || '—'
-          ),
+        biggestA: String(
+          r?.['Biggest Win Team A'] || '—'
+        ),
 
-        biggestB: swapped
-          ? String(
-            r?.['Biggest Win Team A'] || '—'
-          )
-          : String(
-            r?.['Biggest Win Team B'] || '—'
-          ),
+        biggestB: String(
+          r?.['Biggest Win Team B'] || '—'
+        ),
 
-        bestA: swapped
-          ? String(
-            r?.['Best Streak Team B'] || '—'
-          )
-          : String(
-            r?.['Best Streak Team A'] || '—'
-          ),
+        bestA: String(
+          r?.['Best Streak Team A'] || '—'
+        ),
 
-        bestB: swapped
-          ? String(
-            r?.['Best Streak Team A'] || '—'
-          )
-          : String(
-            r?.['Best Streak Team B'] || '—'
-          ),
+        bestB: String(
+          r?.['Best Streak Team B'] || '—'
+        ),
 
         heat: getRivalryHeat(
           r?.Games,
@@ -460,15 +443,15 @@ export default function RivalriesPage() {
 
     return result
       .filter((r) => {
-        const matchA =
-          teamFilterA === 'ALL' ||
-          r.teamA === teamFilterA
+        const directMatch =
+          (teamFilterA === 'ALL' || r.teamA === teamFilterA) &&
+          (teamFilterB === 'ALL' || r.teamB === teamFilterB)
 
-        const matchB =
-          teamFilterB === 'ALL' ||
-          r.teamB === teamFilterB
+        const invertedMatch =
+          (teamFilterA === 'ALL' || r.teamB === teamFilterA) &&
+          (teamFilterB === 'ALL' || r.teamA === teamFilterB)
 
-        return matchA && matchB
+        return directMatch || invertedMatch
       })
       .sort((a, b) => {
         if (sortBy === 'GAMES') {
@@ -536,11 +519,16 @@ export default function RivalriesPage() {
 
   useEffect(() => {
     if (rivalries.length === 1) {
-      setSelected(rivalries[0])
+      const r = rivalries[0]
+
+      const needsFlip =
+        teamFilterA !== 'ALL' && r.teamA !== teamFilterA
+
+      setSelected(needsFlip ? flipRivalry(r) : r)
     } else {
       setSelected(null)
     }
-  }, [teamFilterA, teamFilterB])
+  }, [teamFilterA, teamFilterB, rivalries])
 
   /* =====================================================
   HISTORY
@@ -1277,8 +1265,8 @@ RENDER
                         key={season}
                         onClick={() => setSeasonFilter(season)}
                         className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-black transition-all ${seasonFilter === season
-                            ? 'bg-cyan-400 text-black'
-                            : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'
+                          ? 'bg-cyan-400 text-black'
+                          : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'
                           }`}
                       >
                         {season}
