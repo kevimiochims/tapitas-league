@@ -46,16 +46,17 @@ async function safeFetch(url) {
 }
 
 // Returns an ordinal label like "most all-time", "2nd all-time", "3rd all-time"...
-// Ties share the same rank. Values <= 0 return null (no ranking shown).
+// Ties share the same rank, and the next distinct value skips ahead accordingly
+// (e.g. two teams tied for 2nd push the next team to 4th, not 3rd).
+// Values <= 0 return null (no ranking shown).
 function getOrdinalRankLabel(value, allValues) {
   if (!value || value <= 0) return null
-  const sorted = [...new Set(allValues.filter(v => v > 0))].sort((a, b) => b - a)
-  const rank = sorted.indexOf(value)
-  if (rank === -1) return null
-  if (rank === 0) return 'most all-time'
-  const n = rank + 1
-  const suffix = (n % 100 >= 11 && n % 100 <= 13) ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] || 'th')
-  return `${n}${suffix} all-time`
+  const valid = allValues.filter(v => v > 0)
+  if (!valid.some(v => v === value)) return null
+  const rank = valid.filter(v => v > value).length + 1
+  if (rank === 1) return 'most all-time'
+  const suffix = (rank % 100 >= 11 && rank % 100 <= 13) ? 'th' : (['th', 'st', 'nd', 'rd'][rank % 10] || 'th')
+  return `${rank}${suffix} all-time`
 }
 
 function TeamAvatar({ name, size = 'md' }) {
