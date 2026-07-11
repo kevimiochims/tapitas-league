@@ -1859,17 +1859,17 @@ export default function TapitasLeagueHomepage() {
   }, [recentMatchups, selectedMatchupOption])
 
   useEffect(() => {
-    const el = weeksScrollRef.current
-    if (!el || !matchupOptions.length) return
+  const el = weeksScrollRef.current
+  if (!el || !matchupOptions.length) return
 
-    const isDesktop = window.matchMedia('(min-width: 768px)').matches
+  const isDesktop = window.matchMedia('(min-width: 768px)').matches
 
-    if (isDesktop) {
-      el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2)
-    } else {
-      el.scrollLeft = el.scrollWidth
-    }
-  }, [matchupOptions.length, selectedMatchupKey])
+  if (isDesktop) {
+    el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2)
+  } else {
+    el.scrollLeft = el.scrollWidth
+  }
+}, [matchupOptions.length])
 
   // Lista única de times extraída do h2h
   const allTeams = useMemo(() => {
