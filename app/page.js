@@ -5674,7 +5674,7 @@ export default function TapitasLeagueHomepage() {
                       <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.highestGame.team}</div>
                     </div>
                     <div className="text-sm text-cyan-300">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
-                    <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · W{seasonSummary.highestGame.week}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.highestGame.opponent} · Week {seasonSummary.highestGame.week}</div>
                   </div>
                 )}
 
@@ -5696,7 +5696,7 @@ export default function TapitasLeagueHomepage() {
                       <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.closestGame.team}</div>
                     </div>
                     <div className="text-sm text-cyan-300">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
-                    <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · W{seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.closestGame.opponent} · Week {seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
                   </div>
                 )}
 
@@ -5718,7 +5718,7 @@ export default function TapitasLeagueHomepage() {
                       <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.biggestWin.team}</div>
                     </div>
                     <div className="text-sm text-cyan-300">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
-                    <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · W{seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.biggestWin.opponent} · Week {seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
                   </div>
                 )}
 
@@ -5740,7 +5740,7 @@ export default function TapitasLeagueHomepage() {
                       <div className="min-w-0 truncate text-lg font-black text-white">{seasonSummary.lowestGame.team}</div>
                     </div>
                     <div className="text-sm text-red-400">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
-                    <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · W{seasonSummary.lowestGame.week}</div>
+                    <div className="text-xs text-slate-500">vs {seasonSummary.lowestGame.opponent} · Week {seasonSummary.lowestGame.week}</div>
                   </div>
                 )}
 
