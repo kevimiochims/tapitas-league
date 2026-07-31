@@ -367,35 +367,6 @@ export default function DraftPage() {
     const photos = DRAFT_PHOTOS?.[season] || []
     const photoTouchStartX = useRef(null)
     const boardScrollRef = useRef(null)
-    const boardDrag = useRef({ active: false, startX: 0, startScrollLeft: 0 })
-
-    const handleBoardWheel = (e) => {
-        const el = boardScrollRef.current
-        if (!el) return
-        // Convert vertical mouse-wheel scroll into horizontal scroll for the board
-        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-            el.scrollLeft += e.deltaY
-            e.preventDefault()
-        }
-    }
-
-    const handleBoardMouseDown = (e) => {
-        const el = boardScrollRef.current
-        if (!el) return
-        boardDrag.current = { active: true, startX: e.pageX, startScrollLeft: el.scrollLeft }
-    }
-
-    const handleBoardMouseMove = (e) => {
-        const el = boardScrollRef.current
-        if (!el || !boardDrag.current.active) return
-        e.preventDefault()
-        const delta = e.pageX - boardDrag.current.startX
-        el.scrollLeft = boardDrag.current.startScrollLeft - delta
-    }
-
-    const stopBoardDrag = () => {
-        boardDrag.current.active = false
-    }
     const [photoTimerKey, setPhotoTimerKey] = useState(0)
 
     const prevPhoto = () => {
@@ -627,6 +598,11 @@ export default function DraftPage() {
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
         .scroll-hide::-webkit-scrollbar { display: none; }
         .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .board-scroll { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.35) transparent; }
+        .board-scroll::-webkit-scrollbar { height: 10px; }
+        .board-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 999px; }
+        .board-scroll::-webkit-scrollbar-thumb { background-color: rgba(148,163,184,0.35); border-radius: 999px; }
+        .board-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(148,163,184,0.55); }
       `}</style>
 
             <Header onSummaryOpen={() => setDrawerOpen(true)} />
@@ -1001,12 +977,7 @@ export default function DraftPage() {
 
                                 <div
                                     ref={boardScrollRef}
-                                    onWheel={handleBoardWheel}
-                                    onMouseDown={handleBoardMouseDown}
-                                    onMouseMove={handleBoardMouseMove}
-                                    onMouseUp={stopBoardDrag}
-                                    onMouseLeave={stopBoardDrag}
-                                    className="overflow-x-auto scroll-hide p-4 cursor-grab active:cursor-grabbing select-none"
+                                    className="board-scroll overflow-x-auto p-4"
                                 >
                                     <table className="w-full border-separate border-spacing-1" style={{ minWidth: `${teams.length * 160 + 64}px` }}>
                                         <thead>
