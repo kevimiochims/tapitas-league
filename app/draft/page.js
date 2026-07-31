@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ChevronLeft, ChevronRight, Users } from 'lucide-react'
 import Header from '../components/Header'
@@ -384,15 +384,6 @@ export default function DraftPage() {
         setBoardThumb({ left, width })
     }
 
-    useEffect(() => {
-        const raf = requestAnimationFrame(updateBoardThumb)
-        window.addEventListener('resize', updateBoardThumb)
-        return () => {
-            cancelAnimationFrame(raf)
-            window.removeEventListener('resize', updateBoardThumb)
-        }
-    }, [teams, rounds, season])
-
     const handleBoardThumbPointerDown = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -562,6 +553,19 @@ export default function DraftPage() {
             })
         })
     }, [rounds, teams, seasonPicks])
+
+    useEffect(() => {
+        const el = boardScrollRef.current
+        updateBoardThumb()
+        if (!el || typeof ResizeObserver === 'undefined') return
+        const observer = new ResizeObserver(() => updateBoardThumb())
+        observer.observe(el)
+        window.addEventListener('resize', updateBoardThumb)
+        return () => {
+            observer.disconnect()
+            window.removeEventListener('resize', updateBoardThumb)
+        }
+    }, [teams, rounds, season, activeTab])
 
     const filteredSeasonPicks = useMemo(() => {
         return seasonPicks.filter((pick) => {
@@ -1052,83 +1056,80 @@ export default function DraftPage() {
                                     onScroll={updateBoardThumb}
                                     className="scroll-hide overflow-x-scroll px-4 pb-4"
                                 >
-                                    <table
-                                        className="w-full border-separate border-spacing-y-1 border-spacing-x-0"
-                                        style={{ minWidth: `${teams.length * 160 + 64}px` }}
+                                    <div
+                                        className="grid gap-y-1 gap-x-0"
+                                        style={{
+                                            gridTemplateColumns: `64px repeat(${teams.length}, 160px)`,
+                                            minWidth: `${teams.length * 160 + 64}px`,
+                                        }}
                                     >
-                                        <thead>
-                                            <tr>
-                                                <th className="sticky left-0 z-20 w-16 border-r border-white/10 bg-[#071120] text-left px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
-                                                    Round
-                                                </th>
-                                                {teams.map((team) => (
-                                                    <th
-                                                        key={team}
-                                                        className="px-2 py-2 text-center text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 whitespace-nowrap"
-                                                    >
-                                                        {team}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
+                                        <div className="sticky left-0 z-20 flex items-center border-r border-white/10 bg-[#071120] px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
+                                            Round
+                                        </div>
+                                        {teams.map((team) => (
+                                            <div
+                                                key={team}
+                                                className="flex items-center justify-center bg-[#071120] px-2 py-2 text-center text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 whitespace-nowrap"
+                                            >
+                                                {team}
+                                            </div>
+                                        ))}
 
-                                        <tbody>
-                                            {boardMatrix.map((row, rIdx) => (
-                                                <tr key={rIdx}>
-                                                    <td className="sticky left-0 z-10 border-r border-white/10 bg-[#071120] px-2 py-1 text-center text-xs font-black text-slate-600">
-                                                        R{rounds[rIdx]}
-                                                    </td>
+                                        {boardMatrix.map((row, rIdx) => (
+                                            <Fragment key={rIdx}>
+                                                <div className="sticky left-0 z-10 flex items-center justify-center border-r border-white/10 bg-[#071120] px-2 py-1 text-xs font-black text-slate-600">
+                                                    R{rounds[rIdx]}
+                                                </div>
 
-                                                    {row.map((picks, cIdx) => (
-                                                        <td key={cIdx} className="px-1 py-1 align-top">
-                                                            {picks.length > 0 ? (
-                                                                <div className="flex flex-col gap-1">
-                                                                    {picks.map((pick) => (
-                                                                        <div
-                                                                            key={pick.pick}
-                                                                            className={`relative rounded-xl border p-2 transition-all ${pick.tagOk
-                                                                                ? 'border-amber-400/40 bg-amber-400/[0.07] hover:bg-amber-400/[0.12]'
-                                                                                : 'border-white/5 bg-white/[0.03] hover:bg-white/[0.06]'
-                                                                                }`}
-                                                                        >
-                                                                            {pick.tagOk && (
-                                                                                <span
-                                                                                    title="Elegível para tag em 2026"
-                                                                                    className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-amber-300/50 bg-amber-400 text-[8px] font-black text-[#071120] shadow-[0_0_8px_rgba(251,191,36,0.7)]"
-                                                                                >
-                                                                                    ✓
-                                                                                </span>
-                                                                            )}
-                                                                            <div className="mb-1 flex items-center justify-between gap-1">
-                                                                                <span className="text-[9px] font-black text-slate-600">
-                                                                                    #{pick.pick}
-                                                                                </span>
-                                                                                <PosBadge pos={pick.position} />
-                                                                            </div>
+                                                {row.map((picks, cIdx) => (
+                                                    <div key={cIdx} className="bg-[#071120] px-1 py-1">
+                                                        {picks.length > 0 ? (
+                                                            <div className="flex flex-col gap-1">
+                                                                {picks.map((pick) => (
+                                                                    <div
+                                                                        key={pick.pick}
+                                                                        className={`relative rounded-xl border p-2 transition-all ${pick.tagOk
+                                                                            ? 'border-amber-400/40 bg-amber-400/[0.07] hover:bg-amber-400/[0.12]'
+                                                                            : 'border-white/5 bg-white/[0.03] hover:bg-white/[0.06]'
+                                                                            }`}
+                                                                    >
+                                                                        {pick.tagOk && (
+                                                                            <span
+                                                                                title="Elegível para tag em 2026"
+                                                                                className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-amber-300/50 bg-amber-400 text-[8px] font-black text-[#071120] shadow-[0_0_8px_rgba(251,191,36,0.7)]"
+                                                                            >
+                                                                                ✓
+                                                                            </span>
+                                                                        )}
+                                                                        <div className="mb-1 flex items-center justify-between gap-1">
+                                                                            <span className="text-[9px] font-black text-slate-600">
+                                                                                #{pick.pick}
+                                                                            </span>
+                                                                            <PosBadge pos={pick.position} />
+                                                                        </div>
 
-                                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                                <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
-                                                                                <div className="min-w-0">
-                                                                                    <div className="truncate text-xs font-black text-white leading-tight">
-                                                                                        {pick.player}
-                                                                                    </div>
-                                                                                    <div className="truncate text-[10px] font-bold text-slate-500">
-                                                                                        {pick.team}
-                                                                                    </div>
+                                                                        <div className="flex items-center gap-2 min-w-0">
+                                                                            <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
+                                                                            <div className="min-w-0">
+                                                                                <div className="truncate text-xs font-black text-white leading-tight">
+                                                                                    {pick.player}
+                                                                                </div>
+                                                                                <div className="truncate text-[10px] font-bold text-slate-500">
+                                                                                    {pick.team}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="rounded-xl border border-white/[0.03] bg-white/[0.01] p-2 h-[52px]" />
-                                                            )}
-                                                        </td>
-                                                    ))}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="rounded-xl border border-white/[0.03] bg-white/[0.01] p-2 h-[52px]" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </Fragment>
+                                        ))}
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
