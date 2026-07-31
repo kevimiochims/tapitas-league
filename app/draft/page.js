@@ -367,6 +367,69 @@ export default function DraftPage() {
     const photos = DRAFT_PHOTOS?.[season] || []
     const photoTouchStartX = useRef(null)
     const boardScrollRef = useRef(null)
+    const boardTrackRef = useRef(null)
+    const [boardThumb, setBoardThumb] = useState({ left: 0, width: 100 })
+
+    const updateBoardThumb = () => {
+        const el = boardScrollRef.current
+        if (!el) return
+        const { scrollLeft, scrollWidth, clientWidth } = el
+        if (scrollWidth <= clientWidth) {
+            setBoardThumb({ left: 0, width: 100 })
+            return
+        }
+        const width = Math.max((clientWidth / scrollWidth) * 100, 6)
+        const maxScrollLeft = scrollWidth - clientWidth
+        const left = (scrollLeft / maxScrollLeft) * (100 - width)
+        setBoardThumb({ left, width })
+    }
+
+    useEffect(() => {
+        const raf = requestAnimationFrame(updateBoardThumb)
+        window.addEventListener('resize', updateBoardThumb)
+        return () => {
+            cancelAnimationFrame(raf)
+            window.removeEventListener('resize', updateBoardThumb)
+        }
+    }, [teams, rounds, season])
+
+    const handleBoardThumbPointerDown = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const el = boardScrollRef.current
+        if (!el) return
+        const startX = e.clientX
+        const startScrollLeft = el.scrollLeft
+
+        const onMove = (ev) => {
+            const trackEl = boardTrackRef.current
+            if (!trackEl) return
+            const deltaX = ev.clientX - startX
+            const deltaScroll = (deltaX / trackEl.clientWidth) * el.scrollWidth
+            const maxScrollLeft = el.scrollWidth - el.clientWidth
+            el.scrollLeft = Math.min(Math.max(startScrollLeft + deltaScroll, 0), maxScrollLeft)
+            updateBoardThumb()
+        }
+        const onUp = () => {
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onUp)
+        }
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onUp)
+    }
+
+    const handleBoardTrackClick = (e) => {
+        if (e.target !== boardTrackRef.current) return
+        const el = boardScrollRef.current
+        const trackEl = boardTrackRef.current
+        if (!el || !trackEl) return
+        const rect = trackEl.getBoundingClientRect()
+        const ratio = (e.clientX - rect.left) / rect.width
+        const maxScrollLeft = el.scrollWidth - el.clientWidth
+        el.scrollLeft = Math.min(Math.max(ratio * el.scrollWidth - el.clientWidth / 2, 0), maxScrollLeft)
+        updateBoardThumb()
+    }
+
     const [photoTimerKey, setPhotoTimerKey] = useState(0)
 
     const prevPhoto = () => {
@@ -598,11 +661,6 @@ export default function DraftPage() {
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
         .scroll-hide::-webkit-scrollbar { display: none; }
         .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .board-scroll { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.35) transparent; }
-        .board-scroll::-webkit-scrollbar { height: 10px; }
-        .board-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 999px; }
-        .board-scroll::-webkit-scrollbar-thumb { background-color: rgba(148,163,184,0.35); border-radius: 999px; }
-        .board-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(148,163,184,0.55); }
       `}</style>
 
             <Header onSummaryOpen={() => setDrawerOpen(true)} />
@@ -975,18 +1033,32 @@ export default function DraftPage() {
                                     </span>
                                 </div>
 
+                                <div className="px-4 pb-3">
+                                    <div
+                                        ref={boardTrackRef}
+                                        onMouseDown={handleBoardTrackClick}
+                                        className="relative h-2.5 w-full cursor-pointer rounded-full bg-white/5"
+                                    >
+                                        <div
+                                            onMouseDown={handleBoardThumbPointerDown}
+                                            className="absolute top-0 h-2.5 cursor-grab rounded-full bg-slate-400/60 transition-colors hover:bg-slate-300/80 active:cursor-grabbing"
+                                            style={{ left: `${boardThumb.left}%`, width: `${boardThumb.width}%` }}
+                                        />
+                                    </div>
+                                </div>
+
                                 <div
                                     ref={boardScrollRef}
-                                    className="board-scroll overflow-x-scroll p-4"
-                                    style={{ transform: 'scaleY(-1)' }}
+                                    onScroll={updateBoardThumb}
+                                    className="scroll-hide overflow-x-scroll px-4 pb-4"
                                 >
                                     <table
-                                        className="w-full border-separate border-spacing-1"
-                                        style={{ minWidth: `${teams.length * 160 + 64}px`, transform: 'scaleY(-1)' }}
+                                        className="w-full border-separate border-spacing-y-1 border-spacing-x-0"
+                                        style={{ minWidth: `${teams.length * 160 + 64}px` }}
                                     >
                                         <thead>
                                             <tr>
-                                                <th className="sticky left-0 z-20 w-16 bg-[#071120] text-left px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 shadow-[-8px_0_0_0_#071120]">
+                                                <th className="sticky left-0 z-20 w-16 border-r border-white/10 bg-[#071120] text-left px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
                                                     Round
                                                 </th>
                                                 {teams.map((team) => (
@@ -1003,7 +1075,7 @@ export default function DraftPage() {
                                         <tbody>
                                             {boardMatrix.map((row, rIdx) => (
                                                 <tr key={rIdx}>
-                                                    <td className="sticky left-0 z-10 bg-[#071120] px-2 py-1 text-center text-xs font-black text-slate-600 shadow-[-8px_0_0_0_#071120]">
+                                                    <td className="sticky left-0 z-10 border-r border-white/10 bg-[#071120] px-2 py-1 text-center text-xs font-black text-slate-600">
                                                         R{rounds[rIdx]}
                                                     </td>
 
