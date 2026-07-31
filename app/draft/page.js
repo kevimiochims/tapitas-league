@@ -366,6 +366,36 @@ export default function DraftPage() {
     const { setLeftSlot } = useDrawer()
     const photos = DRAFT_PHOTOS?.[season] || []
     const photoTouchStartX = useRef(null)
+    const boardScrollRef = useRef(null)
+    const boardDrag = useRef({ active: false, startX: 0, startScrollLeft: 0 })
+
+    const handleBoardWheel = (e) => {
+        const el = boardScrollRef.current
+        if (!el) return
+        // Convert vertical mouse-wheel scroll into horizontal scroll for the board
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            el.scrollLeft += e.deltaY
+            e.preventDefault()
+        }
+    }
+
+    const handleBoardMouseDown = (e) => {
+        const el = boardScrollRef.current
+        if (!el) return
+        boardDrag.current = { active: true, startX: e.pageX, startScrollLeft: el.scrollLeft }
+    }
+
+    const handleBoardMouseMove = (e) => {
+        const el = boardScrollRef.current
+        if (!el || !boardDrag.current.active) return
+        e.preventDefault()
+        const delta = e.pageX - boardDrag.current.startX
+        el.scrollLeft = boardDrag.current.startScrollLeft - delta
+    }
+
+    const stopBoardDrag = () => {
+        boardDrag.current.active = false
+    }
     const [photoTimerKey, setPhotoTimerKey] = useState(0)
 
     const prevPhoto = () => {
@@ -472,6 +502,9 @@ export default function DraftPage() {
                 team: String(r?.Team || '').trim(),
                 player: String(r?.Player || '').trim(),
                 position: String(r?.Position || '').trim().toUpperCase(),
+                tagOk: ['true', 'yes', 'y', '1', 'sim', 'ok'].includes(
+                    String(r?.Tag_Ok || '').trim().toLowerCase()
+                ),
             }))
             .sort((a, b) => a.pick - b.pick)
     }, [draftData, season])
@@ -956,11 +989,29 @@ export default function DraftPage() {
                                     </div>
                                 </div>
 
-                                <div className="overflow-x-auto scroll-hide p-4">
-                                    <table className="w-full border-separate border-spacing-1" style={{ minWidth: `${teams.length * 160}px` }}>
+                                <div className="flex items-center gap-2 px-6 pb-3">
+                                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-amber-300">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]" />
+                                        Tag OK
+                                    </span>
+                                    <span className="text-[10px] font-bold text-slate-500">
+                                        Jogadores elegíveis para tag em 2026
+                                    </span>
+                                </div>
+
+                                <div
+                                    ref={boardScrollRef}
+                                    onWheel={handleBoardWheel}
+                                    onMouseDown={handleBoardMouseDown}
+                                    onMouseMove={handleBoardMouseMove}
+                                    onMouseUp={stopBoardDrag}
+                                    onMouseLeave={stopBoardDrag}
+                                    className="overflow-x-auto scroll-hide p-4 cursor-grab active:cursor-grabbing select-none"
+                                >
+                                    <table className="w-full border-separate border-spacing-1" style={{ minWidth: `${teams.length * 160 + 64}px` }}>
                                         <thead>
                                             <tr>
-                                                <th className="w-16 text-left px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
+                                                <th className="sticky left-0 z-20 w-16 bg-[#071120] text-left px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
                                                     Round
                                                 </th>
                                                 {teams.map((team) => (
@@ -977,7 +1028,7 @@ export default function DraftPage() {
                                         <tbody>
                                             {boardMatrix.map((row, rIdx) => (
                                                 <tr key={rIdx}>
-                                                    <td className="px-2 py-1 text-center text-xs font-black text-slate-600">
+                                                    <td className="sticky left-0 z-10 bg-[#071120] px-2 py-1 text-center text-xs font-black text-slate-600">
                                                         R{rounds[rIdx]}
                                                     </td>
 
@@ -988,8 +1039,19 @@ export default function DraftPage() {
                                                                     {picks.map((pick) => (
                                                                         <div
                                                                             key={pick.pick}
-                                                                            className="rounded-xl border border-white/5 bg-white/[0.03] p-2 hover:bg-white/[0.06] transition-all"
+                                                                            className={`relative rounded-xl border p-2 transition-all ${pick.tagOk
+                                                                                ? 'border-amber-400/40 bg-amber-400/[0.07] hover:bg-amber-400/[0.12]'
+                                                                                : 'border-white/5 bg-white/[0.03] hover:bg-white/[0.06]'
+                                                                                }`}
                                                                         >
+                                                                            {pick.tagOk && (
+                                                                                <span
+                                                                                    title="Elegível para tag em 2026"
+                                                                                    className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-amber-300/50 bg-amber-400 text-[8px] font-black text-[#071120] shadow-[0_0_8px_rgba(251,191,36,0.7)]"
+                                                                                >
+                                                                                    ✓
+                                                                                </span>
+                                                                            )}
                                                                             <div className="mb-1 flex items-center justify-between gap-1">
                                                                                 <span className="text-[9px] font-black text-slate-600">
                                                                                     #{pick.pick}
