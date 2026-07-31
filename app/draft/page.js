@@ -1041,11 +1041,11 @@ export default function DraftPage() {
                                     <div
                                         ref={boardTrackRef}
                                         onMouseDown={handleBoardTrackClick}
-                                        className="relative h-2.5 w-full cursor-pointer rounded-full bg-white/5"
+                                        className="relative h-1 w-full cursor-pointer rounded-full bg-white/5"
                                     >
                                         <div
                                             onMouseDown={handleBoardThumbPointerDown}
-                                            className="absolute top-0 h-2.5 cursor-grab rounded-full bg-slate-400/60 transition-colors hover:bg-slate-300/80 active:cursor-grabbing"
+                                            className="absolute top-0 h-1 cursor-grab rounded-full bg-slate-400/60 transition-colors hover:bg-slate-300/80 active:cursor-grabbing"
                                             style={{ left: `${boardThumb.left}%`, width: `${boardThumb.width}%` }}
                                         />
                                     </div>
@@ -1063,7 +1063,10 @@ export default function DraftPage() {
                                             minWidth: `${teams.length * 160 + 64}px`,
                                         }}
                                     >
-                                        <div className="sticky left-0 z-20 flex items-center border-r border-white/10 bg-[#071120] px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
+                                        <div
+                                            className="sticky left-0 z-20 flex items-center border-r border-white/10 bg-[#071120] px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600"
+                                            style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+                                        >
                                             Round
                                         </div>
                                         {teams.map((team) => (
@@ -1077,7 +1080,10 @@ export default function DraftPage() {
 
                                         {boardMatrix.map((row, rIdx) => (
                                             <Fragment key={rIdx}>
-                                                <div className="sticky left-0 z-10 flex items-center justify-center border-r border-white/10 bg-[#071120] px-2 py-1 text-xs font-black text-slate-600">
+                                                <div
+                                                    className="sticky left-0 z-10 flex items-center justify-center border-r border-white/10 bg-[#071120] px-2 py-1 text-xs font-black text-slate-600"
+                                                    style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+                                                >
                                                     R{rounds[rIdx]}
                                                 </div>
 
