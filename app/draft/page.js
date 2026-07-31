@@ -977,7 +977,7 @@ export default function DraftPage() {
 
                                 <div
                                     ref={boardScrollRef}
-                                    className="board-scroll overflow-x-auto p-4"
+                                    className="board-scroll overflow-x-scroll p-4"
                                     style={{ transform: 'scaleY(-1)' }}
                                 >
                                     <table
@@ -986,7 +986,7 @@ export default function DraftPage() {
                                     >
                                         <thead>
                                             <tr>
-                                                <th className="sticky left-0 z-20 w-16 bg-[#071120] text-left px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 shadow-[4px_0_0_0_#071120]">
+                                                <th className="sticky left-0 z-20 w-16 bg-[#071120] text-left px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 shadow-[-8px_0_0_0_#071120]">
                                                     Round
                                                 </th>
                                                 {teams.map((team) => (
@@ -1003,7 +1003,7 @@ export default function DraftPage() {
                                         <tbody>
                                             {boardMatrix.map((row, rIdx) => (
                                                 <tr key={rIdx}>
-                                                    <td className="sticky left-0 z-10 bg-[#071120] px-2 py-1 text-center text-xs font-black text-slate-600 shadow-[4px_0_0_0_#071120]">
+                                                    <td className="sticky left-0 z-10 bg-[#071120] px-2 py-1 text-center text-xs font-black text-slate-600 shadow-[-8px_0_0_0_#071120]">
                                                         R{rounds[rIdx]}
                                                     </td>
 
