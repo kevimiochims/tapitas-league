@@ -421,6 +421,31 @@ export default function DraftPage() {
         updateBoardThumb()
     }
 
+    // Round column is rendered OUTSIDE the horizontally-scrolling area entirely
+    // (no position:sticky involved), so its row heights are measured from the
+    // real scrollable grid and applied to the fixed label column to keep both
+    // in perfect pixel alignment regardless of content height.
+    const [boardRowHeights, setBoardRowHeights] = useState({})
+
+    const measureBoardRowHeights = () => {
+        const el = boardScrollRef.current
+        if (!el) return
+        const cells = el.querySelectorAll('[data-board-row]')
+        setBoardRowHeights((prev) => {
+            const next = { ...prev }
+            let changed = false
+            cells.forEach((cell) => {
+                const key = cell.getAttribute('data-board-row')
+                const h = Math.ceil(cell.getBoundingClientRect().height)
+                if (next[key] !== h) {
+                    next[key] = h
+                    changed = true
+                }
+            })
+            return changed ? next : prev
+        })
+    }
+
     const [photoTimerKey, setPhotoTimerKey] = useState(0)
 
     const prevPhoto = () => {
@@ -557,15 +582,22 @@ export default function DraftPage() {
     useEffect(() => {
         const el = boardScrollRef.current
         updateBoardThumb()
+        measureBoardRowHeights()
         if (!el || typeof ResizeObserver === 'undefined') return
-        const observer = new ResizeObserver(() => updateBoardThumb())
+        const observer = new ResizeObserver(() => {
+            updateBoardThumb()
+            measureBoardRowHeights()
+        })
         observer.observe(el)
+        Array.from(el.querySelectorAll('img')).forEach((img) => {
+            if (!img.complete) img.addEventListener('load', measureBoardRowHeights, { once: true })
+        })
         window.addEventListener('resize', updateBoardThumb)
         return () => {
             observer.disconnect()
             window.removeEventListener('resize', updateBoardThumb)
         }
-    }, [teams, rounds, season, activeTab])
+    }, [teams, rounds, season, activeTab, boardMatrix])
 
     const filteredSeasonPicks = useMemo(() => {
         return seasonPicks.filter((pick) => {
@@ -1051,90 +1083,108 @@ export default function DraftPage() {
                                     </div>
                                 </div>
 
-                                <div
-                                    ref={boardScrollRef}
-                                    onScroll={updateBoardThumb}
-                                    className="scroll-hide overflow-x-scroll px-4 pb-4"
-                                >
-                                    <div
-                                        className="grid gap-y-1 gap-x-0"
-                                        style={{
-                                            gridTemplateColumns: `64px repeat(${teams.length}, 160px)`,
-                                            minWidth: `${teams.length * 160 + 64}px`,
-                                        }}
-                                    >
+                                <div className="flex pb-4 pl-4">
+                                    {/* Fixed round-label column — structurally outside the horizontal
+                                        scroll area, so there's nothing that can scroll "behind" it. */}
+                                    <div className="flex w-16 flex-shrink-0 flex-col border-r border-white/10 bg-[#071120]">
                                         <div
-                                            className="sticky left-0 z-20 flex items-center border-r border-white/10 bg-[#071120] px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600"
-                                            style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+                                            style={{ height: boardRowHeights.header }}
+                                            className="flex items-center px-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600"
                                         >
                                             Round
                                         </div>
-                                        {teams.map((team) => (
-                                            <div
-                                                key={team}
-                                                className="flex items-center justify-center bg-[#071120] px-2 py-2 text-center text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 whitespace-nowrap"
-                                            >
-                                                {team}
-                                            </div>
-                                        ))}
-
-                                        {boardMatrix.map((row, rIdx) => (
-                                            <Fragment key={rIdx}>
+                                        <div className="flex flex-col gap-1">
+                                            {rounds.map((round, rIdx) => (
                                                 <div
-                                                    className="sticky left-0 z-10 flex items-center justify-center border-r border-white/10 bg-[#071120] px-2 py-1 text-xs font-black text-slate-600"
-                                                    style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+                                                    key={round}
+                                                    style={{ height: boardRowHeights[rIdx] }}
+                                                    className="flex items-center justify-center text-xs font-black text-slate-600"
                                                 >
-                                                    R{rounds[rIdx]}
+                                                    R{round}
                                                 </div>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                                                {row.map((picks, cIdx) => (
-                                                    <div key={cIdx} className="bg-[#071120] px-1 py-1">
-                                                        {picks.length > 0 ? (
-                                                            <div className="flex flex-col gap-1">
-                                                                {picks.map((pick) => (
-                                                                    <div
-                                                                        key={pick.pick}
-                                                                        className={`relative rounded-xl border p-2 transition-all ${pick.tagOk
-                                                                            ? 'border-amber-400/40 bg-amber-400/[0.07] hover:bg-amber-400/[0.12]'
-                                                                            : 'border-white/5 bg-white/[0.03] hover:bg-white/[0.06]'
-                                                                            }`}
-                                                                    >
-                                                                        {pick.tagOk && (
-                                                                            <span
-                                                                                title="Elegível para tag em 2026"
-                                                                                className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-amber-300/50 bg-amber-400 text-[8px] font-black text-[#071120] shadow-[0_0_8px_rgba(251,191,36,0.7)]"
-                                                                            >
-                                                                                ✓
-                                                                            </span>
-                                                                        )}
-                                                                        <div className="mb-1 flex items-center justify-between gap-1">
-                                                                            <span className="text-[9px] font-black text-slate-600">
-                                                                                #{pick.pick}
-                                                                            </span>
-                                                                            <PosBadge pos={pick.position} />
-                                                                        </div>
+                                    {/* Scrollable team columns only — no round column inside, so
+                                        nothing can render "underneath" the fixed label column. */}
+                                    <div
+                                        ref={boardScrollRef}
+                                        onScroll={updateBoardThumb}
+                                        className="scroll-hide overflow-x-scroll pr-4"
+                                    >
+                                        <div
+                                            className="grid gap-y-1 gap-x-0"
+                                            style={{
+                                                gridTemplateColumns: `repeat(${teams.length}, 160px)`,
+                                                minWidth: `${teams.length * 160}px`,
+                                            }}
+                                        >
+                                            {teams.map((team) => (
+                                                <div
+                                                    key={team}
+                                                    data-board-row="header"
+                                                    className="flex items-center justify-center px-2 py-2 text-center text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 whitespace-nowrap"
+                                                >
+                                                    {team}
+                                                </div>
+                                            ))}
 
-                                                                        <div className="flex items-center gap-2 min-w-0">
-                                                                            <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
-                                                                            <div className="min-w-0">
-                                                                                <div className="truncate text-xs font-black text-white leading-tight">
-                                                                                    {pick.player}
-                                                                                </div>
-                                                                                <div className="truncate text-[10px] font-bold text-slate-500">
-                                                                                    {pick.team}
+                                            {boardMatrix.map((row, rIdx) => (
+                                                <Fragment key={rIdx}>
+                                                    {row.map((picks, cIdx) => (
+                                                        <div
+                                                            key={cIdx}
+                                                            data-board-row={cIdx === 0 ? rIdx : undefined}
+                                                            className="px-1 py-1"
+                                                        >
+                                                            {picks.length > 0 ? (
+                                                                <div className="flex flex-col gap-1">
+                                                                    {picks.map((pick) => (
+                                                                        <div
+                                                                            key={pick.pick}
+                                                                            className={`relative rounded-xl border p-2 transition-all ${pick.tagOk
+                                                                                ? 'border-amber-400/40 bg-amber-400/[0.07] hover:bg-amber-400/[0.12]'
+                                                                                : 'border-white/5 bg-white/[0.03] hover:bg-white/[0.06]'
+                                                                                }`}
+                                                                        >
+                                                                            {pick.tagOk && (
+                                                                                <span
+                                                                                    title="Elegível para tag em 2026"
+                                                                                    className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-amber-300/50 bg-amber-400 text-[8px] font-black text-[#071120] shadow-[0_0_8px_rgba(251,191,36,0.7)]"
+                                                                                >
+                                                                                    ✓
+                                                                                </span>
+                                                                            )}
+                                                                            <div className="mb-1 flex items-center justify-between gap-1">
+                                                                                <span className="text-[9px] font-black text-slate-600">
+                                                                                    #{pick.pick}
+                                                                                </span>
+                                                                                <PosBadge pos={pick.position} />
+                                                                            </div>
+
+                                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                                <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
+                                                                                <div className="min-w-0">
+                                                                                    <div className="truncate text-xs font-black text-white leading-tight">
+                                                                                        {pick.player}
+                                                                                    </div>
+                                                                                    <div className="truncate text-[10px] font-bold text-slate-500">
+                                                                                        {pick.team}
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="rounded-xl border border-white/[0.03] bg-white/[0.01] p-2 h-[52px]" />
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </Fragment>
-                                        ))}
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="rounded-xl border border-white/[0.03] bg-white/[0.01] p-2 h-[52px]" />
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </Fragment>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </motion.div>
