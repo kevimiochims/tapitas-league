@@ -431,8 +431,14 @@ export default function RecordsPage() {
       const sorted = [...teamGames].sort((a, b) =>
         a.season !== b.season ? a.season - b.season : a.weekNum - b.weekNum
       )
-      // Find peak index (first time value reaches bestVal)
-      let peakIdx = sorted.findIndex(g => Math.abs(getStreak(g)) === bestVal)
+      // Find peak index (last time value reaches bestVal — most recent streak)
+      // Using findLastIndex equivalent: if we used findIndex we'd get the oldest
+      // occurrence, which could point to a different season (e.g. 2016 instead of 2025)
+      // when the team matched the same streak length more than once.
+      let peakIdx = -1
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        if (Math.abs(getStreak(sorted[i])) === bestVal) { peakIdx = i; break }
+      }
       if (peakIdx === -1) return null
       // Walk back to find start (where streak becomes 1 or -1)
       const sign = getStreak(sorted[peakIdx]) > 0 ? 1 : -1
