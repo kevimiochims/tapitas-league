@@ -39,7 +39,10 @@ const TEAM_AVATARS = {
 }
 
 function getTeamAvatar(name) {
-  return TEAM_AVATARS[normalizeString(name)] || null
+  // Strip trailing emoji/decorators (e.g. " 🔥") before lookup so names
+  // like "H-Lera do Mahl 🔥" still resolve to the correct avatar key
+  const clean = String(name || '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()
+  return TEAM_AVATARS[normalizeString(clean)] || null
 }
 
 function TeamAvatar({ team, size = 'md' }) {
@@ -385,6 +388,24 @@ export default function RecordsPage() {
       }))
     }
 
+    // Most winning seasons (RS: RS_W > RS_L; Total: W > L)
+    const winSeasonsRS = {}, winSeasonsRSYears = {}
+    const winSeasonsTot = {}, winSeasonsTotYears = {}
+    history.forEach(r => {
+      const team = String(r?.Team || '').trim()
+      const season = String(r?.Season || '').trim()
+      if (parseNumber(r?.RS_W) > parseNumber(r?.RS_L)) {
+        winSeasonsRS[team] = (winSeasonsRS[team] || 0) + 1
+        if (!winSeasonsRSYears[team]) winSeasonsRSYears[team] = []
+        winSeasonsRSYears[team].push(season)
+      }
+      if (parseNumber(r?.W) > parseNumber(r?.L)) {
+        winSeasonsTot[team] = (winSeasonsTot[team] || 0) + 1
+        if (!winSeasonsTotYears[team]) winSeasonsTotYears[team] = []
+        winSeasonsTotYears[team].push(season)
+      }
+    })
+
     return {
       mostWins: topN(allTime, 'W'),
       mostLosses: topN(allTime, 'L'),
@@ -396,6 +417,8 @@ export default function RecordsPage() {
       mostPoW: topN(allTime, 'PO_W'),
       topTenRS: mkObj(tenWSeasons, tenWSeasonsYears),
       topTenTot: mkObj(tenWTotal, tenWTotalYears),
+      mostWinSeasonsRS: mkObj(winSeasonsRS, winSeasonsRSYears),
+      mostWinSeasonsTot: mkObj(winSeasonsTot, winSeasonsTotYears),
       pr1All: mkPR(pr1All),
       pr1from21: mkPR(pr1from21),
       pr1from23: mkPR(pr1from23),
@@ -677,6 +700,26 @@ export default function RecordsPage() {
   const seasonRecords = useMemo(() => {
     if (!history.length) return {}
 
+    // Aggregate total-season (RS + Playoffs + Consolation) PF and game count
+    // directly from GAME_FACTS_ALL so we don't need extra sheet columns.
+    const totByTeamSeason = {}
+    games.forEach(g => {
+      const team = String(g?.Team || '').trim()
+      const season = String(g?.Season || '').trim()
+      const pf = parseNumber(g?.PF)
+      if (!team || !season || pf <= 0) return
+      const key = `${team}|${season}`
+      if (!totByTeamSeason[key]) totByTeamSeason[key] = { team, season, totalPF: 0, gp: 0 }
+      totByTeamSeason[key].totalPF += pf
+      totByTeamSeason[key].gp += 1
+    })
+    // Build avgPF-total rows (all seasons, in-progress included)
+    const withAvgTot = Object.values(totByTeamSeason)
+      .filter(r => r.gp > 0)
+      .map(r => ({ ...r, avgPF: r.totalPF / r.gp }))
+    const withAvgTot21 = withAvgTot.filter(r => Number(r.season) >= 2021)
+    const withAvgTot23 = withAvgTot.filter(r => Number(r.season) >= 2023)
+
     const mkTop = (arr, key, n = 5, asc = false, fmt = v => v) => {
       const sorted = [...arr].filter(r => parseNumber(r[key]) > 0).sort((a, b) =>
         asc ? parseNumber(a[key]) - parseNumber(b[key]) : parseNumber(b[key]) - parseNumber(a[key])
@@ -737,6 +780,28 @@ export default function RecordsPage() {
       }
     }
 
+    // Total-season avg helpers (same shape as mkAvg/mkAvgLow but uses totalPF rows)
+    const mkAvgTot = arr => {
+      const sorted = [...arr].sort((a, b) => b.avgPF - a.avgPF)
+      const topVal = sorted[0]?.avgPF || 0
+      return {
+        value: sorted[0],
+        avgVal: topVal,
+        teams: sorted.filter(r => Math.abs(r.avgPF - topVal) < 0.001).map(r => `${r.team} (${r.season})`),
+        top5: sorted.slice(0, 5).map(r => ({ label: r.team, sub: r.season, value: r.avgPF.toFixed(2) }))
+      }
+    }
+    const mkAvgTotLow = arr => {
+      const sorted = [...arr].sort((a, b) => a.avgPF - b.avgPF)
+      const topVal = sorted[0]?.avgPF || 0
+      return {
+        value: sorted[0],
+        avgVal: topVal,
+        teams: sorted.filter(r => Math.abs(r.avgPF - topVal) < 0.001).map(r => `${r.team} (${r.season})`),
+        top5: sorted.slice(0, 5).map(r => ({ label: r.team, sub: r.season, value: r.avgPF.toFixed(2) }))
+      }
+    }
+
     return {
       byWin: mkTop(history, 'RS_W'),
       byLoss: mkTop(history, 'RS_L'),
@@ -754,8 +819,14 @@ export default function RecordsPage() {
       avgLow: mkAvgLow(withAvg),
       avgLow21: mkAvgLow(withAvg21),
       avgLow23: mkAvgLow(withAvg23),
+      avgHighTot: mkAvgTot(withAvgTot),
+      avgHighTot21: mkAvgTot(withAvgTot21),
+      avgHighTot23: mkAvgTot(withAvgTot23),
+      avgLowTot: mkAvgTotLow(withAvgTot),
+      avgLowTot21: mkAvgTotLow(withAvgTot21),
+      avgLowTot23: mkAvgTotLow(withAvgTot23),
     }
-  }, [history])
+  }, [history, games])
 
   // ── RIVALRY ────────────────────────────────────────────────────────
   const rivalryRecords = useMemo(() => {
@@ -1057,6 +1128,11 @@ export default function RecordsPage() {
       <RecordCard label="Most 10W Seasons (Total)" value={franchiseRecords.topTenTot?.value} sub={franchiseRecords.topTenTot?.teams} team={franchiseRecords.topTenTot?.teams} accent="cyan" icon={Star} top5={franchiseRecords.topTenTot?.top5} />
     </RecordSection>
 
+    <RecordSection title="Most Winning Seasons">
+      <RecordCard label="Reg Season Only" value={franchiseRecords.mostWinSeasonsRS?.value} sub={franchiseRecords.mostWinSeasonsRS?.teams} team={franchiseRecords.mostWinSeasonsRS?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostWinSeasonsRS?.top5} />
+      <RecordCard label="Full Season (RS + Playoffs)" value={franchiseRecords.mostWinSeasonsTot?.value} sub={franchiseRecords.mostWinSeasonsTot?.teams} team={franchiseRecords.mostWinSeasonsTot?.teams} accent="emerald" icon={Trophy} top5={franchiseRecords.mostWinSeasonsTot?.top5} />
+    </RecordSection>
+
     <RecordSection title="Power Rankings — Most Weeks at #1">
       <RecordCard label="All-Time" value={franchiseRecords.pr1All?.value} sub={franchiseRecords.pr1All?.teams} team={franchiseRecords.pr1All?.teams} sub2="All seasons" accent="gold" icon={Zap} top5={franchiseRecords.pr1All?.top5} />
       <RecordCard label="Since 2021" value={franchiseRecords.pr1from21?.value} sub={franchiseRecords.pr1from21?.teams} team={franchiseRecords.pr1from21?.teams} sub2="From 2021 on" accent="orange" icon={Zap} top5={franchiseRecords.pr1from21?.top5} />
@@ -1147,6 +1223,18 @@ export default function RecordsPage() {
       <RecordCard label="All-Time" value={seasonRecords.avgLow?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow?.teams} team={seasonRecords.avgLow?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="red" icon={TrendingDown} top5={seasonRecords.avgLow?.top5} />
       <RecordCard label="Since 2021" value={seasonRecords.avgLow21?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow21?.teams} team={seasonRecords.avgLow21?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="orange" icon={TrendingDown} top5={seasonRecords.avgLow21?.top5} />
       <RecordCard label="Since 2023" value={seasonRecords.avgLow23?.avgVal?.toFixed(2)} sub={seasonRecords.avgLow23?.teams} team={seasonRecords.avgLow23?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="purple" icon={TrendingDown} top5={seasonRecords.avgLow23?.top5} />
+    </RecordSection>
+
+    <RecordSection title="Best Avg Points/Week in a Season (Total)">
+      <RecordCard label="All-Time" value={seasonRecords.avgHighTot?.avgVal?.toFixed(2)} sub={seasonRecords.avgHighTot?.teams} team={seasonRecords.avgHighTot?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="gold" icon={Activity} top5={seasonRecords.avgHighTot?.top5} />
+      <RecordCard label="Since 2021" value={seasonRecords.avgHighTot21?.avgVal?.toFixed(2)} sub={seasonRecords.avgHighTot21?.teams} team={seasonRecords.avgHighTot21?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="cyan" icon={Activity} top5={seasonRecords.avgHighTot21?.top5} />
+      <RecordCard label="Since 2023" value={seasonRecords.avgHighTot23?.avgVal?.toFixed(2)} sub={seasonRecords.avgHighTot23?.teams} team={seasonRecords.avgHighTot23?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="emerald" icon={Activity} top5={seasonRecords.avgHighTot23?.top5} />
+    </RecordSection>
+
+    <RecordSection title="Fewest Avg Points/Week in a Season (Total)">
+      <RecordCard label="All-Time" value={seasonRecords.avgLowTot?.avgVal?.toFixed(2)} sub={seasonRecords.avgLowTot?.teams} team={seasonRecords.avgLowTot?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="red" icon={TrendingDown} top5={seasonRecords.avgLowTot?.top5} />
+      <RecordCard label="Since 2021" value={seasonRecords.avgLowTot21?.avgVal?.toFixed(2)} sub={seasonRecords.avgLowTot21?.teams} team={seasonRecords.avgLowTot21?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="orange" icon={TrendingDown} top5={seasonRecords.avgLowTot21?.top5} />
+      <RecordCard label="Since 2023" value={seasonRecords.avgLowTot23?.avgVal?.toFixed(2)} sub={seasonRecords.avgLowTot23?.teams} team={seasonRecords.avgLowTot23?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="purple" icon={TrendingDown} top5={seasonRecords.avgLowTot23?.top5} />
     </RecordSection>
   </>
 )}
