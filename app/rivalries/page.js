@@ -579,6 +579,28 @@ export default function RivalriesPage() {
     })
   }, [selected, gamesData])
 
+
+  const playoffGames = useMemo(() => {
+    if (!selected) return { wA: 0, wB: 0, total: 0 }
+
+    return history.reduce(
+      (acc, g) => {
+        if (!g.GameStage || g.GameStage === 'Reg Season') return acc
+
+        const won = g.Result === 'W'
+        const winner = won ? g.Team : g.Opponent
+        const isA = normalizeString(winner) === normalizeString(selected.teamA)
+
+        return {
+          wA: acc.wA + (isA ? 1 : 0),
+          wB: acc.wB + (isA ? 0 : 1),
+          total: acc.total + 1
+        }
+      },
+      { wA: 0, wB: 0, total: 0 }
+    )
+  }, [history, selected])
+
   const seasons = [
     'ALL',
 
@@ -751,6 +773,17 @@ export default function RivalriesPage() {
   }
 
   const statRows = selected ? [
+    {
+      label: 'Playoff Record',
+      left: playoffGames.total > 0 ? String(playoffGames.wA) : '—',
+      right: playoffGames.total > 0 ? String(playoffGames.wB) : '—',
+      subLeft: '',
+      subRight: '',
+      leftLead: playoffGames.wA > playoffGames.wB,
+      rightLead: playoffGames.wB > playoffGames.wA,
+      breakArrow: false,
+      greenMargin: false,
+    },
     {
       label: 'Biggest Win',
       left: biggestA ? `${biggestA.scoreA}–${biggestA.scoreB}` : '—',
