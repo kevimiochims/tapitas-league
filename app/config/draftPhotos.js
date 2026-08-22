@@ -7,7 +7,6 @@ export const DRAFT_PHOTOS = {
     { file: 'foto5.jpg', caption: '' },
     { file: 'foto6.jpg', caption: '' },
     { file: 'foto7.jpg', caption: '' },
-    { file: 'foto8.jpg', caption: '' },
   ],
   2025: [
     { file: 'foto1.jpg', caption: 'Os GMs reunidos ao final do Draft' },
