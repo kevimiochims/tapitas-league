@@ -207,7 +207,10 @@ function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide, t
 function RecordSection({ title, children }) {
   return (
     <div className="mb-10">
-      <div className="mb-4 text-xs font-black uppercase tracking-[0.3em] text-slate-500">{title}</div>
+      <div className="mb-4 flex items-center gap-3">
+        <div className="text-sm font-black uppercase tracking-[0.2em] text-slate-200">{title}</div>
+        <div className="flex-1 h-px bg-white/10" />
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {children}
       </div>
@@ -429,17 +432,37 @@ export default function RecordsPage() {
       if (!weeklyHighYears[team]) weeklyHighYears[team] = {}
       weeklyHighYears[team][season] = (weeklyHighYears[team][season] || 0) + 1
     })
-    const weeklyHighSorted = Object.entries(weeklyHighMap).sort((a, b) => b[1] - a[1])
-    const weeklyHighTop = weeklyHighSorted[0]?.[1] || 0
-    const mostWeeklyHigh = {
-      value: weeklyHighTop,
-      teams: weeklyHighSorted.filter(e => e[1] === weeklyHighTop).map(e => e[0]),
-      top5: weeklyHighSorted.slice(0, 5).map(([team, count]) => ({
-        label: team,
-        sub: Object.entries(weeklyHighYears[team] || {}).sort().map(([yr, n]) => `${yr}(${n})`).join(', '),
-        value: count
-      }))
+    const mkWeeklyHighRecord = (weeks, years) => {
+      const sorted = Object.entries(weeks).sort((a, b) => b[1] - a[1])
+      const topVal = sorted[0]?.[1] || 0
+      return {
+        value: topVal,
+        teams: sorted.filter(e => e[1] === topVal).map(e => e[0]),
+        top5: sorted.slice(0, 5).map(([team, count]) => ({
+          label: team,
+          sub: Object.entries(years[team] || {}).sort().map(([yr, n]) => `${yr}(${n})`).join(', '),
+          value: count
+        }))
+      }
     }
+    // Filter variants for 2021+ and 2023+
+    const weeklyHighMap21 = {}, weeklyHighYears21 = {}
+    const weeklyHighMap23 = {}, weeklyHighYears23 = {}
+    Object.values(rsByWeek).forEach(({ season, team }) => {
+      if (Number(season) >= 2021) {
+        weeklyHighMap21[team] = (weeklyHighMap21[team] || 0) + 1
+        if (!weeklyHighYears21[team]) weeklyHighYears21[team] = {}
+        weeklyHighYears21[team][season] = (weeklyHighYears21[team][season] || 0) + 1
+      }
+      if (Number(season) >= 2023) {
+        weeklyHighMap23[team] = (weeklyHighMap23[team] || 0) + 1
+        if (!weeklyHighYears23[team]) weeklyHighYears23[team] = {}
+        weeklyHighYears23[team][season] = (weeklyHighYears23[team][season] || 0) + 1
+      }
+    })
+    const mostWeeklyHigh = mkWeeklyHighRecord(weeklyHighMap, weeklyHighYears)
+    const mostWeeklyHigh21 = mkWeeklyHighRecord(weeklyHighMap21, weeklyHighYears21)
+    const mostWeeklyHigh23 = mkWeeklyHighRecord(weeklyHighMap23, weeklyHighYears23)
 
     return {
       mostWins: topN(allTime, 'W'),
@@ -455,6 +478,8 @@ export default function RecordsPage() {
       mostWinSeasonsRS: mkObj(winSeasonsRS, winSeasonsRSYears),
       mostWinSeasonsTot: mkObj(winSeasonsTot, winSeasonsTotYears),
       mostWeeklyHigh,
+      mostWeeklyHigh21,
+      mostWeeklyHigh23,
       pr1All: mkPR(pr1All),
       pr1from21: mkPR(pr1from21),
       pr1from23: mkPR(pr1from23),
@@ -1170,7 +1195,9 @@ export default function RecordsPage() {
     </RecordSection>
 
     <RecordSection title="Weekly High Scorer (RS)">
-      <RecordCard label="Most Times Top Scorer of the Week" value={franchiseRecords.mostWeeklyHigh?.value} sub={franchiseRecords.mostWeeklyHigh?.teams} team={franchiseRecords.mostWeeklyHigh?.teams} sub2="Reg Season only" accent="gold" icon={Flame} top5={franchiseRecords.mostWeeklyHigh?.top5} wide />
+      <RecordCard label="All-Time" value={franchiseRecords.mostWeeklyHigh?.value} sub={franchiseRecords.mostWeeklyHigh?.teams} team={franchiseRecords.mostWeeklyHigh?.teams} accent="gold" icon={Flame} top5={franchiseRecords.mostWeeklyHigh?.top5} />
+      <RecordCard label="Since 2021" value={franchiseRecords.mostWeeklyHigh21?.value} sub={franchiseRecords.mostWeeklyHigh21?.teams} team={franchiseRecords.mostWeeklyHigh21?.teams} accent="orange" icon={Flame} top5={franchiseRecords.mostWeeklyHigh21?.top5} />
+      <RecordCard label="Since 2023" value={franchiseRecords.mostWeeklyHigh23?.value} sub={franchiseRecords.mostWeeklyHigh23?.teams} team={franchiseRecords.mostWeeklyHigh23?.teams} accent="cyan" icon={Flame} top5={franchiseRecords.mostWeeklyHigh23?.top5} />
     </RecordSection>
 
     <RecordSection title="Power Rankings — Most Weeks at #1">
