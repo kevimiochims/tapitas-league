@@ -406,6 +406,41 @@ export default function RecordsPage() {
       }
     })
 
+    // Weekly High Scorer — Reg Season only
+    // For each (Season, Week), find the team with the highest PF.
+    // Group all RS games by season+week, find max PF per group, count per team.
+    const weeklyHighMap = {}
+    const weeklyHighYears = {}
+    const rsByWeek = {}
+    games.forEach(g => {
+      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
+      const season = String(g?.Season || '').trim()
+      const week = String(g?.Week || '').trim()
+      const team = String(g?.Team || '').trim()
+      const pf = parseNumber(g?.PF)
+      if (!season || !week || !team || pf <= 0) return
+      const key = `${season}|${week}`
+      if (!rsByWeek[key] || pf > rsByWeek[key].pf) {
+        rsByWeek[key] = { season, week, team, pf }
+      }
+    })
+    Object.values(rsByWeek).forEach(({ season, team }) => {
+      weeklyHighMap[team] = (weeklyHighMap[team] || 0) + 1
+      if (!weeklyHighYears[team]) weeklyHighYears[team] = {}
+      weeklyHighYears[team][season] = (weeklyHighYears[team][season] || 0) + 1
+    })
+    const weeklyHighSorted = Object.entries(weeklyHighMap).sort((a, b) => b[1] - a[1])
+    const weeklyHighTop = weeklyHighSorted[0]?.[1] || 0
+    const mostWeeklyHigh = {
+      value: weeklyHighTop,
+      teams: weeklyHighSorted.filter(e => e[1] === weeklyHighTop).map(e => e[0]),
+      top5: weeklyHighSorted.slice(0, 5).map(([team, count]) => ({
+        label: team,
+        sub: Object.entries(weeklyHighYears[team] || {}).sort().map(([yr, n]) => `${yr}(${n})`).join(', '),
+        value: count
+      }))
+    }
+
     return {
       mostWins: topN(allTime, 'W'),
       mostLosses: topN(allTime, 'L'),
@@ -419,6 +454,7 @@ export default function RecordsPage() {
       topTenTot: mkObj(tenWTotal, tenWTotalYears),
       mostWinSeasonsRS: mkObj(winSeasonsRS, winSeasonsRSYears),
       mostWinSeasonsTot: mkObj(winSeasonsTot, winSeasonsTotYears),
+      mostWeeklyHigh,
       pr1All: mkPR(pr1All),
       pr1from21: mkPR(pr1from21),
       pr1from23: mkPR(pr1from23),
@@ -1131,6 +1167,10 @@ export default function RecordsPage() {
     <RecordSection title="Most Winning Seasons">
       <RecordCard label="Reg Season Only" value={franchiseRecords.mostWinSeasonsRS?.value} sub={franchiseRecords.mostWinSeasonsRS?.teams} team={franchiseRecords.mostWinSeasonsRS?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostWinSeasonsRS?.top5} />
       <RecordCard label="Full Season (RS + Playoffs)" value={franchiseRecords.mostWinSeasonsTot?.value} sub={franchiseRecords.mostWinSeasonsTot?.teams} team={franchiseRecords.mostWinSeasonsTot?.teams} accent="emerald" icon={Trophy} top5={franchiseRecords.mostWinSeasonsTot?.top5} />
+    </RecordSection>
+
+    <RecordSection title="Weekly High Scorer (RS)">
+      <RecordCard label="Most Times Top Scorer of the Week" value={franchiseRecords.mostWeeklyHigh?.value} sub={franchiseRecords.mostWeeklyHigh?.teams} team={franchiseRecords.mostWeeklyHigh?.teams} sub2="Reg Season only" accent="gold" icon={Flame} top5={franchiseRecords.mostWeeklyHigh?.top5} wide />
     </RecordSection>
 
     <RecordSection title="Power Rankings — Most Weeks at #1">
