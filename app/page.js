@@ -636,7 +636,7 @@ function DraftPickTile({ pick, playerLookup }) {
         className="group block"
       >
         <div className="relative mx-auto h-[88px] w-[88px]">
-          <div className="h-full w-full overflow-hidden rounded-full bg-slate-200/90 ring-1 ring-white/10">
+          <div className="h-full w-full overflow-hidden rounded-full bg-[#F7F6F2] ring-2 ring-[#0A0A0A]">
             {photoSrc ? (
               <img
                 src={photoSrc}
@@ -645,7 +645,7 @@ function DraftPickTile({ pick, playerLookup }) {
                 onError={() => setPhotoFailed(true)}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-white/10 text-lg font-black text-white">
+              <div className="flex h-full w-full items-center justify-center bg-[#16274F] text-lg font-black text-white">
                 {String(shortName)
                   .split(' ')
                   .filter(Boolean)
@@ -657,7 +657,7 @@ function DraftPickTile({ pick, playerLookup }) {
             )}
           </div>
 
-          <div className="absolute left-0 top-0 rounded-full border border-black bg-black px-2 py-1 text-[10px] font-black leading-none text-white shadow-lg">
+          <div className="absolute left-0 top-0 rounded-full border-2 border-[#0A0A0A] bg-[#D01F2D] px-2 py-1 text-[10px] font-black leading-none text-white shadow-lg">
             #{pick.pick}
           </div>
 
@@ -669,11 +669,11 @@ function DraftPickTile({ pick, playerLookup }) {
         </div>
 
         <div className="mt-4 text-center">
-          <div className="truncate text-[14px] font-black tracking-[-0.01em] text-white">
+          <div className="truncate text-[14px] font-black tracking-[-0.01em] text-[#16274F]">
             {shortName}
           </div>
 
-          <div className="mt-1 flex items-center justify-center gap-1.5 text-[10px] font-bold text-slate-400">
+          <div className="mt-1 flex items-center justify-center gap-1.5 text-[10px] font-bold text-[#6B7280]">
             {getTeamAvatar(pick.team) ? (
               <img
                 src={getTeamAvatar(pick.team)}
@@ -3029,16 +3029,16 @@ export default function TapitasLeagueHomepage() {
           transition={{ duration: 0.45, ease: 'easeOut' }}
           className="mb-4"
         >
-          <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-            <div className="mb-4 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3 sm:gap-3 sm:px-5 sm:pb-1 sm:pt-4">
+          <div className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy">
+            <div className="mb-4 flex items-center justify-between gap-2.5 border-b-2 border-[#0A0A0A]/10 px-4 pb-3 pt-3 sm:gap-3 sm:px-5 sm:pb-4 sm:pt-4">
               <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-14 sm:w-14 sm:rounded-[20px]">
-                  <ScrollText className="h-4.5 w-4.5 text-pink-300 sm:h-5 sm:w-5" />
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] sm:h-14 sm:w-14">
+                  <ScrollText className="h-4.5 w-4.5 text-white sm:h-5 sm:w-5" />
                 </div>
 
                 <div className="min-w-0">
                   <div
-                    className="truncate uppercase leading-none text-pink-300"
+                    className="truncate uppercase leading-none text-[#16274F]"
                     style={{
                       fontFamily: '"Bebas Neue", sans-serif',
                       fontSize: '20px',
@@ -3049,7 +3049,7 @@ export default function TapitasLeagueHomepage() {
                     Last Draft
                   </div>
 
-                  <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
+                  <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-[#3F4757] sm:mt-1.5 sm:text-sm">
                     Draft {draftSeason}
                   </div>
                 </div>
@@ -3058,7 +3058,7 @@ export default function TapitasLeagueHomepage() {
               <div className="flex flex-shrink-0 flex-col items-end justify-center gap-1.5 self-center sm:gap-2">
                 <a
                   href="/draft"
-                  className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
+                  className="inline-flex flex-shrink-0 items-center gap-1 border-2 border-[#0A0A0A] bg-[#D01F2D] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
                 >
                   Ver tudo
                   <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -3070,12 +3070,12 @@ export default function TapitasLeagueHomepage() {
                       type="button"
                       onClick={() => goDraftRound(-1)}
                       disabled={!canGoDraftPrev}
-                      className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                      className="flex h-6 w-6 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-all hover:bg-[#F7F6F2] disabled:opacity-20 sm:h-7 sm:w-7"
                     >
                       <ChevronLeft className="h-3 w-3" />
                     </button>
 
-                    <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-pink-300 sm:min-w-[42px] sm:text-[10px]">
+                    <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-[#16274F] sm:min-w-[42px] sm:text-[10px]">
                       R{selectedDraftRound}
                     </div>
 
@@ -3083,7 +3083,7 @@ export default function TapitasLeagueHomepage() {
                       type="button"
                       onClick={() => goDraftRound(1)}
                       disabled={!canGoDraftNext}
-                      className="flex h-6 w-6 items-center justify-center rounded-[9px] border border-white/10 bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] text-slate-300 transition-all hover:bg-[linear-gradient(135deg,rgba(22,34,58,0.9),rgba(6,12,30,0.96))] hover:text-white disabled:opacity-20 sm:h-7 sm:w-7 sm:rounded-[10px]"
+                      className="flex h-6 w-6 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-all hover:bg-[#F7F6F2] disabled:opacity-20 sm:h-7 sm:w-7"
                     >
                       <ChevronRight className="h-3 w-3" />
                     </button>
