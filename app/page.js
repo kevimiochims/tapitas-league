@@ -2211,7 +2211,7 @@ export default function TapitasLeagueHomepage() {
         rightSlot={
           <button
             onClick={() => setDrawerOpen(true)}
-            className="inline-flex h-10 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-sm font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
+            className="inline-flex h-11 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-[15px] font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
           >
             Summary
             <ChevronRight className="h-4 w-4" />
@@ -5343,7 +5343,7 @@ export default function TapitasLeagueHomepage() {
                       setSeasonSummary(null)
                       setSelectedSeason(e.target.value)
                     }}
-                    className="border-2 border-[#0A0A0A] bg-[#F7F6F2] px-3 py-1 text-sm font-black text-[#16274F] outline-none"
+                    className="border-2 border-[#0A0A0A] bg-[#F7F6F2] px-3 py-1 text-sm text-[#16274F] outline-none"
                   >
                     {leagueStats?.allSeasons
                       ?.slice()
@@ -5378,7 +5378,7 @@ export default function TapitasLeagueHomepage() {
           {/* Conteúdo */}
           <div className="p-4 sm:p-6">
             {!seasonSummary ? (
-              <div className="flex items-center justify-center py-20 font-bold text-[#6B7280]">
+              <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">
                 Loading...
               </div>
             ) : (
@@ -5409,7 +5409,7 @@ export default function TapitasLeagueHomepage() {
                         return avatar ? (
                           <img src={avatar} alt={team} className="h-12 w-12 flex-shrink-0 rounded-[14px] object-cover" />
                         ) : (
-                          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-white text-[11px] font-black text-[#16274F]">
+                          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                             {String(team || '').slice(0, 2).toUpperCase()}
                           </div>
                         )
@@ -5441,7 +5441,7 @@ export default function TapitasLeagueHomepage() {
                         return avatar ? (
                           <img src={avatar} alt={team} className="h-10 w-10 flex-shrink-0 rounded-[12px] object-cover" />
                         ) : (
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                             {String(team || '').slice(0, 2).toUpperCase()}
                           </div>
                         )
@@ -5461,7 +5461,7 @@ export default function TapitasLeagueHomepage() {
                 )}
 
                 {/* Recordes */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-3">
                   {seasonSummary.bestRecord && (
                     <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
                       <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">🏅 Best Record</div>
@@ -5472,14 +5472,14 @@ export default function TapitasLeagueHomepage() {
                           return avatar ? (
                             <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
                           ) : (
-                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                               {String(team || '').slice(0, 2).toUpperCase()}
                             </div>
                           )
                         })()}
                         <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
                       </div>
-                      <span className="text-sm font-black text-[#16274F]">
+                      <span className="text-sm text-[#16274F]">
                         {parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}
                       </span>
                     </div>
@@ -5495,7 +5495,7 @@ export default function TapitasLeagueHomepage() {
                           return avatar ? (
                             <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
                           ) : (
-                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                               {String(team || '').slice(0, 2).toUpperCase()}
                             </div>
                           )
@@ -5518,15 +5518,15 @@ export default function TapitasLeagueHomepage() {
                           return avatar ? (
                             <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
                           ) : (
-                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                               {String(team || '').slice(0, 2).toUpperCase()}
                             </div>
                           )
                         })()}
                         <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
                       </div>
-                      <span className="text-sm font-black text-[#16274F]">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
-                      <span className="mt-1 text-sm text-[#6B7280]"> (reg season)</span>
+                      <span className="text-sm text-[#16274F]">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
+                      <span className="text-sm text-[#6B7280]"> (reg season)</span>
                     </div>
                   )}
 
@@ -5540,7 +5540,7 @@ export default function TapitasLeagueHomepage() {
                           return avatar ? (
                             <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
                           ) : (
-                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                               {String(team || '').slice(0, 2).toUpperCase()}
                             </div>
                           )
@@ -5548,14 +5548,14 @@ export default function TapitasLeagueHomepage() {
                         <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
                       </div>
                       <span className="text-sm font-black text-[#D01F2D]">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</span>
-                      <span className="mt-1 text-sm text-[#6B7280]"> (reg season)</span>
+                      <span className="text-sm text-[#6B7280]"> (reg season)</span>
                     </div>
                   )}
                 </div>
 
                 {/* Unicórnio */}
                 {seasonSummary.unicorn && seasonSummary.champion && (
-                  <div className="border-2 border-[#0A0A0A]/15 bg-white p-4 tp-shadow-navy-sm">
+                  <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
                     <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">🦄 Unicórnio</div>
                     <div className="mt-2 flex items-center gap-3">
                       {(() => {
@@ -5564,7 +5564,7 @@ export default function TapitasLeagueHomepage() {
                         return avatar ? (
                           <img src={avatar} alt={team} className="h-9 w-9 flex-shrink-0 rounded-[12px] object-cover" />
                         ) : (
-                          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
+                          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                             {String(team || '').slice(0, 2).toUpperCase()}
                           </div>
                         )
@@ -5595,14 +5595,14 @@ export default function TapitasLeagueHomepage() {
                         return avatar ? (
                           <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
                         ) : (
-                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                             {String(team || '').slice(0, 2).toUpperCase()}
                           </div>
                         )
                       })()}
                       <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.highestGame.team}</div>
                     </div>
-                    <div className="text-sm font-black text-[#16274F]">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
+                    <div className="text-sm text-[#16274F]">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
                     <div className="text-xs text-[#6B7280]">vs {seasonSummary.highestGame.opponent} · Week {seasonSummary.highestGame.week}</div>
                   </div>
                 )}
@@ -5617,14 +5617,14 @@ export default function TapitasLeagueHomepage() {
                         return avatar ? (
                           <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
                         ) : (
-                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                             {String(team || '').slice(0, 2).toUpperCase()}
                           </div>
                         )
                       })()}
                       <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.closestGame.team}</div>
                     </div>
-                    <div className="text-sm font-black text-[#16274F]">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
+                    <div className="text-sm text-[#16274F]">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
                     <div className="text-xs text-[#6B7280]">vs {seasonSummary.closestGame.opponent} · Week {seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
                   </div>
                 )}
@@ -5639,14 +5639,14 @@ export default function TapitasLeagueHomepage() {
                         return avatar ? (
                           <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
                         ) : (
-                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                             {String(team || '').slice(0, 2).toUpperCase()}
                           </div>
                         )
                       })()}
                       <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.biggestWin.team}</div>
                     </div>
-                    <div className="text-sm font-black text-[#16274F]">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
+                    <div className="text-sm text-[#16274F]">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
                     <div className="text-xs text-[#6B7280]">vs {seasonSummary.biggestWin.opponent} · Week {seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
                   </div>
                 )}
@@ -5661,7 +5661,7 @@ export default function TapitasLeagueHomepage() {
                         return avatar ? (
                           <img src={avatar} alt={team} className="h-7 w-7 flex-shrink-0 rounded-[10px] object-cover" />
                         ) : (
-                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]">
                             {String(team || '').slice(0, 2).toUpperCase()}
                           </div>
                         )
