@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #171717;
-  --foreground: #171717;
+  --background: #16274F;
+  --foreground: #16274F;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #16274F;
+    --foreground: #16274F;
   }
 }
 
 html,
 body {
-  background-color: #171717;
+  background-color: #F7F6F2;
 }
 
 body {
