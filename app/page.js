@@ -255,11 +255,17 @@ function ChampionsWallInline({ champions }) {
               <div className="absolute right-3 top-3 z-10 border-2 border-[#0A0A0A] bg-[#F5C518] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#0A0A0A]">
                 Reigning
               </div>
+                    <div className="absolute right-4 top-10 flex h-6 w-6 items-center justify-center text-[#6B7280] sm:top-11">
+                      <ChevronRight
+                        className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-90 text-[#D01F2D]' : ''
+                          }`}
+                      />
+                    </div>
 
               <button
                 type="button"
                 onClick={() => toggle(0)}
-                className="flex w-full items-center gap-4 px-4 py-4 text-left sm:px-5 sm:py-5"
+                className="flex w-full items-center gap-4 px-4 py-4 pr-24 text-left sm:px-5 sm:py-5 sm:pr-28"
               >
                 {avatar ? (
                   <img
@@ -292,9 +298,6 @@ function ChampionsWallInline({ champions }) {
                       {champ.season}
                     </div>
 
-                    <div className="inline-flex items-center border-2 border-[#0A0A0A] bg-[#F5C518] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#0A0A0A]">
-                      Champion
-                    </div>
                   </div>
 
                   <div className="mt-1 truncate text-[15px] font-black text-[#16274F] sm:text-[17px]">
@@ -390,10 +393,14 @@ function ChampionsWallInline({ champions }) {
                     : 'bg-white tp-shadow-navy-sm hover:-translate-y-[1px]'
                     }`}
                 >
+                  <div className="absolute right-3 top-3 z-10 border-2 border-[#0A0A0A] bg-[#F7F6F2] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#3F4757]">
+                    Title Run
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => toggle(actualIndex)}
-                    className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left sm:px-4 sm:py-4"
+                    className="flex w-full items-center gap-3 px-3.5 py-3.5 pr-28 text-left sm:px-4 sm:py-4 sm:pr-32"
                   >
                     {avatar ? (
                       <img
@@ -424,9 +431,6 @@ function ChampionsWallInline({ champions }) {
                           {champ.season}
                         </div>
 
-                        <div className="inline-flex items-center border-2 border-[#0A0A0A]/20 bg-[#F7F6F2] px-2 py-[4px] text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">
-                          Title run
-                        </div>
                       </div>
 
                       <div className="mt-1 truncate text-[13px] font-black text-[#16274F] sm:text-[14px]">
@@ -438,10 +442,12 @@ function ChampionsWallInline({ champions }) {
                       </div>
                     </div>
 
-                    <ChevronRight
-                      className={`h-4 w-4 flex-shrink-0 text-[#6B7280] transition-transform ${isOpen ? 'rotate-90 text-[#D01F2D]' : ''
-                        }`}
-                    />
+                    <div className="absolute right-4 top-10 flex h-6 w-6 items-center justify-center text-[#6B7280] sm:top-11">
+                      <ChevronRight
+                        className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-90 text-[#D01F2D]' : ''
+                          }`}
+                      />
+                    </div>
                   </button>
 
                   {isOpen && (
@@ -2229,9 +2235,9 @@ export default function TapitasLeagueHomepage() {
       />
 
       {/* ===== HERO ===== */}
-      <section className="relative z-10 px-3 md:px-6 pb-5">
+      <section className="relative z-10 px-3 pb-2 md:px-6">
         <div
-          className="relative isolate mb-10 overflow-hidden rounded-none border-2 border-[#0A0A0A] tp-shadow-navy"
+          className="relative isolate mb-3 overflow-hidden rounded-none border-2 border-[#0A0A0A] tp-shadow-navy"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
@@ -2934,7 +2940,7 @@ export default function TapitasLeagueHomepage() {
 
 
         </div>
-        <div className="mt-3 md:mt-4 flex justify-center gap-2">
+        <div className="mt-1.5 md:mt-2 flex justify-center gap-2">
           {[0, 1, 2].map((i) => (
             <button
               key={i}
@@ -2951,7 +2957,7 @@ export default function TapitasLeagueHomepage() {
       {/* ═══════════════════════════════════════════════════════════════
           CONTENT SECTION
       ════════════════════════════════════════════════════════════════ */}
-      <section className="home-content relative z-10 mx-auto flex max-w-[16100px] flex-col gap-10 overflow-x-clip px-3 pb-14 pt-8 lg:gap-12 [&>*]:mb-0">
+      <section className="home-content relative z-10 mx-auto flex max-w-[16100px] flex-col gap-10 overflow-x-clip px-3 pb-14 pt-4 lg:gap-12 [&>*]:mb-0">
 
         {/* ── STAT STRIP ─────────────────────────────────────────────────── */}
         <motion.div
@@ -3119,7 +3125,7 @@ export default function TapitasLeagueHomepage() {
         <motion.div
           initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-0 flex flex-col gap-6 xl:flex-row"
+          className="mb-0 flex flex-col gap-10 xl:flex-row xl:gap-6"
         >
           {/* Power Rankings */}
           <div className="w-full border-2 border-[#0A0A0A] bg-white p-3 tp-shadow-navy xl:flex-1">
@@ -3655,17 +3661,17 @@ export default function TapitasLeagueHomepage() {
               </a>
 
               {newsTotalPages > 1 && (
-                <div className="flex w-full items-center gap-1 sm:hidden">
+                <div className="flex w-full items-center gap-1">
                   <button
                     type="button"
                     onClick={() => goNewsPage(-1)}
                     disabled={newsPage === 0}
-                    className="flex h-6 w-6 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-all hover:bg-[#F7F6F2] disabled:opacity-20"
+                    className="flex h-6 flex-1 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-all hover:bg-[#F7F6F2] disabled:opacity-20 sm:h-7"
                   >
                     <ChevronLeft className="h-3 w-3" />
                   </button>
 
-                  <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-[#16274F]">
+                  <div className="min-w-[36px] text-center text-[9px] font-black uppercase tracking-[0.14em] text-[#16274F] sm:min-w-[42px] sm:text-[10px]">
                     {newsPage + 1}/{newsTotalPages}
                   </div>
 
@@ -3673,7 +3679,7 @@ export default function TapitasLeagueHomepage() {
                     type="button"
                     onClick={() => goNewsPage(1)}
                     disabled={newsPage >= newsTotalPages - 1}
-                    className="flex h-6 w-6 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-all hover:bg-[#F7F6F2] disabled:opacity-20"
+                    className="flex h-6 flex-1 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-all hover:bg-[#F7F6F2] disabled:opacity-20 sm:h-7"
                   >
                     <ChevronRight className="h-3 w-3" />
                   </button>
@@ -4884,7 +4890,7 @@ export default function TapitasLeagueHomepage() {
                   meta: 'text-[#6B7280]',
                 },
                 violet: {
-                  shell: 'border-[#0A0A0A] bg-white tp-shadow-red-sm',
+                  shell: 'border-[#0A0A0A] bg-white tp-shadow-navy-sm',
                   chip: 'border-[#0A0A0A] bg-[#D01F2D] text-white',
                   value: 'text-[#D01F2D]',
                   meta: 'text-[#6B7280]',
@@ -5134,7 +5140,7 @@ export default function TapitasLeagueHomepage() {
                                   lineHeight: 0.95,
                                 })}
                               </div>
-                              <div className={`mt-1 text-[10px] font-bold uppercase tracking-[0.15em] ${tone.meta}`}>
+                              <div className={`mt-1 inline-flex items-center border-2 border-[#0A0A0A] bg-[#F7F6F2] px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${tone.meta}`}>
                                 {tied ? 'Co-leaders' : 'Leader'}
                               </div>
                             </div>
@@ -5187,9 +5193,9 @@ export default function TapitasLeagueHomepage() {
                                     lineHeight: 0.95,
                                   })}
                                 </div>
-                                <div className={`mt-1 text-[10px] font-bold uppercase tracking-[0.15em] ${tone.meta}`}>
-                                  {tied ? 'Co-leaders' : 'Leader'}
-                                </div>
+                                <div className={`mt-1 inline-flex items-center border-2 border-[#0A0A0A] bg-[#F7F6F2] px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${tone.meta}`}>
+                                {tied ? 'Co-leaders' : 'Leader'}
+                              </div>
                               </div>
                               <div className="flex flex-shrink-0 flex-col items-end">
                                 <div
