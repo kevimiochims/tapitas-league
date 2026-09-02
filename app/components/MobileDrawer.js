@@ -18,7 +18,7 @@ export default function MobileDrawer() {
   return (
     <>
       {/* BOTÕES FIXOS */}
-      <div className="absolute right-4 top-4 z-50 flex items-center gap-2 xl:hidden">
+      <div className="absolute right-4 top-4 z-50 flex items-center gap-2 lg:hidden">
 
         {leftSlot && leftSlot}
 
@@ -34,12 +34,12 @@ export default function MobileDrawer() {
       {open && (
         <div
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-50 bg-[#16274F]/55 backdrop-blur-[2px] xl:hidden"
+          className="fixed inset-0 z-50 bg-[#16274F]/55 backdrop-blur-[2px] lg:hidden"
         />
       )}
 
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[min(86vw,360px)] border-r-4 border-[#0A0A0A] bg-[#F7F6F2] transition-transform duration-300 xl:hidden ${
+        className={`fixed left-0 top-0 z-50 h-full w-[min(86vw,360px)] border-r-4 border-[#0A0A0A] bg-[#F7F6F2] transition-transform duration-300 lg:hidden ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

@@ -5368,7 +5368,7 @@ export default function TapitasLeagueHomepage() {
             </div>
             <button
               onClick={() => setDrawerOpen(false)}
-              className="flex h-10 w-10 items-center justify-center border-2 border-white/20 bg-white/10 text-[#16274F] transition-all hover:bg-white/20"
+              className="flex h-10 w-10 items-center justify-center text-white transition-opacity hover:opacity-70"
               aria-label="Close Summary"
             >
               ✕

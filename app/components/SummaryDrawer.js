@@ -261,9 +261,9 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
           </div>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center border-2 border-white/20 bg-white/10 text-[#16274F] transition-all hover:bg-white/20"
+            className="flex h-10 w-10 items-center justify-center text-white transition-opacity hover:opacity-70"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 

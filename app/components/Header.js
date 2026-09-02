@@ -27,7 +27,7 @@ export default function Header({ rightSlot, onSummaryOpen }) {
           </span>
         </a>
 
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:flex">
           {NAV_LINKS.map(({ label, href }) => {
             const isActive = pathname === href
             return (
@@ -46,11 +46,11 @@ export default function Header({ rightSlot, onSummaryOpen }) {
           })}
         </nav>
 
-        <div className="hidden shrink-0 items-center gap-3 xl:flex">
+        <div className="hidden shrink-0 items-center gap-3 lg:flex">
           {showSummary && onSummaryOpen && (
             <button
               onClick={onSummaryOpen}
-              className="inline-flex h-11 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-[15px] font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
+              className="inline-flex h-10 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-[15px] font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
             >
               Summary
               <ChevronRight className="h-4 w-4" />
