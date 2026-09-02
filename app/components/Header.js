@@ -12,17 +12,17 @@ export default function Header({ rightSlot, onSummaryOpen }) {
   const showSummary = SUMMARY_PAGES.includes(pathname)
 
   return (
-    <header className="relative z-30 mb-6 w-full border-b-4 border-[#D01F2D] bg-[#16274F]">
-      <div className="mx-auto flex min-h-[88px] max-w-[1920px] items-center justify-between gap-5 px-5 sm:px-8 lg:px-12">
-        <a href="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
+    <header className="relative z-30 mb-5 w-full border-b-4 border-[#D01F2D] bg-[#16274F]">
+      <div className="mx-auto flex min-h-[70px] max-w-[1920px] items-center justify-between gap-5 px-5 sm:px-8 lg:px-12">
+        <a href="/" className="flex min-w-0 shrink-0 items-center gap-2">
           <Image
             src="/images/LogoFinalBlack.png"
             alt="Tapitas League"
-            width={38}
-            height={38}
-            className="h-9 w-9 shrink-0 object-contain"
+            width={34}
+            height={34}
+            className="h-8 w-8 shrink-0 object-contain"
           />
-          <span className="whitespace-nowrap text-[21px] font-black tracking-[-0.04em] text-white sm:text-[23px]">
+          <span className="whitespace-nowrap text-[20px] font-black tracking-[-0.04em] text-white sm:text-[22px]">
             Tapitas<span className="text-[#D01F2D]">League</span>
           </span>
         </a>
@@ -34,9 +34,9 @@ export default function Header({ rightSlot, onSummaryOpen }) {
               <a
                 key={href}
                 href={href}
-                className={`relative whitespace-nowrap px-3.5 py-3 text-[15px] font-black transition-colors duration-200 ${
+                className={`relative whitespace-nowrap px-3 py-2 text-[14px] font-black transition-colors duration-200 xl:px-3.5 xl:text-[15px] ${
                   isActive
-                    ? 'text-white after:absolute after:inset-x-3.5 after:-bottom-[1px] after:h-[3px] after:bg-[#D01F2D]'
+                    ? 'text-white after:absolute after:inset-x-3 after:-bottom-[2px] after:h-[3px] after:bg-[#D01F2D]'
                     : 'text-[#B8C0D0] hover:text-white'
                 }`}
               >
@@ -50,7 +50,7 @@ export default function Header({ rightSlot, onSummaryOpen }) {
           {showSummary && onSummaryOpen && (
             <button
               onClick={onSummaryOpen}
-              className="inline-flex h-12 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-6 text-[16px] font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
+              className="inline-flex h-11 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-[15px] font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
             >
               Summary
               <ChevronRight className="h-4 w-4" />

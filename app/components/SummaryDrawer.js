@@ -39,7 +39,7 @@ function TeamAvatar({ team, size = 'h-8 w-8' }) {
       <img
         src={avatar}
         alt={team}
-        className={`${size} flex-shrink-0 rounded-full object-cover`}
+        className={`${size} flex-shrink-0 rounded-[12px] object-cover`}
       />
     )
   }
@@ -224,36 +224,36 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
       )}
 
       {/* DRAWER */}
-      <div className={`fixed right-0 top-0 z-50 h-full w-full max-w-2xl overflow-y-auto border-l-4 border-[#0A0A0A] bg-[#F7F6F2] transition-transform duration-300 ${
+      <div className={`fixed right-0 top-0 z-50 h-full w-full max-w-lg overflow-y-auto border-l-4 border-[#0A0A0A] bg-[#F7F6F2] transition-transform duration-300 ${
         open ? 'translate-x-0' : 'translate-x-full'
       }`}>
 
         {/* HEADER */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 sm:px-6">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-4 sm:px-6">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#B8C0D0]">
+            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#B8C0D0]">
               Season Summary
             </div>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-3 mt-1">
               <div className="text-xl font-black text-white">
                 Season{' '}
                 <select
                   value={selectedSeason || ''}
                   onChange={(e) => setSelectedSeason(e.target.value)}
-                  className="border-2 border-white/20 bg-[#F7F6F2] px-3 py-1.5 text-sm font-black text-[#16274F] outline-none"
+                  className="border-2 border-[#0A0A0A] bg-[#F7F6F2] px-3 py-1 text-sm font-black text-[#16274F] outline-none"
                 >
                   {(playedSeasons.length > 0 ? playedSeasons : (allSeasons || []))
                     .slice()
                     .sort((a, b) => b - a)
                     .map((season) => (
-                      <option key={season} value={season} className="bg-[#080f1e]">
+                      <option key={season} value={season} className="bg-[#F7F6F2]">
                         {season}
                       </option>
                     ))}
                 </select>
               </div>
               {seasonSummary && !seasonSummary.champion && (
-                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-[#0A0A0A] border border-yellow-400/30 bg-yellow-400/10 rounded-lg px-2 py-0.5">
+                <span className="border-2 border-[#0A0A0A] bg-[#F5C518] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#0A0A0A]">
                   In Progress
                 </span>
               )}
@@ -268,13 +268,13 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
         </div>
 
         {/* CONTEÚDO */}
-        <div className="p-4 sm:p-6 lg:p-7">
+        <div className="p-4 sm:p-6">
           {!seasonSummary ? (
             <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">
               Loading...
             </div>
           ) : (
-            <div className="flex flex-col gap-7">
+            <div className="flex flex-col gap-6">
 
               {!seasonSummary.champion && (
                 <div className="border-2 border-[#0A0A0A] bg-[#FFF9E5] p-4 tp-shadow-navy-sm">
@@ -284,12 +284,12 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
               )}
 
               {seasonSummary.champion && (
-                <div className="border-2 border-[#0A0A0A] bg-[#FFF9E5] p-5 tp-shadow-navy">
-                  <div className="mb-2 inline-flex border-2 border-[#0A0A0A] bg-[#D01F2D] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-white">🏆 Champion</div>
+                <div className="border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy">
+                  <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#D01F2D]">🏆 Champion</div>
                   <div className="mt-2 flex items-center gap-3">
                     <TeamAvatar team={seasonSummary.champion.Team || seasonSummary.champion.team} size="h-12 w-12" />
                     <div className="min-w-0">
-                      <div className="truncate text-3xl font-black text-[#16274F]">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
+                      <div className="truncate text-2xl font-black text-[#16274F]">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
                       <div className="mt-1 text-sm text-[#3F4757]">
                         {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
                         {' • '}
@@ -379,7 +379,7 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
                 </div>
               )}
 
-              <div className="mt-2 flex items-center gap-3 border-t-2 border-[#0A0A0A]/10 pt-5">
+              <div className="mt-1 flex items-center gap-3 border-t-2 border-[#0A0A0A]/10 pt-5">
                 <span className="h-2.5 w-2.5 bg-[#D01F2D]" />
                 <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#6B7280]">Notable Games</div>
               </div>

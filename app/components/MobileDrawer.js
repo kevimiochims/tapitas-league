@@ -18,13 +18,13 @@ export default function MobileDrawer() {
   return (
     <>
       {/* BOTÕES FIXOS */}
-      <div className="absolute top-4 right-4 z-50 flex items-center gap-2 lg:hidden">
+      <div className="absolute right-4 top-4 z-50 flex items-center gap-2 lg:hidden">
 
         {leftSlot && leftSlot}
 
         <button
           onClick={() => setOpen(true)}
-          className="flex h-11 w-11 items-center justify-center border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[#16274F] tp-shadow-black"
+          className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D] tp-shadow-black"
         >
           <Menu className="h-5 w-5 text-white" />
         </button>
@@ -34,25 +34,25 @@ export default function MobileDrawer() {
       {open && (
         <div
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-50 bg-[#16274F]/45 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-50 bg-[#16274F]/55 backdrop-blur-[2px] lg:hidden"
         />
       )}
 
       <div
-        className={`fixed top-0 left-0 z-50 h-full w-[min(86vw,360px)] border-r-4 border-[#0A0A0A] bg-[#F7F6F2] transition-transform duration-300 lg:hidden ${
+        className={`fixed left-0 top-0 z-50 h-full w-[min(86vw,360px)] border-r-4 border-[#0A0A0A] bg-[#F7F6F2] transition-transform duration-300 lg:hidden ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5">
+        <div className="flex items-center justify-between border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-4">
           <div className="flex items-center gap-3">
             <Image
               src="/images/LogoFinalBlack.png"
               alt="Tapitas League"
               width={30}
               height={30}
-              className="h-8 w-8 object-contain invert"
+              className="h-8 w-8 object-contain"
             />
-            <span className="text-[19px] font-black tracking-[-0.04em] text-white">
+            <span className="text-[18px] font-black tracking-[-0.04em] text-white">
               Tapitas<span className="text-[#D01F2D]">League</span>
             </span>
           </div>
@@ -71,8 +71,8 @@ export default function MobileDrawer() {
                 onClick={() => setOpen(false)}
                 className={`flex items-center justify-between border-2 px-4 py-3.5 text-[14px] font-black transition-all ${
                   active
-                    ? 'border-[#0A0A0A] bg-[#16274F] text-white tp-shadow-navy-sm'
-                    : 'border-transparent text-[#3F4757] hover:border-[#0A0A0A]/15 hover:bg-white'
+                    ? 'bg-cyan-400/10 border-cyan-400/20 text-[#D01F2D]'
+                    : 'border-transparent text-[#3F4757] hover:border-[#0A0A0A]/20 hover:bg-white'
                 }`}
               >
                 {label}
