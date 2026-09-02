@@ -1169,7 +1169,7 @@ export default function TapitasLeagueHomepage() {
     setLeftSlot(
       <button
         onClick={() => setDrawerOpen(true)}
-        className="inline-flex h-10 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-sm font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]" 
+        className="inline-flex h-11 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-[15px] font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]" 
       >
         Summary
         <ChevronRight className="h-4 w-4" />
@@ -5334,7 +5334,7 @@ export default function TapitasLeagueHomepage() {
               <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#B8C0D0]">
                 Season Summary
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-3 mt-1">
                 <div className="text-xl font-black text-white">
                   Season{' '}
                   <select
@@ -5360,7 +5360,7 @@ export default function TapitasLeagueHomepage() {
                   </select>
                 </div>
                 {seasonSummary && !seasonSummary.champion && (
-                  <span className="border-2 border-[#0A0A0A] bg-[#F5C518] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#0A0A0A] whitespace-nowrap">
+                  <span className="border-2 border-[#0A0A0A] bg-[#F5C518] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#0A0A0A]">
                     In Progress
                   </span>
                 )}
@@ -5368,7 +5368,7 @@ export default function TapitasLeagueHomepage() {
             </div>
             <button
               onClick={() => setDrawerOpen(false)}
-              className="flex h-10 w-10 items-center justify-center border-2 border-white/20 bg-white/10 text-white transition-all hover:bg-white/20"
+              className="flex h-10 w-10 items-center justify-center border-2 border-white/20 bg-white/10 text-[#16274F] transition-all hover:bg-white/20"
               aria-label="Close Summary"
             >
               ✕
@@ -5376,7 +5376,7 @@ export default function TapitasLeagueHomepage() {
           </div>
 
           {/* Conteúdo */}
-          <div className="p-4 sm:p-6 lg:p-7">
+          <div className="p-4 sm:p-6">
             {!seasonSummary ? (
               <div className="flex items-center justify-center py-20 font-bold text-[#6B7280]">
                 Loading...
@@ -5398,11 +5398,11 @@ export default function TapitasLeagueHomepage() {
 
                 {/* Campeão */}
                 {seasonSummary.champion && (
-                  <div className="border-2 border-[#0A0A0A] bg-[#FFF9E5] p-5 tp-shadow-navy">
-                    <div className="mb-2 inline-flex border-2 border-[#0A0A0A] bg-[#D01F2D] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-white">
+                  <div className="border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy">
+                    <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#D01F2D]">
                       🏆 Champion
                     </div>
-                    <div className="mt-3 flex items-center gap-3">
+                    <div className="mt-2 flex items-center gap-3">
                       {(() => {
                         const team = seasonSummary.champion.Team || seasonSummary.champion.team
                         const avatar = getTeamAvatar(team)
@@ -5415,7 +5415,7 @@ export default function TapitasLeagueHomepage() {
                         )
                       })()}
                       <div className="min-w-0">
-                        <div className="truncate text-3xl font-black text-[#16274F]">
+                        <div className="truncate text-2xl font-black text-[#16274F]">
                           {seasonSummary.champion.Team || seasonSummary.champion.team}
                         </div>
                         <div className="mt-1 text-sm text-[#3F4757]">
