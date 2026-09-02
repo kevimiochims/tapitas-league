@@ -255,17 +255,11 @@ function ChampionsWallInline({ champions }) {
               <div className="absolute right-3 top-3 z-10 border-2 border-[#0A0A0A] bg-[#F5C518] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#0A0A0A]">
                 Reigning
               </div>
-                    <div className="absolute right-4 top-10 flex h-6 w-6 items-center justify-center text-[#6B7280] sm:top-11">
-                      <ChevronRight
-                        className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-90 text-[#D01F2D]' : ''
-                          }`}
-                      />
-                    </div>
 
               <button
                 type="button"
                 onClick={() => toggle(0)}
-                className="flex w-full items-center gap-4 px-4 py-4 pr-24 text-left sm:px-5 sm:py-5 sm:pr-28"
+                className="flex w-full items-center gap-4 px-4 py-4 pr-28 text-left sm:px-5 sm:py-5 sm:pr-32"
               >
                 {avatar ? (
                   <img
@@ -309,18 +303,9 @@ function ChampionsWallInline({ champions }) {
                   </div>
                 </div>
 
-                <div className="flex flex-shrink-0 items-center gap-2 pl-1.5">
-                  <div className="hidden text-right sm:block">
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[#6B7280]">
-                      Run
-                    </div>
-                    <div className="text-[11px] font-bold text-[#3F4757]">
-                      {isOpen ? 'Hide details' : 'Open details'}
-                    </div>
-                  </div>
-
+                <div className="absolute right-4 top-10 flex h-6 w-6 items-center justify-center text-[#6B7280] sm:top-11">
                   <ChevronRight
-                    className={`h-4 w-4 flex-shrink-0 text-[#6B7280] transition-transform ${isOpen ? 'rotate-90' : ''
+                    className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-90 text-[#D01F2D]' : ''
                       }`}
                   />
                 </div>
@@ -2971,7 +2956,7 @@ export default function TapitasLeagueHomepage() {
             { icon: Shield, label: 'Franchises', value: leagueStats.franchises, sub: 'Current', href: '/teams' },
             { icon: Calendar, label: 'Seasons', value: leagueStats.seasons, sub: buildSeasonRanges(leagueStats.allSeasons), href: '/history' },
             { icon: Radar, label: 'Games Played', value: leagueStats.games, sub: 'All-time', href: '/matchups' },
-            { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, href: '/records', accent: true },
+            { icon: Flame, label: 'Highest Score', value: leagueStats.highestScore, sub: leagueStats.highestScoreTeam, href: '/records' },
           ].map(({ icon: Icon, label, value, sub, href, accent }) => {
             return (
               <a
@@ -2988,7 +2973,7 @@ export default function TapitasLeagueHomepage() {
                     {label}
                   </div>
 
-                  <div className={`text-[22px] font-black leading-none sm:text-2xl ${accent ? 'text-[#D01F2D]' : 'text-[#16274F]'}`} style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.02em' }}>
+                  <div className="text-[22px] font-black leading-none text-[#16274F] sm:text-2xl" style={{ fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.02em' }}>
                     {value}
                   </div>
 
@@ -3039,7 +3024,7 @@ export default function TapitasLeagueHomepage() {
           transition={{ duration: 0.45, ease: 'easeOut' }}
           className="mb-4"
         >
-          <div className="border-2 border-[#0A0A0A] bg-white tp-shadow-navy">
+          <div className="border-2 border-[#0A0A0A] bg-white p-3 tp-shadow-navy">
             <div className="mb-4 flex items-center justify-between gap-2.5 border-b-2 border-[#0A0A0A]/10 px-4 pb-3 pt-3 sm:gap-3 sm:px-5 sm:pb-4 sm:pt-4">
               <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] sm:h-14 sm:w-14">
