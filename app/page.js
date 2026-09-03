@@ -5269,8 +5269,8 @@ export default function TapitasLeagueHomepage() {
       </section >
 
       {/* FOOTER */}
-      < footer className="relative z-10 mx-auto max-w-[16100px] px-3 pb-8 pt-0" >
-        <div className="flex flex-col items-center gap-8 border-2 border-[#0A0A0A] bg-[#16274F] px-8 py-16 text-center">
+      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
+        <div className="mx-auto flex max-w-[1920px] flex-col items-center gap-8 px-5 py-16 text-center sm:px-8 lg:px-12">
 
           {/* Frase */}
           <h2
@@ -5310,7 +5310,7 @@ export default function TapitasLeagueHomepage() {
           </p>
 
         </div>
-      </footer >
+      </footer>
 
       {/* DRAWER — Season Summary */}
       <>
