@@ -4,7 +4,7 @@ import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import { useEffect, useMemo, useState, useRef, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { Sparkles, ChevronLeft, ChevronRight, Users, Search } from 'lucide-react'
 import Header from '../components/Header'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
@@ -362,6 +362,7 @@ export default function DraftPage() {
     const [allSeasons, setAllSeasons] = useState([])
     const [teamFilter, setTeamFilter] = useState('All Teams')
     const [positionFilter, setPositionFilter] = useState('All Positions')
+    const [playerNameFilter, setPlayerNameFilter] = useState('')
     const { setLeftSlot } = useDrawer()
     const photos = DRAFT_PHOTOS?.[season] || []
     const photoTouchStartX = useRef(null)
@@ -418,31 +419,6 @@ export default function DraftPage() {
         const maxScrollLeft = el.scrollWidth - el.clientWidth
         el.scrollLeft = Math.min(Math.max(ratio * el.scrollWidth - el.clientWidth / 2, 0), maxScrollLeft)
         updateBoardThumb()
-    }
-
-    // Round column is rendered OUTSIDE the horizontally-scrolling area entirely
-    // (no position:sticky involved), so its row heights are measured from the
-    // real scrollable grid and applied to the fixed label column to keep both
-    // in perfect pixel alignment regardless of content height.
-    const [boardRowHeights, setBoardRowHeights] = useState({})
-
-    const measureBoardRowHeights = () => {
-        const el = boardScrollRef.current
-        if (!el) return
-        const cells = el.querySelectorAll('[data-board-row]')
-        setBoardRowHeights((prev) => {
-            const next = { ...prev }
-            let changed = false
-            cells.forEach((cell) => {
-                const key = cell.getAttribute('data-board-row')
-                const h = Math.ceil(cell.getBoundingClientRect().height)
-                if (next[key] !== h) {
-                    next[key] = h
-                    changed = true
-                }
-            })
-            return changed ? next : prev
-        })
     }
 
     const [photoTimerKey, setPhotoTimerKey] = useState(0)
@@ -581,16 +557,11 @@ export default function DraftPage() {
     useEffect(() => {
         const el = boardScrollRef.current
         updateBoardThumb()
-        measureBoardRowHeights()
         if (!el || typeof ResizeObserver === 'undefined') return
         const observer = new ResizeObserver(() => {
             updateBoardThumb()
-            measureBoardRowHeights()
         })
         observer.observe(el)
-        Array.from(el.querySelectorAll('img')).forEach((img) => {
-            if (!img.complete) img.addEventListener('load', measureBoardRowHeights, { once: true })
-        })
         window.addEventListener('resize', updateBoardThumb)
         return () => {
             observer.disconnect()
@@ -599,16 +570,19 @@ export default function DraftPage() {
     }, [teams, rounds, season, activeTab, boardMatrix])
 
     const filteredSeasonPicks = useMemo(() => {
+        const query = playerNameFilter.trim().toLowerCase()
         return seasonPicks.filter((pick) => {
             const byTeam = teamFilter === 'All Teams' || pick.team === teamFilter
             const byPos = positionFilter === 'All Positions' || pick.position === positionFilter
-            return byTeam && byPos
+            const byName = !query || String(pick.player || '').toLowerCase().includes(query)
+            return byTeam && byPos && byName
         })
-    }, [seasonPicks, teamFilter, positionFilter])
+    }, [seasonPicks, teamFilter, positionFilter, playerNameFilter])
 
     useEffect(() => {
         setTeamFilter('All Teams')
         setPositionFilter('All Positions')
+        setPlayerNameFilter('')
     }, [season])
 
     const highlights = useMemo(() => {
@@ -1077,31 +1051,7 @@ export default function DraftPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex pb-4 pl-4">
-                                    {/* Fixed round-label column — structurally outside the horizontal
-                                        scroll area, so there's nothing that can scroll "behind" it. */}
-                                    <div className="flex w-16 flex-shrink-0 flex-col border-r-2 border-[#0A0A0A]/10 bg-white">
-                                        <div
-                                            style={{ height: boardRowHeights.header }}
-                                            className="flex items-center px-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]"
-                                        >
-                                            Round
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            {rounds.map((round, rIdx) => (
-                                                <div
-                                                    key={round}
-                                                    style={{ height: boardRowHeights[rIdx] }}
-                                                    className="flex items-center justify-center text-xs font-black text-[#16274F]"
-                                                >
-                                                    R{round}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Scrollable team columns only — no round column inside, so
-                                        nothing can render "underneath" the fixed label column. */}
+                                <div className="pb-4 pl-4">
                                     <div
                                         ref={boardScrollRef}
                                         onScroll={updateBoardThumb}
@@ -1117,67 +1067,72 @@ export default function DraftPage() {
                                             {teams.map((team) => (
                                                 <div
                                                     key={team}
-                                                    data-board-row="header"
                                                     className="flex items-center justify-center px-2 py-2 text-center text-[10px] font-black uppercase tracking-[0.15em] text-[#16274F] whitespace-nowrap"
                                                 >
                                                     {team}
                                                 </div>
                                             ))}
 
-                                            {boardMatrix.map((row, rIdx) => (
-                                                <Fragment key={rIdx}>
-                                                    {row.map((picks, cIdx) => (
-                                                        <div
-                                                            key={cIdx}
-                                                            data-board-row={cIdx === 0 ? rIdx : undefined}
-                                                            className="px-1 py-1"
-                                                        >
-                                                            {picks.length > 0 ? (
-                                                                <div className="flex flex-col gap-1">
-                                                                    {picks.map((pick) => (
-                                                                        <div
-                                                                            key={pick.pick}
-                                                                            className={`relative border-2 p-2 transition-all ${pick.tagOk
-                                                                                ? 'border-[#0A0A0A] bg-[#FFF9E5] hover:bg-[#FFF3C4]'
-                                                                                : 'border-[#0A0A0A] bg-white hover:bg-[#F7F6F2]'
-                                                                                }`}
-                                                                        >
-                                                                            {pick.tagOk && (
-                                                                                <span
-                                                                                    title="Elegível para tag em 2026"
-                                                                                    className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F5C518] text-[8px] font-black text-[#0A0A0A]"
-                                                                                >
-                                                                                    ✓
-                                                                                </span>
-                                                                            )}
-                                                                            <div className="mb-1 flex items-center justify-between gap-1">
-                                                                                <span className="text-[9px] font-black text-[#6B7280]">
-                                                                                    #{pick.pick}
-                                                                                </span>
-                                                                                <PosBadge pos={pick.position} />
-                                                                            </div>
+                                            {boardMatrix.map((row, rIdx) => {
+                                                const round = rounds[rIdx]
+                                                return (
+                                                    <Fragment key={rIdx}>
+                                                        {row.map((picks, cIdx) => (
+                                                            <div key={cIdx} className="px-1 py-1">
+                                                                {picks.length > 0 ? (
+                                                                    <div className="flex flex-col gap-1">
+                                                                        {picks.map((pick) => {
+                                                                            const pickInRound = teams.length
+                                                                                ? ((pick.pick - 1) % teams.length) + 1
+                                                                                : pick.pick
 
-                                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                                <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
-                                                                                <div className="min-w-0">
-                                                                                    <div className="truncate text-xs font-black text-[#16274F] leading-tight">
-                                                                                        {pick.player}
+                                                                            return (
+                                                                                <div
+                                                                                    key={pick.pick}
+                                                                                    className={`relative border-2 p-2 transition-all ${pick.tagOk
+                                                                                        ? 'border-[#0A0A0A] bg-[#FFF9E5] hover:bg-[#FFF3C4]'
+                                                                                        : 'border-[#0A0A0A] bg-white hover:bg-[#F7F6F2]'
+                                                                                        }`}
+                                                                                >
+                                                                                    {pick.tagOk && (
+                                                                                        <span
+                                                                                            title="Elegível para tag em 2026"
+                                                                                            className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F5C518] text-[8px] font-black text-[#0A0A0A]"
+                                                                                        >
+                                                                                            ✓
+                                                                                        </span>
+                                                                                    )}
+                                                                                    <div className="mb-1 flex items-center justify-between gap-1">
+                                                                                        <span className="text-[9px] font-black text-[#6B7280] whitespace-nowrap">
+                                                                                            R{round}.{String(pickInRound).padStart(2, '0')}{' '}
+                                                                                            <span className="text-[#D01F2D]">#{pick.pick}</span>
+                                                                                        </span>
+                                                                                        <PosBadge pos={pick.position} />
                                                                                     </div>
-                                                                                    <div className="truncate text-[10px] font-bold text-[#6B7280]">
-                                                                                        {pick.team}
+
+                                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                                        <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
+                                                                                        <div className="min-w-0">
+                                                                                            <div className="truncate text-xs font-black text-[#16274F] leading-tight">
+                                                                                                {pick.player}
+                                                                                            </div>
+                                                                                            <div className="truncate text-[10px] font-bold text-[#6B7280]">
+                                                                                                {pick.team}
+                                                                                            </div>
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="border-2 border-dashed border-[#0A0A0A]/10 bg-[#F7F6F2] p-2 h-[52px]" />
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </Fragment>
-                                            ))}
+                                                                            )
+                                                                        })}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="border-2 border-dashed border-[#0A0A0A]/10 bg-[#F7F6F2] p-2 h-[52px]" />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </Fragment>
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                 </div>
@@ -1201,7 +1156,18 @@ export default function DraftPage() {
                                 </div>
 
                                 <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                                        <div className="relative">
+                                            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
+                                            <input
+                                                type="text"
+                                                value={playerNameFilter}
+                                                onChange={(e) => setPlayerNameFilter(e.target.value)}
+                                                placeholder="Buscar jogador..."
+                                                className="w-full border-2 border-[#0A0A0A] bg-white py-3 pl-11 pr-4 text-[12px] font-bold text-[#16274F] placeholder:text-[#6B7280] transition-all focus:border-[#D01F2D] focus:outline-none"
+                                            />
+                                        </div>
+
                                         <TeamSelect
                                             value={teamFilter}
                                             onChange={setTeamFilter}
@@ -1359,8 +1325,8 @@ export default function DraftPage() {
                 )}
             </section>
 
-            <footer className="px-3 md:px-6 pb-6">
-                <div className="flex items-center justify-center gap-3 border-2 border-[#0A0A0A] bg-[#16274F] py-6">
+            <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
+                <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
                     <Image
                         src="/images/LogoFinalBlack.png"
                         alt="Tapitas League"
