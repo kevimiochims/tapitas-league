@@ -701,7 +701,14 @@ export default function DraftPage() {
         .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
         .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
         .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-        .tp-stack-title { color: #D01F2D; text-shadow: 4px 4px 0 #0A0A0A; }
+        .tp-stack-title { position: relative; display: inline-block; color: #D01F2D; }
+        .tp-stack-title::after {
+          content: attr(data-text);
+          position: absolute;
+          left: 4px; top: 4px;
+          color: #0A0A0A;
+          z-index: -1;
+        }
       `}</style>
 
             <Header onSummaryOpen={() => setDrawerOpen(true)} />
@@ -819,7 +826,9 @@ export default function DraftPage() {
                             }}
                         >
                             Draft
-                            <span className="tp-stack-title">{' '}Central</span>
+                            <span className="tp-stack-title" data-text=" Central">
+                                {' '}Central
+                            </span>
                         </h1>
 
                         <p
@@ -1359,7 +1368,7 @@ export default function DraftPage() {
                 )}
             </section>
 
-            <footer className="px-3 md:px-6 pb-6">
+            <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
                 <div className="flex items-center justify-center gap-3 border-2 border-[#0A0A0A] bg-[#16274F] py-6">
                     <Image
                         src="/images/LogoFinalBlack.png"
