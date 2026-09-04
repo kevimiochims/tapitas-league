@@ -747,7 +747,7 @@ export default function HistoryPage() {
                               <ChevronDown className="h-5 w-5 shrink-0 text-[#16274F]" style={{ transform: open ? 'rotate(180deg)' : 'none' }} />
                             </div>
                           ) : (
-                            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[minmax(270px,1.55fr)_1px_minmax(180px,1.1fr)_minmax(150px,0.9fr)_minmax(150px,0.9fr)_minmax(185px,1fr)]">
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:grid-cols-[minmax(270px,1.55fr)_1px_minmax(180px,1.1fr)_minmax(150px,0.9fr)_minmax(150px,0.9fr)_minmax(185px,1fr)]">
                               <div className="flex min-w-0 items-center gap-3">
                                 <span className="shrink-0 text-3xl leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                                   {s.season}
@@ -765,11 +765,11 @@ export default function HistoryPage() {
                                 </div>
                               </div>
 
-                              <ChevronDown className="h-4 w-4 shrink-0 text-[#16274F] lg:hidden" />
+                              <ChevronDown className="h-4 w-4 shrink-0 text-[#16274F] xl:hidden" />
 
-                              <div className="hidden h-9 border-l border-[#0A0A0A]/15 lg:block" />
+                              <div className="hidden h-9 border-l border-[#0A0A0A]/15 xl:block" />
 
-                              <div className="hidden lg:grid grid-cols-2 divide-x divide-[#0A0A0A]/10 border border-[#0A0A0A]/10 bg-[#F7F6F2]">
+                              <div className="hidden xl:grid grid-cols-2 divide-x divide-[#0A0A0A]/10 border border-[#0A0A0A]/10 bg-[#F7F6F2]">
                                 <div className="px-3 py-2">
                                   <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Champion Record</div>
                                   <div className="mt-1 text-xl font-black leading-none">
@@ -784,7 +784,7 @@ export default function HistoryPage() {
                                 </div>
                               </div>
 
-                              <div className="hidden lg:flex min-w-0 items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                              <div className="hidden xl:flex min-w-0 items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
                                 {getTeamLogo(getTeam(bestPF)) ? (
                                   <img src={getTeamLogo(getTeam(bestPF))} alt={getTeam(bestPF) || ''} className="h-8 w-8 shrink-0 rounded-full object-cover" />
                                 ) : (
@@ -797,7 +797,7 @@ export default function HistoryPage() {
                                 </div>
                               </div>
 
-                              <div className="hidden lg:flex min-w-0 items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                              <div className="hidden xl:flex min-w-0 items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
                                 {getTeamLogo(getTeam(worstPF)) ? (
                                   <img src={getTeamLogo(getTeam(worstPF))} alt={getTeam(worstPF) || ''} className="h-8 w-8 shrink-0 rounded-full object-cover" />
                                 ) : (
@@ -810,7 +810,7 @@ export default function HistoryPage() {
                                 </div>
                               </div>
 
-                              <div className="hidden lg:grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                              <div className="hidden xl:grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
                                 {unicornLogo ? (
                                   <img
                                     src={unicornLogo}
