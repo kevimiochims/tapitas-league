@@ -65,7 +65,10 @@ function TeamAvatar({ team, size = 'md' }) {
 
   return (
     <div
-      className={`${sizeClass} flex flex-shrink-0 items-center justify-center bg-[#16274F] text-[10px] font-black text-white uppercase`}
+      className={`${sizeClass} flex flex-shrink-0 items-center justify-center text-[10px] font-black text-white uppercase`}
+      style={{
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))',
+      }}
     >
       {String(team || '').slice(0, 2)}
     </div>
@@ -103,7 +106,7 @@ function TrendIcon({ delta }) {
 
   if (delta > 0) {
     return (
-      <div className="flex items-center gap-1 text-[#1E8E3E]">
+      <div className="flex items-center gap-1 text-emerald-400">
         <TrendingUp className="h-4 w-4" />
         <span className="text-xs font-black">
           +{Math.abs(delta)}
@@ -114,7 +117,7 @@ function TrendIcon({ delta }) {
 
   if (delta < 0) {
     return (
-      <div className="flex items-center gap-1 text-[#D01F2D]">
+      <div className="flex items-center gap-1 text-red-400">
         <TrendingDown className="h-4 w-4" />
         <span className="text-xs font-black">
           -{Math.abs(delta)}
@@ -124,7 +127,7 @@ function TrendIcon({ delta }) {
   }
 
   return (
-    <div className="flex items-center gap-1 text-[#6B7280]">
+    <div className="flex items-center gap-1 text-slate-500">
       <Minus className="h-4 w-4" />
     </div>
   )
@@ -134,15 +137,15 @@ function getTierColor(rank, total) {
 
   const pct = rank / total
 
-  if (rank === 1) return 'text-[#B8860B]'
+  if (rank === 1) return 'text-yellow-400'
 
-  if (pct <= 0.25) return 'text-[#16274F]'
+  if (pct <= 0.25) return 'text-cyan-400'
 
-  if (pct <= 0.5) return 'text-[#1E8E3E]'
+  if (pct <= 0.5) return 'text-emerald-400'
 
-  if (pct <= 0.75) return 'text-[#6B7280]'
+  if (pct <= 0.75) return 'text-orange-400'
 
-  return 'text-[#D01F2D]'
+  return 'text-slate-400'
 }
 
 export default function PowerRankingsPage() {
@@ -244,7 +247,7 @@ export default function PowerRankingsPage() {
     setLeftSlot(
       <button
         onClick={() => setDrawerOpen(true)}
-        className="inline-flex h-10 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-sm font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
+        className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
       >
         Summary
         <ChevronRight className="h-4 w-4" />
@@ -735,7 +738,7 @@ export default function PowerRankingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
+    <main className="min-h-screen bg-[#020617] text-white">
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
@@ -748,13 +751,6 @@ export default function PowerRankingsPage() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-
-        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-        .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
-        .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
-        .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-        .tp-stack-title { color: #D01F2D; text-shadow: 4px 4px 0 #0A0A0A; }
       `}</style>
 
       <Header onSummaryOpen={() => setDrawerOpen(true)} />
@@ -762,8 +758,8 @@ export default function PowerRankingsPage() {
       <section className="px-3 md:px-6 pb-20">
 
         {/* HERO */}
-        <div className="relative mb-10 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="relative mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl md:rounded-[38px]">
             <svg
               className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
               preserveAspectRatio="xMidYMid slice"
@@ -771,67 +767,70 @@ export default function PowerRankingsPage() {
               xmlns="http://www.w3.org/2000/svg"
               aria-hidden="true"
             >
-              <g opacity="0.06">
+              <g opacity="0.09">
                 {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="520" fill="#16274F" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`} />
+                  <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="520" fill="#22d3ee" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`} />
                 ))}
               </g>
-              <g opacity="0.10" fill="none" stroke="#16274F" strokeWidth="1">
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
                 {["M380 -30 L460 85 L380 200 L300 85 Z", "M460 85 L540 200 L460 315 L380 200 Z", "M540 -30 L620 85 L540 200 L460 85 Z", "M620 85 L700 200 L620 315 L540 200 Z", "M700 -30 L780 85 L700 200 L620 85 Z", "M780 85 L860 200 L780 315 L700 200 Z"].map((d, i) => (
                   <path key={i} d={d} />
                 ))}
               </g>
-              <g opacity="0.05" fill="#D01F2D">
+              <g opacity="0.08" fill="#22d3ee">
                 {["M420 30 L440 58 L420 86 L400 58 Z", "M500 120 L520 148 L500 176 L480 148 Z", "M580 30 L600 58 L580 86 L560 58 Z", "M660 120 L680 148 L660 176 L640 148 Z", "M740 30 L760 58 L740 86 L720 58 Z"].map((d, i) => (
                   <path key={i} d={d} />
                 ))}
               </g>
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2" strokeLinejoin="round">
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round">
                 {[520, 600, 680].map((x, i) => (
                   <polyline key={i} points={`${x},0 ${x + 160},170 ${x},340`} />
                 ))}
               </g>
-              <g opacity="0.08" fill="#16274F">
+              <g opacity="0.07" fill="#22d3ee">
                 <polygon points="900,0 900,140 760,0" />
                 <polygon points="900,340 900,200 760,340" />
               </g>
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="1">
+              <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
                 {[30, 50, 70].map((r) => <circle key={r} cx="870" cy="60" r={r} />)}
               </g>
-              <g opacity="0.10" fill="#16274F">
+              <g opacity="0.09" fill="#22d3ee">
                 {[40, 60, 80, 100].map((y) => [310, 330, 350].map((x) => (
                   <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
                 )))}
               </g>
-              <g opacity="0.10" stroke="#16274F" strokeWidth="0.5">
+              <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
                 {[56, 113, 226, 284].map((y) => <line key={y} x1="0" y1={y} x2="900" y2={y} />)}
               </g>
-              <text x="790" y="310" fontFamily="'Bebas Neue', sans-serif" fontSize="340" fill="#16274F" opacity="0.04" textAnchor="middle">1</text>
+              <text x="790" y="310" fontFamily="'Bebas Neue', sans-serif" fontSize="340" fill="#22d3ee" opacity="0.02" textAnchor="middle">1</text>
             </svg>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 28%, rgba(247,246,242,0.90) 48%, rgba(247,246,242,0.25) 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)' }} />
           </div>
 
           <div className="relative z-10 p-6 sm:p-8 md:p-10">
-            <div
-              className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
-            >
-              <BarChart2 className="h-3 w-3 sm:h-4 sm:w-4 text-white shrink-0" />
-              <span className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
+            <div className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 sm:px-4 sm:py-2">
+              <BarChart2 className="h-3 w-3 sm:h-4 sm:w-4 text-cyan-300 shrink-0" />
+              <span className="font-black uppercase tracking-[0.25em] text-cyan-300 whitespace-nowrap" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
                 Weekly Rankings
               </span>
             </div>
             <h1
-              className="leading-[0.9] tracking-[-0.02em] text-[#16274F]"
+              className="leading-[0.9] tracking-[-0.02em]"
               style={{
                 fontFamily: '"Bebas Neue", sans-serif',
                 fontSize: 'clamp(48px, 7vw, 96px)',
+                background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
               }}
             >
               Power
-              <span className="tp-stack-title">{' '}Rankings</span>
+              <span style={{ background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                {' '}Rankings
+              </span>
             </h1>
-            <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-[#3F4757] leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
+            <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-slate-400 leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
               Who's hot, who's not. The definitive weekly power rankings
               of the Tapitas League — based on performance, not just record.
             </p>
@@ -839,11 +838,11 @@ export default function PowerRankingsPage() {
         </div>
 
         {/* SEASON */}
-        <div className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+        <div className="mb-6 overflow-hidden rounded-2xl md:rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
-          <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
+          <div className="border-b border-white/5 px-6 py-4">
             <div
-              className="font-black uppercase tracking-[0.3em] text-[#16274F]"
+              className="font-black uppercase tracking-[0.3em] text-cyan-300"
               style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
             >
               Season
@@ -878,9 +877,9 @@ export default function PowerRankingsPage() {
                     setWeek(ws[ws.length - 1])
                   }
                 }}
-                className={`flex-shrink-0 border-2 px-5 py-2.5 text-sm font-black transition-all ${season === s
-                  ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                  : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                className={`flex-shrink-0 rounded-2xl px-5 py-2.5 text-sm font-black transition-all ${season === s
+                  ? 'bg-yellow-400/10 border border-yellow-400/25 text-yellow-300'
+                  : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                   }`}
               >
                 {s}
@@ -891,11 +890,11 @@ export default function PowerRankingsPage() {
         </div>
 
         {/* WEEK */}
-        <div className="mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+        <div className="mb-8 overflow-hidden rounded-2xl md:rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
 
-          <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
+          <div className="border-b border-white/5 px-6 py-4">
             <div
-              className="font-black uppercase tracking-[0.3em] text-[#16274F]"
+              className="font-black uppercase tracking-[0.3em] text-cyan-300"
               style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
             >
               Week
@@ -911,9 +910,9 @@ export default function PowerRankingsPage() {
                 key={w}
                 data-active={week === w}
                 onClick={() => setWeek(w)}
-                className={`flex-shrink-0 h-11 w-11 border-2 text-sm font-black transition-all ${week === w
-                  ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                  : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                className={`flex-shrink-0 h-11 w-11 rounded-2xl text-sm font-black transition-all ${week === w
+                  ? 'bg-yellow-400/10 border border-yellow-400/25 text-yellow-300'
+                  : 'border border-white/5 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                   }`}
               >
                 {w}
@@ -925,7 +924,7 @@ export default function PowerRankingsPage() {
 
         {loading ? (
 
-          <div className="py-20 text-center text-[#6B7280] font-bold">
+          <div className="py-20 text-center text-slate-500">
             Loading...
           </div>
 
@@ -971,7 +970,7 @@ export default function PowerRankingsPage() {
 
                 <div
                   key={team.team}
-                  className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
+                  className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]"
                 >
 
                   <button
@@ -1014,16 +1013,16 @@ export default function PowerRankingsPage() {
 
                           <div className="flex items-center gap-2 flex-wrap">
 
-                            <div className="text-xl font-black text-[#16274F] uppercase">
+                            <div className="text-xl font-black text-white uppercase">
                               {team.team}
                             </div>
 
                             {team.rank === 1 && (
-                              <Star className="h-4 w-4 text-[#F5C518] fill-[#F5C518]" />
+                              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                             )}
                           </div>
 
-                          <div className="text-sm font-semibold uppercase text-[#6B7280]">
+                          <div className="text-sm font-semibold uppercase text-slate-400">
                             {team.owner}
                           </div>
 
@@ -1032,46 +1031,46 @@ export default function PowerRankingsPage() {
                           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
 
                             <div>
-                              <span className="text-[#6B7280]">
+                              <span className="text-slate-500">
                                 REC:
                               </span>{' '}
-                              <span className="font-black text-[#16274F]">
+                              <span className="font-black text-white">
                                 {team.wins}-{team.losses}
                               </span>
                             </div>
 
                             <div>
-                              <span className="text-[#6B7280]">
+                              <span className="text-slate-500">
                                 STRK:
                               </span>{' '}
                               <span className={`font-black ${team.streak.startsWith('W')
-                                ? 'text-[#1E8E3E]'
-                                : 'text-[#D01F2D]'
+                                ? 'text-emerald-400'
+                                : 'text-red-400'
                                 }`}>
                                 {team.streak}
                               </span>
                             </div>
 
                             <div>
-                              <span className="text-[#6B7280]">
+                              <span className="text-slate-500">
                                 AVG:
                               </span>{' '}
-                              <span className="font-black text-[#16274F]">
+                              <span className="font-black text-white">
                                 {team.avgPF.toFixed(1)}
                               </span>{' '}
-                              <span className="text-[#6B7280]">
+                              <span className="text-slate-500">
                                 (#{team.avgRank})
                               </span>
                             </div>
 
                             <div>
-                              <span className="text-[#6B7280]">
+                              <span className="text-slate-500">
                                 OVW:
                               </span>{' '}
-                              <span className="font-black text-[#16274F]">
+                              <span className="font-black text-white">
                                 {team.ovw.toFixed(0)}
                               </span>{' '}
-                              <span className="text-[#6B7280]">
+                              <span className="text-slate-500">
                                 (#{team.ovwRank})
                               </span>
                             </div>
@@ -1092,9 +1091,9 @@ export default function PowerRankingsPage() {
                                 <div
                                   key={idx}
                                   title={`Week ${idx + 1}`}
-                                  className={`h-5 w-5 flex items-center justify-center text-[9px] font-black border-2 border-[#0A0A0A] flex-shrink-0 ${r === 'W'
-                                    ? 'bg-[#1E8E3E] text-white'
-                                    : 'bg-[#D01F2D] text-white'
+                                  className={`h-5 w-5 rounded-md flex items-center justify-center text-[9px] font-black border flex-shrink-0 ${r === 'W'
+                                    ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-400'
+                                    : 'border-red-400/30 bg-red-400/15 text-red-400'
                                     }`}
                                 >
                                   {r}
@@ -1106,7 +1105,7 @@ export default function PowerRankingsPage() {
                         </div>
 
                         <ChevronRight
-                          className={`h-4 w-4 flex-shrink-0 text-[#6B7280] transition-transform ${expandedOpen
+                          className={`h-4 w-4 flex-shrink-0 text-slate-600 transition-transform ${expandedOpen
                             ? 'rotate-90'
                             : ''
                             }`}
@@ -1119,13 +1118,13 @@ export default function PowerRankingsPage() {
 
                   {expandedOpen && (
 
-                    <div className="border-t-2 border-[#0A0A0A]/10 px-5 pb-10 pt-3">
+                    <div className="border-t border-white/5 px-5 pb-10 pt-3">
 
                       {/* THIS WEEK / NEXT WEEK */}
                       <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 mb-5">
 
-                        <div className="border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 min-w-0">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
+                        <div className="rounded-2xl border border-white/5 bg-black/20 p-3 min-w-0">
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
                             This Week
                           </div>
 
@@ -1136,17 +1135,17 @@ export default function PowerRankingsPage() {
                               <div className="text-sm font-black leading-tight uppercase truncate">
                                 <span className={
                                   team.result === 'W'
-                                    ? 'text-[#1E8E3E]'
-                                    : 'text-[#D01F2D]'
+                                    ? 'text-emerald-400'
+                                    : 'text-red-400'
                                 }>
                                   {team.result}
                                 </span>
 
-                                <span className="ml-1 text-[#16274F]">
+                                <span className="ml-1 text-white">
                                   vs {team.opponent}
                                 </span>
 
-                                <span className="ml-1 text-[#6B7280]">
+                                <span className="ml-1 text-slate-400">
                                   {opponentRecord
                                     ? `(${opponentRecord.wins}-${opponentRecord.losses})`
                                     : ''
@@ -1154,15 +1153,15 @@ export default function PowerRankingsPage() {
                                 </span>
                               </div>
 
-                              <div className="mt-2 text-sm font-semibold text-[#6B7280]">
+                              <div className="mt-2 text-sm font-semibold text-slate-400">
                                 {team.pf.toFixed(1)} - {team.pa.toFixed(1)}
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 min-w-0">
-                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
+                        <div className="rounded-2xl border border-white/5 bg-black/20 p-3 min-w-0">
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
                             Next Week
                           </div>
 
@@ -1171,28 +1170,28 @@ export default function PowerRankingsPage() {
                               <TeamAvatar team={nextOpponent.team} size="sm" />
 
                               <div className="min-w-0">
-                                <div className="text-sm font-black leading-tight text-[#16274F] uppercase truncate">
+                                <div className="text-sm font-black leading-tight text-white uppercase truncate">
                                   <span>
                                     vs {nextOpponent.team}
                                   </span>
 
-                                  <span className="ml-1 text-[#6B7280]">
+                                  <span className="ml-1 text-slate-400">
                                     ({nextOpponent.wins}-{nextOpponent.losses})
                                   </span>
                                 </div>
 
                                 <div className="mt-2 text-sm font-semibold leading-tight">
-                                  <span className="text-[#6B7280]">
+                                  <span className="text-slate-500">
                                     H2H:
                                   </span>
 
-                                  <span className="ml-1 text-[#16274F]">
+                                  <span className="ml-1 text-white">
                                     ({h2h.aWins}-{h2h.bWins})
                                   </span>
 
                                   <span className={`ml-2 font-black ${h2h.streak.startsWith('W')
-                                    ? 'text-[#1E8E3E]'
-                                    : 'text-[#D01F2D]'
+                                    ? 'text-emerald-400'
+                                    : 'text-red-400'
                                     }`}>
                                     {h2h.streak}
                                   </span>
@@ -1200,7 +1199,7 @@ export default function PowerRankingsPage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="text-sm font-semibold text-[#6B7280]">
+                            <div className="text-sm font-semibold text-slate-500">
                               No upcoming matchup available
                             </div>
                           )}
@@ -1210,73 +1209,73 @@ export default function PowerRankingsPage() {
                       {/* EDITORIAL */}
                       {team.note && (
 
-                        <div className="border-2 border-[#0A0A0A] bg-[#FDEDEE] p-4 mb-5">
+                        <div className="rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-4 mb-5">
 
-                          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-[#D01F2D]">
+                          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
                             Power Take
                           </div>
                           <ReactMarkdown
                             components={{
                               h1: ({ children }) => (
-                                <h1 className="text-2xl font-black text-[#16274F] mb-4 mt-6 leading-tight">
+                                <h1 className="text-2xl font-black text-white mb-4 mt-6 leading-tight">
                                   {children}
                                 </h1>
                               ),
 
                               h2: ({ children }) => (
-                                <h2 className="text-xl font-black text-[#16274F] mb-3 mt-5 leading-tight">
+                                <h2 className="text-xl font-black text-white mb-3 mt-5 leading-tight">
                                   {children}
                                 </h2>
                               ),
 
                               h3: ({ children }) => (
-                                <h3 className="text-lg font-black text-[#16274F] mb-2 mt-4">
+                                <h3 className="text-lg font-black text-white mb-2 mt-4">
                                   {children}
                                 </h3>
                               ),
 
                               p: ({ children }) => (
-                                <p className="text-[#3F4757] mb-3 leading-relaxed text-justify">
+                                <p className="text-slate-300 mb-3 leading-relaxed text-justify">
                                   {children}
                                 </p>
                               ),
 
                               strong: ({ children }) => (
-                                <strong className="text-[#16274F] font-black">
+                                <strong className="text-white font-black">
                                   {children}
                                 </strong>
                               ),
 
                               em: ({ children }) => (
-                                <em className="text-[#D01F2D] not-italic font-bold">
+                                <em className="text-cyan-300 not-italic font-bold">
                                   {children}
                                 </em>
                               ),
 
                               ul: ({ children }) => (
-                                <ul className="list-disc list-inside mb-3 text-[#3F4757] space-y-1">
+                                <ul className="list-disc list-inside mb-3 text-slate-300 space-y-1">
                                   {children}
                                 </ul>
                               ),
 
                               ol: ({ children }) => (
-                                <ol className="list-decimal list-inside mb-3 text-[#3F4757] space-y-1">
+                                <ol className="list-decimal list-inside mb-3 text-slate-300 space-y-1">
                                   {children}
                                 </ol>
                               ),
 
                               li: ({ children }) => (
-                                <li className="text-[#3F4757]">
+                                <li className="text-slate-300">
                                   {children}
                                 </li>
                               ),
 
                               hr: () => (
-                                <hr className="border-[#0A0A0A]/10 my-4" />
+                                <hr className="border-white/10 my-4" />
                               ),
 
                               blockquote: ({ children }) => (
-                                <blockquote className="border-l-4 border-[#D01F2D] pl-4 my-3 text-[#3F4757] italic">
+                                <blockquote className="border-l-2 border-cyan-400 pl-4 my-3 text-slate-400 italic">
                                   {children}
                                 </blockquote>
                               ),
@@ -1287,7 +1286,7 @@ export default function PowerRankingsPage() {
                         </div>
                       )}
 
-                      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">
+                      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
                         Ranking History
                       </div>
 
@@ -1321,22 +1320,22 @@ export default function PowerRankingsPage() {
                             >
 
                               <div className={`text-[10px] font-black ${current
-                                ? 'text-[#16274F]'
-                                : 'text-[#6B7280]'
+                                ? 'text-white'
+                                : 'text-slate-500'
                                 }`}>
                                 {r}
                               </div>
 
                               <div
-                                className={`w-8 border-2 border-[#0A0A0A] ${r <= 3
-                                  ? 'bg-[#16274F]'
+                                className={`w-8 rounded-t-lg ${r <= 3
+                                  ? 'bg-gradient-to-t from-emerald-600 to-emerald-400'
                                   : r <= 6
-                                    ? 'bg-[#1E8E3E]'
+                                    ? 'bg-gradient-to-t from-cyan-600 to-cyan-400'
                                     : r <= 10
-                                      ? 'bg-[#6B7280]'
-                                      : 'bg-[#D01F2D]'
+                                      ? 'bg-gradient-to-t from-amber-600 to-amber-400'
+                                      : 'bg-gradient-to-t from-red-700 to-red-500'
                                   } ${current
-                                    ? 'tp-shadow-red-sm'
+                                    ? 'ring-2 ring-white/50'
                                     : ''
                                   }`}
                                 style={{
@@ -1345,8 +1344,8 @@ export default function PowerRankingsPage() {
                               />
 
                               <div className={`text-[10px] font-bold ${current
-                                ? 'text-[#16274F]'
-                                : 'text-[#6B7280]'
+                                ? 'text-white'
+                                : 'text-slate-600'
                                 }`}>
                                 W{h?.Week}
                               </div>
@@ -1370,18 +1369,18 @@ export default function PowerRankingsPage() {
       />
 
       {/* FOOTER */}
-      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
+      <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
+        <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
           <Image
             src="/images/LogoFinalBlack.png"
             alt="Tapitas League"
             width={24}
             height={24}
             style={{ filter: 'invert(1)' }}
-            className="opacity-70"
+            className="opacity-30"
           />
 
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">
+          <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
             Tapitas League · Est. 2014
           </span>
         </div>
