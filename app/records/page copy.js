@@ -1,8 +1,8 @@
 'use client'
 import Image from 'next/image'
-import Link from 'next/link'
 import Header from '../components/Header'
 import SummaryDrawer from '../components/SummaryDrawer'
+import { useDrawer } from '../context/DrawerContext'
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Flame, Swords, Activity, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
 
@@ -23,40 +23,6 @@ function parseMarginVal(val) {
 
 function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-}
-
-function teamHref(name) {
-  return `/teams?team=${encodeURIComponent(String(name || '').trim())}`
-}
-
-function matchupHref(game, allGames = []) {
-  if (!game) return '/matchups'
-
-  const season = String(game?.Season || '').trim()
-  const week = String(game?.Week || '').trim()
-  const team = String(game?.Team || '').trim()
-  const opp = String(game?.Opponent || '').trim()
-
-  // Matchups renders one card per matchup and keeps the first row it
-  // encounters for each Season + Week + Team/Opponent pair. Some records
-  // are naturally represented by the mirrored row (the other team's
-  // perspective), so using that row's orientation in the URL can open the
-  // correct week but fail to mark the matchup as selected. Canonicalize the
-  // URL to the first occurrence of that matchup, matching the Matchups page.
-  const canonical = Array.isArray(allGames)
-    ? allGames.find((g) => {
-        const gs = String(g?.Season || '').trim()
-        const gw = String(g?.Week || '').trim()
-        const gt = String(g?.Team || '').trim()
-        const go = String(g?.Opponent || '').trim()
-
-        if (gs !== season || gw !== week) return false
-        return (gt === team && go === opp) || (gt === opp && go === team)
-      })
-    : null
-
-  const target = canonical || game
-  return `/matchups?season=${encodeURIComponent(String(target?.Season || '').trim())}&week=${encodeURIComponent(String(target?.Week || '').trim())}&team=${encodeURIComponent(String(target?.Team || '').trim())}&opp=${encodeURIComponent(String(target?.Opponent || '').trim())}`
 }
 
 const TEAM_AVATARS = {
@@ -84,24 +50,24 @@ function TeamAvatar({ team, size = 'md' }) {
 
   const sizeClass =
     size === 'sm'
-      ? 'h-8 w-8 rounded-full border-2 border-[#16274F]'
+      ? 'h-8 w-8 rounded-lg'
       : size === 'lg'
-        ? 'h-12 w-12 rounded-full border-2 border-[#16274F]'
-        : 'h-10 w-10 rounded-full border-2 border-[#16274F]'
+        ? 'h-12 w-12 rounded-xl'
+        : 'h-10 w-10 rounded-xl'
 
   if (avatar) {
     return (
       <img
         src={avatar}
         alt={team}
-        className={`${sizeClass} object-cover flex-shrink-0 bg-white`}
+        className={`${sizeClass} object-cover flex-shrink-0`}
       />
     )
   }
 
   return (
     <div
-      className={`${sizeClass} flex flex-shrink-0 items-center justify-center rounded-full text-[10px] font-black uppercase text-white bg-[#16274F]`}
+      className={`${sizeClass} flex flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white`}
       style={{
         background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))',
       }}
@@ -120,176 +86,119 @@ async function safeFetch(url) {
   } catch { return [] }
 }
 
-function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: Icon, top5, wide, team }) {
+function RecordCard({ label, value, sub, sub2, accent, icon: Icon, top5, wide, team }) {
   const [expanded, setExpanded] = useState(false)
 
   const accents = {
-    gold: {
-      border: 'border-[#F5C518]',
-      bg: 'bg-[#FFF9E5]',
-      text: 'text-[#16274F]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#F5C518] text-[#0A0A0A] border-[#0A0A0A]',
-    },
-    cyan: {
-      border: 'border-[#16274F]',
-      bg: 'bg-white',
-      text: 'text-[#16274F]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#16274F] text-white border-[#0A0A0A]',
-    },
-    emerald: {
-      border: 'border-[#1E8E3E]',
-      bg: 'bg-[#F4FAF5]',
-      text: 'text-[#1E8E3E]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#1E8E3E] text-white border-[#0A0A0A]',
-    },
-    red: {
-      border: 'border-[#D01F2D]',
-      bg: 'bg-[#FFF3F4]',
-      text: 'text-[#D01F2D]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#D01F2D] text-white border-[#0A0A0A]',
-    },
-    purple: {
-      border: 'border-[#16274F]',
-      bg: 'bg-[#F3F7FF]',
-      text: 'text-[#16274F]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#16274F] text-white border-[#0A0A0A]',
-    },
-    orange: {
-      border: 'border-[#D97706]',
-      bg: 'bg-[#FFF7ED]',
-      text: 'text-[#D97706]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#F5C518] text-[#0A0A0A] border-[#0A0A0A]',
-    },
-    slate: {
-      border: 'border-[#16274F]',
-      bg: 'bg-[#F7F6F2]',
-      text: 'text-[#16274F]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#16274F] text-white border-[#0A0A0A]',
-    },
+    gold: { border: 'border-yellow-400/25', bg: 'bg-yellow-400/5', text: 'text-yellow-400', icon: 'bg-yellow-400/10 border-yellow-400/20' },
+    cyan: { border: 'border-cyan-400/25', bg: 'bg-cyan-400/5', text: 'text-cyan-400', icon: 'bg-cyan-400/10 border-cyan-400/20' },
+    emerald: { border: 'border-emerald-400/25', bg: 'bg-emerald-400/5', text: 'text-emerald-400', icon: 'bg-emerald-400/10 border-emerald-400/20' },
+    red: { border: 'border-red-400/25', bg: 'bg-red-400/5', text: 'text-red-400', icon: 'bg-red-400/10 border-red-400/20' },
+    purple: { border: 'border-purple-400/25', bg: 'bg-purple-400/5', text: 'text-purple-400', icon: 'bg-purple-400/10 border-purple-400/20' },
+    orange: { border: 'border-orange-400/25', bg: 'bg-orange-400/5', text: 'text-orange-400', icon: 'bg-orange-400/10 border-orange-400/20' },
+    slate: { border: 'border-white/10', bg: 'bg-white/[0.03]', text: 'text-slate-300', icon: 'bg-white/[0.06] border-white/10' },
   }
-
   const a = accents[accent] || accents.slate
-  const subArr = Array.isArray(sub) ? sub.filter(Boolean) : sub ? [sub] : []
+
+  const subArr = Array.isArray(sub) ? sub : sub ? [sub] : []
   const teamArr = Array.isArray(team) ? team.filter(Boolean) : team ? [team] : []
 
   return (
-    <div className={`flex h-full flex-col border-2 shadow-[4px_4px_0_#16274F] ${a.border} ${a.bg} ${wide ? 'sm:col-span-2' : ''}`}>
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
+    <div className={`rounded-[24px] border transition-all ${a.border} ${a.bg} ${wide ? 'col-span-2' : ''}`}>
+      <div className="p-5 md:p-6">
         <div className="mb-4 flex items-start justify-between gap-3">
           {Icon ? (
-            <div className={`flex h-9 w-9 items-center justify-center border-2 shadow-[2px_2px_0_#0A0A0A] ${a.icon}`}>
-              <Icon className="h-4 w-4" />
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${a.icon}`}>
+              <Icon className={`h-5 w-5 ${a.text}`} />
             </div>
-          ) : <div />}
+          ) : (
+            <div />
+          )}
 
           {teamArr.length > 0 && (
-            <div className="flex flex-wrap items-center justify-end">
+            <div className="flex items-center flex-wrap justify-end">
               {teamArr.map((teamName, i) => (
-                <Link key={`${teamName}-${i}`} href={teamHref(teamName)} className={i > 0 ? '-ml-2' : ''} aria-label={`Open ${teamName}`}>
+                <div
+                  key={`${teamName}-${i}`}
+                  className={i > 0 ? '-ml-2' : ''}
+                >
                   <TeamAvatar team={teamName} size="md" />
-                </Link>
+                </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
+        <div className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
 
         <div
-          className={`leading-none ${a.value}`}
-          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(40px, 6vw, 58px)' }}
+          className={`font-black leading-none ${a.text}`}
+          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(38px, 8vw, 56px)' }}
         >
           {value}
         </div>
 
         {subArr.length > 0 && (
-          <div className="mt-3 flex min-h-[2.75rem] flex-col justify-end gap-0.5">
+          <div className="mt-3 flex flex-col gap-0.5">
             {subArr.map((s, i) => (
-              subHref ? (
-                <Link key={i} href={subHref} className="text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
-                  {s}
-                </Link>
-              ) : (
-                <div key={i} className="text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
-                  {s}
-                </div>
-              )
+              <div
+                key={i}
+                className="font-black text-white"
+                style={{ fontSize: 'clamp(14px, 3vw, 16px)' }}
+              >
+                {s}
+              </div>
             ))}
           </div>
         )}
 
-        {sub2 && (sub2Href ? (
-          <Link href={sub2Href} className="mt-1 text-xs font-semibold text-slate-500 hover:text-[#D01F2D]">{sub2}</Link>
-        ) : (
-          <div className="mt-1 text-xs font-semibold text-slate-500">{sub2}</div>
-        ))}
+        {sub2 && <div className="mt-1 text-xs text-slate-500">{sub2}</div>}
       </div>
 
       {top5 && top5.length > 1 && (
-        <div className="border-t-2 border-[#16274F]/15">
+        <>
           <button
             onClick={() => setExpanded(e => !e)}
-            className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-black/[0.03]"
+            className="flex w-full items-center justify-between border-t border-white/5 px-5 py-3 text-left transition-all hover:bg-white/[0.02]"
           >
-            <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${a.text}`}>
-              {expanded ? 'Hide Top 5' : 'Show Top 5'}
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
+              {expanded ? 'Hide' : 'Show Top 5'}
             </span>
-            {expanded ? <ChevronUp className="h-4 w-4 text-[#16274F]" /> : <ChevronDown className="h-4 w-4 text-[#16274F]" />}
+            {expanded ? <ChevronUp className="h-3.5 w-3.5 text-slate-600" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-600" />}
           </button>
 
           {expanded && (
-            <div className="border-t-2 border-[#16274F]/10 px-4 pb-3">
+            <div className="border-t border-white/5 px-5 pb-4">
               {top5.slice(0, 5).map((item, i) => {
                 const labelText = Array.isArray(item.label) ? item.label.join(', ') : item.label
                 const showAvatar = !Array.isArray(item.label) && !String(labelText).includes(' vs ')
 
                 return (
-                  (() => {
-                    const rowContent = (
-                      <>
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <span className={`w-5 flex-shrink-0 text-sm font-black ${i === 0 ? a.text : 'text-slate-500'}`}>
-                            {i + 1}
-                          </span>
-                          {showAvatar && (item.href ? (
-                            <span className="flex-shrink-0"><TeamAvatar team={labelText} size="sm" /></span>
-                          ) : (
-                            <Link href={teamHref(labelText)} className="flex-shrink-0" aria-label={`Open ${labelText}`}>
-                              <TeamAvatar team={labelText} size="sm" />
-                            </Link>
-                          ))}
-                          <div className="min-w-0 flex-1">
-                            <div className={`truncate text-sm font-bold leading-tight ${item.href || showAvatar ? 'text-[#0A0A0A]' : 'text-[#0A0A0A]'}`}>{labelText}</div>
-                            {item.sub && <div className="mt-0.5 text-xs font-semibold leading-tight text-slate-500">{item.sub}</div>}
-                          </div>
+                  <div key={i} className="flex items-center justify-between gap-3 py-2 border-b border-white/[0.04] last:border-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className={`text-sm font-black flex-shrink-0 w-5 ${i === 0 ? a.text : 'text-slate-600'}`}>
+                        {i + 1}
+                      </span>
+
+                      {showAvatar && <TeamAvatar team={labelText} size="sm" />}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-bold text-white leading-tight">
+                          {labelText}
                         </div>
-                        <span className={`flex-shrink-0 text-base font-black ${i === 0 ? a.text : 'text-[#16274F]'}`}>
-                          {item.value}
-                        </span>
-                      </>
-                    )
-                    return item.href ? (
-                      <Link href={item.href} key={i} className="flex items-center justify-between gap-3 border-b border-[#16274F]/10 py-2.5 last:border-0 hover:bg-black/[0.03]">
-                        {rowContent}
-                      </Link>
-                    ) : (
-                      <div key={i} className="flex items-center justify-between gap-3 border-b border-[#16274F]/10 py-2.5 last:border-0">
-                        {rowContent}
+                        {item.sub && <div className="text-xs text-slate-500 leading-tight mt-0.5">{item.sub}</div>}
                       </div>
-                    )
-                  })()
+                    </div>
+
+                    <span className={`text-base font-black flex-shrink-0 ${i === 0 ? a.text : 'text-slate-400'}`}>
+                      {item.value}
+                    </span>
+                  </div>
                 )
               })}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   )
@@ -299,10 +208,10 @@ function RecordSection({ title, children }) {
   return (
     <div className="mb-10">
       <div className="mb-4 flex items-center gap-3">
-        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[#16274F]">{title}</h2>
-        <div className="h-[2px] flex-1 bg-[#16274F]/15" />
+        <div className="text-sm font-black uppercase tracking-[0.2em] text-slate-200">{title}</div>
+        <div className="flex-1 h-px bg-white/10" />
       </div>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {children}
       </div>
     </div>
@@ -327,6 +236,7 @@ export default function RecordsPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('franchise')
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { setLeftSlot } = useDrawer()
   const [allSeasons, setAllSeasons] = useState([])
 
   useEffect(() => {
@@ -353,6 +263,21 @@ export default function RecordsPage() {
       setLoading(false)
     }
     load()
+  }, [])
+
+  //DRAWER
+  useEffect(() => {
+    setLeftSlot(
+      <button
+        onClick={() => setDrawerOpen(true)}
+        className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+      >
+        Summary
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    )
+
+    return () => setLeftSlot(null)
   }, [])
 
   // ── FRANCHISE ──────────────────────────────────────────────────────
@@ -751,8 +676,7 @@ export default function RecordsPage() {
         value: topVal.toFixed(2),
         teams: sorted.filter(g => parseNumber(g.PF) === topVal).map(g => String(g.Team || '').trim()),
         sub2: sorted[0] ? `vs ${String(sorted[0].Opponent || '').trim()} · Week ${sorted[0].Week} ${sorted[0].Season}` : '',
-        sub2Href: sorted[0] ? matchupHref(sorted[0], games) : null,
-        top5: sorted.slice(0, 5).map(g => ({ label: String(g.Team || '').trim(), sub: `vs ${String(g.Opponent || '').trim()} · Week ${g.Week} ${g.Season}`, value: parseNumber(g.PF).toFixed(2), href: matchupHref(g, games) }))
+        top5: sorted.slice(0, 5).map(g => ({ label: String(g.Team || '').trim(), sub: `vs ${String(g.Opponent || '').trim()} · Week ${g.Week} ${g.Season}`, value: parseNumber(g.PF).toFixed(2) }))
       }
     }
 
@@ -763,8 +687,7 @@ export default function RecordsPage() {
         value: topVal.toFixed(2),
         teams: sorted.filter(g => parseNumber(g.PF) === topVal).map(g => String(g.Team || '').trim()),
         sub2: sorted[0] ? `vs ${String(sorted[0].Opponent || '').trim()} · Week ${sorted[0].Week} ${sorted[0].Season}` : '',
-        sub2Href: sorted[0] ? matchupHref(sorted[0], games) : null,
-        top5: sorted.slice(0, 5).map(g => ({ label: String(g.Team || '').trim(), sub: `vs ${String(g.Opponent || '').trim()} · Week ${g.Week} ${g.Season}`, value: parseNumber(g.PF).toFixed(2), href: matchupHref(g, games) }))
+        top5: sorted.slice(0, 5).map(g => ({ label: String(g.Team || '').trim(), sub: `vs ${String(g.Opponent || '').trim()} · Week ${g.Week} ${g.Season}`, value: parseNumber(g.PF).toFixed(2) }))
       }
     }
 
@@ -778,8 +701,7 @@ export default function RecordsPage() {
         value: topVal.toFixed(2),
         teams: sorted.filter(g => Math.abs(g.margin - topVal) < 0.001).map(g => `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`),
         sub2: sorted[0] ? `Week ${sorted[0].Week} ${sorted[0].Season}` : '',
-        sub2Href: sorted[0] ? matchupHref(sorted[0], games) : null,
-        top5: sorted.slice(0, 5).map(g => ({ label: `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`, sub: `Week ${g.Week} ${g.Season}`, value: g.margin.toFixed(2), href: matchupHref(g, games) }))
+        top5: sorted.slice(0, 5).map(g => ({ label: `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`, sub: `Week ${g.Week} ${g.Season}`, value: g.margin.toFixed(2) }))
       }
     }
 
@@ -793,8 +715,7 @@ export default function RecordsPage() {
         value: topVal.toFixed(2),
         teams: sorted.filter(g => Math.abs(g.margin - topVal) < 0.001).map(g => `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`),
         sub2: sorted[0] ? `Week ${sorted[0].Week} ${sorted[0].Season}` : '',
-        sub2Href: sorted[0] ? matchupHref(sorted[0], games) : null,
-        top5: sorted.slice(0, 5).map(g => ({ label: `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`, sub: `Week ${g.Week} ${g.Season}`, value: g.margin.toFixed(2), href: matchupHref(g, games) }))
+        top5: sorted.slice(0, 5).map(g => ({ label: `${String(g.Team || '').trim()} vs ${String(g.Opponent || '').trim()}`, sub: `Week ${g.Week} ${g.Season}`, value: g.margin.toFixed(2) }))
       }
     }
 
@@ -826,10 +747,8 @@ export default function RecordsPage() {
       highRegNoDb: mkHighest(regNoDb),
       highPO: mkHighest(poDedup),
       highPONoDb: mkHighest(poNoDb),
-      // Lowest score is a TEAM score, not a matchup score. Keep both mirrored rows
-      // so the losing side's lower PF can also qualify as the record.
-      lowAll: mkLowest(games),
-      lowNoDouble: mkLowest(games.filter(g => !isDoubleWeek(g))),
+      lowAll: mkLowest(allDedup),
+      lowNoDouble: mkLowest(noDouble),
       closestAll: mkClosest(allDedup),
       closestNoDouble: mkClosest(noDouble),
       biggestAll: mkBiggest(allDedup),
@@ -994,7 +913,7 @@ export default function RecordsPage() {
     const mostGames = {
       value: topMG,
       teams: mgSorted.filter(r => parseNumber(r.Games) === topMG).map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
-      top5: mgSorted.slice(0, 5).map(r => ({ label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`, value: parseNumber(r.Games), href: '/rivalries' }))
+      top5: mgSorted.slice(0, 5).map(r => ({ label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`, value: parseNumber(r.Games) }))
     }
 
     // Best H2H streak — compara todas as linhas corretamente
@@ -1035,7 +954,6 @@ export default function RecordsPage() {
           label: `${s.team} vs ${s.opponent}`,
           sub: period,
           value,
-          href: '/rivalries',
         }
       })
     }
@@ -1062,8 +980,7 @@ export default function RecordsPage() {
         .map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
       top5: balSorted.slice(0, 5).map(r => ({
         label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`,
-        value: `${r.recA}–${r.recB}`,
-        href: '/rivalries'
+        value: `${r.recA}–${r.recB}`
       }))
     }
 
@@ -1088,7 +1005,7 @@ export default function RecordsPage() {
     const highestMargin = {
       value: `${topHM.toFixed(2)} pts`,
       teams: hmSorted.filter(r => Math.abs(r._norm.margin - topHM) < 0.01).map(r => `${r._norm.dominant} vs ${r._norm.other}`),
-      top5: hmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: '/rivalries' }))
+      top5: hmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts` }))
     }
 
     // Lowest avg margin — same normalization, ascending
@@ -1100,7 +1017,7 @@ export default function RecordsPage() {
     const lowestMargin = {
       value: `${topLM.toFixed(2)} pts`,
       teams: lmSorted.filter(r => Math.abs(r._norm.margin - topLM) < 0.01).map(r => `${r._norm.dominant} vs ${r._norm.other}`),
-      top5: lmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: '/rivalries' }))
+      top5: lmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts` }))
     }
 
     return { mostGames, bestH2HStreak, mostBalanced, highestMargin, lowestMargin }
@@ -1176,66 +1093,70 @@ export default function RecordsPage() {
   }, [history])
 
   return (
-    <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
+    <main className="min-h-screen bg-[#020617] text-white">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
+      {/* Header */}
       <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
-      <section className="px-3 pb-20 md:px-6">
+      <section className="px-3 md:px-6 pb-20">
 
         {/* Hero */}
-        <div className="relative mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]">
-          <div className="absolute inset-0 overflow-hidden">
+        <div className="relative mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10">
+          <div className="absolute inset-0 overflow-hidden rounded-2xl md:rounded-[38px]">
             <svg width="100%" height="100%" viewBox="0 0 900 280" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <g opacity="0.06" fill="#16274F">
-                {[280,355,400,475,520,595,640,715,760,835].map((x,i) => (
-                  <rect key={i} x={x} y="-80" width={i%2===0?55:22} height="450" transform={`rotate(-18 ${x+(i%2===0?27:11)} 140)`}/>
+              <g opacity="0.09">
+                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
+                  <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="450" fill="#22d3ee" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 140)`} />
                 ))}
               </g>
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="1">
-                {["M380 -30 L460 85 L380 200 L300 85 Z","M460 85 L540 200 L460 315 L380 200 Z","M540 -30 L620 85 L540 200 L460 85 Z","M620 85 L700 200 L620 315 L540 200 Z","M700 -30 L780 85 L700 200 L620 85 Z"].map((d,i)=><path key={i} d={d}/>)}
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
+                {["M380 -30 L460 85 L380 200 L300 85 Z", "M460 85 L540 200 L460 315 L380 200 Z", "M540 -30 L620 85 L540 200 L460 85 Z", "M620 85 L700 200 L620 315 L540 200 Z", "M700 -30 L780 85 L700 200 L620 85 Z", "M780 85 L860 200 L780 315 L700 200 Z"].map((d, i) => <path key={i} d={d} />)}
               </g>
-              <g opacity="0.06" fill="#F5C518">
-                {["M420 30 L440 58 L420 86 L400 58 Z","M580 30 L600 58 L580 86 L560 58 Z","M740 30 L760 58 L740 86 L720 58 Z","M500 120 L520 148 L500 176 L480 148 Z","M660 120 L680 148 L660 176 L640 148 Z"].map((d,i)=><path key={i} d={d}/>)}
+              <g opacity="0.08" fill="#22d3ee">
+                {["M420 30 L440 58 L420 86 L400 58 Z", "M580 30 L600 58 L580 86 L560 58 Z", "M740 30 L760 58 L740 86 L720 58 Z", "M500 120 L520 148 L500 176 L480 148 Z", "M660 120 L680 148 L660 176 L640 148 Z", "M820 120 L840 148 L820 176 L800 148 Z"].map((d, i) => <path key={i} d={d} />)}
               </g>
-              <text x="815" y="262" fontFamily="'Bebas Neue',sans-serif" fontSize="280" fill="#16274F" opacity="0.035" textAnchor="middle">REC</text>
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round">
+                {[500, 540, 580, 620].map((x, i) => <polyline key={i} points={`${x},0 ${x + 140},140 ${x},280`} />)}
+              </g>
+              <g opacity="0.07" fill="#22d3ee">
+                <polygon points="900,0 900,120 780,0" />
+                <polygon points="900,280 900,160 780,280" />
+                <polygon points="280,0 360,0 280,80" />
+              </g>
+              <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
+                {[30, 50, 70].map(r => <circle key={r} cx="860" cy="50" r={r} />)}
+              </g>
+              <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
+                {[70, 140, 210].map(y => <line key={y} x1="0" y1={y} x2="900" y2={y} />)}
+              </g>
+              <text x="820" y="260" fontFamily="'Bebas Neue',sans-serif" fontSize="280" fill="#22d3ee" opacity="0.025" textAnchor="middle">REC</text>
             </svg>
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.9) 48%, rgba(2,6,23,0.15) 100%)' }} />
           </div>
-
           <div className="relative z-10 p-6 sm:p-8 md:p-10">
-            <div className="mb-5 inline-flex items-center border-2 border-[#D01F2D] bg-[#D01F2D] px-4 py-2 text-white shadow-[3px_3px_0_#16274F]">
-              <span className="text-xs font-black uppercase tracking-[0.25em]">League</span>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
+              <Trophy className="h-4 w-4 text-cyan-300" />
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">Hall of Records</span>
             </div>
-
-            <h1
-              className="mb-4 leading-[0.84]"
-              style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(58px, 9vw, 104px)', letterSpacing: '0.02em' }}
-            >
-              <span className="block text-[#16274F]">League</span>
-              <span className="block text-[#D01F2D]" style={{ textShadow: '2px 2px 0 #0A0A0A' }}>Records</span>
+            <h1 className="mb-4 leading-[0.88]"
+              style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(56px, 8vw, 100px)', letterSpacing: '0.02em' }}>
+              <span style={{ display: 'block', background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>LEAGUE</span>
+              <span style={{ display: 'block', background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>RECORDS</span>
             </h1>
-
-            <p className="max-w-xl text-sm font-semibold text-slate-600 sm:text-base">
-              The numbers that define glory, rivalry and heartbreak.
-            </p>
+            <p className="max-w-lg text-base text-slate-400">The numbers that define glory, rivalry and heartbreak.</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="mb-8 overflow-hidden border-2 border-[#16274F] bg-white shadow-[4px_4px_0_#16274F]">
+        <div className="mb-8 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
           <div className="flex overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             {TABS.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`flex flex-shrink-0 items-center gap-2 border-b-4 px-5 py-4 text-sm font-black uppercase transition-all sm:px-6 ${
-                  tab === t.key
-                    ? 'border-[#D01F2D] bg-[#FFF3F4] text-[#D01F2D]'
-                    : 'border-transparent text-[#16274F]/60 hover:bg-[#F7F6F2] hover:text-[#16274F]'
-                }`}
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`flex flex-shrink-0 items-center gap-2 border-b-2 px-6 py-4 text-sm font-black transition-all ${tab === t.key ? 'border-cyan-400 text-cyan-300' : 'border-transparent text-slate-500 hover:text-slate-300'
+                  }`}
               >
-                <t.Icon className="h-4 w-4" />
-                {t.label}
+                <t.Icon className="h-4 w-4" />{t.label}
               </button>
             ))}
           </div>
@@ -1244,7 +1165,7 @@ export default function RecordsPage() {
         {loading ? (
           <div className="flex items-center justify-center py-20 text-slate-500 font-bold">Loading...</div>
         ) : (
-          <div className="border-2 border-[#16274F] bg-white p-4 shadow-[5px_5px_0_#16274F] sm:p-6 md:p-8">
+          <div className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))] p-8">
 
             {/* FRANCHISE */}
 {tab === 'franchise' && (
@@ -1311,28 +1232,28 @@ export default function RecordsPage() {
 {tab === 'games' && (
   <>
     <RecordSection title="Highest Scores — Including Double Weeks">
-      <RecordCard label="All-Time" value={gameRecords.highAll?.value} sub={gameRecords.highAll?.teams} team={gameRecords.highAll?.teams} sub2={gameRecords.highAll?.sub2} sub2Href={gameRecords.highAll?.sub2Href} accent="gold" icon={Flame} top5={gameRecords.highAll?.top5} />
-      <RecordCard label="Reg Season" value={gameRecords.highReg?.value} sub={gameRecords.highReg?.teams} team={gameRecords.highReg?.teams} sub2={gameRecords.highReg?.sub2} sub2Href={gameRecords.highReg?.sub2Href} accent="cyan" icon={Flame} top5={gameRecords.highReg?.top5} />
-      <RecordCard label="Playoffs" value={gameRecords.highPO?.value} sub={gameRecords.highPO?.teams} team={gameRecords.highPO?.teams} sub2={gameRecords.highPO?.sub2} sub2Href={gameRecords.highPO?.sub2Href} accent="purple" icon={Flame} top5={gameRecords.highPO?.top5} />
+      <RecordCard label="All-Time" value={gameRecords.highAll?.value} sub={gameRecords.highAll?.teams} team={gameRecords.highAll?.teams} sub2={gameRecords.highAll?.sub2} accent="gold" icon={Flame} top5={gameRecords.highAll?.top5} />
+      <RecordCard label="Reg Season" value={gameRecords.highReg?.value} sub={gameRecords.highReg?.teams} team={gameRecords.highReg?.teams} sub2={gameRecords.highReg?.sub2} accent="cyan" icon={Flame} top5={gameRecords.highReg?.top5} />
+      <RecordCard label="Playoffs" value={gameRecords.highPO?.value} sub={gameRecords.highPO?.teams} team={gameRecords.highPO?.teams} sub2={gameRecords.highPO?.sub2} accent="purple" icon={Flame} top5={gameRecords.highPO?.top5} />
     </RecordSection>
 
     <RecordSection title="Highest Scores — Single Weeks Only">
-      <RecordCard label="All-Time" value={gameRecords.highNoDouble?.value} sub={gameRecords.highNoDouble?.teams} team={gameRecords.highNoDouble?.teams} sub2={gameRecords.highNoDouble?.sub2} sub2Href={gameRecords.highNoDouble?.sub2Href} accent="gold" icon={Flame} top5={gameRecords.highNoDouble?.top5} />
-      <RecordCard label="Reg Season" value={gameRecords.highRegNoDb?.value} sub={gameRecords.highRegNoDb?.teams} team={gameRecords.highRegNoDb?.teams} sub2={gameRecords.highRegNoDb?.sub2} sub2Href={gameRecords.highRegNoDb?.sub2Href} accent="cyan" icon={Flame} top5={gameRecords.highRegNoDb?.top5} />
-      <RecordCard label="Playoffs" value={gameRecords.highPONoDb?.value} sub={gameRecords.highPONoDb?.teams} team={gameRecords.highPONoDb?.teams} sub2={gameRecords.highPONoDb?.sub2} sub2Href={gameRecords.highPONoDb?.sub2Href} accent="purple" icon={Flame} top5={gameRecords.highPONoDb?.top5} />
+      <RecordCard label="All-Time" value={gameRecords.highNoDouble?.value} sub={gameRecords.highNoDouble?.teams} team={gameRecords.highNoDouble?.teams} sub2={gameRecords.highNoDouble?.sub2} accent="gold" icon={Flame} top5={gameRecords.highNoDouble?.top5} />
+      <RecordCard label="Reg Season" value={gameRecords.highRegNoDb?.value} sub={gameRecords.highRegNoDb?.teams} team={gameRecords.highRegNoDb?.teams} sub2={gameRecords.highRegNoDb?.sub2} accent="cyan" icon={Flame} top5={gameRecords.highRegNoDb?.top5} />
+      <RecordCard label="Playoffs" value={gameRecords.highPONoDb?.value} sub={gameRecords.highPONoDb?.teams} team={gameRecords.highPONoDb?.teams} sub2={gameRecords.highPONoDb?.sub2} accent="purple" icon={Flame} top5={gameRecords.highPONoDb?.top5} />
       <RecordCard label="Most Games Over 200 pts" value={gameRecords.most200?.value} sub={gameRecords.most200?.teams} team={gameRecords.most200?.teams} sub2="Single weeks only · all stages" accent="orange" icon={Zap} top5={gameRecords.most200?.top5} />
     </RecordSection>
 
     <RecordSection title="Lowest Scores">
-      <RecordCard label="Lowest Score (inc. doubles)" value={gameRecords.lowAll?.value} sub={gameRecords.lowAll?.teams} team={gameRecords.lowAll?.teams} sub2={gameRecords.lowAll?.sub2} sub2Href={gameRecords.lowAll?.sub2Href} accent="red" icon={TrendingDown} top5={gameRecords.lowAll?.top5} />
-      <RecordCard label="Lowest Score (single weeks only)" value={gameRecords.lowNoDouble?.value} sub={gameRecords.lowNoDouble?.teams} team={gameRecords.lowNoDouble?.teams} sub2={gameRecords.lowNoDouble?.sub2} sub2Href={gameRecords.lowNoDouble?.sub2Href} accent="orange" icon={TrendingDown} top5={gameRecords.lowNoDouble?.top5} />
+      <RecordCard label="Lowest Score (inc. doubles)" value={gameRecords.lowAll?.value} sub={gameRecords.lowAll?.teams} team={gameRecords.lowAll?.teams} sub2={gameRecords.lowAll?.sub2} accent="red" icon={TrendingDown} top5={gameRecords.lowAll?.top5} />
+      <RecordCard label="Lowest Score (single weeks only)" value={gameRecords.lowNoDouble?.value} sub={gameRecords.lowNoDouble?.teams} team={gameRecords.lowNoDouble?.teams} sub2={gameRecords.lowNoDouble?.sub2} accent="orange" icon={TrendingDown} top5={gameRecords.lowNoDouble?.top5} />
     </RecordSection>
 
     <RecordSection title="Notable Games">
-      <RecordCard label="Closest Game (inc. doubles)" value={gameRecords.closestAll?.value} sub={gameRecords.closestAll?.teams} sub2={gameRecords.closestAll?.sub2} sub2Href={gameRecords.closestAll?.sub2Href} accent="emerald" icon={Target} top5={gameRecords.closestAll?.top5} />
-      <RecordCard label="Closest Game (single weeks only)" value={gameRecords.closestNoDouble?.value} sub={gameRecords.closestNoDouble?.teams} sub2={gameRecords.closestNoDouble?.sub2} sub2Href={gameRecords.closestNoDouble?.sub2Href} accent="cyan" icon={Target} top5={gameRecords.closestNoDouble?.top5} />
-      <RecordCard label="Biggest Win (inc. doubles)" value={gameRecords.biggestAll?.value} sub={gameRecords.biggestAll?.teams} sub2={gameRecords.biggestAll?.sub2} sub2Href={gameRecords.biggestAll?.sub2Href} accent="gold" icon={Zap} top5={gameRecords.biggestAll?.top5} />
-      <RecordCard label="Biggest Win (single weeks only)" value={gameRecords.biggestNoDouble?.value} sub={gameRecords.biggestNoDouble?.teams} sub2={gameRecords.biggestNoDouble?.sub2} sub2Href={gameRecords.biggestNoDouble?.sub2Href} accent="orange" icon={Zap} top5={gameRecords.biggestNoDouble?.top5} />
+      <RecordCard label="Closest Game (inc. doubles)" value={gameRecords.closestAll?.value} sub={gameRecords.closestAll?.teams} sub2={gameRecords.closestAll?.sub2} accent="emerald" icon={Target} top5={gameRecords.closestAll?.top5} />
+      <RecordCard label="Closest Game (single weeks only)" value={gameRecords.closestNoDouble?.value} sub={gameRecords.closestNoDouble?.teams} sub2={gameRecords.closestNoDouble?.sub2} accent="cyan" icon={Target} top5={gameRecords.closestNoDouble?.top5} />
+      <RecordCard label="Biggest Win (inc. doubles)" value={gameRecords.biggestAll?.value} sub={gameRecords.biggestAll?.teams} sub2={gameRecords.biggestAll?.sub2} accent="gold" icon={Zap} top5={gameRecords.biggestAll?.top5} />
+      <RecordCard label="Biggest Win (single weeks only)" value={gameRecords.biggestNoDouble?.value} sub={gameRecords.biggestNoDouble?.teams} sub2={gameRecords.biggestNoDouble?.sub2} accent="orange" icon={Zap} top5={gameRecords.biggestNoDouble?.top5} />
     </RecordSection>
   </>
 )}
@@ -1389,17 +1310,17 @@ export default function RecordsPage() {
 {tab === 'rivalry' && (
   <>
     <RecordSection title="Most Played">
-      <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} subHref="/rivalries" wide />
+      <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} wide />
     </RecordSection>
 
     <RecordSection title="H2H Streaks">
-      <RecordCard label="Longest H2H Winning Streak" value={rivalryRecords.bestH2HStreak?.value} sub={rivalryRecords.bestH2HStreak?.teams} accent="gold" icon={Flame} top5={rivalryRecords.bestH2HStreak?.top5} subHref="/rivalries" wide />
+      <RecordCard label="Longest H2H Winning Streak" value={rivalryRecords.bestH2HStreak?.value} sub={rivalryRecords.bestH2HStreak?.teams} accent="gold" icon={Flame} top5={rivalryRecords.bestH2HStreak?.top5} wide />
     </RecordSection>
 
     <RecordSection title="Dominance & Balance">
-      <RecordCard label="Most Balanced Rivalry" value={rivalryRecords.mostBalanced?.value} sub={rivalryRecords.mostBalanced?.teams} accent="emerald" icon={Target} top5={rivalryRecords.mostBalanced?.top5} subHref="/rivalries" />
-      <RecordCard label="Highest Avg Margin H2H" value={rivalryRecords.highestMargin?.value} sub={rivalryRecords.highestMargin?.teams} accent="red" icon={TrendingUp} top5={rivalryRecords.highestMargin?.top5} subHref="/rivalries" />
-      <RecordCard label="Closest Avg Margin H2H" value={rivalryRecords.lowestMargin?.value} sub={rivalryRecords.lowestMargin?.teams} accent="cyan" icon={Target} top5={rivalryRecords.lowestMargin?.top5} subHref="/rivalries" />
+      <RecordCard label="Most Balanced Rivalry" value={rivalryRecords.mostBalanced?.value} sub={rivalryRecords.mostBalanced?.teams} accent="emerald" icon={Target} top5={rivalryRecords.mostBalanced?.top5} />
+      <RecordCard label="Highest Avg Margin H2H" value={rivalryRecords.highestMargin?.value} sub={rivalryRecords.highestMargin?.teams} accent="red" icon={TrendingUp} top5={rivalryRecords.highestMargin?.top5} />
+      <RecordCard label="Closest Avg Margin H2H" value={rivalryRecords.lowestMargin?.value} sub={rivalryRecords.lowestMargin?.teams} accent="cyan" icon={Target} top5={rivalryRecords.lowestMargin?.top5} />
     </RecordSection>
   </>
 )}
@@ -1432,10 +1353,10 @@ export default function RecordsPage() {
       />
 
       {/* Footer */}
-      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-50" />
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-[#B8C0D0]">Tapitas League · Est. 2014</span>
+      <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
+        <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
+          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-30" />
+          <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Tapitas League · Est. 2014</span>
         </div>
       </footer>
     </main>

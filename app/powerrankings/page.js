@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -146,11 +147,20 @@ function getTierColor(rank, total) {
 }
 
 function getHistoryColor(rank, total) {
-  const pct = rank / total
+  const numericRank = Number(rank)
 
-  if (pct <= 0.25) return 'bg-[#1E8E3E]'
-  if (pct <= 0.60) return 'bg-[#16274F]'
-  return 'bg-[#D01F2D]'
+  if (numericRank === 1) return 'bg-[#F5C518]'
+  if (numericRank >= 2 && numericRank <= 3) return 'bg-[#1E8E3E]'
+  if (numericRank >= 4 && numericRank <= 6) return 'bg-[#16274F]'
+  if (numericRank >= 7 && numericRank <= 10) return 'bg-[#D01F2D]'
+
+  return 'bg-[#16274F]'
+}
+
+function matchupHref(row) {
+  if (!row) return '/matchups'
+
+  return `/matchups?season=${encodeURIComponent(String(row?.Season || '').trim())}&week=${encodeURIComponent(String(row?.Week || '').trim())}&team=${encodeURIComponent(String(row?.Team || '').trim())}&opp=${encodeURIComponent(String(row?.Opponent || '').trim())}`
 }
 
 export default function PowerRankingsPage() {
@@ -409,6 +419,13 @@ export default function PowerRankingsPage() {
         next,
 
         note: String(g?.Note || '').trim(),
+
+        matchupRow: {
+          Season: g?.Season,
+          Week: g?.Week,
+          Team: g?.Team,
+          Opponent: g?.Opponent,
+        },
       }
     })
 
@@ -1132,8 +1149,8 @@ export default function PowerRankingsPage() {
                       {/* THIS WEEK / NEXT WEEK */}
                       <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 mb-5">
 
-                        <a
-                          href={`/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}&team=${encodeURIComponent(team.team)}&opp=${encodeURIComponent(team.opponent || '')}`}
+                        <Link
+                          href={matchupHref(team.matchupRow)}
                           className="group block border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 min-w-0 transition-colors hover:bg-white"
                         >
                           <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
@@ -1170,7 +1187,7 @@ export default function PowerRankingsPage() {
                               </div>
                             </div>
                           </div>
-                        </a>
+                        </Link>
 
                         <div className="border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 min-w-0">
                           <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
@@ -1342,10 +1359,7 @@ export default function PowerRankingsPage() {
                                 className={`w-8 border-2 border-[#0A0A0A] ${getHistoryColor(
                                   r,
                                   totalTeams
-                                )} ${current
-                                  ? 'tp-shadow-red-sm'
-                                  : ''
-                                }`}
+                                )}`}
                                 style={{
                                   height: `${height}px`
                                 }}
