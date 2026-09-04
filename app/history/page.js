@@ -107,7 +107,7 @@ function matchupHref(row) {
 }
 
 function teamHref(name) {
-  return `/teams/${encodeURIComponent(String(name || '').trim())}`
+  return `/teams?team=${encodeURIComponent(String(name || '').trim())}`
 }
 
 async function safeFetch(url) {
@@ -386,6 +386,8 @@ export default function HistoryPage() {
               getResult(g),
 
             opp: getOpponent(g),
+
+            week: getField(g, 'Week', 'week'),
 
             score: parseNumber(getField(g, 'PF', 'pf')),
 
