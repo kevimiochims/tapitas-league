@@ -361,6 +361,8 @@ export default function HistoryPage() {
 
           opp: getOpponent(g),
 
+          week: getField(g, 'Week', 'week'),
+
           score: parseNumber(getField(g, 'PF', 'pf')),
 
           oppScore: parseNumber(getField(g, 'PA', 'pa')),
@@ -399,12 +401,12 @@ export default function HistoryPage() {
         losses: regGames.filter(g => g.result === 'L').length,
       }
 
-      const numericSeasonPF = seasonGames
-        .map(g => parseNumber(getField(g, 'PF', 'pf')))
+      const numericChampionRegPF = regGames
+        .map(g => Number(g?.score))
         .filter(Number.isFinite)
 
-      const avgPF = numericSeasonPF.length
-        ? numericSeasonPF.reduce((sum, value) => sum + value, 0) / numericSeasonPF.length
+      const avgPF = numericChampionRegPF.length
+        ? numericChampionRegPF.reduce((sum, value) => sum + value, 0) / numericChampionRegPF.length
         : 0
 
       const bestPFGame = [...seasonGames].sort(
@@ -732,12 +734,9 @@ export default function HistoryPage() {
                               <ChevronDown className="h-5 w-5 shrink-0 text-[#16274F]" style={{ transform: open ? 'rotate(180deg)' : 'none' }} />
                             </div>
                           ) : (
-                            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[minmax(250px,1.55fr)_1px_92px_100px_160px_160px_minmax(180px,1fr)]">
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[minmax(270px,1.55fr)_1px_minmax(180px,1.1fr)_minmax(150px,0.9fr)_minmax(150px,0.9fr)_minmax(185px,1fr)]">
                               <div className="flex min-w-0 items-center gap-3">
-                                <span
-                                  className="shrink-0 text-3xl leading-none text-[#16274F]"
-                                  style={{ fontFamily: '"Bebas Neue", sans-serif' }}
-                                >
+                                <span className="shrink-0 text-3xl leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                                   {s.season}
                                 </span>
                                 {championLogo ? (
@@ -757,39 +756,56 @@ export default function HistoryPage() {
 
                               <div className="hidden h-9 border-l border-[#0A0A0A]/15 lg:block" />
 
-                              <div className="hidden lg:block pl-0">
-                                <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Record</div>
-                                <div className="mt-1 text-xl font-black text-[#16274F]">
-                                  <span className="text-[#1E8E3E]">{s.championRecord.wins}</span><span className="text-[#6B7280]">–</span><span className="text-[#D01F2D]">{s.championRecord.losses}</span>
+                              <div className="hidden lg:grid grid-cols-2 divide-x divide-[#0A0A0A]/10 border border-[#0A0A0A]/10 bg-[#F7F6F2]">
+                                <div className="px-3 py-2">
+                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Champion Record</div>
+                                  <div className="mt-1 text-xl font-black leading-none">
+                                    <span className="text-[#1E8E3E]">{s.championRecord?.wins ?? 0}</span>
+                                    <span className="text-[#6B7280]">–</span>
+                                    <span className="text-[#D01F2D]">{s.championRecord?.losses ?? 0}</span>
+                                  </div>
+                                </div>
+                                <div className="px-3 py-2">
+                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Champion PF Avg</div>
+                                  <div className="mt-1 text-xl font-black leading-none text-[#16274F]">{(s.avgPF ?? 0).toFixed(1)}</div>
                                 </div>
                               </div>
 
-                              <div className="hidden lg:block border-l border-[#0A0A0A]/15 pl-4">
-                                <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">PF Avg</div>
-                                <div className="mt-1 text-xl font-black text-[#16274F]">{s.avgPF.toFixed(1)}</div>
-                              </div>
-
-                              <div className="hidden lg:block border-l border-[#0A0A0A]/15 pl-4">
-                                <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Best PF</div>
-                                <div className="mt-1 text-xl font-black text-[#1E8E3E]">{parseNumber(getField(bestPF, 'PF', 'pf')).toFixed(2)}</div>
-                                <div className="truncate text-[8px] font-black uppercase text-[#1E8E3E]">{getTeam(bestPF) || '—'}</div>
-                              </div>
-
-                              <div className="hidden lg:block border-l border-[#0A0A0A]/15 pl-4">
-                                <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Worst PF</div>
-                                <div className="mt-1 text-xl font-black text-[#D01F2D]">{parseNumber(getField(worstPF, 'PF', 'pf')).toFixed(2)}</div>
-                                <div className="truncate text-[8px] font-black uppercase text-[#D01F2D]">{getTeam(worstPF) || '—'}</div>
-                              </div>
-
-                              <div className="hidden lg:flex min-w-0 items-center justify-end gap-2 border-l border-[#0A0A0A]/15 pl-4">
-                                {unicornLogo ? (
-                                  <img src={unicornLogo} alt={s.unicorn || 'Unicorn'} className="h-10 w-10 rounded-full object-cover" />
+                              <div className="hidden lg:flex min-w-0 items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                                {getTeamLogo(getTeam(bestPF)) ? (
+                                  <img src={getTeamLogo(getTeam(bestPF))} alt={getTeam(bestPF) || ''} className="h-8 w-8 shrink-0 rounded-full object-cover" />
                                 ) : (
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F7EAF8] text-lg">🦄</div>
+                                  <div className="h-8 w-8 shrink-0 rounded-full bg-[#F4FAF5]" />
                                 )}
                                 <div className="min-w-0">
-                                  <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Unicorn</div>
-                                  <div className="truncate text-[11px] font-black uppercase text-[#16274F]">{s.unicorn || '—'}</div>
+                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#1E8E3E]">Best PF</div>
+                                  <div className="mt-0.5 text-lg font-black leading-none text-[#1E8E3E]">{parseNumber(getField(bestPF, 'PF', 'pf')).toFixed(2)}</div>
+                                  <div className="mt-0.5 truncate text-[7px] font-black uppercase text-[#6B7280]">{getTeam(bestPF) || '—'}</div>
+                                </div>
+                              </div>
+
+                              <div className="hidden lg:flex min-w-0 items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                                {getTeamLogo(getTeam(worstPF)) ? (
+                                  <img src={getTeamLogo(getTeam(worstPF))} alt={getTeam(worstPF) || ''} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                                ) : (
+                                  <div className="h-8 w-8 shrink-0 rounded-full bg-[#FDEDEE]" />
+                                )}
+                                <div className="min-w-0">
+                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#D01F2D]">Worst PF</div>
+                                  <div className="mt-0.5 text-lg font-black leading-none text-[#D01F2D]">{parseNumber(getField(worstPF, 'PF', 'pf')).toFixed(2)}</div>
+                                  <div className="mt-0.5 truncate text-[7px] font-black uppercase text-[#6B7280]">{getTeam(worstPF) || '—'}</div>
+                                </div>
+                              </div>
+
+                              <div className="hidden lg:flex min-w-0 items-center justify-start gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                                {unicornLogo ? (
+                                  <img src={unicornLogo} alt={s.unicorn || 'Unicorn'} className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                                ) : (
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7EAF8] text-base">🦄</div>
+                                )}
+                                <div className="min-w-0">
+                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#7A3F91]">Unicorn</div>
+                                  <div className="truncate text-[10px] font-black uppercase text-[#16274F]">{s.unicorn || '—'}</div>
                                 </div>
                                 <ChevronDown className="ml-1 h-4 w-4 shrink-0 text-[#16274F]" />
                               </div>
@@ -996,7 +1012,7 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* CLOSEST GAME */}
-                                    <div className="border-2 border-[#22B983]/25 bg-[#F3FBF7] p-4 shadow-[3px_3px_0_#16274F]">
+                                    <div className="border-2 border-[#2D6CDF]/25 bg-[#F3F7FF] p-4 shadow-[3px_3px_0_#16274F]">
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                           <Swords className="h-4 w-4 text-[#15805D]" />
@@ -1019,7 +1035,7 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* BIGGEST WIN */}
-                                    <div className="border-2 border-[#8B5AA8]/25 bg-[#F8F3FA] p-4 shadow-[3px_3px_0_#16274F]">
+                                    <div className="border-2 border-[#536A96]/25 bg-[#EEF2FA] p-4 shadow-[3px_3px_0_#16274F]">
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                           <Zap className="h-4 w-4 text-[#7A3F91]" />
@@ -1057,7 +1073,10 @@ export default function HistoryPage() {
                                         {s.regGames.map((g,index)=>(
                                           <div key={`rs-${index}`} className="flex min-w-0 items-center gap-2 border border-[#0A0A0A]/10 bg-[#F7F6F2] px-2.5 py-2">
                                             <span className={`shrink-0 text-[11px] font-black ${g.result==='W'?'text-[#1E8E3E]':'text-[#D01F2D]'}`}>{g.result}</span>
-                                            <span className="truncate text-[9px] font-bold text-[#3F4757]">vs {g.opp}</span>
+                                            <div className="min-w-0">
+                                              <div className="truncate text-[9px] font-bold text-[#3F4757]">vs {g.opp}</div>
+                                              <div className="text-[7px] font-black uppercase tracking-[0.1em] text-[#9CA3AF]">Week {g.week || '—'}</div>
+                                            </div>
                                           </div>
                                         ))}
                                       </div>
@@ -1072,7 +1091,10 @@ export default function HistoryPage() {
                                             <div key={`po-${index}`} className={`flex items-center justify-between gap-2 border px-2.5 py-2 ${isFinal?'border-[#F5C518] bg-[#FFF9E5]':'border-[#0A0A0A]/10 bg-[#F7F6F2]'}`}>
                                               <div className="flex min-w-0 items-center gap-2">
                                                 <span className={`shrink-0 text-[11px] font-black ${g.result==='W'?'text-[#1E8E3E]':'text-[#D01F2D]'}`}>{g.result}</span>
-                                                <span className="truncate text-[9px] font-bold text-[#3F4757]">vs {g.opp}</span>
+                                                <div className="min-w-0">
+                                              <div className="truncate text-[9px] font-bold text-[#3F4757]">vs {g.opp}</div>
+                                              <div className="text-[7px] font-black uppercase tracking-[0.1em] text-[#9CA3AF]">Week {g.week || '—'}</div>
+                                            </div>
                                               </div>
                                               {isFinal && <span className="shrink-0 text-[8px] font-black uppercase tracking-[0.12em] text-[#B8860B]">Final</span>}
                                             </div>
@@ -1101,96 +1123,8 @@ export default function HistoryPage() {
                                         {s.recap}
                                       </ReactMarkdown>
                                     </div>
-                                    <div className="mt-4 flex justify-end">
-                                      <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.14em] text-[#D01F2D]">
-                                        View full recap <ChevronRight className="h-3.5 w-3.5" />
-                                      </span>
-                                    </div>
                                   </div>
                                 )}
-
-                                {/* NOTABLE GAMES */}
-                                <div className="mt-4 border-t-2 border-[#0A0A0A]/10 pt-5">
-                                  <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#16274F]">Season Highlights</div>
-                                  <div className="grid gap-3 md:grid-cols-3">
-
-                                    {/* HIGHEST SCORE */}
-                                    <div className="border-2 border-[#1E8E3E]/25 bg-[#F4FAF5] p-4 shadow-[2px_2px_0_#16274F]">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                          <Flame className="h-4 w-4 text-[#1E8E3E]" />
-                                          <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1E8E3E]">Highest Score</div>
-                                        </div>
-                                        {getTeam(s.highestScoreGame) && getTeamLogo(getTeam(s.highestScoreGame)) && (
-                                          <img src={getTeamLogo(getTeam(s.highestScoreGame))} alt="" className="h-10 w-10 rounded-full object-cover" />
-                                        )}
-                                      </div>
-                                      <div className="mt-4 text-4xl font-black tracking-[-0.04em] text-[#16274F]">
-                                        {parseNumber(getField(s.highestScoreGame, 'PF', 'pf')).toFixed(2)}
-                                      </div>
-                                      <div className="mt-2 text-lg font-black text-[#1E8E3E]">{getTeam(s.highestScoreGame) || '—'}</div>
-                                      <div className="mt-1 text-[11px] font-bold text-[#3F4757]">
-                                        {parseNumber(getField(s.highestScoreGame, 'PF', 'pf')).toFixed(2)} — {parseNumber(getField(s.highestScoreGame, 'PA', 'pa')).toFixed(2)} vs {getOpponent(s.highestScoreGame) || '—'}
-                                      </div>
-                                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">Week {getField(s.highestScoreGame, 'Week', 'week') || '—'}</span>
-                                        <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">{getField(s.highestScoreGame, 'GameType', 'gameType') || 'Reg Season'}</span>
-                                      </div>
-                                    </div>
-
-                                    {/* CLOSEST GAME */}
-                                    <div className="border-2 border-[#22B983]/25 bg-[#F3FBF7] p-4 shadow-[2px_2px_0_#16274F]">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                          <Swords className="h-4 w-4 text-[#22B983]" />
-                                          <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#15805D]">Closest Game</div>
-                                        </div>
-                                        {getTeam(s.closestGame) && (
-                                          <div className="flex -space-x-2">
-                                            <img src={getTeamLogo(getTeam(s.closestGame)) || '/images/teams/default.png'} alt="" className="h-9 w-9 rounded-full border-2 border-[#F3FBF7] object-cover" />
-                                            <img src={getTeamLogo(getOpponent(s.closestGame)) || '/images/teams/default.png'} alt="" className="h-9 w-9 rounded-full border-2 border-[#F3FBF7] object-cover" />
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="mt-4 text-4xl font-black tracking-[-0.04em] text-[#16274F]">
-                                        {Math.abs(parseNumber(getField(s.closestGame, 'PF', 'pf')) - parseNumber(getField(s.closestGame, 'PA', 'pa'))).toFixed(2)}
-                                      </div>
-                                      <div className="mt-2 text-lg font-black text-[#15805D]">{getTeam(s.closestGame) || '—'}</div>
-                                      <div className="mt-1 text-[11px] font-bold text-[#3F4757]">
-                                        {parseNumber(getField(s.closestGame, 'PF', 'pf')).toFixed(2)} — {parseNumber(getField(s.closestGame, 'PA', 'pa')).toFixed(2)} vs {getOpponent(s.closestGame) || '—'}
-                                      </div>
-                                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">Week {getField(s.closestGame, 'Week', 'week') || '—'}</span>
-                                        <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">{getField(s.closestGame, 'GameType', 'gameType') || 'Reg Season'}</span>
-                                      </div>
-                                    </div>
-
-                                    {/* BIGGEST WIN */}
-                                    <div className="border-2 border-[#8B5AA8]/25 bg-[#F8F3FA] p-4 shadow-[2px_2px_0_#16274F]">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                          <Zap className="h-4 w-4 text-[#8B5AA8]" />
-                                          <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#7A3F91]">Biggest Win</div>
-                                        </div>
-                                        {getTeam(s.biggestBlowout) && getTeamLogo(getTeam(s.biggestBlowout)) && (
-                                          <img src={getTeamLogo(getTeam(s.biggestBlowout))} alt="" className="h-10 w-10 rounded-full object-cover" />
-                                        )}
-                                      </div>
-                                      <div className="mt-4 text-4xl font-black tracking-[-0.04em] text-[#16274F]">
-                                        {Math.abs(parseNumber(getField(s.biggestBlowout, 'PF', 'pf')) - parseNumber(getField(s.biggestBlowout, 'PA', 'pa'))).toFixed(2)}
-                                      </div>
-                                      <div className="mt-2 text-lg font-black text-[#7A3F91]">{getTeam(s.biggestBlowout) || '—'}</div>
-                                      <div className="mt-1 text-[11px] font-bold text-[#3F4757]">
-                                        {parseNumber(getField(s.biggestBlowout, 'PF', 'pf')).toFixed(2)} — {parseNumber(getField(s.biggestBlowout, 'PA', 'pa')).toFixed(2)} vs {getOpponent(s.biggestBlowout) || '—'}
-                                      </div>
-                                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">Week {getField(s.biggestBlowout, 'Week', 'week') || '—'}</span>
-                                        <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">{getField(s.biggestBlowout, 'GameType', 'gameType') || 'Reg Season'}</span>
-                                      </div>
-                                    </div>
-
-                                  </div>
-                                </div>
 
                               </div>
                             </motion.div>
