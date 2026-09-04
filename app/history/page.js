@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -98,6 +99,15 @@ function getOpponent(row) {
 
 function getStage(row) {
   return normalizeString(getField(row, 'GameStage', 'gameStage'))
+}
+
+function matchupHref(row) {
+  if (!row) return '/matchups'
+  return `/matchups?season=${encodeURIComponent(getSeason(row))}&week=${encodeURIComponent(getField(row, 'Week', 'week'))}&team=${encodeURIComponent(getTeam(row))}&opp=${encodeURIComponent(getOpponent(row))}`
+}
+
+function teamHref(name) {
+  return `/teams/${encodeURIComponent(String(name || '').trim())}`
 }
 
 async function safeFetch(url) {
@@ -513,6 +523,7 @@ export default function HistoryPage() {
         championshipOpponent,
         championshipScore,
         championshipOpponentScore,
+        championshipFinalGame: finalsWinner,
         regGames,
         playoffGames,
         regCol1,
@@ -797,17 +808,23 @@ export default function HistoryPage() {
                                 </div>
                               </div>
 
-                              <div className="hidden lg:flex min-w-0 items-center justify-start gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                              <div className="hidden lg:grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
                                 {unicornLogo ? (
-                                  <img src={unicornLogo} alt={s.unicorn || 'Unicorn'} className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                                  <img
+                                    src={unicornLogo}
+                                    alt={s.unicorn || 'Unicorn'}
+                                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                  />
                                 ) : (
-                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7EAF8] text-base">🦄</div>
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7EAF8] text-base">
+                                    🦄
+                                  </div>
                                 )}
                                 <div className="min-w-0">
                                   <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#7A3F91]">Unicorn</div>
                                   <div className="truncate text-[10px] font-black uppercase text-[#16274F]">{s.unicorn || '—'}</div>
                                 </div>
-                                <ChevronDown className="ml-1 h-4 w-4 shrink-0 text-[#16274F]" />
+                                <ChevronDown className="h-4 w-4 shrink-0 justify-self-end text-[#16274F]" />
                               </div>
                             </div>
                           )}
@@ -827,7 +844,8 @@ export default function HistoryPage() {
                                 {/* TOP SUMMARY CARDS */}
                                 <div className="grid items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
 {/* CHAMPION */}
-                                  <div className="h-full border-2 border-[#B8860B]/35 bg-[#FFF9E5] p-4 shadow-[3px_3px_0_#16274F]">
+                                  <Link href={teamHref(s.champion)} className="block h-full min-w-0 transition-transform hover:-translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16274F]">
+<div className="h-full border-2 border-[#B8860B]/35 bg-[#FFF9E5] p-4 shadow-[3px_3px_0_#16274F]">
                                     <div className="mb-3 flex items-center justify-between gap-2">
                                       <div className="flex items-center gap-2">
                                         <Crown className="h-4 w-4 text-[#B8860B]" />
@@ -861,17 +879,16 @@ export default function HistoryPage() {
                                       </div>
                                     </div>
                                   </div>
+                                  </Link>
 
 {/* CHAMPIONSHIP FINAL */}
-                                <div className="h-full min-w-0 border-2 border-[#B8860B]/35 bg-white p-4 shadow-[4px_4px_0_#16274F]">
+                                <Link href={matchupHref(s.championshipFinalGame)} className="block h-full min-w-0 transition-transform hover:-translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16274F]">
+<div className="h-full min-w-0 border-2 border-[#B8860B]/35 bg-white p-4 shadow-[4px_4px_0_#16274F]">
                                   <div className="mb-4 flex items-start justify-between gap-3">
                                     <div>
                                       <div className="flex items-center gap-2 text-[#B8860B]">
                                         <Trophy className="h-4 w-4 shrink-0" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.18em]">Championship Final</span>
-                                      </div>
-                                      <div className="mt-2 inline-flex bg-[#F5C518] px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#0A0A0A]">
-                                        Tapitas Bowl
+                                        <span className="text-[10px] font-black uppercase tracking-[0.18em]" >Tapitas Bowl</span>
                                       </div>
                                     </div>
 
@@ -932,9 +949,11 @@ export default function HistoryPage() {
                                     </div>
                                   </div>
                                 </div>
+                                </Link>
 
 {/* UNICORN */}
-                                  <div className="h-full border-2 border-[#8B5AA8]/35 bg-[#F7EAF8] p-4 shadow-[3px_3px_0_#16274F]">
+                                  <Link href={teamHref(s.unicorn)} className="block h-full min-w-0 transition-transform hover:-translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16274F]">
+<div className="h-full border-2 border-[#8B5AA8]/35 bg-[#F7EAF8] p-4 shadow-[3px_3px_0_#16274F]">
                                     <div className="mb-3 flex items-center justify-between gap-2">
                                       <div className="flex items-center gap-2">
                                         <span className="text-base leading-none">🦄</span>
@@ -984,6 +1003,7 @@ export default function HistoryPage() {
                                       </div>
                                     </div>
                                   </div>
+                                  </Link>
                                 </div>                                {/* SEASON HIGHLIGHTS */}
                                 <div className="mt-4">
                                   <div className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#16274F]">
@@ -992,7 +1012,8 @@ export default function HistoryPage() {
 
                                   <div className="grid gap-3 md:grid-cols-3">
                                     {/* HIGHEST SCORE */}
-                                    <div className="border-2 border-[#1E8E3E]/25 bg-[#F4FAF5] p-4 shadow-[3px_3px_0_#16274F]">
+                                    <Link href={matchupHref(s.highestScoreGame)} className="block h-full min-w-0 transition-transform hover:-translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16274F]">
+<div className="border-2 border-[#1E8E3E]/25 bg-[#F4FAF5] p-4 shadow-[3px_3px_0_#16274F]">
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                           <Flame className="h-4 w-4 text-[#1E8E3E]" />
@@ -1010,9 +1031,11 @@ export default function HistoryPage() {
                                         <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">{getField(s.highestScoreGame, 'GameType', 'gameType') || 'Reg Season'}</span>
                                       </div>
                                     </div>
+                                      </Link>
 
                                     {/* CLOSEST GAME */}
-                                    <div className="border-2 border-[#2D6CDF]/25 bg-[#F3F7FF] p-4 shadow-[3px_3px_0_#16274F]">
+                                    <Link href={matchupHref(s.closestGame)} className="block h-full min-w-0 transition-transform hover:-translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16274F]">
+<div className="border-2 border-[#2D6CDF]/25 bg-[#F3F7FF] p-4 shadow-[3px_3px_0_#16274F]">
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                           <Swords className="h-4 w-4 text-[#15805D]" />
@@ -1033,9 +1056,11 @@ export default function HistoryPage() {
                                         <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">{getField(s.closestGame, 'GameType', 'gameType') || 'Reg Season'}</span>
                                       </div>
                                     </div>
+                                      </Link>
 
                                     {/* BIGGEST WIN */}
-                                    <div className="border-2 border-[#536A96]/25 bg-[#EEF2FA] p-4 shadow-[3px_3px_0_#16274F]">
+                                    <Link href={matchupHref(s.biggestBlowout)} className="block h-full min-w-0 transition-transform hover:-translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16274F]">
+<div className="border-2 border-[#D88719]/25 bg-[#FFF6E8] p-4 shadow-[3px_3px_0_#16274F]">
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                           <Zap className="h-4 w-4 text-[#7A3F91]" />
@@ -1053,6 +1078,7 @@ export default function HistoryPage() {
                                         <span className="border border-[#0A0A0A]/10 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">{getField(s.biggestBlowout, 'GameType', 'gameType') || 'Reg Season'}</span>
                                       </div>
                                     </div>
+                                      </Link>
                                   </div>
                                 </div>
 
