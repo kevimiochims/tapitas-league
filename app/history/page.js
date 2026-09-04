@@ -899,28 +899,30 @@ export default function HistoryPage() {
                                     </span>
                                   </div>
 
-                                  <div className="grid grid-cols-1 items-center gap-5 min-[560px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[560px]:gap-4">
+                                  <div className="grid grid-cols-1 items-center gap-5 min-[560px]:grid-cols-2 min-[560px]:gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:gap-4">
                                     {/* CHAMPION */}
-                                    <div className="min-w-0 text-center">
+                                    <div className="min-w-0 text-center min-[560px]:flex min-[560px]:items-center min-[560px]:justify-center min-[560px]:gap-3 min-[560px]:text-left xl:block xl:text-center">
                                       {championLogo ? (
                                         <img
                                           src={championLogo}
                                           alt={s.champion || 'Champion'}
-                                          className="mx-auto h-14 w-14 rounded-full object-cover sm:h-16 sm:w-16"
+                                          className="mx-auto h-14 w-14 shrink-0 rounded-full object-cover sm:h-16 sm:w-16 min-[560px]:mx-0 xl:mx-auto"
                                         />
                                       ) : (
-                                        <div className="mx-auto h-14 w-14 rounded-full bg-[#16274F] sm:h-16 sm:w-16" />
+                                        <div className="mx-auto h-14 w-14 shrink-0 rounded-full bg-[#16274F] sm:h-16 sm:w-16 min-[560px]:mx-0 xl:mx-auto" />
                                       )}
-                                      <div className="mx-auto mt-2 max-w-[180px] break-words text-[10px] font-black uppercase leading-tight text-[#16274F] sm:text-[11px]">
-                                        {s.champion || '—'}
-                                      </div>
-                                      <div className="mt-2 inline-flex bg-[#F5C518] px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-[#0A0A0A]">
-                                        Champion
+                                      <div className="mt-2 min-w-0 min-[560px]:mt-0 xl:mt-2">
+                                        <div className="max-w-[180px] break-words text-[10px] font-black uppercase leading-tight text-[#16274F] sm:text-[11px] xl:mx-auto">
+                                          {s.champion || '—'}
+                                        </div>
+                                        <div className="mt-2 inline-flex bg-[#F5C518] px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-[#0A0A0A] min-[560px]:mt-1 xl:mt-2">
+                                          Champion
+                                        </div>
                                       </div>
                                     </div>
 
                                     {/* SCORE */}
-                                    <div className="min-w-0 border-y border-[#B8860B]/20 px-4 py-3 text-center min-[560px]:border-x min-[560px]:border-y-0 min-[560px]:py-2">
+                                    <div className="order-first col-span-1 min-w-0 border-y border-[#B8860B]/20 px-3 py-3 text-center min-[560px]:col-span-2 min-[560px]:order-none xl:col-span-1 xl:border-x xl:border-y-0 xl:px-4 xl:py-2">
                                       <div className="text-[7px] font-black uppercase tracking-[0.16em] text-[#6B7280]">
                                         Final Score
                                       </div>
@@ -932,21 +934,23 @@ export default function HistoryPage() {
                                     </div>
 
                                     {/* RUNNER-UP */}
-                                    <div className="min-w-0 text-center">
+                                    <div className="min-w-0 text-center min-[560px]:flex min-[560px]:items-center min-[560px]:justify-center min-[560px]:gap-3 min-[560px]:text-left xl:block xl:text-center">
                                       {getTeamLogo(s.championshipOpponent) ? (
                                         <img
                                           src={getTeamLogo(s.championshipOpponent)}
                                           alt={s.championshipOpponent || 'Runner-up'}
-                                          className="mx-auto h-14 w-14 rounded-full object-cover sm:h-16 sm:w-16"
+                                          className="mx-auto h-14 w-14 shrink-0 rounded-full object-cover sm:h-16 sm:w-16 min-[560px]:mx-0 xl:mx-auto"
                                         />
                                       ) : (
-                                        <div className="mx-auto h-14 w-14 rounded-full bg-[#16274F] sm:h-16 sm:w-16" />
+                                        <div className="mx-auto h-14 w-14 shrink-0 rounded-full bg-[#16274F] sm:h-16 sm:w-16 min-[560px]:mx-0 xl:mx-auto" />
                                       )}
-                                      <div className="mx-auto mt-2 max-w-[180px] break-words text-[10px] font-black uppercase leading-tight text-[#16274F] sm:text-[11px]">
-                                        {s.championshipOpponent || '—'}
-                                      </div>
-                                      <div className="mt-2 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280]">
-                                        Runner-up
+                                      <div className="mt-2 min-w-0 min-[560px]:mt-0 xl:mt-2">
+                                        <div className="max-w-[180px] break-words text-[10px] font-black uppercase leading-tight text-[#16274F] sm:text-[11px] xl:mx-auto">
+                                          {s.championshipOpponent || '—'}
+                                        </div>
+                                        <div className="mt-2 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280] min-[560px]:mt-1 xl:mt-2">
+                                          Runner-up
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
