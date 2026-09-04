@@ -747,86 +747,86 @@ export default function HistoryPage() {
                               <ChevronDown className="h-5 w-5 shrink-0 text-[#16274F]" style={{ transform: open ? 'rotate(180deg)' : 'none' }} />
                             </div>
                           ) : (
-                            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:grid-cols-[minmax(270px,1.55fr)_1px_minmax(180px,1.1fr)_minmax(150px,0.9fr)_minmax(150px,0.9fr)_minmax(185px,1fr)]">
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[minmax(190px,1.35fr)_1px_minmax(135px,1fr)_minmax(105px,.8fr)_minmax(105px,.8fr)_minmax(145px,1fr)] lg:gap-2">
                               <div className="flex min-w-0 items-center gap-3">
                                 <span className="shrink-0 text-3xl leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                                   {s.season}
                                 </span>
                                 {championLogo ? (
-                                  <img src={championLogo} alt={s.champion || 'Champion'} className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                                  <img src={championLogo} alt={s.champion || 'Champion'} className="h-8 w-8 shrink-0 rounded-full object-cover" />
                                 ) : (
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#16274F] text-[9px] font-black text-white">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#16274F] text-[8px] font-black text-white">
                                     {String(s.champion || '—').slice(0, 2).toUpperCase()}
                                   </div>
                                 )}
                                 <div className="min-w-0">
-                                  <div className="whitespace-nowrap text-[13px] font-black uppercase text-[#16274F]">{s.champion || '—'}</div>
-                                  <div className="mt-0.5 inline-flex bg-[#F5C518] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.08em] text-[#0A0A0A]">🏆 Champion</div>
+                                  <div className="truncate text-[14px] font-black uppercase text-[#16274F] lg:text-[15px]">{s.champion || '—'}</div>
+                                  <div className="mt-1 inline-flex max-w-full bg-[#F5C518] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.06em] text-[#0A0A0A]">🏆 Champion</div>
                                 </div>
                               </div>
 
-                              <ChevronDown className="h-4 w-4 shrink-0 text-[#16274F] xl:hidden" />
+                              <ChevronDown className="h-4 w-4 shrink-0 text-[#16274F] lg:hidden" />
 
-                              <div className="hidden h-9 border-l border-[#0A0A0A]/15 xl:block" />
+                              <div className="hidden h-8 border-l border-[#0A0A0A]/15 lg:block" />
 
-                              <div className="hidden xl:grid grid-cols-2 divide-x divide-[#0A0A0A]/10 border border-[#0A0A0A]/10 bg-[#F7F6F2]">
-                                <div className="px-3 py-2">
-                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Champion Record</div>
-                                  <div className="mt-1 text-xl font-black leading-none">
+                              <div className="hidden lg:grid grid-cols-2 divide-x divide-[#0A0A0A]/10 border border-[#0A0A0A]/10 bg-[#F7F6F2]">
+                                <div className="px-2 py-1.5">
+                                  <div className="text-[8px] font-black uppercase tracking-[0.12em] text-[#6B7280] lg:text-[9px]">Champion Record</div>
+                                  <div className="mt-0.5 text-[20px] font-black leading-none">
                                     <span className="text-[#1E8E3E]">{s.championRecord?.wins ?? 0}</span>
                                     <span className="text-[#6B7280]">–</span>
                                     <span className="text-[#D01F2D]">{s.championRecord?.losses ?? 0}</span>
                                   </div>
                                 </div>
-                                <div className="px-3 py-2">
-                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Champion PF Avg</div>
-                                  <div className="mt-1 text-xl font-black leading-none text-[#16274F]">{(s.avgPF ?? 0).toFixed(1)}</div>
+                                <div className="px-2 py-1.5">
+                                  <div className="text-[8px] font-black uppercase tracking-[0.12em] text-[#6B7280] lg:text-[9px]">Champion PF Avg</div>
+                                  <div className="mt-0.5 text-[20px] font-black leading-none text-[#16274F]">{(s.avgPF ?? 0).toFixed(1)}</div>
                                 </div>
                               </div>
 
-                              <div className="hidden xl:flex min-w-0 items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                              <div className="hidden lg:flex min-w-0 items-center gap-1.5 border-l border-[#0A0A0A]/10 pl-2">
                                 {getTeamLogo(getTeam(bestPF)) ? (
-                                  <img src={getTeamLogo(getTeam(bestPF))} alt={getTeam(bestPF) || ''} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                                  <img src={getTeamLogo(getTeam(bestPF))} alt={getTeam(bestPF) || ''} className="h-7 w-7 shrink-0 rounded-full object-cover" />
                                 ) : (
-                                  <div className="h-8 w-8 shrink-0 rounded-full bg-[#F4FAF5]" />
+                                  <div className="h-7 w-7 shrink-0 rounded-full bg-[#F4FAF5]" />
                                 )}
                                 <div className="min-w-0">
-                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#1E8E3E]">Best PF</div>
-                                  <div className="mt-0.5 text-lg font-black leading-none text-[#1E8E3E]">{parseNumber(getField(bestPF, 'PF', 'pf')).toFixed(2)}</div>
+                                  <div className="text-[8px] font-black uppercase tracking-[0.1em] text-[#1E8E3E] lg:text-[9px]">Best PF</div>
+                                  <div className="mt-0.5 text-[18px] font-black leading-none text-[#1E8E3E]">{parseNumber(getField(bestPF, 'PF', 'pf')).toFixed(2)}</div>
                                   <div className="mt-0.5 truncate text-[7px] font-black uppercase text-[#6B7280]">{getTeam(bestPF) || '—'}</div>
                                 </div>
                               </div>
 
-                              <div className="hidden xl:flex min-w-0 items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                              <div className="hidden lg:flex min-w-0 items-center gap-1.5 border-l border-[#0A0A0A]/10 pl-2">
                                 {getTeamLogo(getTeam(worstPF)) ? (
-                                  <img src={getTeamLogo(getTeam(worstPF))} alt={getTeam(worstPF) || ''} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                                  <img src={getTeamLogo(getTeam(worstPF))} alt={getTeam(worstPF) || ''} className="h-7 w-7 shrink-0 rounded-full object-cover" />
                                 ) : (
-                                  <div className="h-8 w-8 shrink-0 rounded-full bg-[#FDEDEE]" />
+                                  <div className="h-7 w-7 shrink-0 rounded-full bg-[#FDEDEE]" />
                                 )}
                                 <div className="min-w-0">
-                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#D01F2D]">Worst PF</div>
-                                  <div className="mt-0.5 text-lg font-black leading-none text-[#D01F2D]">{parseNumber(getField(worstPF, 'PF', 'pf')).toFixed(2)}</div>
+                                  <div className="text-[8px] font-black uppercase tracking-[0.1em] text-[#D01F2D] lg:text-[9px]">Worst PF</div>
+                                  <div className="mt-0.5 text-[18px] font-black leading-none text-[#D01F2D]">{parseNumber(getField(worstPF, 'PF', 'pf')).toFixed(2)}</div>
                                   <div className="mt-0.5 truncate text-[7px] font-black uppercase text-[#6B7280]">{getTeam(worstPF) || '—'}</div>
                                 </div>
                               </div>
 
-                              <div className="hidden xl:grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-l border-[#0A0A0A]/10 pl-3">
+                              <div className="hidden lg:grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 border-l border-[#0A0A0A]/10 pl-2">
                                 {unicornLogo ? (
                                   <img
                                     src={unicornLogo}
                                     alt={s.unicorn || 'Unicorn'}
-                                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                    className="h-8 w-8 shrink-0 rounded-full object-cover"
                                   />
                                 ) : (
-                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7EAF8] text-base">
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F7EAF8] text-sm">
                                     🦄
                                   </div>
                                 )}
                                 <div className="min-w-0">
-                                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-[#7A3F91]">Unicorn</div>
-                                  <div className="truncate text-[10px] font-black uppercase text-[#16274F]">{s.unicorn || '—'}</div>
+                                  <div className="text-[8px] font-black uppercase tracking-[0.1em] text-[#7A3F91] lg:text-[9px]">Unicorn</div>
+                                  <div className="truncate text-[11px] font-black uppercase text-[#16274F] lg:text-[12px]">{s.unicorn || '—'}</div>
                                 </div>
-                                <ChevronDown className="h-4 w-4 shrink-0 justify-self-end text-[#16274F]" />
+                                <ChevronDown className="h-3.5 w-3.5 shrink-0 justify-self-end text-[#16274F]" />
                               </div>
                             </div>
                           )}
@@ -1128,19 +1128,19 @@ export default function HistoryPage() {
                                       <Flag className="h-4 w-4 text-[#D01F2D]" />
                                       <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#16274F]">Championship Run</div>
                                     </div>
-                                    <div className="text-[8px] font-black uppercase tracking-[0.14em] text-[#6B7280]">Full campaign</div>
+                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6B7280]">Full campaign</div>
                                   </div>
 
                                   <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
                                     <div>
-                                      <div className="mb-2 text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Regular Season</div>
+                                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Regular Season</div>
                                       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
                                         {s.regGames.map((g,index)=>(
                                           <div key={`rs-${index}`} className="flex min-w-0 items-center gap-2 border border-[#0A0A0A]/10 bg-[#F7F6F2] px-2.5 py-2">
-                                            <span className={`shrink-0 text-[11px] font-black ${g.result==='W'?'text-[#1E8E3E]':'text-[#D01F2D]'}`}>{g.result}</span>
+                                            <span className={`shrink-0 text-[13px] font-black ${g.result==='W'?'text-[#1E8E3E]':'text-[#D01F2D]'}`} >{g.result}</span>
                                             <div className="min-w-0">
-                                              <div className="truncate text-[9px] font-bold text-[#3F4757]">vs {g.opp}</div>
-                                              <div className="text-[7px] font-black uppercase tracking-[0.1em] text-[#9CA3AF]">Week {g.week || '—'}</div>
+                                              <div className="truncate text-[11px] font-bold text-[#3F4757]">vs {g.opp}</div>
+                                              <div className="text-[9px] font-black uppercase tracking-[0.1em] text-[#9CA3AF]">Week {g.week || '—'}</div>
                                             </div>
                                           </div>
                                         ))}
@@ -1148,20 +1148,20 @@ export default function HistoryPage() {
                                     </div>
 
                                     <div className="lg:border-l lg:border-[#0A0A0A]/10 lg:pl-4">
-                                      <div className="mb-2 text-[8px] font-black uppercase tracking-[0.15em] text-[#B8860B]">Playoffs</div>
+                                      <div className="mb-2 text-[9px] font-black uppercase tracking-[0.15em] text-[#B8860B]">Playoffs</div>
                                       <div className="space-y-1.5">
                                         {s.playoffGames.map((g,index)=>{
                                           const isFinal=getGameType(g)==='tapitas bowl'
                                           return (
                                             <div key={`po-${index}`} className={`flex items-center justify-between gap-2 border px-2.5 py-2 ${isFinal?'border-[#F5C518] bg-[#FFF9E5]':'border-[#0A0A0A]/10 bg-[#F7F6F2]'}`}>
                                               <div className="flex min-w-0 items-center gap-2">
-                                                <span className={`shrink-0 text-[11px] font-black ${g.result==='W'?'text-[#1E8E3E]':'text-[#D01F2D]'}`}>{g.result}</span>
+                                                <span className={`shrink-0 text-[13px] font-black ${g.result==='W'?'text-[#1E8E3E]':'text-[#D01F2D]'}`} >{g.result}</span>
                                                 <div className="min-w-0">
-                                              <div className="truncate text-[9px] font-bold text-[#3F4757]">vs {g.opp}</div>
-                                              <div className="text-[7px] font-black uppercase tracking-[0.1em] text-[#9CA3AF]">Week {g.week || '—'}</div>
+                                              <div className="truncate text-[11px] font-bold text-[#3F4757]">vs {g.opp}</div>
+                                              <div className="text-[9px] font-black uppercase tracking-[0.1em] text-[#9CA3AF]">Week {g.week || '—'}</div>
                                             </div>
                                               </div>
-                                              {isFinal && <span className="shrink-0 text-[8px] font-black uppercase tracking-[0.12em] text-[#B8860B]">Final</span>}
+                                              {isFinal && <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.12em] text-[#B8860B]">Final</span>}
                                             </div>
                                           )
                                         })}

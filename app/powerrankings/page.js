@@ -145,6 +145,14 @@ function getTierColor(rank, total) {
   return 'text-[#D01F2D]'
 }
 
+function getHistoryColor(rank, total) {
+  const pct = rank / total
+
+  if (pct <= 0.25) return 'bg-[#1E8E3E]'
+  if (pct <= 0.60) return 'bg-[#16274F]'
+  return 'bg-[#D01F2D]'
+}
+
 export default function PowerRankingsPage() {
 
   const [games, setGames] = useState([])
@@ -991,10 +999,10 @@ export default function PowerRankingsPage() {
 
                       <div className="flex gap-4 md:gap-5 items-start">
 
-                        <div className="w-[52px] flex-shrink-0 text-center pt-0.5">
-                          <div className="flex-shrink-0 pt-0.5 pb-2">
-                          <TeamAvatar team={team.team} size="lg" />
-                        </div>
+                        <div className="w-14 flex-shrink-0 text-center pt-0.5">
+                          <div className="flex w-14 items-center justify-center pt-0.5 pb-2">
+                            <TeamAvatar team={team.team} size="lg" />
+                          </div>
                           <div
                             className={`text-[42px] font-black leading-none ${tierColor}`}
                             style={{
@@ -1124,7 +1132,10 @@ export default function PowerRankingsPage() {
                       {/* THIS WEEK / NEXT WEEK */}
                       <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 mb-5">
 
-                        <div className="border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 min-w-0">
+                        <a
+                          href={`/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}&team=${encodeURIComponent(team.team)}&opp=${encodeURIComponent(team.opponent || '')}`}
+                          className="group block border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 min-w-0 transition-colors hover:bg-white"
+                        >
                           <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
                             This Week
                           </div>
@@ -1154,12 +1165,12 @@ export default function PowerRankingsPage() {
                                 </span>
                               </div>
 
-                              <div className="mt-2 text-sm font-semibold text-[#6B7280]">
+                              <div className="mt-2 text-sm font-semibold text-[#6B7280] group-hover:text-[#16274F]">
                                 {team.pf.toFixed(1)} - {team.pa.toFixed(1)}
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </a>
 
                         <div className="border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 min-w-0">
                           <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
@@ -1328,17 +1339,13 @@ export default function PowerRankingsPage() {
                               </div>
 
                               <div
-                                className={`w-8 border-2 border-[#0A0A0A] ${r <= 3
-                                  ? 'bg-[#16274F]'
-                                  : r <= 6
-                                    ? 'bg-[#1E8E3E]'
-                                    : r <= 10
-                                      ? 'bg-[#6B7280]'
-                                      : 'bg-[#D01F2D]'
-                                  } ${current
-                                    ? 'tp-shadow-red-sm'
-                                    : ''
-                                  }`}
+                                className={`w-8 border-2 border-[#0A0A0A] ${getHistoryColor(
+                                  r,
+                                  totalTeams
+                                )} ${current
+                                  ? 'tp-shadow-red-sm'
+                                  : ''
+                                }`}
                                 style={{
                                   height: `${height}px`
                                 }}
