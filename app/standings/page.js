@@ -67,6 +67,7 @@ async function safeFetch(url) {
   }
 }
 
+
 function Select({ value, onChange, options, placeholder, disabled }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -84,26 +85,31 @@ function Select({ value, onChange, options, placeholder, disabled }) {
       <button
         onClick={() => !disabled && setOpen(p => !p)}
         disabled={disabled}
-        className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 text-sm font-bold transition-all w-full ${disabled ? 'cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-600'
-          : open ? 'border-cyan-400/40 bg-white/[0.07] text-white'
-            : 'border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07]'
-          }`}
+        className={`flex w-full items-center justify-between gap-3 border-2 px-4 py-2.5 text-sm font-black transition-all ${
+          disabled
+            ? 'cursor-not-allowed border-white/20 bg-white/5 text-white/40'
+            : open
+              ? 'border-[#F5C518] bg-white text-[#16274F]'
+              : 'border-white/30 bg-white/10 text-white hover:bg-white/15'
+        }`}
       >
-        <span className={value ? 'text-white' : 'text-slate-500'}>
+        <span className={value ? 'truncate text-white' : 'text-white/50'}>
           {value || placeholder}
         </span>
-        <ChevronRight className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
+        <ChevronRight className={`h-4 w-4 shrink-0 text-white/60 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1525] shadow-2xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[4px_4px_0_#16274F]">
           <div className="max-h-56 overflow-y-auto">
             {options.map(opt => (
               <button
                 key={opt}
                 onClick={() => { onChange(opt); setOpen(false) }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all hover:bg-white/[0.06] ${opt === value ? 'text-cyan-300' : 'text-slate-300'}`}
+                className={`flex w-full items-center gap-3 border-b border-[#E5E3DC] px-4 py-2.5 text-left text-sm font-black transition-colors last:border-0 hover:bg-[#F7F6F2] ${
+                  opt === value ? 'text-[#D01F2D]' : 'text-[#374151]'
+                }`}
               >
-                {opt === value && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400" />}
+                {opt === value && <span className="h-2 w-2 shrink-0 bg-[#D01F2D]" />}
                 <span className={opt === value ? '' : 'ml-[14px]'}>{opt}</span>
               </button>
             ))}
@@ -138,10 +144,10 @@ function WinChart({ data, chartStats }) {
   return (
 
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
-      <polyline points={points} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />
+      <polyline points={points} fill="none" stroke="#16274F" strokeWidth="2" strokeLinejoin="round" />
       {data.map((d, i) => (
         <g key={i}>
-          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#f4f6f8">
+          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#4B5563">
             {`'${String(d.season).slice(2)}`}
           </text>
           <text
@@ -168,7 +174,7 @@ function WinChart({ data, chartStats }) {
           >
             {Math.round(d.value)}
           </text>
-          <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#22d3ee" />
+          <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#16274F" />
         </g>
       ))}
     </svg>
@@ -417,234 +423,99 @@ export default function StandingsPage() {
     return '—'
   }
 
+
   return (
-
-    <main className="min-h-screen bg-[#020617] text-white">
-
+    <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
-      {/* Header */}
       <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
-      <section className="px-3 md:px-6 pb-20">
-
-        {/* Hero */}
-        <div className="relative mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
-
-          {/* Background */}
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl md:rounded-[38px]">
-
-            <svg
-              className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
-              preserveAspectRatio="xMidYMid slice"
-              viewBox="0 0 900 340"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-
-              {/* Listras diagonais */}
-              <g opacity="0.09">
-                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect
-                    key={i}
-                    x={x}
-                    y="-80"
-                    width={i % 2 === 0 ? 55 : 22}
-                    height="520"
-                    fill="#22d3ee"
-                    transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`}
-                  />
+      <section className="mx-auto max-w-[1680px] px-3 pb-16 pt-4 sm:px-5 md:px-6">
+        {/* HERO */}
+        <div className="relative mb-10 min-h-[280px] overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] shadow-[6px_6px_0_#16274F]">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <svg className="absolute right-0 top-0 h-full w-[62%]" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2">
+                {[80, 150, 220, 290, 360, 430, 500, 570, 640, 710, 780].map((x) => (
+                  <line key={x} x1={x} y1="0" x2={x + 220} y2="340" />
                 ))}
               </g>
-
-              {/* Losangos */}
-              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
+              <g opacity="0.08" fill="none" stroke="#D01F2D" strokeWidth="1.5">
                 {[
-                  "M380 -30 L460 85 L380 200 L300 85 Z",
-                  "M460 85 L540 200 L460 315 L380 200 Z",
-                  "M540 -30 L620 85 L540 200 L460 85 Z",
-                  "M620 85 L700 200 L620 315 L540 200 Z",
-                  "M700 -30 L780 85 L700 200 L620 85 Z",
-                  "M780 85 L860 200 L780 315 L700 200 Z",
-                ].map((d, i) => (
-                  <path key={i} d={d} />
-                ))}
+                  "M460 0 L560 85 L460 170 L360 85 Z",
+                  "M600 85 L700 170 L600 255 L500 170 Z",
+                  "M740 0 L840 85 L740 170 L640 85 Z",
+                  "M740 170 L840 255 L740 340 L640 255 Z",
+                ].map((d, i) => <path key={i} d={d} />)}
               </g>
-
-              {/* Losangos preenchidos */}
-              <g opacity="0.08" fill="#22d3ee">
-                {[
-                  "M420 30 L440 58 L420 86 L400 58 Z",
-                  "M500 120 L520 148 L500 176 L480 148 Z",
-                  "M580 30 L600 58 L580 86 L560 58 Z",
-                  "M660 120 L680 148 L660 176 L640 148 Z",
-                  "M740 30 L760 58 L740 86 L720 58 Z",
-                ].map((d, i) => (
-                  <path key={i} d={d} />
-                ))}
+              <g opacity="0.07" fill="#D01F2D">
+                <circle cx="700" cy="72" r="5" />
+                <circle cx="760" cy="130" r="5" />
+                <circle cx="640" cy="190" r="5" />
+                <circle cx="820" cy="220" r="5" />
               </g>
-
-              {/* Chevrons */}
-              <g
-                opacity="0.07"
-                fill="none"
-                stroke="#22d3ee"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              >
-                {[520, 600, 680].map((x, i) => (
-                  <polyline
-                    key={i}
-                    points={`${x},0 ${x + 160},170 ${x},340`}
-                  />
-                ))}
-              </g>
-
-              {/* Triângulos */}
-              <g opacity="0.07" fill="#22d3ee">
-                <polygon points="900,0 900,140 760,0" />
-                <polygon points="900,340 900,200 760,340" />
-              </g>
-
-              {/* Círculos */}
-              <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
-                {[30, 50, 70].map((r) => (
-                  <circle key={r} cx="870" cy="60" r={r} />
-                ))}
-              </g>
-
-              {/* Grid pontos */}
-              <g opacity="0.09" fill="#22d3ee">
-                {[40, 60, 80, 100].map((y) =>
-                  [310, 330, 350].map((x) => (
-                    <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
-                  ))
-                )}
-              </g>
-
-              {/* Linhas */}
-              <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
-                {[56, 113, 226, 284].map((y) => (
-                  <line key={y} x1="0" y1={y} x2="900" y2={y} />
-                ))}
-              </g>
-
-              {/* Número fantasma */}
-              <text
-                x="820"
-                y="310"
-                fontFamily="'Bebas Neue', sans-serif"
-                fontSize="340"
-                fill="#22d3ee"
-                opacity="0.02"
-                textAnchor="middle"
-              >
-                12
-              </text>
+              <text x="785" y="305" textAnchor="middle" fontFamily="'Bebas Neue', sans-serif" fontSize="310" fill="#16274F" opacity="0.035">12</text>
             </svg>
-
-            {/* Overlay */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)',
-              }}
-            />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,#F7F6F2_0%,#F7F6F2_40%,rgba(247,246,242,0.9)_56%,rgba(247,246,242,0.15)_100%)]" />
           </div>
 
-          {/* Content */}
-          <div className="relative z-10 p-6 sm:p-8 md:p-10">
+          <div className="relative z-10 flex min-h-[280px] items-center p-6 sm:p-10 md:p-12">
+            <div className="max-w-3xl">
+              <div className="mb-5 inline-flex items-center gap-2 border-2 border-[#D01F2D] bg-[#D01F2D] px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] text-white">
+                <Medal className="h-4 w-4" />
+                League
+              </div>
 
-            <div className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
-              <Medal className="h-4 w-4 text-cyan-300" />
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
-                All-Time Records
-              </span>
-            </div>
-
-            <h1
-              className="leading-[0.9] tracking-[-0.02em]"
-              style={{
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(48px, 7vw, 96px)',
-                background:
-                  'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              League{' '}
-              <span
-                style={{
-                  background:
-                    'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
+              <h1
+                className="leading-[0.82] tracking-[-0.02em]"
+                style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(56px, 8vw, 110px)' }}
               >
-                Standings
-              </span>
-            </h1>
+                <span className="text-[#16274F]">League</span>{' '}
+                <span className="text-[#D01F2D]" style={{ textShadow: '3px 3px 0 #0A0A0A' }}>Standings</span>
+              </h1>
 
-            <p className="mt-4 max-w-lg text-base text-slate-400">
-              Every team. Every season. Every stat.
-            </p>
-
+              <p className="mt-5 max-w-xl text-base font-semibold leading-relaxed text-[#4B5563] sm:text-lg">
+                Every team. Every season. Every stat.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Tabela */}
+        {/* STANDINGS */}
         <motion.div
-          initial={{
-            opacity: 0,
-            y: 50,
-            filter: 'blur(10px)',
-          }}
-          whileInView={{
-            opacity: 1,
-            y: 0,
-            filter: 'blur(0px)',
-          }}
-          viewport={{
-            once: false,
-            amount: 0.15,
-          }}
-          transition={{
-            duration: 0.8,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-
-          className="mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 px-8 py-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                <Medal className="h-5 w-5 text-cyan-300" />
-              </div>
-              <div>
-                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Team Rankings</div>
-                <div className="text-base text-slate-400">
-                  {season === 'All-Time' ? 'All-Time standings' : `Season ${season}`}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.5 }}
+          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[5px_5px_0_#16274F]"
+        >
+          <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center border-2 border-white/30 bg-white/10">
+                  <Medal className="h-4.5 w-4.5" />
                 </div>
+                <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Team Rankings</div>
+              </div>
+              <div className="mt-1 text-lg font-bold text-white/80">
+                {season === 'All-Time' ? 'All-Time standings' : `Season ${season}`}
               </div>
             </div>
-            <div className="w-48">
+            <div className="w-full md:w-56">
               <Select value={season} onChange={setSeason} options={seasons} placeholder="Season..." />
             </div>
           </div>
 
-          <div className="flex gap-2 border-b border-white/5 px-8 py-4">
+          <div className="flex overflow-x-auto border-b-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 sm:px-7">
             {TABS.map(t => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`rounded-2xl px-4 py-2 text-sm font-black transition-all ${tab === t
-                  ? 'border border-cyan-400/20 bg-cyan-400/10 text-cyan-300'
-                  : 'text-slate-500 hover:text-slate-300'
-                  }`}
+                className={`border-r-2 border-[#0A0A0A] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] transition-colors first:border-l-2 ${
+                  tab === t
+                    ? 'bg-[#D01F2D] text-white'
+                    : 'bg-transparent text-[#6B7280] hover:bg-white hover:text-[#16274F]'
+                }`}
               >
                 {t}
               </button>
@@ -652,42 +523,39 @@ export default function StandingsPage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-slate-500 font-bold">Loading...</div>
+            <div className="flex items-center justify-center py-20 text-sm font-black uppercase tracking-[0.2em] text-[#6B7280]">Loading...</div>
           ) : (
-            <div className="p-4 space-y-1.5">
-              {/* Header row — desktop only */}
+            <div className="p-3 sm:p-5">
+              {/* Desktop table heading */}
               <div
-                className="hidden md:grid gap-2 px-4 pb-1"
-                style={{ gridTemplateColumns: `2rem 1fr ${tabCols[tab].map(() => '4rem').join(' ')}` }}
+                className="hidden border-b-2 border-[#D7D5CF] px-4 pb-3 md:grid md:items-end md:gap-3"
+                style={{ gridTemplateColumns: `2.25rem minmax(0,1fr) ${tabCols[tab].map(() => '4.5rem').join(' ')}` }}
               >
                 <button
                   onClick={() => season !== 'All-Time' && handleSort('Pos')}
-                  className={`text-[10px] font-black uppercase tracking-[0.2em] text-left ${season !== 'All-Time' ? 'cursor-pointer hover:text-cyan-300' : 'cursor-default text-slate-600'}`}
-                  style={{ color: sortCol === 'Pos' && season !== 'All-Time' ? '#22d3ee' : undefined }}
+                  className={`text-left text-[10px] font-black uppercase tracking-[0.18em] ${season !== 'All-Time' ? 'text-[#6B7280] hover:text-[#D01F2D]' : 'cursor-default text-[#B5B5AF]'}`}
                 >
                   #
                 </button>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Franchise</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Franchise</div>
                 {tabCols[tab].map(col => (
-                  <button key={col} onClick={() => handleSort(col)}
-                    className="text-[10px] font-black uppercase tracking-[0.15em] text-right transition-colors hover:text-cyan-300"
-                    style={{ color: sortCol === col ? '#22d3ee' : '#64748b' }}>
+                  <button
+                    key={col}
+                    onClick={() => handleSort(col)}
+                    className="text-right text-[10px] font-black uppercase tracking-[0.14em] transition-colors"
+                    style={{ color: sortCol === col ? '#D01F2D' : '#6B7280' }}
+                  >
                     {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
                   </button>
                 ))}
               </div>
 
-              {/* Sort bar — mobile only */}
-              <div className="md:hidden flex items-center gap-2 overflow-x-auto px-1 pb-2">
+              {/* Mobile sort controls */}
+              <div className="flex gap-2 overflow-x-auto px-1 pb-3 pt-1 md:hidden">
                 {season !== 'All-Time' && (
                   <button
                     onClick={() => handleSort('Pos')}
-                    className="flex-shrink-0 rounded-xl border px-3 py-1.5 text-xs font-black transition-all"
-                    style={{
-                      borderColor: sortCol === 'Pos' ? 'rgba(34,211,238,0.4)' : 'rgba(255,255,255,0.1)',
-                      color: sortCol === 'Pos' ? '#22d3ee' : '#64748b',
-                      background: sortCol === 'Pos' ? 'rgba(34,211,238,0.08)' : 'transparent',
-                    }}
+                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === 'Pos' ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#D7D5CF] bg-white text-[#6B7280]'}`}
                   >
                     #{sortCol === 'Pos' ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
                   </button>
@@ -696,120 +564,113 @@ export default function StandingsPage() {
                   <button
                     key={col}
                     onClick={() => handleSort(col)}
-                    className="flex-shrink-0 rounded-xl border px-3 py-1.5 text-xs font-black transition-all"
-                    style={{
-                      borderColor: sortCol === col ? 'rgba(34,211,238,0.4)' : 'rgba(255,255,255,0.1)',
-                      color: sortCol === col ? '#22d3ee' : '#64748b',
-                      background: sortCol === col ? 'rgba(34,211,238,0.08)' : 'transparent',
-                    }}
+                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === col ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#D7D5CF] bg-white text-[#6B7280]'}`}
                   >
                     {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
                   </button>
                 ))}
               </div>
 
-              {paged.map((row, i) => {
-                const rank = page * PER_PAGE + i + 1
-                const pos = season !== 'All-Time' && row.standing ? row.standing : rank
-                const avatar = getTeamAvatar(row.team)
-                return (
-                  <a key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`}
-                    className="block rounded-[18px] border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all hover:bg-white/[0.05] hover:border-white/10">
+              <div className="space-y-2">
+                {paged.map((row, i) => {
+                  const rank = page * PER_PAGE + i + 1
+                  const pos = season !== 'All-Time' && row.standing ? row.standing : rank
+                  const avatar = getTeamAvatar(row.team)
+                  const rankClass = pos === 1 ? 'bg-[#F5C518] text-[#0A0A0A]' : pos === 2 ? 'bg-[#E8E8E8] text-[#0A0A0A]' : pos === 3 ? 'bg-[#E6D0B4] text-[#0A0A0A]' : 'bg-[#F7F6F2] text-[#6B7280]'
 
-                    {/* Desktop: linha única em grid, igual ao original */}
-                    <div
-                      className="hidden md:grid items-center gap-2"
-                      style={{ gridTemplateColumns: `2rem 1fr ${tabCols[tab].map(() => '4rem').join(' ')}` }}
+                  return (
+                    <a
+                      key={row.team}
+                      href={`/teams?team=${encodeURIComponent(row.team)}`}
+                      className="block border-2 border-[#D7D5CF] bg-white p-3 transition-transform hover:-translate-y-0.5 hover:border-[#16274F] hover:shadow-[3px_3px_0_#D01F2D] sm:p-4"
                     >
-                      <span className="font-black leading-none text-center"
-                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: pos === 1 ? '#facc15' : pos <= 3 ? '#22d3ee' : '#475569' }}>
-                        {pos}
-                      </span>
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {avatar
-                          ? <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-lg object-cover" />
-                          : <div className="h-7 w-7 flex-shrink-0 rounded-lg bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">{row.team.slice(0, 2).toUpperCase()}</div>
-                        }
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-black text-white">{row.team}</div>
-                        </div>
-                        {row.champion && <span className="flex-shrink-0 text-sm">🏆</span>}
-                      </div>
-                      {tabCols[tab].map(col => (
-                        <div key={col} className="text-right">
-                          <span
-                            className={`inline-block rounded-lg px-2 py-1 text-sm font-black transition-all ${sortCol === col
-                              ? 'border border-cyan-400/40 bg-cyan-400/10 text-cyan-300'
-                              : 'text-slate-400'
-                              }`}
-                          >
-                            {getCol(row, col)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Mobile: nome completo + grid de stats abaixo */}
-                    <div className="md:hidden">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="font-black leading-none text-center w-7 flex-shrink-0"
-                          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '18px', color: pos === 1 ? '#facc15' : pos <= 3 ? '#22d3ee' : '#475569' }}>
+                      <div
+                        className="hidden md:grid md:items-center md:gap-3"
+                        style={{ gridTemplateColumns: `2.25rem minmax(0,1fr) ${tabCols[tab].map(() => '4.5rem').join(' ')}` }}
+                      >
+                        <span className={`flex h-8 w-8 items-center justify-center text-sm font-black ${rankClass}`} style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                           {pos}
                         </span>
-                        {avatar
-                          ? <img src={avatar} alt={row.team} className="h-7 w-7 flex-shrink-0 rounded-lg object-cover" />
-                          : <div className="h-7 w-7 flex-shrink-0 rounded-lg bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center text-[9px] font-black text-cyan-400">{row.team.slice(0, 2).toUpperCase()}</div>
-                        }
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-black text-white leading-snug whitespace-normal break-words">{row.team}</div>
-                        </div>
-                        {row.champion && <span className="flex-shrink-0 text-sm">🏆</span>}
-                      </div>
 
-                      <div
-                        className="mt-3 grid gap-2 pl-[2.375rem]"
-                        style={{ gridTemplateColumns: `repeat(${Math.min(tabCols[tab].length, 4)}, 1fr)` }}
-                      >
-                        {tabCols[tab].map(col => (
-                          <div
-                            key={col}
-                            className={`rounded-xl py-1.5 text-center transition-all ${sortCol === col
-                                ? 'border border-cyan-400/40 bg-cyan-400/10'
-                                : 'border border-transparent bg-white/[0.03]'
-                              }`}
-                          >
-                            <div className={`text-[9px] font-black uppercase tracking-[0.15em] ${sortCol === col ? 'text-cyan-300/70' : 'text-slate-500'}`}>{col}</div>
-                            <div className={`text-sm font-black ${sortCol === col ? 'text-cyan-300' : 'text-slate-300'}`}>
-                              {getCol(row, col)}
+                        <div className="flex min-w-0 items-center gap-3">
+                          {avatar ? (
+                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full border-2 border-[#0A0A0A] object-cover" />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
+                              {row.team.slice(0, 2).toUpperCase()}
                             </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-black uppercase tracking-tight text-[#16274F]">{row.team}</div>
+                            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9CA3AF]">{season === 'All-Time' ? 'All-Time' : `Season ${season}`}</div>
+                          </div>
+                          {row.champion && <span className="ml-auto text-base">🏆</span>}
+                        </div>
+
+                        {tabCols[tab].map(col => (
+                          <div key={col} className="text-right">
+                            <span className={`text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#4B5563]'}`}>
+                              {getCol(row, col)}
+                            </span>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  </a>
-                )
-              })}
+
+                      <div className="md:hidden">
+                        <div className="flex items-center gap-3">
+                          <span className={`flex h-8 w-8 shrink-0 items-center justify-center text-sm font-black ${rankClass}`} style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                            {pos}
+                          </span>
+                          {avatar ? (
+                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full border-2 border-[#0A0A0A] object-cover" />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
+                              {row.team.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="break-words text-sm font-black uppercase leading-snug text-[#16274F]">{row.team}</div>
+                            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9CA3AF]">
+                              {season === 'All-Time' ? 'All-Time ranking' : `Season ${season}`}
+                            </div>
+                          </div>
+                          {row.champion && <span className="text-base">🏆</span>}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 pl-0 sm:grid-cols-4">
+                          {tabCols[tab].map(col => (
+                            <div key={col} className={`border-2 px-3 py-2 ${sortCol === col ? 'border-[#D01F2D] bg-[#FFF1F1]' : 'border-[#E4E2DB] bg-[#F7F6F2]'}`}>
+                              <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[#9CA3AF]">{col}</div>
+                              <div className={`mt-0.5 text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#374151]'}`}>{getCol(row, col)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
             </div>
           )}
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-white/5 px-8 py-4">
-              <span className="text-xs font-black text-slate-500">
+            <div className="flex flex-col gap-3 border-t-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+              <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
                 Showing {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, tableData.length)} of {tableData.length}
               </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPage(p => Math.max(0, p - 1))}
                   disabled={page === 0}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-30"
+                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="text-xs font-black text-slate-500">{page + 1}/{totalPages}</span>
+                <span className="min-w-12 text-center text-xs font-black text-[#16274F]">{page + 1}/{totalPages}</span>
                 <button
                   onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                   disabled={page >= totalPages - 1}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 transition-all hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-30"
+                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -818,133 +679,75 @@ export default function StandingsPage() {
           )}
         </motion.div>
 
-        {/* Gráfico */}
+        {/* TEAM EVOLUTION */}
         <motion.div
-          initial={{
-            opacity: 0,
-            y: 50,
-            filter: 'blur(10px)',
-          }}
-          whileInView={{
-            opacity: 1,
-            y: 0,
-            filter: 'blur(0px)',
-          }}
-          viewport={{
-            once: false,
-            amount: 0.15,
-          }}
-          transition={{
-            duration: 0.8,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          className="overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
-
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 px-8 py-6">
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.5 }}
+          className="overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[5px_5px_0_#16274F]"
+        >
+          <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                <Activity className="h-5 w-5 text-cyan-300" />
+              <div className="flex h-9 w-9 items-center justify-center border-2 border-white/30 bg-white/10">
+                <Activity className="h-4.5 w-4.5" />
               </div>
               <div>
-                <div className="text-sm font-black uppercase tracking-[0.3em] text-cyan-300">Team Evolution</div>
-                <div className="text-base text-slate-400">Year by year performance</div>
+                <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Team Evolution</div>
+                <div className="mt-1 text-lg font-bold text-white/80">Year by year performance</div>
               </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <div className="w-36">
-                <Select
-                  value={chartStat}
-                  onChange={setChartStat}
-                  options={CHART_STATS.map(s => s.label)}
-                  placeholder="Stat..."
-                />
-              </div>
-              <div className="w-36">
-                <Select
-                  value={chartScope}
-                  onChange={setChartScope}
-                  options={['Reg Season', 'Playoffs', 'Total']}
-                  placeholder="Scope..."
-                />
-              </div>
-              <div className="w-56">
-                <Select value={chartTeam} onChange={setChartTeam} options={allTeams} placeholder="Select Team..." />
-              </div>
-            </div>
-          </div>
-          {/* LEGENDA DO GRÁFICO */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs tracking-wider">
-            {/* Campeão */}
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-              <span className="text-slate-300">Championships</span>
             </div>
 
-            {/* Melhores Temporadas */}
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              <span className="text-slate-300">Best Seasons</span>
-            </div>
-
-            {/* Piores Temporadas */}
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-              <span className="text-slate-300">Worst Seasons</span>
+            <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[520px]">
+              <Select value={chartStat} onChange={setChartStat} options={CHART_STATS.map(s => s.label)} placeholder="Stat..." />
+              <Select value={chartScope} onChange={setChartScope} options={['Reg Season', 'Playoffs', 'Total']} placeholder="Scope..." />
+              <Select value={chartTeam} onChange={setChartTeam} options={allTeams} placeholder="Select Team..." />
             </div>
           </div>
 
-          <div className="overflow-x-auto px-6 pb-2 pt-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 border-b-2 border-[#D7D5CF] bg-[#F7F6F2] px-4 py-4 text-xs font-black uppercase tracking-[0.1em]">
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#F5C518]" /> Championships</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#1E8E3E]" /> Best Seasons</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#D01F2D]" /> Worst Seasons</div>
+          </div>
+
+          <div className="overflow-x-auto px-3 pb-1 pt-6 sm:px-6">
             <div style={{ minWidth: '360px' }}>
               <WinChart data={chartData} chartStats={chartStats} />
             </div>
           </div>
 
           {chartStats && (
-            <div className="grid grid-cols-2 gap-4 p-6 md:grid-cols-4">
-              <div className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Best Season</div>
-                <div className="text-3xl font-black text-cyan-300">{chartStats.bestVal}</div>
-                <div className="mt-1 text-xs font-bold text-slate-500">
-                  {chartStats.bestSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
-                </div>
+            <div className="grid grid-cols-2 gap-0 border-t-2 border-[#0A0A0A] md:grid-cols-4">
+              <div className="border-b-2 border-r-2 border-[#0A0A0A] bg-[#F7F6F2] p-5 md:border-b-0">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Best Season</div>
+                <div className="text-3xl font-black text-[#16274F]">{chartStats.bestVal}</div>
+                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.bestSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
-              <div className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Worst Season</div>
-                <div className="text-3xl font-black text-cyan-300">{chartStats.worstVal}</div>
-                <div className="mt-1 text-xs font-bold text-slate-500">
-                  {chartStats.worstSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
-                </div>
+              <div className="border-b-2 border-[#0A0A0A] bg-[#FFF6F6] p-5 md:border-b-0 md:border-r-2">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Worst Season</div>
+                <div className="text-3xl font-black text-[#D01F2D]">{chartStats.worstVal}</div>
+                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.worstSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
-              <div className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Season Avg</div>
-                <div className="text-3xl font-black text-cyan-300">{chartStats.avg}</div>
-                <div className="mt-1 text-xs font-bold text-slate-500">per season</div>
+              <div className="border-r-2 border-[#0A0A0A] bg-white p-5">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Season Avg</div>
+                <div className="text-3xl font-black text-[#16274F]">{chartStats.avg}</div>
+                <div className="mt-1 text-xs font-bold text-[#6B7280]">per season</div>
               </div>
-              <div className="rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Championships</div>
-                <div className="text-3xl font-black text-cyan-300">{chartStats.titles}</div>
-                <div className="mt-1 text-xs font-bold text-slate-500">
-                  {chartStats.championSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
-                </div>
+              <div className="bg-[#FFF9E7] p-5">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Championships</div>
+                <div className="text-3xl font-black text-[#0A0A0A]">{chartStats.titles}</div>
+                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.championSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
             </div>
           )}
         </motion.div>
-
       </section>
 
-      {/* Footer */}
-      <footer className="mx-auto max-w-[1680px] px-3 pb-6">
-        <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
-          <Image
-            src="/images/LogoFinalBlack.png"
-            alt="Tapitas League"
-            width={24}
-            height={24}
-            style={{ filter: 'invert(1)' }}
-            className="opacity-30"
-          />
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
+      <footer className="mx-auto max-w-[1680px] px-3 pb-6 sm:px-5 md:px-6">
+        <div className="flex items-center justify-center gap-3 border-2 border-[#D7D5CF] bg-white py-5">
+          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} className="opacity-40" />
+          <span className="text-xs font-black uppercase tracking-[0.24em] text-[#8A8A84]">
             Tapitas League · Est. 2014
           </span>
         </div>
@@ -955,7 +758,6 @@ export default function StandingsPage() {
         onClose={() => setDrawerOpen(false)}
         allSeasons={allSeasons}
       />
-
     </main>
   )
 }
