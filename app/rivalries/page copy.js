@@ -258,16 +258,25 @@ BADGE
 
 function HeatBadge({ heat }) {
   const colors = {
-    LEGENDARY: 'bg-[#F5C518] text-[#0A0A0A] border-[#0A0A0A]',
-    ELITE: 'bg-[#16274F] text-white border-[#0A0A0A]',
-    HIGH: 'bg-[#D01F2D] text-white border-[#0A0A0A]',
-    MEDIUM: 'bg-white text-[#3F4757] border-[#0A0A0A]',
-    LOW: 'bg-[#F7F6F2] text-[#6B7280] border-[#0A0A0A]/30'
+    LEGENDARY:
+      'bg-yellow-400/15 text-yellow-300 border-yellow-400/20',
+
+    ELITE:
+      'bg-orange-400/15 text-orange-300 border-orange-400/20',
+
+    HIGH:
+      'bg-cyan-400/15 text-cyan-300 border-cyan-400/20',
+
+    MEDIUM:
+      'bg-slate-400/15 text-slate-300 border-slate-400/20',
+
+    LOW:
+      'bg-slate-700/20 text-slate-500 border-slate-700/20'
   }
 
   return (
     <div
-      className={`border-2 px-3 py-1.5 text-[10px] font-black tracking-[0.3em] ${colors[heat]}`}
+      className={`rounded-full border px-3 py-1.5 text-[10px] font-black tracking-[0.3em] ${colors[heat]}`}
     >
       {heat}
     </div>
@@ -648,6 +657,9 @@ export default function RivalriesPage() {
     fontFamily: bebas.style.fontFamily
   }
 
+  const teamABg = 'bg-cyan-400'
+  const teamBBg = 'bg-purple-400'
+
   const TEAM_AVATARS = {
     'howmuch': '/images/howmuch.png',
     'i am megatron': '/images/megatron.png',
@@ -823,22 +835,14 @@ RENDER
 ===================================================== */
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#F7F6F2] text-[#0A0A0A]">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-        .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
-        .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
-        .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-      `}</style>
+    <main className="min-h-screen overflow-x-hidden bg-[#020617] text-white">
       {/* HEADER */}
       <Header />
 
       <section className="px-3 md:px-6 pb-20">
         {/* HERO */}
-        <div className="relative mb-10 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="relative mb-10 overflow-hidden rounded-2xl md:rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]">
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl md:rounded-[38px]">
             <svg
               className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
               preserveAspectRatio="xMidYMid slice"
@@ -846,67 +850,70 @@ RENDER
               xmlns="http://www.w3.org/2000/svg"
               aria-hidden="true"
             >
-              <g opacity="0.06">
+              <g opacity="0.09">
                 {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="520" fill="#16274F" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`} />
+                  <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="520" fill="#22d3ee" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`} />
                 ))}
               </g>
-              <g opacity="0.10" fill="none" stroke="#16274F" strokeWidth="1">
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
                 {["M380 -30 L460 85 L380 200 L300 85 Z", "M460 85 L540 200 L460 315 L380 200 Z", "M540 -30 L620 85 L540 200 L460 85 Z", "M620 85 L700 200 L620 315 L540 200 Z", "M700 -30 L780 85 L700 200 L620 85 Z", "M780 85 L860 200 L780 315 L700 200 Z"].map((d, i) => (
                   <path key={i} d={d} />
                 ))}
               </g>
-              <g opacity="0.05" fill="#D01F2D">
+              <g opacity="0.08" fill="#22d3ee">
                 {["M420 30 L440 58 L420 86 L400 58 Z", "M500 120 L520 148 L500 176 L480 148 Z", "M580 30 L600 58 L580 86 L560 58 Z", "M660 120 L680 148 L660 176 L640 148 Z", "M740 30 L760 58 L740 86 L720 58 Z"].map((d, i) => (
                   <path key={i} d={d} />
                 ))}
               </g>
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2" strokeLinejoin="round">
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round">
                 {[520, 600, 680].map((x, i) => (
                   <polyline key={i} points={`${x},0 ${x + 160},170 ${x},340`} />
                 ))}
               </g>
-              <g opacity="0.08" fill="#16274F">
+              <g opacity="0.07" fill="#22d3ee">
                 <polygon points="900,0 900,140 760,0" />
                 <polygon points="900,340 900,200 760,340" />
               </g>
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="1">
+              <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
                 {[30, 50, 70].map((r) => <circle key={r} cx="870" cy="60" r={r} />)}
               </g>
-              <g opacity="0.10" fill="#16274F">
+              <g opacity="0.09" fill="#22d3ee">
                 {[40, 60, 80, 100].map((y) => [310, 330, 350].map((x) => (
                   <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
                 )))}
               </g>
-              <g opacity="0.10" stroke="#16274F" strokeWidth="0.5">
+              <g opacity="0.06" stroke="#22d3ee" strokeWidth="0.5">
                 {[56, 113, 226, 284].map((y) => <line key={y} x1="0" y1={y} x2="900" y2={y} />)}
               </g>
-              <text x="790" y="310" fontFamily="'Bebas Neue', sans-serif" fontSize="340" fill="#16274F" opacity="0.04" textAnchor="middle">⚔</text>
+              <text x="790" y="310" fontFamily="'Bebas Neue', sans-serif" fontSize="340" fill="#22d3ee" opacity="0.02" textAnchor="middle">⚔</text>
             </svg>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 28%, rgba(247,246,242,0.90) 48%, rgba(247,246,242,0.25) 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.88) 48%, rgba(2,6,23,0.18) 100%)' }} />
           </div>
 
           <div className="relative z-10 p-6 sm:p-8 md:p-10">
-            <div
-              className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
-            >
-              <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-white shrink-0" />
-              <span className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
+            <div className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 sm:px-4 sm:py-2">
+              <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-cyan-300 shrink-0" />
+              <span className="font-black uppercase tracking-[0.25em] text-cyan-300 whitespace-nowrap" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
                 Head to Head
               </span>
             </div>
             <h1
-              className="leading-[0.9] tracking-[-0.02em] text-[#16274F]"
+              className="leading-[0.9] tracking-[-0.02em]"
               style={{
                 fontFamily: '"Bebas Neue", sans-serif',
                 fontSize: 'clamp(48px, 7vw, 96px)',
+                background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 40%, #67e8f9 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
               }}
             >
               Historic
-              <span className="text-[#D01F2D]">{' '}Rivalries</span>
+              <span style={{ background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                {' '}Rivalries
+              </span>
             </h1>
-            <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-[#3F4757] leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
+            <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-slate-400 leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
               Explore every head-to-head in Tapitas League history.
             </p>
           </div>
@@ -914,8 +921,8 @@ RENDER
 
         {/* SELETOR DE TIMES */}
         <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="border-2 border-[#0A0A0A] bg-white px-5 py-4 tp-shadow-navy-sm">
-            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#6B7280]">
+          <div className="rounded-[24px] border border-white/10 bg-[#071120] px-5 py-4">
+            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
               Team
             </div>
             <select
@@ -924,7 +931,7 @@ RENDER
                 setTeamFilterA(e.target.value)
                 setSelected(null)
               }}
-              className="w-full bg-transparent text-base font-black text-[#16274F] outline-none"
+              className="w-full bg-transparent text-base font-black outline-none"
             >
               <option value="ALL">Select team...</option>
               {allTeams.map((team) => (
@@ -933,8 +940,8 @@ RENDER
             </select>
           </div>
 
-          <div className="border-2 border-[#0A0A0A] bg-white px-5 py-4 tp-shadow-navy-sm">
-            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#6B7280]">
+          <div className="rounded-[24px] border border-white/10 bg-[#071120] px-5 py-4">
+            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
               Opponent
             </div>
             <select
@@ -943,7 +950,7 @@ RENDER
                 setTeamFilterB(e.target.value)
                 setSelected(null)
               }}
-              className="w-full bg-transparent text-base font-black text-[#16274F] outline-none"
+              className="w-full bg-transparent text-base font-black outline-none"
             >
               <option value="ALL">vs opponent...</option>
               {allTeams.map((team) => (
@@ -963,9 +970,9 @@ RENDER
             <button
               key={item.value}
               onClick={() => setSortBy(item.value)}
-              className={`flex flex-1 items-center justify-center gap-2 border-2 px-4 py-3 text-sm font-black transition-all ${sortBy === item.value
-                ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+              className={`flex flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-black transition-all ${sortBy === item.value
+                ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-300'
+                : 'border-white/10 bg-white/[0.03] text-slate-500'
                 }`}
             >
               <span>{item.icon}</span>
@@ -991,12 +998,12 @@ RENDER
                   whileHover={{ scale: 1.01, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelected(r)}
-                  className="w-full overflow-hidden border-2 border-[#0A0A0A] bg-white text-left tp-shadow-navy-sm transition-all hover:-translate-y-[1px]"
+                  className="w-full overflow-hidden rounded-[28px] border border-white/10 bg-[#071120] text-left transition-all hover:border-cyan-400/20 hover:bg-cyan-400/[0.03]"
                 >
                   {/* header: heat + total de jogos */}
                   <div className="flex items-center justify-between gap-2 px-5 pt-4">
                     <HeatBadge heat={r.heat} />
-                    <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
+                    <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
                       {rWA + rWB} jogos
                     </div>
                   </div>
@@ -1006,19 +1013,22 @@ RENDER
                     {/* Time A */}
                     <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
                       {avA ? (
-                        <img src={avA} alt={r.teamA} className="h-12 w-12 flex-shrink-0 object-contain" />
+                        <img src={avA} alt={r.teamA} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
                       ) : (
-                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[10px] font-black uppercase text-white">
+                        <div
+                          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white"
+                          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}
+                        >
                           {r.teamA.slice(0, 2).toUpperCase()}
                         </div>
                       )}
-                      <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-[#16274F]">
+                      <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-cyan-300">
                         {r.teamA}
                       </span>
                       <span
                         className="text-[40px] font-black leading-none"
                         style={{
-                          color: rALeads ? '#1E8E3E' : rBLeads ? '#D01F2D' : '#16274F',
+                          color: rALeads ? '#86efac' : rBLeads ? '#fca5a5' : '#e2e8f0',
                           fontFamily: '"Bebas Neue", sans-serif',
                         }}
                       >
@@ -1028,25 +1038,28 @@ RENDER
 
                     {/* centro */}
                     <div className="flex flex-shrink-0 flex-col items-center gap-1 pt-5">
-                      <Swords className="h-4 w-4 text-[#6B7280]" />
+                      <Swords className="h-4 w-4 text-slate-600" />
                     </div>
 
                     {/* Time B */}
                     <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
                       {avB ? (
-                        <img src={avB} alt={r.teamB} className="h-12 w-12 flex-shrink-0 object-contain" />
+                        <img src={avB} alt={r.teamB} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
                       ) : (
-                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[10px] font-black uppercase text-white">
+                        <div
+                          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white"
+                          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}
+                        >
                           {r.teamB.slice(0, 2).toUpperCase()}
                         </div>
                       )}
-                      <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-[#16274F]">
+                      <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-purple-300">
                         {r.teamB}
                       </span>
                       <span
                         className="text-[40px] font-black leading-none"
                         style={{
-                          color: rBLeads ? '#1E8E3E' : rALeads ? '#D01F2D' : '#16274F',
+                          color: rBLeads ? '#86efac' : rALeads ? '#fca5a5' : '#e2e8f0',
                           fontFamily: '"Bebas Neue", sans-serif',
                         }}
                       >
@@ -1071,7 +1084,7 @@ RENDER
                   setTeamFilterA('ALL')
                   setTeamFilterB('ALL')
                 }}
-                className="mb-4 flex items-center gap-2 border-2 border-[#0A0A0A] bg-white px-4 py-2 text-sm font-black text-[#3F4757] transition-all hover:bg-[#F7F6F2]"
+                className="mb-4 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-black text-slate-400 transition-all hover:text-white"
               >
                 ← Voltar
               </button>
@@ -1081,22 +1094,22 @@ RENDER
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45 }}
-                className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy p-3"
+                className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.97),rgba(2,6,23,0.99))] p-3"
               >
                 {/* header do card */}
-                <div className="mb-4 flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-4 pb-3 pt-3 sm:px-5 sm:pt-4">
+                <div className="mb-4 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3 sm:px-5 sm:pb-1 sm:pt-4">
                   <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D] sm:h-14 sm:w-14">
-                      <Swords className="h-5 w-5 text-white" />
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                      <Swords className="h-5 w-5 text-rose-300" />
                     </div>
                     <div className="min-w-0">
                       <div
-                        className="truncate uppercase leading-none text-[#16274F]"
+                        className="truncate uppercase leading-none text-rose-300"
                         style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', letterSpacing: '0.06em', fontWeight: 900 }}
                       >
                         Historic Rivalry
                       </div>
-                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-[#3F4757] sm:mt-1.5 sm:text-sm">
+                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                         All-time H2H
                       </div>
                     </div>
@@ -1106,7 +1119,7 @@ RENDER
 
                 {/* placar */}
                 <div className="mb-4 px-4 sm:px-5">
-                  <div className="overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 tp-shadow-navy-sm">
+                  <div className="overflow-hidden rounded-[26px] border border-white/[0.07] bg-[linear-gradient(160deg,rgba(18,30,52,0.98),rgba(10,18,35,0.99))] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
                     <div className="flex items-center justify-between gap-4">
 
                       {/* Time A */}
@@ -1114,19 +1127,19 @@ RENDER
                         {(() => {
                           const av = getTeamAvatar(selected.teamA)
                           return av ? (
-                            <img src={av} alt={selected.teamA} className="h-12 w-12 flex-shrink-0 object-contain" />
+                            <img src={av} alt={selected.teamA} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
                           ) : (
-                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[10px] font-black uppercase text-white">
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white" style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}>
                               {selected.teamA.slice(0, 2).toUpperCase()}
                             </div>
                           )
                         })()}
-                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-[#16274F]">
+                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-cyan-300">
                           {selected.teamA}
                         </span>
                         <span
                           className="text-[52px] font-black leading-none sm:text-[68px]"
-                          style={{ color: aLeads ? '#1E8E3E' : bLeads ? '#D01F2D' : '#16274F', fontFamily: '"Bebas Neue", sans-serif' }}
+                          style={{ color: aLeads ? '#86efac' : bLeads ? '#fca5a5' : '#e2e8f0', fontFamily: '"Bebas Neue", sans-serif' }}
                         >
                           {wA}
                         </span>
@@ -1134,9 +1147,9 @@ RENDER
 
                       {/* centro */}
                       <div className="flex flex-shrink-0 flex-col items-center gap-1">
-                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">All-Time</div>
-                        <div className="h-px w-6 bg-[#0A0A0A]/15" />
-                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Record</div>
+                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">All-Time</div>
+                        <div className="h-px w-6 bg-white/10" />
+                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Record</div>
                       </div>
 
                       {/* Time B */}
@@ -1144,19 +1157,19 @@ RENDER
                         {(() => {
                           const av = getTeamAvatar(selected.teamB)
                           return av ? (
-                            <img src={av} alt={selected.teamB} className="h-12 w-12 flex-shrink-0 object-contain" />
+                            <img src={av} alt={selected.teamB} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
                           ) : (
-                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[10px] font-black uppercase text-white">
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-[10px] font-black uppercase text-white" style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))' }}>
                               {selected.teamB.slice(0, 2).toUpperCase()}
                             </div>
                           )
                         })()}
-                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-[#16274F]">
+                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-purple-300">
                           {selected.teamB}
                         </span>
                         <span
                           className="text-[52px] font-black leading-none sm:text-[68px]"
-                          style={{ color: bLeads ? '#1E8E3E' : aLeads ? '#D01F2D' : '#16274F', fontFamily: '"Bebas Neue", sans-serif' }}
+                          style={{ color: bLeads ? '#86efac' : aLeads ? '#fca5a5' : '#e2e8f0', fontFamily: '"Bebas Neue", sans-serif' }}
                         >
                           {wB}
                         </span>
@@ -1166,12 +1179,12 @@ RENDER
                     {/* streak badge */}
                     {currentStreak && (
                       <div className="mt-3 flex justify-center">
-                        <div className="inline-flex items-center gap-2 border-2 border-[#0A0A0A] bg-white px-4 py-1.5">
-                          <Flame className="h-3.5 w-3.5 text-[#D01F2D]" />
-                          <span className="text-[11px] font-black text-[#3F4757]">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-1.5">
+                          <Flame className="h-3.5 w-3.5 text-orange-300" />
+                          <span className="text-[11px] font-black text-slate-300">
                             {currentStreak.team}
                           </span>
-                          <span className="text-[11px] font-black text-[#D01F2D]">
+                          <span className="text-[11px] font-black text-orange-300">
                             {currentStreak.result}{currentStreak.count} streak
                           </span>
                         </div>
@@ -1193,18 +1206,18 @@ RENDER
                             style={{
                               fontFamily: '"Bebas Neue", sans-serif',
                               fontWeight: 900,
-                              color: row.leftLead ? '#1E8E3E' : '#16274F',
+                              color: row.leftLead ? '#6ee7b7' : '#f1f5f9',
                             }}
                           >
                             {row.left}
                           </div>
                           {row.subLeft ? (
-                            <div className="mt-1 text-[11px] font-bold leading-snug text-[#6B7280] sm:text-[12px]">
+                            <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
                               {row.greenMargin ? (
                                 <>
                                   <span>{row.subLeft.split('·')[0].trim()}</span>
                                   {row.subLeft.includes('·') && (
-                                    <span className="text-[#1E8E3E]"> · {row.subLeft.split('·')[1].trim()}</span>
+                                    <span className="text-emerald-400"> · {row.subLeft.split('·')[1].trim()}</span>
                                   )}
                                 </>
                               ) : row.breakArrow ? formatRangeWithBreak(row.subLeft) : row.subLeft}
@@ -1214,7 +1227,7 @@ RENDER
 
                         {/* label central */}
                         <div className="w-full justify-self-center pt-1 text-center">
-                          <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-[#6B7280] sm:text-[11px]">
+                          <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-500 sm:text-[11px]">
                             {row.label}
                           </div>
                         </div>
@@ -1226,18 +1239,18 @@ RENDER
                             style={{
                               fontFamily: '"Bebas Neue", sans-serif',
                               fontWeight: 900,
-                              color: row.rightLead ? '#1E8E3E' : '#16274F',
+                              color: row.rightLead ? '#6ee7b7' : '#f1f5f9',
                             }}
                           >
                             {row.right}
                           </div>
                           {row.subRight ? (
-                            <div className="mt-1 text-[11px] font-bold leading-snug text-[#6B7280] sm:text-[12px]">
+                            <div className="mt-1 text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
                               {row.greenMargin ? (
                                 <>
                                   <span>{row.subRight.split('·')[0].trim()}</span>
                                   {row.subRight.includes('·') && (
-                                    <span className="text-[#1E8E3E]"> · {row.subRight.split('·')[1].trim()}</span>
+                                    <span className="text-emerald-400"> · {row.subRight.split('·')[1].trim()}</span>
                                   )}
                                 </>
                               ) : row.breakArrow ? formatRangeWithBreak(row.subRight) : row.subRight}
@@ -1247,7 +1260,7 @@ RENDER
                       </div>
 
                       {idx < arr.length - 1 && (
-                        <div className="mt-4 h-px w-full bg-[#0A0A0A]/8" />
+                        <div className="mt-4 h-px w-full bg-white/[0.06]" />
                       )}
                     </div>
                   ))}
@@ -1255,22 +1268,22 @@ RENDER
               </motion.div>
 
               {/* TIMELINE */}
-              <div className="mt-4 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm p-3">
+              <div className="mt-4 overflow-hidden rounded-[32px] border border-white/10 p-3">
 
                 {/* header */}
-                <div className="mb-3 flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-4 pb-3 pt-3 sm:px-5">
+                <div className="mb-3 flex items-center justify-between gap-3 px-4 pb-1.5 pt-3 sm:px-5">
                   <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] sm:h-14 sm:w-14">
-                      <Activity className="h-5 w-5 text-white" />
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                      <Activity className="h-5 w-5 text-cyan-300" />
                     </div>
                     <div className="min-w-0">
                       <div
-                        className="truncate uppercase leading-none text-[#16274F]"
+                        className="truncate uppercase leading-none text-cyan-300"
                         style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', letterSpacing: '0.06em', fontWeight: 900 }}
                       >
                         Rivalry Timeline
                       </div>
-                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-[#3F4757] sm:mt-1.5 sm:text-sm">
+                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-slate-300 sm:mt-1.5 sm:text-sm">
                         Every Chapter
                       </div>
                     </div>
@@ -1284,9 +1297,9 @@ RENDER
                       <button
                         key={season}
                         onClick={() => setSeasonFilter(season)}
-                        className={`whitespace-nowrap border-2 px-4 py-1.5 text-xs font-black transition-all ${seasonFilter === season
-                          ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                          : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                        className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-black transition-all ${seasonFilter === season
+                          ? 'bg-cyan-400 text-black'
+                          : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'
                           }`}
                       >
                         {season}
@@ -1297,7 +1310,7 @@ RENDER
 
                 {/* lista de jogos */}
                 <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                  <div className="overflow-hidden border-2 border-[#0A0A0A]/10 px-4 py-1 sm:px-5">
+                  <div className="overflow-hidden rounded-[26px] border border-white/[0.07] px-4 py-1 sm:px-5">
                     {filteredHistory.map((g, i) => {
                       const won = g.Result === 'W'
                       const winner = won ? g.Team : g.Opponent
@@ -1314,7 +1327,7 @@ RENDER
                         <div key={i}>
                           <a
                             href={matchupHref}
-                            className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 py-4 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4"
+                            className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 rounded-2xl py-4 transition-colors hover:bg-white/[0.04] sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4"
                           >
                             {/* vencedor — esquerda */}
                             <div className="min-w-0 text-left">
@@ -1323,22 +1336,22 @@ RENDER
                                 style={{
                                   fontFamily: '"Bebas Neue", sans-serif',
                                   fontWeight: 900,
-                                  color: winnerIsA ? '#16274F' : '#D01F2D',
+                                  color: winnerIsA ? '#67e8f9' : '#c4b5fd',
                                 }}
                               >
                                 {winnerScore.toFixed(1)}
                               </div>
-                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-[#6B7280] sm:text-[12px]">
+                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
                                 {winner}
                               </div>
                             </div>
 
                             {/* centro — semana + badge */}
                             <div className="w-full justify-self-center pt-1 text-center">
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-[#16274F] sm:text-[11px]">
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-slate-100 sm:text-[11px]">
                                 {g.Season}
                               </div>
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.3] tracking-[0.12em] text-[#3F4757] sm:text-[11px]">
+                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.3] tracking-[0.12em] text-slate-300 sm:text-[11px]">
                                 Week {g.Week}
                               </div>
                               {isPlayoff && gameType && (() => {
@@ -1347,12 +1360,12 @@ RENDER
                                 const isConsolationBracket = normalizeString(gameType) === 'consolation bracket'
 
                                 const badgeClass = isUnicornio
-                                  ? 'bg-white text-[#D01F2D] border-[#0A0A0A]'
+                                  ? 'bg-pink-400/15 text-pink-300'
                                   : isTapitasBowl
-                                    ? 'bg-[#F5C518] text-[#0A0A0A] border-[#0A0A0A]'
+                                    ? 'bg-yellow-400/15 text-yellow-400'
                                     : isConsolation
-                                      ? 'bg-[#F7F6F2] text-[#6B7280] border-[#0A0A0A]/20'
-                                      : 'bg-[#16274F] text-white border-[#0A0A0A]'
+                                      ? 'bg-red-400/10 text-red-300'
+                                      : 'bg-cyan-400/15 text-cyan-300'
 
                                 const label = isUnicornio
                                   ? `🦄 ${gameType}`
@@ -1363,7 +1376,7 @@ RENDER
                                       : gameType
 
                                 return (
-                                  <div className={`mt-1 inline-block border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${badgeClass}`}>
+                                  <div className={`mt-1 inline-block rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${badgeClass}`}>
                                     {label}
                                   </div>
                                 )
@@ -1377,26 +1390,26 @@ RENDER
                                 style={{
                                   fontFamily: '"Bebas Neue", sans-serif',
                                   fontWeight: 900,
-                                  color: '#6B7280',
+                                  color: '#475569',
                                 }}
                               >
                                 {loserScore.toFixed(1)}
                               </div>
-                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-[#6B7280] sm:text-[12px]">
+                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-slate-400 sm:text-[12px]">
                                 {loser}
                               </div>
                             </div>
                           </a>
 
                           {i < filteredHistory.length - 1 && (
-                            <div className="h-px w-full bg-[#0A0A0A]/8" />
+                            <div className="h-px w-full bg-white/[0.06]" />
                           )}
                         </div>
                       )
                     })}
 
                     {filteredHistory.length === 0 && (
-                      <div className="py-6 text-center text-sm font-black text-[#6B7280]">
+                      <div className="py-6 text-center text-sm font-black text-slate-600">
                         No games found
                       </div>
                     )}
@@ -1405,13 +1418,13 @@ RENDER
               </div>
             </>
           ) : (
-            <div className="flex min-h-[50vh] items-center justify-center border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+            <div className="flex min-h-[50vh] items-center justify-center rounded-[34px] border border-white/10 bg-[#071120]">
               <div className="text-center">
-                <Swords className="mx-auto mb-6 h-14 w-14 text-[#6B7280]" />
-                <div style={{ fontFamily: bebas.style.fontFamily, fontSize: '64px', color: '#16274F' }}>
+                <Swords className="mx-auto mb-6 h-14 w-14 text-slate-700" />
+                <div style={{ fontFamily: bebas.style.fontFamily, fontSize: '64px' }}>
                   SELECT A RIVALRY
                 </div>
-                <p className="mt-2 text-[#6B7280]">
+                <p className="mt-2 text-slate-500">
                   Explore the greatest battles in league history
                 </p>
               </div>
@@ -1419,24 +1432,24 @@ RENDER
           )}
         </div>
         {/* FOOTER */}
+        <footer className="px-2 py-6 md:px-6 max-w-5xl mx-auto">
+          <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
+            <Image
+              src="/images/LogoFinalBlack.png"
+              alt="Tapitas League"
+              width={24}
+              height={24}
+              style={{ filter: 'invert(1)' }}
+              className="opacity-30"
+            />
+
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">
+              Tapitas League · Est. 2014
+            </span>
+          </div>
+        </footer>
+
       </section>
-
-      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-          <Image
-            src="/images/LogoFinalBlack.png"
-            alt="Tapitas League"
-            width={24}
-            height={24}
-            style={{ filter: 'invert(1)' }}
-            className="opacity-70"
-          />
-
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">
-            Tapitas League · Est. 2014
-          </span>
-        </div>
-      </footer>
     </main>
   )
 }
