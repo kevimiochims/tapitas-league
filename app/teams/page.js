@@ -29,6 +29,19 @@ function getInitials(name) {
   return String(name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
+function normalizeTeamName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function isTrueFlag(value) {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  return ['true', 'yes', 'sim', '1'].includes(normalized)
+}
+
 function parseNumber(value) {
   if (!value && value !== 0) return 0
   const cleaned = String(value).replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '')
@@ -80,6 +93,7 @@ function TeamAvatar({ name, size = 'md' }) {
 export default function TeamsPage() {
   const [allTime, setAllTime] = useState([])
   const [history, setHistory] = useState([])
+  const [historyRaw, setHistoryRaw] = useState([])
   const [h2hData, setH2hData] = useState([])
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
@@ -87,14 +101,16 @@ export default function TeamsPage() {
 
   useEffect(() => {
     async function load() {
-      const [at, hi, h2h, ga] = await Promise.all([
+      const [at, hi, hr, h2h, ga] = await Promise.all([
         safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
         safeFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+        safeFetch(`${BASE_URL}/TEAM_HISTORY_RAW`),
         safeFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
       ])
       setAllTime(at)
       setHistory(hi)
+      setHistoryRaw(hr)
       setH2hData(h2h)
       setGames(ga)
       setLoading(false)
@@ -121,8 +137,11 @@ export default function TeamsPage() {
       .sort((a, b) => parseNumber(b.W) - parseNumber(a.W))
   }, [allTime])
 
+  const historySource = historyRaw.length ? historyRaw : history
+
   const getTeamHistory = (teamName) =>
-    history.filter(r => String(r?.Team || '').trim() === teamName)
+    historySource
+      .filter(r => normalizeTeamName(r?.Team) === normalizeTeamName(teamName))
       .sort((a, b) => Number(b.Season) - Number(a.Season))
 
   const getTeamH2H = (teamName) => {
@@ -168,7 +187,7 @@ export default function TeamsPage() {
   const getTeamUnicornSeasons = (teamName) => {
     const teamH = getTeamHistory(teamName)
     return teamH.filter(r => {
-      const seasonRows = history.filter(h => String(h.Season) === String(r.Season))
+      const seasonRows = historySource.filter(h => String(h.Season) === String(r.Season))
       const maxStanding = Math.max(...seasonRows.map(s => Number(s.Standing) || 0))
       return Number(r.Standing) === maxStanding
     })
@@ -181,8 +200,8 @@ export default function TeamsPage() {
     const byTeam = {}
     teams.forEach(t => {
       const teamH = getTeamHistory(t.team)
-      const titlesArr = teamH.filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE')
-      const finalsArr = teamH.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE')
+      const titlesArr = teamH.filter(r => isTrueFlag(r?.Champion))
+      const finalsArr = teamH.filter(r => isTrueFlag(r?.Reached_Final))
       const completedSeasonsArr = teamH.filter(r => parseNumber(r?.Standing) > 0)
       const unicornArr = getTeamUnicornSeasons(t.team)
 
@@ -202,16 +221,16 @@ export default function TeamsPage() {
       }
     })
     return byTeam
-  }, [allTime, history, games, teams])
+  }, [allTime, history, historyRaw, games, teams])
 
   const allValuesFor = (key) => leagueStats ? Object.values(leagueStats).map(v => v[key]) : []
 
   if (selected) {
     const teamH = getTeamHistory(selected.team)
     const teamH2H = getTeamH2H(selected.team)
-    const titles = teamH.filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE')
+    const titles = teamH.filter(r => isTrueFlag(r?.Champion))
     const unicorns = teamH.filter(r => {
-      const seasonRows = history.filter(
+      const seasonRows = historySource.filter(
         h => String(h.Season) === String(r.Season)
       )
 
@@ -238,13 +257,13 @@ export default function TeamsPage() {
       ? `${fmtYears(titles)}${titlesRank === 'most all-time' ? ' (most all-time)' : ''}`
       : 'never'
 
-    const finalsTeamH = teamH.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE')
+    const finalsTeamH = teamH.filter(r => isTrueFlag(r?.Reached_Final))
     const finalsRank = leagueStats ? getOrdinalRankLabel(finalsTeamH.length, allValuesFor('finals')) : null
     const finalsSub = finalsTeamH.length
       ? `${fmtYears(finalsTeamH)}${finalsRank === 'most all-time' ? ' (most all-time)' : ''}`
       : 'never'
 
-    const poApps = parseNumber(selected['Playoff Apps'])
+    const poApps = parseNumber(selected['Playoff Apps']) || teamH.filter(r => isTrueFlag(r?.Made_Playoffs) || parseNumber(r?.PO_W) > 0 || parseNumber(r?.PO_L) > 0).length
     const completedSeasonsCount = teamH.filter(r => parseNumber(r?.Standing) > 0).length
     const poAppsRank = leagueStats ? getOrdinalRankLabel(poApps, allValuesFor('playoffApps')) : null
     const poAppsSub = `in ${completedSeasonsCount} season${completedSeasonsCount === 1 ? '' : 's'}${poAppsRank ? ` (${poAppsRank})` : ''}`
@@ -331,7 +350,7 @@ export default function TeamsPage() {
                   <span>·</span>
                   <span>{winPct} win rate</span>
                   <span>·</span>
-                  <span>{teamH.length} seasons</span>
+                  <span>{new Set(teamH.map(r => String(r?.Season || '').trim()).filter(Boolean)).size} seasons</span>
                 </div>
               </div>
             </div>
@@ -340,8 +359,8 @@ export default function TeamsPage() {
           {/* Stats Grid */}
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              [Trophy, 'Titles', parseNumber(selected.Titles), titlesSub, 'gold'],
-              [Star, 'Finals Apps', parseNumber(selected.Finals), finalsSub, 'navy'],
+              [Trophy, 'Titles', titles.length, titlesSub, 'gold'],
+              [Star, 'Finals Apps', finalsTeamH.length, finalsSub, 'navy'],
               [Activity, 'Playoff Apps', poApps, poAppsSub, 'navy'],
               [TrendingUp, 'Playoff Wins', poWins, poWinsSub, 'green'],
               [Target, 'RS Wins', parseNumber(selected.RS_W), rsWinsRank || 'regular season', 'green'],
@@ -384,7 +403,7 @@ export default function TeamsPage() {
                 </div>
                 <div>
                   <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Season History</div>
-                  <div className="text-sm text-[#6B7280]">{teamH.length} seasons</div>
+                  <div className="text-sm text-[#6B7280]">{new Set(teamH.map(r => String(r?.Season || '').trim()).filter(Boolean)).size} seasons</div>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -398,10 +417,10 @@ export default function TeamsPage() {
                   </thead>
                   <tbody>
                     {teamH.map((r, i) => {
-                      const isChamp = String(r?.Champion || '').toUpperCase() === 'TRUE'
-                      const isFinal = String(r?.Reached_Final || '').toUpperCase() === 'TRUE'
+                      const isChamp = isTrueFlag(r?.Champion)
+                      const isFinal = isTrueFlag(r?.Reached_Final)
                       const isPlayoff = String(r?.Made_Playoffs || '').toUpperCase() === 'TRUE'
-                      const seasonRows = history.filter(
+                      const seasonRows = historySource.filter(
                         h => String(h.Season) === String(r.Season)
                       )
 
@@ -564,12 +583,13 @@ export default function TeamsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {teams.map((team, i) => {
               const teamHistory = getTeamHistory(team.team)
-              const titles = teamHistory.filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE').length
+              const titles = teamHistory.filter(r => isTrueFlag(r?.Champion)).length
               const currentSeason = teamHistory[0]
+              const seasonCount = new Set(teamHistory.map(r => String(r?.Season || '').trim()).filter(Boolean)).size
               const winPct = String(team?.['W%'] || '').trim()
               const isChampion = titles > 0
               const unicornCount = teamHistory.filter(r => {
-                const seasonRows = history.filter(
+                const seasonRows = historySource.filter(
                   h => String(h.Season) === String(r.Season)
                 )
 
@@ -597,7 +617,7 @@ export default function TeamsPage() {
                         <div className="font-black text-[#16274F] leading-tight truncate" style={{ fontSize: 'clamp(13px, 1.8vw, 16px)' }}>
                           {team.team}
                         </div>
-                        <div className="text-xs text-[#6B7280] mt-0.5">{teamHistory.length} seasons</div>
+                        <div className="text-xs text-[#6B7280] mt-0.5">{seasonCount} seasons</div>
                       </div>
                     </div>
 
@@ -635,8 +655,8 @@ export default function TeamsPage() {
                         </span>
                         <span className="text-xs font-black text-[#16274F]">
                           {parseNumber(currentSeason.RS_W)}–{parseNumber(currentSeason.RS_L)}
-                          {String(currentSeason?.Champion || '').toUpperCase() === 'TRUE' && ' 🏆'}
-                          {String(currentSeason?.Reached_Final || '').toUpperCase() === 'TRUE' && String(currentSeason?.Champion || '').toUpperCase() !== 'TRUE' && ' 🥈'}
+                          {isTrueFlag(currentSeason?.Champion) && ' 🏆'}
+                          {isTrueFlag(currentSeason?.Reached_Final) && !isTrueFlag(currentSeason?.Champion) && ' 🥈'}
                         </span>
                       </div>
                     )}
