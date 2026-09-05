@@ -63,14 +63,15 @@ function TeamAvatar({ name, size = 'md' }) {
   const img = getTeamImage(name)
   const sizes = { sm: 40, md: 64, lg: 96, xl: 128 }
   const px = sizes[size]
+  const rounded = size === 'xl' ? 'rounded-[24px]' : size === 'lg' ? 'rounded-[18px]' : 'rounded-[14px]'
 
   if (img) return (
-    <div className="flex-shrink-0" style={{ width: px, height: px }}>
-      <img src={img} alt={name} className="w-full h-full object-contain" />
+    <div className={`overflow-hidden flex-shrink-0 ${rounded}`} style={{ width: px, height: px }}>
+      <img src={img} alt={name} className="w-full h-full object-cover" />
     </div>
   )
   return (
-    <div className="flex-shrink-0 flex items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] font-black text-white"
+    <div className={`flex-shrink-0 flex items-center justify-center bg-cyan-400/10 border border-cyan-400/20 font-black text-cyan-300 ${rounded}`}
       style={{ width: px, height: px, fontSize: px * 0.3 }}>
       {getInitials(name)}
     </div>
@@ -267,37 +268,32 @@ export default function TeamsPage() {
     const pr1Rank = leagueStats ? getOrdinalRankLabel(pr1Weeks, allValuesFor('pr1Weeks')) : null
 
     return (
-      <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
-        <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-          .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-          .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-          .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-        `}</style>
+      <main className="min-h-screen bg-[#020617] text-white">
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
         <Header />
 
 
         <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
           <button onClick={() => setSelected(null)}
-            className="mb-8 border-2 border-[#0A0A0A] bg-white px-4 py-2 text-sm font-bold text-[#3F4757] hover:bg-[#F7F6F2] transition-all">
+            className="mb-8 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-slate-400 hover:text-white transition-all">
             ← All Teams
           </button>
 
           {/* Team Hero */}
-          <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy" style={{ minHeight: '260px' }}>
+          <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(135deg,#08111f,#0b1422,#0d1028)]" style={{ minHeight: '260px' }}>
             <div className="absolute inset-0 overflow-hidden">
               <svg width="100%" height="100%" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <g opacity="0.06">
+                <g opacity="0.08">
                   {[400, 475, 550, 625, 700, 775].map((x, i) => (
-                    <rect key={i} x={x} y="-60" width={i % 2 === 0 ? 50 : 20} height="400" fill="#16274F" transform={`rotate(-18 ${x + 25} 130)`} />
+                    <rect key={i} x={x} y="-60" width={i % 2 === 0 ? 50 : 20} height="400" fill="#22d3ee" transform={`rotate(-18 ${x + 25} 130)`} />
                   ))}
                 </g>
-                <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="1">
+                <g opacity="0.05" fill="none" stroke="#22d3ee" strokeWidth="1">
                   {[25, 45, 65].map(r => <circle key={r} cx="850" cy="50" r={r} />)}
                 </g>
               </svg>
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 30%, rgba(247,246,242,0.85) 55%, rgba(247,246,242,0.2) 100%)' }} />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #08111f 30%, rgba(8,17,31,0.8) 55%, rgba(8,17,31,0.2) 100%)' }} />
             </div>
 
             <div className="relative z-10 flex items-center gap-8 p-10 md:p-14">
@@ -305,28 +301,28 @@ export default function TeamsPage() {
               <div className="flex-1">
                 <div className="mt-3 mb-3 flex flex-wrap gap-2">
                   {titles.length > 0 && (
-                    <div className="inline-flex items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#F5C518] px-3 py-1.5">
-                      <Trophy className="h-3.5 w-3.5 text-[#0A0A0A]" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#0A0A0A]">
+                    <div className="inline-flex items-center gap-1.5 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 px-3 py-1.5">
+                      <Trophy className="h-3.5 w-3.5 text-yellow-400" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">
                         {titles.length}X Champion — {titles.map(t => t.Season).join(', ')}
                       </span>
                     </div>
                   )}
 
                   {unicorns.length > 0 && (
-                    <div className="inline-flex items-center gap-1.5 border-2 border-[#0A0A0A] bg-white px-3 py-1.5">
+                    <div className="inline-flex items-center gap-1.5 rounded-2xl border border-pink-400/20 bg-pink-400/10 px-3 py-1.5">
                       <span className="text-[11px]">🦄</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#D01F2D]">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-pink-300">
                         {unicorns.length}X Unicorn — {unicorns.map(u => u.Season).join(', ')}
                       </span>
                     </div>
                   )}
                 </div>
-                <h1 className="mb-2 leading-none font-black text-[#16274F]"
+                <h1 className="mb-2 leading-none font-black text-white"
                   style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px, 6vw, 80px)' }}>
                   {selected.team}
                 </h1>
-                <div className="flex flex-wrap gap-4 text-sm font-bold text-[#3F4757]">
+                <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-400">
                   <span>{parseNumber(selected.W)}W – {parseNumber(selected.L)}L</span>
                   <span>·</span>
                   <span>{winPct} win rate</span>
@@ -341,33 +337,37 @@ export default function TeamsPage() {
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
               [Trophy, 'Titles', parseNumber(selected.Titles), titlesSub, 'gold'],
-              [Star, 'Finals Apps', parseNumber(selected.Finals), finalsSub, 'navy'],
-              [Activity, 'Playoff Apps', poApps, poAppsSub, 'navy'],
-              [TrendingUp, 'Playoff Wins', poWins, poWinsSub, 'green'],
-              [Target, 'RS Wins', parseNumber(selected.RS_W), rsWinsRank || 'regular season', 'green'],
+              [Star, 'Finals Apps', parseNumber(selected.Finals), finalsSub, 'purple'],
+              [Activity, 'Playoff Apps', poApps, poAppsSub, 'cyan'],
+              [TrendingUp, 'Playoff Wins', poWins, poWinsSub, 'emerald'],
+              [Target, 'RS Wins', parseNumber(selected.RS_W), rsWinsRank || 'regular season', 'cyan'],
               [TrendingDown, 'RS Losses', parseNumber(selected.RS_L), rsLossesRank || 'regular season', 'red'],
-              [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), totalPointsRank || 'all-time', 'navy'],
-              [Skull, 'Unicorns', unicorns.length, unicornsSub, 'red'],
-              [Zap, '200+ Pt Games', games200, games200Rank || 'single weeks only', 'gold'],
+              [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), totalPointsRank || 'all-time', 'orange'],
+              [Skull, 'Unicorns', unicorns.length, unicornsSub, 'pink'],
+              [Zap, '200+ Pt Games', games200, games200Rank || 'single weeks only', 'orange'],
               [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
-                gold: { text: 'text-[#B8860B]', iconBg: 'bg-[#F5C518] text-[#0A0A0A]' },
-                navy: { text: 'text-[#16274F]', iconBg: 'bg-[#16274F] text-white' },
-                green: { text: 'text-[#1E8E3E]', iconBg: 'bg-[#1E8E3E] text-white' },
-                red: { text: 'text-[#D01F2D]', iconBg: 'bg-[#D01F2D] text-white' },
+                gold: { border: 'border-yellow-400/20', bg: 'bg-yellow-400/5', text: 'text-yellow-300', iconBg: 'bg-yellow-400/10 border-yellow-400/20' },
+                purple: { border: 'border-purple-400/20', bg: 'bg-purple-400/5', text: 'text-purple-300', iconBg: 'bg-purple-400/10 border-purple-400/20' },
+                cyan: { border: 'border-cyan-400/20', bg: 'bg-cyan-400/5', text: 'text-cyan-300', iconBg: 'bg-cyan-400/10 border-cyan-400/20' },
+                emerald: { border: 'border-emerald-400/20', bg: 'bg-emerald-400/5', text: 'text-emerald-300', iconBg: 'bg-emerald-400/10 border-emerald-400/20' },
+                orange: { border: 'border-orange-400/20', bg: 'bg-orange-400/5', text: 'text-orange-300', iconBg: 'bg-orange-400/10 border-orange-400/20' },
+                slate: { border: 'border-white/10', bg: 'bg-white/[0.03]', text: 'text-slate-200', iconBg: 'bg-white/[0.06] border-white/10' },
+                red: { border: 'border-red-400/20', bg: 'bg-red-400/5', text: 'text-red-300', iconBg: 'bg-red-400/10 border-red-400/20' },
+                pink: { border: 'border-pink-400/20', bg: 'bg-pink-400/5', text: 'text-pink-300', iconBg: 'bg-pink-400/10 border-pink-400/20' },
               }
               const c = colors[accent]
               return (
-                <div key={label} className="border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                  <div className={`mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] ${c.iconBg}`}>
-                    <Icon className="h-4 w-4" />
+                <div key={label} className={`rounded-[20px] border p-4 ${c.border} ${c.bg}`}>
+                  <div className={`mb-3 flex h-8 w-8 items-center justify-center rounded-xl border ${c.iconBg}`}>
+                    <Icon className={`h-4 w-4 ${c.text}`} />
                   </div>
-                  <div className={`mb-1 text-[9px] font-black uppercase tracking-[0.2em] ${c.text}`}>{label}</div>
+                  <div className={`mb-1 text-[9px] font-black uppercase tracking-[0.2em] ${c.text} opacity-80`}>{label}</div>
                   <div className={`font-black leading-none ${c.text}`} style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px, 3vw, 40px)' }}>
                     {value}
                   </div>
-                  <div className="mt-1 text-[11px] font-bold text-[#6B7280]">{sub}</div>
+                  <div className="mt-1 text-[11px] font-bold text-slate-200">{sub}</div>
                 </div>
               )
             })}
@@ -377,22 +377,22 @@ export default function TeamsPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
             {/* Season History */}
-            <div className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-              <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
-                  <Activity className="h-4 w-4 text-white" />
+            <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+              <div className="border-b border-white/5 px-6 py-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                  <Activity className="h-4 w-4 text-cyan-300" />
                 </div>
                 <div>
-                  <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Season History</div>
-                  <div className="text-sm text-[#6B7280]">{teamH.length} seasons</div>
+                  <div className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">Season History</div>
+                  <div className="text-sm text-slate-400">{teamH.length} seasons</div>
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-2 border-[#0A0A0A]/10">
+                    <tr className="border-b border-white/5">
                       {['Season', 'Reg Season', 'Overall', 'PF', 'Playoffs', 'Result'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280] whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -411,21 +411,21 @@ export default function TeamsPage() {
 
                       const isUnicorn = Number(r.Standing) === maxStanding
                       return (
-                        <tr key={i} className={`border-b border-[#0A0A0A]/8 transition-colors hover:bg-[#F7F6F2] ${isChamp ? 'bg-[#FFF9E5]' : ''}`}>
-                          <td className="px-4 py-3 text-sm font-black text-[#16274F] whitespace-nowrap">{r.Season}</td>
-                          <td className="px-4 py-3 text-sm text-[#3F4757] whitespace-nowrap">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</td>
-                          <td className="px-4 py-3 text-sm text-[#3F4757] whitespace-nowrap">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
-                          <td className="px-4 py-3 text-sm text-[#3F4757] whitespace-nowrap">{Math.round(parseNumber(r.RS_PF))}</td>
+                        <tr key={i} className={`border-b border-white/[0.03] transition-colors hover:bg-white/[0.02] ${isChamp ? 'bg-yellow-400/[0.03]' : ''}`}>
+                          <td className="px-4 py-3 text-sm font-black text-white whitespace-nowrap">{r.Season}</td>
+                          <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</td>
+                          <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
+                          <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{Math.round(parseNumber(r.RS_PF))}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            {isChamp ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-[#0A0A0A] border-2 border-[#0A0A0A] bg-[#F5C518] px-2 py-0.5">🏆 Champion</span>
-                              : isUnicorn ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-[#D01F2D] border-2 border-[#0A0A0A] bg-white px-2 py-0.5">🦄 Unicorn</span>
-                                : isFinal ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-white border-2 border-[#0A0A0A] bg-[#16274F] px-2 py-0.5">Final</span>
-                                  : isPlayoff ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-[#16274F] border-2 border-[#0A0A0A]/20 bg-[#F7F6F2] px-2 py-0.5">Playoffs</span>
-                                    : <span className="text-[9px] text-[#6B7280]">—</span>}
+                            {isChamp ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-yellow-400 border border-yellow-400/20 bg-yellow-400/10 rounded-lg px-2 py-0.5">🏆 Champion</span>
+                              : isUnicorn ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-pink-400 border border-pink-400/20 bg-pink-400/10 rounded-lg px-2 py-0.5">🦄 Unicorn</span>
+                                : isFinal ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-purple-400 border border-purple-400/20 bg-purple-400/10 rounded-lg px-2 py-0.5">Final</span>
+                                  : isPlayoff ? <span className="inline-block whitespace-nowrap text-[9px] font-black text-cyan-400 border border-cyan-400/20 bg-cyan-400/10 rounded-lg px-2 py-0.5">Playoffs</span>
+                                    : <span className="text-[9px] text-slate-600">—</span>}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {parseNumber(r.Standing) > 0 && (
-                              <span className="text-xs font-black text-[#6B7280]">#{parseNumber(r.Standing)}</span>
+                              <span className="text-xs font-black text-slate-500">#{parseNumber(r.Standing)}</span>
                             )}
                           </td>
                         </tr>
@@ -437,17 +437,17 @@ export default function TeamsPage() {
             </div>
 
             {/* H2H */}
-            <div className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-              <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
-                  <Swords className="h-4 w-4 text-white" />
+            <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]">
+              <div className="border-b border-white/5 px-6 py-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                  <Swords className="h-4 w-4 text-cyan-300" />
                 </div>
                 <div>
-                  <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Head to Head</div>
-                  <div className="text-sm text-[#6B7280]">vs all franchises</div>
+                  <div className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">Head to Head</div>
+                  <div className="text-sm text-slate-400">vs all franchises</div>
                 </div>
               </div>
-              <div className="divide-y-2 divide-[#0A0A0A]/8">
+              <div className="divide-y divide-white/[0.03]">
                 {teamH2H.map((h, i) => {
                   const total = h.wins + h.losses
                   const pct = total > 0 ? Math.round((h.wins / total) * 100) : 0
@@ -457,14 +457,14 @@ export default function TeamsPage() {
                     <div key={i} className="flex items-center gap-4 px-6 py-4">
                       <TeamAvatar name={h.opponent} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-black text-[#16274F] truncate">{h.opponent}</div>
-                        <div className="text-xs text-[#6B7280] mt-0.5">{h.games} games · {h.streak}</div>
+                        <div className="text-sm font-black text-white truncate">{h.opponent}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{h.games} games · {h.streak}</div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <div className={`text-sm font-black ${ahead ? 'text-[#1E8E3E]' : tied ? 'text-[#6B7280]' : 'text-[#D01F2D]'}`}>
+                        <div className={`text-sm font-black ${ahead ? 'text-emerald-400' : tied ? 'text-slate-400' : 'text-red-400'}`}>
                           {h.wins}–{h.losses}
                         </div>
-                        <div className="text-[10px] text-[#6B7280]">{pct}%</div>
+                        <div className="text-[10px] text-slate-600">{pct}%</div>
                       </div>
                     </div>
                   )
@@ -478,31 +478,31 @@ export default function TeamsPage() {
           {(bestSeason || worstSeason) && (
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {bestSeason && (
-                <div className="border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">🏅 Best Season</div>
-                  <div className="text-3xl font-black text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-400/5 p-5">
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">🏅 Best Season</div>
+                  <div className="text-3xl font-black text-white" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                     {parseNumber(bestSeason.RS_W)}–{parseNumber(bestSeason.RS_L)}
                   </div>
-                  <div className="mt-1 text-sm font-bold text-[#6B7280]">{bestSeason.Season} · {Math.round(parseNumber(bestSeason.RS_PF))} pts</div>
+                  <div className="mt-1 text-sm font-bold text-slate-400">{bestSeason.Season} · {Math.round(parseNumber(bestSeason.RS_PF))} pts</div>
                 </div>
               )}
               {worstSeason && (
-                <div className="border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#D01F2D]">📉 Worst Season</div>
-                  <div className="text-3xl font-black text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                <div className="rounded-[24px] border border-red-400/20 bg-red-400/5 p-5">
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-400">📉 Worst Season</div>
+                  <div className="text-3xl font-black text-white" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                     {parseNumber(worstSeason.RS_W)}–{parseNumber(worstSeason.RS_L)}
                   </div>
-                  <div className="mt-1 text-sm font-bold text-[#6B7280]">{worstSeason.Season} · {Math.round(parseNumber(worstSeason.RS_PF))} pts</div>
+                  <div className="mt-1 text-sm font-bold text-slate-400">{worstSeason.Season} · {Math.round(parseNumber(worstSeason.RS_PF))} pts</div>
                 </div>
               )}
             </div>
           )}
         </section>
 
-        <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-          <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-            <img src="/images/LogoFinalBlack.png" alt="" width={24} height={24} style={{ filter: 'invert(1)', opacity: 0.7 }} />
-            <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Tapitas League · Est. 2014</span>
+        <footer className="mx-auto max-w-[1680px] px-6 pb-12">
+          <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
+            <img src="/images/LogoFinalBlack.png" alt="" width={24} height={24} style={{ filter: 'invert(1)', opacity: 0.3 }} />
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Tapitas League · Est. 2014</span>
           </div>
         </footer>
       </main>
@@ -510,56 +510,59 @@ export default function TeamsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-        .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-      `}</style>
+    <main className="min-h-screen bg-[#020617] text-white">
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
-      <Header />
+      <Header>
+        <nav className="hidden items-center gap-1 md:flex">
+          {['Home', 'Standings', 'Teams', 'Records', 'Rivalries'].map(item => {
+            const href = item === 'Home' ? '/' : `/${item.toLowerCase()}`
+            return (
+              <a key={item} href={href}
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all hover:bg-white/[0.06] hover:text-white ${item === 'Teams' ? 'bg-white/[0.06] text-white' : 'text-slate-400'}`}
+              >{item}</a>
+            )
+          })}
+        </nav>
+      </Header>
 
       <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
 
         {/* Hero */}
-        <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy" style={{ minHeight: '240px' }}>
-          <div className="absolute inset-0 overflow-hidden">
+        <div className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10" style={{ background: '#020617', minHeight: '240px' }}>
+          <div className="absolute inset-0 overflow-hidden rounded-[38px]">
             <svg width="100%" height="100%" viewBox="0 0 900 240" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <g opacity="0.06">
+              <g opacity="0.09">
                 {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect key={i} x={x} y="-60" width={i % 2 === 0 ? 55 : 22} height="380" fill="#16274F" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 120)`} />
+                  <rect key={i} x={x} y="-60" width={i % 2 === 0 ? 55 : 22} height="380" fill="#22d3ee" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 120)`} />
                 ))}
               </g>
-              <g opacity="0.10" fill="none" stroke="#16274F" strokeWidth="1">
+              <g opacity="0.07" fill="none" stroke="#22d3ee" strokeWidth="1">
                 {["M380 -20 L460 80 L380 180 L300 80 Z", "M540 -20 L620 80 L540 180 L460 80 Z", "M700 -20 L780 80 L700 180 L620 80 Z", "M860 -20 L940 80 L860 180 L780 80 Z"].map((d, i) => <path key={i} d={d} />)}
               </g>
-              <g opacity="0.08" fill="#D01F2D">
+              <g opacity="0.07" fill="#22d3ee">
                 <polygon points="900,0 900,110 790,0" />
                 <polygon points="900,240 900,130 790,240" />
               </g>
-              <text x="820" y="230" fontFamily="'Bebas Neue',sans-serif" fontSize="240" fill="#16274F" opacity="0.04" textAnchor="middle">TMS</text>
+              <text x="820" y="230" fontFamily="'Bebas Neue',sans-serif" fontSize="240" fill="#22d3ee" opacity="0.025" textAnchor="middle">TMS</text>
             </svg>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 28%, rgba(247,246,242,0.9) 48%, rgba(247,246,242,0.15) 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #020617 28%, rgba(2,6,23,0.9) 48%, rgba(2,6,23,0.15) 100%)' }} />
           </div>
           <div className="relative z-10 p-10 md:p-14">
-            <div
-              className="mb-4 inline-flex items-center gap-2 bg-[#D01F2D] px-4 py-2"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
-            >
-              <Swords className="h-4 w-4 text-white" />
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-white">All Franchises</span>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
+              <Swords className="h-4 w-4 text-cyan-300" />
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">All Franchises</span>
             </div>
-            <h1 className="leading-[0.88] text-[#16274F]"
+            <h1 className="leading-[0.88]"
               style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(48px, 7vw, 88px)', letterSpacing: '0.02em' }}>
-              <span style={{ display: 'block' }}>THE</span>
-              <span className="text-[#D01F2D]" style={{ display: 'block' }}>FRANCHISES</span>
+              <span style={{ display: 'block', background: 'linear-gradient(160deg, #e2e8f0 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>THE</span>
+              <span style={{ display: 'block', background: 'linear-gradient(160deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>FRANCHISES</span>
             </h1>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">Loading...</div>
+          <div className="flex items-center justify-center py-20 text-slate-500 font-bold">Loading...</div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {teams.map((team, i) => {
@@ -582,8 +585,8 @@ export default function TeamsPage() {
 
               return (
                 <button key={i} onClick={() => setSelected(team)}
-                  className={`overflow-hidden border-2 border-[#0A0A0A] bg-white text-left transition-all hover:-translate-y-[1px] ${isChampion ? 'tp-shadow-navy' : 'tp-shadow-navy-sm'
-                    }`}
+                  className={`overflow-hidden rounded-[28px] border text-left transition-all hover:scale-[1.02] ${isChampion ? 'border-yellow-400/20 hover:border-yellow-400/40' : 'border-white/5 hover:border-white/15'
+                    } bg-[linear-gradient(180deg,rgba(8,15,30,0.95),rgba(2,6,23,0.98))]`}
                 >
                   {/* Card Header */}
                   <div className="relative p-5 pb-4">
@@ -594,23 +597,23 @@ export default function TeamsPage() {
                     <div className="flex items-center gap-3 mb-4">
                       <TeamAvatar name={team.team} size="md" />
                       <div className="min-w-0">
-                        <div className="font-black text-[#16274F] leading-tight truncate" style={{ fontSize: 'clamp(13px, 1.8vw, 16px)' }}>
+                        <div className="font-black text-white leading-tight truncate" style={{ fontSize: 'clamp(13px, 1.8vw, 16px)' }}>
                           {team.team}
                         </div>
-                        <div className="text-xs text-[#6B7280] mt-0.5">{teamHistory.length} seasons</div>
+                        <div className="text-xs text-slate-300 mt-0.5">{teamHistory.length} seasons</div>
                       </div>
                     </div>
 
                     {/* Record */}
                     <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-3xl font-black text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                      <span className="text-3xl font-black text-cyan-300" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                         {parseNumber(team.W)}
                       </span>
-                      <span className="text-[#6B7280] font-black">–</span>
-                      <span className="text-3xl font-black text-[#6B7280]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                      <span className="text-slate-400 font-black">–</span>
+                      <span className="text-3xl font-black text-slate-300" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                         {parseNumber(team.L)}
                       </span>
-                      <span className="text-xs font-bold text-[#6B7280] ml-1">{winPct}</span>
+                      <span className="text-xs font-bold text-slate-300 ml-1">{winPct}</span>
                     </div>
 
                     {/* Stats row */}
@@ -620,20 +623,20 @@ export default function TeamsPage() {
                         ['Finals', parseNumber(team.Finals) || '—'],
                         ['PO Apps', parseNumber(team['Playoff Apps']) || '—'],
                       ].map(([label, value]) => (
-                        <div key={label} className="border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-2 text-center">
-                          <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">{label}</div>
-                          <div className="text-sm font-black text-[#16274F] mt-0.5">{value}</div>
+                        <div key={label} className="rounded-xl border border-white/5 bg-white/[0.03] p-2 text-center">
+                          <div className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-300">{label}</div>
+                          <div className="text-sm font-black text-white mt-0.5">{value}</div>
                         </div>
                       ))}
                     </div>
 
                     {/* Current season */}
                     {currentSeason && (
-                      <div className="flex items-center justify-between border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-3 py-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
+                      <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">
                           {currentSeason.Season}
                         </span>
-                        <span className="text-xs font-black text-[#16274F]">
+                        <span className="text-xs font-black text-slate-200">
                           {parseNumber(currentSeason.RS_W)}–{parseNumber(currentSeason.RS_L)}
                           {String(currentSeason?.Champion || '').toUpperCase() === 'TRUE' && ' 🏆'}
                           {String(currentSeason?.Reached_Final || '').toUpperCase() === 'TRUE' && String(currentSeason?.Champion || '').toUpperCase() !== 'TRUE' && ' 🥈'}
@@ -642,9 +645,9 @@ export default function TeamsPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between border-t-2 border-[#0A0A0A]/10 px-5 py-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#6B7280]">View Profile</span>
-                    <ChevronRight className="h-3.5 w-3.5 text-[#6B7280]" />
+                  <div className="flex items-center justify-between border-t border-white/5 px-5 py-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">View Profile</span>
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
                   </div>
                 </button>
               )
@@ -653,10 +656,10 @@ export default function TeamsPage() {
         )}
       </section>
 
-      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-          <img src="/images/LogoFinalBlack.png" alt="" width={24} height={24} style={{ filter: 'invert(1)', opacity: 0.7 }} />
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Tapitas League · Est. 2014</span>
+      <footer className="mx-auto max-w-[1680px] px-6 pb-12">
+        <div className="flex items-center justify-center gap-3 rounded-[28px] border border-white/5 py-6">
+          <img src="/images/LogoFinalBlack.png" alt="" width={24} height={24} style={{ filter: 'invert(1)', opacity: 0.3 }} />
+          <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Tapitas League · Est. 2014</span>
         </div>
       </footer>
     </main>
