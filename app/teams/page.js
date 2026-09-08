@@ -332,7 +332,11 @@ export default function TeamsPage() {
   }
 
   const getTeamPR1Weeks = (teamName) =>
-    games.filter(g => String(g?.Team || '').trim() === teamName && parseNumber(g?.['Power Ranking']) === 1).length
+    games.filter(g =>
+      normalizeTeamName(g?.Team) === normalizeTeamName(teamName) &&
+      String(g?.GameStage || '').trim() === 'Reg Season' &&
+      parseNumber(g?.['Power Ranking']) === 1
+    ).length
 
   // Unicorn seasons for a given team (seasons where standing == max standing that season)
   const getTeamUnicornSeasons = (teamName) => {
@@ -570,48 +574,56 @@ export default function TeamsPage() {
                 </div>
               )
             })}
+
+            {/* Player record cards stay in the same stats sequence */}
+            {mostRostered && (
+              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm min-h-[176px]">
+                <div className="pr-[82px]">
+                  <div className="mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered</div>
+                  <div className="truncate font-black leading-tight text-[#16274F]" style={{ fontSize: 'clamp(15px, 1.8vw, 22px)' }}>
+                    {mostRostered.name}
+                  </div>
+                  <div className="mt-2 flex items-end gap-2">
+                    <span className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>
+                      {mostRostered.count}
+                    </span>
+                    <span className="pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">games</span>
+                  </div>
+                  <div className="mt-0.5 text-[10px] font-bold text-[#6B7280]">on roster · starter or bench</div>
+                </div>
+                <div className="absolute right-4 top-4">
+                  <PlayerAvatar name={mostRostered.name} playerLookup={playerLookup} size={64} />
+                </div>
+              </div>
+            )}
+
+            {mostStarted && (
+              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm min-h-[176px]">
+                <div className="pr-[82px]">
+                  <div className="mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
+                    <Star className="h-4 w-4" />
+                  </div>
+                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">Most Started</div>
+                  <div className="truncate font-black leading-tight text-[#16274F]" style={{ fontSize: 'clamp(15px, 1.8vw, 22px)' }}>
+                    {mostStarted.name}
+                  </div>
+                  <div className="mt-2 flex items-end gap-2">
+                    <span className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>
+                      {mostStarted.count}
+                    </span>
+                    <span className="pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">games</span>
+                  </div>
+                  <div className="mt-0.5 text-[10px] font-bold text-[#6B7280]">as a starter</div>
+                </div>
+                <div className="absolute right-4 top-4">
+                  <PlayerAvatar name={mostStarted.name} playerLookup={playerLookup} size={64} />
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Most Rostered / Most Started Player */}
-          {(mostRostered || mostStarted) && (
-            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {mostRostered && (
-                <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                  <PlayerAvatar name={mostRostered.name} playerLookup={playerLookup} size={56} />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">
-                      <Users className="h-3 w-3" />
-                      Most Rostered Ever
-                    </div>
-                    <div className="truncate font-black text-[#16274F]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                      {mostRostered.name}
-                    </div>
-                    <div className="mt-0.5 text-xs font-bold text-[#6B7280]">
-                      {mostRostered.count} game{mostRostered.count === 1 ? '' : 's'} on roster (starter or bench)
-                    </div>
-                  </div>
-                </div>
-              )}
-              {mostStarted && (
-                <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                  <PlayerAvatar name={mostStarted.name} playerLookup={playerLookup} size={56} />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">
-                      <Star className="h-3 w-3" />
-                      Most Started
-                    </div>
-                    <div className="truncate font-black text-[#16274F]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                      {mostStarted.name}
-                    </div>
-                    <div className="mt-0.5 text-xs font-bold text-[#6B7280]">
-                      {mostStarted.count} game{mostStarted.count === 1 ? '' : 's'} as a starter
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
 
           <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
 
@@ -926,6 +938,9 @@ export default function TeamsPage() {
               <span style={{ display: 'block' }}>THE</span>
               <span className="text-[#D01F2D]" style={{ display: 'block' }}>FRANCHISES</span>
             </h1>
+            <p className="mt-4 max-w-xl text-sm font-semibold text-[#6B7280] sm:text-base">
+              The teams, rivalries and legacies that built Tapitas League.
+            </p>
           </div>
         </div>
 

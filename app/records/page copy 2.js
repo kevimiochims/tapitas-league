@@ -418,12 +418,9 @@ export default function RecordsPage() {
       return { value: topVal, teams: sorted.filter(e => e[1] === topVal).map(e => e[0]), top5: sorted.slice(0, 5).map(([l, v]) => ({ label: l, value: v })) }
     }
 
-    // PR #1 weeks — Reg Season only
-    // Same eligibility rule used by Weekly High Scorer (RS): playoff and
-    // consolation weeks do not count because not every team can compete for #1.
+    // PR #1 weeks
     const pr1All = {}, pr1from21 = {}, pr1from23 = {}
     games.forEach(g => {
-      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       if (parseNumber(g?.['Power Ranking']) !== 1) return
       const team = String(g?.Team || '').trim()
       const season = Number(String(g?.Season || '0').trim())
@@ -1282,7 +1279,7 @@ export default function RecordsPage() {
       <RecordCard label="Since 2023" value={franchiseRecords.mostWeeklyHigh23?.value} sub={franchiseRecords.mostWeeklyHigh23?.teams} team={franchiseRecords.mostWeeklyHigh23?.teams} accent="cyan" icon={Flame} top5={franchiseRecords.mostWeeklyHigh23?.top5} />
     </RecordSection>
 
-    <RecordSection title="Power Rankings — Most Weeks at #1 (RS)">
+    <RecordSection title="Power Rankings — Most Weeks at #1">
       <RecordCard label="All-Time" value={franchiseRecords.pr1All?.value} sub={franchiseRecords.pr1All?.teams} team={franchiseRecords.pr1All?.teams} sub2="All seasons" accent="gold" icon={Zap} top5={franchiseRecords.pr1All?.top5} />
       <RecordCard label="Since 2021" value={franchiseRecords.pr1from21?.value} sub={franchiseRecords.pr1from21?.teams} team={franchiseRecords.pr1from21?.teams} sub2="From 2021 on" accent="orange" icon={Zap} top5={franchiseRecords.pr1from21?.top5} />
       <RecordCard label="Since 2023" value={franchiseRecords.pr1from23?.value} sub={franchiseRecords.pr1from23?.teams} team={franchiseRecords.pr1from23?.teams} sub2="New era (2023+)" accent="cyan" icon={Zap} top5={franchiseRecords.pr1from23?.top5} />
