@@ -197,7 +197,7 @@ function buildPlayerLookup(rows) {
     const team = String(row?.team || '').trim().toLowerCase()
     const pos = String(row?.position || '').trim().toUpperCase()
     if (!playerId) return
-    const entry = { playerId, team, pos }
+    const entry = { playerId, team, pos, abbreviated, fullName }
       ;[abbreviated, fullName].filter(Boolean).forEach(value => {
         const baseKey = normalizePlayerKey(value)
         if (!baseKey) return
@@ -225,6 +225,32 @@ function getPlayerData(name, pos, playerLookup) {
     }
   }
   return playerLookup.get(baseKey) || null
+}
+
+// Fallback abbreviation for when the lookup doesn't resolve a match (e.g. player
+// not yet in _PLAYER_CACHE): "Javonte Williams" -> "J. Williams". Names already
+// abbreviated ("J. Love") pass through unchanged.
+function formatAbbreviatedName(name) {
+  const raw = String(name || '').trim()
+  if (!raw) return raw
+  if (/^[A-Za-z]\.\s/.test(raw)) return raw // already "X. Something"
+  const parts = raw.split(/\s+/)
+  if (parts.length < 2) return raw
+  const first = parts[0]
+  const last = parts[parts.length - 1]
+  return `${first[0].toUpperCase()}. ${last}`
+}
+
+// Some GAME_FACTS_ALL rows spell out the full name to disambiguate homonyms
+// (e.g. "Javonte Williams" vs "Jamaal Williams" — both would collide as "J.
+// Williams"). The full name is what's used to resolve the correct player_id
+// and photo; the display should still show the standard abbreviated form,
+// taken from the matched _PLAYER_CACHE entry so it's guaranteed consistent
+// with every other player on the page.
+function getDisplayPlayerName(name, pos, playerLookup) {
+  const data = getPlayerData(name, pos, playerLookup)
+  if (data?.abbreviated) return data.abbreviated
+  return formatAbbreviatedName(name)
 }
 
 const POS_RING = {
@@ -1393,7 +1419,7 @@ function MatchupsPageContent() {
                                   <span className={`text-[22px] md:text-[28px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
                                       ? 'text-[#B8860B]'
-                                      : ((home?.pts ?? 0) > 0 ? 'text-[#D01F2D]' : 'text-[#6B7280]')
+                                      : ((home?.pts ?? 0) > 0 ? 'text-[#16274F]' : 'text-[#6B7280]')
                                     }`}>
                                     {isHistoricPlayer(home) && <span className="text-base md:text-lg">🔥</span>}
                                     {home ? home.pts.toFixed(1) : '—'}
@@ -1403,7 +1429,7 @@ function MatchupsPageContent() {
                                   <div className={`text-[15px] md:text-base font-black truncate leading-tight min-w-0 block ${
                                     isHistoricPlayer(home) ? 'text-[#8A6600]' : 'text-[#16274F]'
                                     }`}>
-                                    {home?.name ?? ''}
+                                    {getDisplayPlayerName(home?.name, pos, playerLookup)}
                                   </div>
                                   <span className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest px-1.5 py-0.5 border-2 ${getPosColor(getDisplayPlayerPos(home?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>
                                     {getDisplayPlayerPos(home?.name, pos, playerLookup)}
@@ -1428,7 +1454,7 @@ function MatchupsPageContent() {
                                   <span className={`text-[22px] md:text-[28px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(away)
                                       ? 'text-[#B8860B]'
-                                      : ((away?.pts ?? 0) > 0 ? 'text-[#D01F2D]' : 'text-[#6B7280]')
+                                      : ((away?.pts ?? 0) > 0 ? 'text-[#16274F]' : 'text-[#6B7280]')
                                     }`}>
                                     {away ? away.pts.toFixed(1) : '—'}
                                     {isHistoricPlayer(away) && <span className="text-base md:text-lg">🔥</span>}
@@ -1444,7 +1470,7 @@ function MatchupsPageContent() {
                                   <div className={`text-[15px] md:text-base font-black truncate leading-tight text-right min-w-0 block ${
                                     isHistoricPlayer(away) ? 'text-[#8A6600]' : 'text-[#16274F]'
                                     }`}>
-                                    {away?.name ?? ''}
+                                    {getDisplayPlayerName(away?.name, pos, playerLookup)}
                                   </div>
                                 </div>
                               </div>
@@ -1504,7 +1530,7 @@ function MatchupsPageContent() {
                                   <div className={`text-[13px] md:text-sm font-bold truncate leading-tight min-w-0 block ${
                                     isHistoricPlayer(home) ? 'text-[#8A6600]' : 'text-[#3F4757]'
                                     }`}>
-                                    {home?.name ?? ''}
+                                    {getDisplayPlayerName(home?.name, 'BN', playerLookup)}
                                   </div>
                                   <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 border-2 ${getPosColor(getDisplayPlayerPos(home?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>
                                     {getDisplayPlayerPos(home?.name, 'BN', playerLookup)}
@@ -1544,7 +1570,7 @@ function MatchupsPageContent() {
                                   <div className={`text-[13px] md:text-sm font-bold truncate leading-tight text-right min-w-0 block ${
                                     isHistoricPlayer(away) ? 'text-[#8A6600]' : 'text-[#3F4757]'
                                     }`}>
-                                    {away?.name ?? ''}
+                                    {getDisplayPlayerName(away?.name, 'BN', playerLookup)}
                                   </div>
                                 </div>
                               </div>
