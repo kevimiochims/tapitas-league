@@ -289,10 +289,13 @@ export default function TeamsPage() {
   // ── GAME_FACTS_ALL derived stats: 200+ pt games & PR #1 weeks ───────
   const isDoubleWeek = g => { const w = String(g?.Week || ''); return w.includes('-') || w.includes('&') }
 
-  // Highest PF among all teams for a given Season+Week, used for "highest score of the week" filter
-  const weeklyMaxPF = useMemo(() => {
+  // Highest PF among all teams for a given Season+Week, Reg Season only.
+  // The weekly-high record is intentionally RS-only because all franchises
+  // are eligible during the regular season.
+  const weeklyMaxPFRS = useMemo(() => {
     const map = {}
     games.forEach(g => {
+      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
       const pf = parseNumber(g?.PF)
       if (map[key] === undefined || pf > map[key]) map[key] = pf
@@ -454,17 +457,21 @@ export default function TeamsPage() {
 
     const logSeasonOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.Season || '').trim()).filter(Boolean))).sort((a, b) => b.localeCompare(a))]
     const logOpponentOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.Opponent || '').trim()).filter(Boolean))).sort()]
-    const logGameTypeOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.GameType || g?.GameStage || 'Reg Season').trim()).filter(Boolean)))]
+    // Filter by GameStage (column I in GAME_FACTS_ALL): Reg Season / Playoffs / Consolation.
+    const logGameTypeOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.GameStage || '').trim()).filter(Boolean)))]
 
     const filteredLog = teamGames.filter(g => {
       if (logSeason !== 'All' && String(g?.Season || '').trim() !== logSeason) return false
       if (logOpponent !== 'All' && String(g?.Opponent || '').trim() !== logOpponent) return false
-      const gType = String(g?.GameType || g?.GameStage || 'Reg Season').trim()
-      if (logGameType !== 'All' && gType !== logGameType) return false
-      if (log200Only && parseNumber(g?.PF) < 200) return false
+      const gameStage = String(g?.GameStage || '').trim()
+      if (logGameType !== 'All' && gameStage !== logGameType) return false
+      // 200+ filter: only single-week games; double weeks are excluded.
+      if (log200Only && (isDoubleWeek(g) || parseNumber(g?.PF) < 200)) return false
+      // Highest score of week (RS): Reg Season only, where every franchise is eligible.
       if (logHighestOnly) {
+        if (gameStage !== 'Reg Season') return false
         const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-        if (parseNumber(g?.PF) !== weeklyMaxPF[key]) return false
+        if (parseNumber(g?.PF) !== weeklyMaxPFRS[key]) return false
       }
       return true
     })
@@ -582,7 +589,7 @@ export default function TeamsPage() {
                   <div className="mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
                     <Users className="h-4 w-4" />
                   </div>
-                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered</div>
+                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered Ever</div>
                   <div className="truncate font-black leading-tight text-[#16274F]" style={{ fontSize: 'clamp(15px, 1.8vw, 22px)' }}>
                     {mostRostered.name}
                   </div>
@@ -777,7 +784,7 @@ export default function TeamsPage() {
                     : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
                     }`}
                 >
-                  Highest score of week
+                  Highest score of week (RS)
                 </button>
                 {(logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly) && (
                   <button
@@ -799,10 +806,25 @@ export default function TeamsPage() {
                 const won = String(g?.Result || '').trim().toUpperCase() === 'W'
                 const pf = parseNumber(g?.PF)
                 const pa = parseNumber(g?.PA)
-                const gType = String(g?.GameType || g?.GameStage || 'Reg Season').trim()
+                const gType = String(g?.GameStage || '').trim()
                 const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-                const isWeekHigh = pf > 0 && pf === weeklyMaxPF[key]
-                const matchupHref = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(selected.team)}&opp=${encodeURIComponent(g.Opponent)}`
+                const isWeekHigh = gType === 'Reg Season' && pf > 0 && pf === weeklyMaxPFRS[key]
+
+                // Matchups deduplicates mirrored rows and selects the first row it
+                // encounters for a given Season + Week + Team/Opponent pair.
+                // Use that same canonical row in the URL so the matchup opens selected.
+                const canonicalMatchup = games.find(row => {
+                  const sameSeason = String(row?.Season || '').trim() === String(g?.Season || '').trim()
+                  const sameWeek = String(row?.Week || '').trim() === String(g?.Week || '').trim()
+                  if (!sameSeason || !sameWeek) return false
+                  const rowTeam = normalizeTeamName(row?.Team)
+                  const rowOpp = normalizeTeamName(row?.Opponent)
+                  const selectedTeam = normalizeTeamName(selected.team)
+                  const opponent = normalizeTeamName(g?.Opponent)
+                  return (rowTeam === selectedTeam && rowOpp === opponent) ||
+                    (rowTeam === opponent && rowOpp === selectedTeam)
+                }) || g
+                const matchupHref = `/matchups?season=${encodeURIComponent(String(canonicalMatchup?.Season || '').trim())}&week=${encodeURIComponent(String(canonicalMatchup?.Week || '').trim())}&team=${encodeURIComponent(String(canonicalMatchup?.Team || '').trim())}&opp=${encodeURIComponent(String(canonicalMatchup?.Opponent || '').trim())}`
 
                 return (
                   <a
