@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo, useRef } from 'react'
-import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
+import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull, Zap } from 'lucide-react'
 import Header from '../components/Header'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -90,150 +90,29 @@ function TeamAvatar({ name, size = 'md' }) {
   )
 }
 
-// ── Player lookup (mirrors the pattern used on the Matchups page) ──────
-function normalizePlayerKey(value) {
-  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-}
-
-function buildPlayerLookup(rows) {
-  const map = new Map()
-  rows.forEach(row => {
-    const playerId = String(row?.player_id || '').trim()
-    const abbreviated = String(row?.name || '').trim()
-    const fullName = String(row?.full_name || '').trim()
-    if (!playerId) return
-    const entry = { playerId }
-      ;[abbreviated, fullName].filter(Boolean).forEach(value => {
-        const baseKey = normalizePlayerKey(value)
-        if (baseKey && !map.has(baseKey)) map.set(baseKey, entry)
-      })
-  })
-  return map
-}
-
-function getPlayerId(name, playerLookup) {
-  if (!playerLookup || !name) return null
-  return playerLookup.get(normalizePlayerKey(name))?.playerId || null
-}
-
-function PlayerAvatar({ name, playerLookup, size = 56 }) {
-  const [failed, setFailed] = useState(false)
-  const playerId = getPlayerId(name, playerLookup)
-  const src = playerId && !failed ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg` : null
-  const initials = String(name || '?').trim().split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
-
-  return (
-    <div className="flex-shrink-0 overflow-hidden rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2]" style={{ width: size, height: size }}>
-      {src ? (
-        <img src={src} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center bg-[#16274F] font-black text-white" style={{ fontSize: size * 0.32 }}>
-          {initials}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Extract a team's roster (starters or bench) from a GAME_FACTS_ALL row ──
-function extractRosterNames(game, prefix, max = 13) {
-  const names = []
-  for (let i = 1; i <= max; i++) {
-    const name = game?.[`${prefix}${i}_Name`]
-    if (name && name !== '--empty--' && String(name).trim() !== '') {
-      names.push(String(name).trim())
-    }
-  }
-  return names
-}
-
-function Select({ value, onChange, options, placeholder, disabled }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => !disabled && setOpen(p => !p)}
-        disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 border-2 px-4 py-2.5 text-sm font-bold transition-all ${disabled ? 'cursor-not-allowed border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]/50'
-          : open ? 'border-[#D01F2D] bg-white text-[#16274F] tp-shadow-red-sm'
-            : 'border-[#0A0A0A] bg-white text-[#16274F] hover:bg-[#F7F6F2]'
-          }`}
-      >
-        <span className="truncate">{value === 'All' ? placeholder : value}</span>
-        <ChevronRight className={`h-4 w-4 flex-shrink-0 text-[#6B7280] transition-transform duration-200 ${open ? 'rotate-90 text-[#D01F2D]' : ''}`} />
-      </button>
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="max-h-56 overflow-y-auto">
-            {options.map(opt => (
-              <button
-                key={opt}
-                onClick={() => { onChange(opt); setOpen(false) }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all hover:bg-[#F7F6F2] ${opt === value ? 'text-[#D01F2D] bg-[#FDEDEE]' : 'text-[#3F4757]'}`}
-              >
-                {opt === value && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#D01F2D]" />}
-                <span className={opt === value ? '' : 'ml-[14px]'}>{opt}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function TeamsPage() {
   const [allTime, setAllTime] = useState([])
   const [history, setHistory] = useState([])
   const [historyRaw, setHistoryRaw] = useState([])
   const [h2hData, setH2hData] = useState([])
   const [games, setGames] = useState([])
-  const [playerLookup, setPlayerLookup] = useState(new Map())
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
-  const gameLogRef = useRef(null)
-
-  // ── Game Log filters ─────────────────────────────────────────────
-  const [logSeason, setLogSeason] = useState('All')
-  const [logOpponent, setLogOpponent] = useState('All')
-  const [logGameType, setLogGameType] = useState('All')
-  const [log200Only, setLog200Only] = useState(false)
-  const [logHighestOnly, setLogHighestOnly] = useState(false)
-
-  useEffect(() => {
-    setLogSeason('All')
-    setLogOpponent('All')
-    setLogGameType('All')
-    setLog200Only(false)
-    setLogHighestOnly(false)
-  }, [selected])
 
   useEffect(() => {
     async function load() {
-      const [at, hi, hr, h2h, ga, pc] = await Promise.all([
+      const [at, hi, hr, h2h, ga] = await Promise.all([
         safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
         safeFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
         safeFetch(`${BASE_URL}/TEAM_HISTORY_RAW`),
         safeFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
-        safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
       ])
       setAllTime(at)
       setHistory(hi)
       setHistoryRaw(hr)
       setH2hData(h2h)
       setGames(ga)
-      setPlayerLookup(buildPlayerLookup(pc))
       setLoading(false)
 
       // Auto-select team from ?team= URL param
@@ -288,36 +167,6 @@ export default function TeamsPage() {
 
   // ── GAME_FACTS_ALL derived stats: 200+ pt games & PR #1 weeks ───────
   const isDoubleWeek = g => { const w = String(g?.Week || ''); return w.includes('-') || w.includes('&') }
-
-  // Highest PF among all teams for a given Season+Week, used for "highest score of the week" filter
-  const weeklyMaxPF = useMemo(() => {
-    const map = {}
-    games.forEach(g => {
-      const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-      const pf = parseNumber(g?.PF)
-      if (map[key] === undefined || pf > map[key]) map[key] = pf
-    })
-    return map
-  }, [games])
-
-  // Most rostered (started or benched) and most started player for a team, from GAME_FACTS_ALL
-  const getMostRosteredPlayers = (teamName) => {
-    const teamGames = games.filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName) && !isDoubleWeek(g))
-    const rosterCounts = {}
-    const starterCounts = {}
-    teamGames.forEach(g => {
-      const starters = extractRosterNames(g, 'S')
-      const bench = extractRosterNames(g, 'B')
-        ;[...starters, ...bench].forEach(name => { rosterCounts[name] = (rosterCounts[name] || 0) + 1 })
-      starters.forEach(name => { starterCounts[name] = (starterCounts[name] || 0) + 1 })
-    })
-    const topRostered = Object.entries(rosterCounts).sort((a, b) => b[1] - a[1])[0]
-    const topStarter = Object.entries(starterCounts).sort((a, b) => b[1] - a[1])[0]
-    return {
-      mostRostered: topRostered ? { name: topRostered[0], count: topRostered[1] } : null,
-      mostStarted: topStarter ? { name: topStarter[0], count: topStarter[1] } : null,
-    }
-  }
 
   const getTeam200Games = (teamName) => {
     const seen = new Set()
@@ -436,35 +285,6 @@ export default function TeamsPage() {
     const games200Rank = leagueStats ? getOrdinalRankLabel(games200, allValuesFor('games200')) : null
     const pr1Rank = leagueStats ? getOrdinalRankLabel(pr1Weeks, allValuesFor('pr1Weeks')) : null
 
-    // ── Most Rostered / Most Started player ─────────────────────────
-    const { mostRostered, mostStarted } = getMostRosteredPlayers(selected.team)
-
-    // ── Game Log (individual games, filterable) ──────────────────────
-    const teamGames = games
-      .filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(selected.team))
-      .sort((a, b) => {
-        const sa = Number(a?.Season) || 0, sb = Number(b?.Season) || 0
-        if (sb !== sa) return sb - sa
-        return parseFloat(String(b?.Week || '0')) - parseFloat(String(a?.Week || '0'))
-      })
-
-    const logSeasonOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.Season || '').trim()).filter(Boolean))).sort((a, b) => b.localeCompare(a))]
-    const logOpponentOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.Opponent || '').trim()).filter(Boolean))).sort()]
-    const logGameTypeOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.GameType || g?.GameStage || 'Reg Season').trim()).filter(Boolean)))]
-
-    const filteredLog = teamGames.filter(g => {
-      if (logSeason !== 'All' && String(g?.Season || '').trim() !== logSeason) return false
-      if (logOpponent !== 'All' && String(g?.Opponent || '').trim() !== logOpponent) return false
-      const gType = String(g?.GameType || g?.GameStage || 'Reg Season').trim()
-      if (logGameType !== 'All' && gType !== logGameType) return false
-      if (log200Only && parseNumber(g?.PF) < 200) return false
-      if (logHighestOnly) {
-        const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-        if (parseNumber(g?.PF) !== weeklyMaxPF[key]) return false
-      }
-      return true
-    })
-
     return (
       <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
         <style>{`
@@ -572,48 +392,8 @@ export default function TeamsPage() {
             })}
           </div>
 
-          {/* Most Rostered / Most Started Player */}
-          {(mostRostered || mostStarted) && (
-            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {mostRostered && (
-                <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                  <PlayerAvatar name={mostRostered.name} playerLookup={playerLookup} size={56} />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">
-                      <Users className="h-3 w-3" />
-                      Most Rostered Ever
-                    </div>
-                    <div className="truncate font-black text-[#16274F]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                      {mostRostered.name}
-                    </div>
-                    <div className="mt-0.5 text-xs font-bold text-[#6B7280]">
-                      {mostRostered.count} game{mostRostered.count === 1 ? '' : 's'} on roster (starter or bench)
-                    </div>
-                  </div>
-                </div>
-              )}
-              {mostStarted && (
-                <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                  <PlayerAvatar name={mostStarted.name} playerLookup={playerLookup} size={56} />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">
-                      <Star className="h-3 w-3" />
-                      Most Started
-                    </div>
-                    <div className="truncate font-black text-[#16274F]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                      {mostStarted.name}
-                    </div>
-                    <div className="mt-0.5 text-xs font-bold text-[#6B7280]">
-                      {mostStarted.count} game{mostStarted.count === 1 ? '' : 's'} as a starter
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
-
-          <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
             {/* Season History */}
             <div className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
@@ -650,18 +430,7 @@ export default function TeamsPage() {
 
                       const isUnicorn = Number(r.Standing) === maxStanding
                       return (
-                        <tr
-                          key={i}
-                          onClick={() => {
-                            setLogSeason(String(r.Season))
-                            setLogOpponent('All')
-                            setLogGameType('All')
-                            setLog200Only(false)
-                            setLogHighestOnly(false)
-                            gameLogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                          }}
-                          className={`cursor-pointer border-b border-[#0A0A0A]/8 transition-colors hover:bg-[#F7F6F2] ${isChamp ? 'bg-[#FFF9E5]' : ''}`}
-                        >
+                        <tr key={i} className={`border-b border-[#0A0A0A]/8 transition-colors hover:bg-[#F7F6F2] ${isChamp ? 'bg-[#FFF9E5]' : ''}`}>
                           <td className="px-4 py-3 text-sm font-black text-[#16274F] whitespace-nowrap">{r.Season}</td>
                           <td className="px-4 py-3 text-sm text-[#3F4757] whitespace-nowrap">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</td>
                           <td className="px-4 py-3 text-sm text-[#3F4757] whitespace-nowrap">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
@@ -704,11 +473,7 @@ export default function TeamsPage() {
                   const ahead = h.wins > h.losses
                   const tied = h.wins === h.losses
                   return (
-                    <a
-                      key={i}
-                      href={`/rivalries?teamA=${encodeURIComponent(selected.team)}&teamB=${encodeURIComponent(h.opponent)}`}
-                      className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-[#F7F6F2]"
-                    >
+                    <div key={i} className="flex items-center gap-4 px-6 py-4">
                       <TeamAvatar name={h.opponent} size="sm" />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-black text-[#16274F] truncate">{h.opponent}</div>
@@ -720,129 +485,12 @@ export default function TeamsPage() {
                         </div>
                         <div className="text-[10px] text-[#6B7280]">{pct}%</div>
                       </div>
-                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
-                    </a>
+                    </div>
                   )
                 })}
               </div>
             </div>
 
-          </div>
-
-          {/* Game Log */}
-          <div ref={gameLogRef} className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm scroll-mt-6">
-            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
-                <Filter className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Game Log</div>
-                <div className="text-sm text-[#6B7280]">{filteredLog.length} of {teamGames.length} games</div>
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <Select value={logSeason} onChange={setLogSeason} options={logSeasonOptions} placeholder="Season" />
-                <Select value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} placeholder="Opponent" />
-                <Select value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} placeholder="Game Type" />
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  onClick={() => setLog200Only(p => !p)}
-                  className={`border-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${log200Only
-                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                    }`}
-                >
-                  200+ pts only
-                </button>
-                <button
-                  onClick={() => setLogHighestOnly(p => !p)}
-                  className={`border-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${logHighestOnly
-                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                    }`}
-                >
-                  Highest score of week
-                </button>
-                {(logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly) && (
-                  <button
-                    onClick={() => {
-                      setLogSeason('All'); setLogOpponent('All'); setLogGameType('All')
-                      setLog200Only(false); setLogHighestOnly(false)
-                    }}
-                    className="border-2 border-[#0A0A0A]/20 bg-[#F7F6F2] px-4 py-2 text-xs font-black uppercase tracking-widest text-[#6B7280] transition-all hover:bg-white"
-                  >
-                    Clear filters
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Games list */}
-            <div className="max-h-[520px] overflow-y-auto divide-y-2 divide-[#0A0A0A]/8">
-              {filteredLog.map((g, i) => {
-                const won = String(g?.Result || '').trim().toUpperCase() === 'W'
-                const pf = parseNumber(g?.PF)
-                const pa = parseNumber(g?.PA)
-                const gType = String(g?.GameType || g?.GameStage || 'Reg Season').trim()
-                const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-                const isWeekHigh = pf > 0 && pf === weeklyMaxPF[key]
-                const matchupHref = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(selected.team)}&opp=${encodeURIComponent(g.Opponent)}`
-
-                return (
-                  <a
-                    key={i}
-                    href={matchupHref}
-                    className="flex items-center gap-3 px-6 py-3.5 transition-colors hover:bg-[#F7F6F2]"
-                  >
-                    <div className="w-20 flex-shrink-0">
-                      <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
-                      <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
-                    </div>
-
-                    <TeamAvatar name={g.Opponent} size="sm" />
-
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                        {gType !== 'Reg Season' && (
-                          <span className="inline-block border border-[#0A0A0A]/20 bg-[#F7F6F2] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#6B7280]">
-                            {gType}
-                          </span>
-                        )}
-                        {pf >= 200 && (
-                          <span className="inline-block border border-[#0A0A0A] bg-[#F5C518] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#0A0A0A]">
-                            200+
-                          </span>
-                        )}
-                        {isWeekHigh && (
-                          <span className="inline-block border border-[#0A0A0A] bg-[#16274F] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-white">
-                            Week High
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex-shrink-0 text-right">
-                      <div className={`text-sm font-black ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
-                        {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
-                      </div>
-                    </div>
-
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
-                  </a>
-                )
-              })}
-
-              {filteredLog.length === 0 && (
-                <div className="py-10 text-center text-sm font-bold text-[#6B7280]">
-                  No games match these filters
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Best/Worst Season */}

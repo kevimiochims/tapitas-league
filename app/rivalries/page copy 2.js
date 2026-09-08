@@ -337,15 +337,6 @@ export default function RivalriesPage() {
     }
 
     load()
-
-    // Pré-seleciona a rivalidade via ?teamA=X&teamB=Y (ex: vindo da página Teams)
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      const paramA = params.get('teamA')
-      const paramB = params.get('teamB')
-      if (paramA) setTeamFilterA(paramA)
-      if (paramB) setTeamFilterB(paramB)
-    }
   }, [])
 
   /* =====================================================
