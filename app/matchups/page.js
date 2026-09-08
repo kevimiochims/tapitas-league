@@ -460,6 +460,8 @@ function MatchupsPageContent() {
   const activeSeasonRef = useRef(null)
   const activeWeekRef = useRef(null)
   const activeGameRef = useRef(null)
+  const matchupsFrameRef = useRef(null)
+  const [matchupsCanCenter, setMatchupsCanCenter] = useState(false)
   const searchParams = useSearchParams()
 
   const router = useRouter()
@@ -479,22 +481,6 @@ function MatchupsPageContent() {
       return () => clearTimeout(timer);
     }
   }, [week]); // Roda sempre que a semana mudar
-
-  // Efeito para rolar até o Jogo Ativo (Matchup)
-  useEffect(() => {
-    // Ajuste o termo "selected" se a sua variável de estado do jogo ativo tiver outro nome
-    if (selected && activeGameRef.current) {
-      const timer = setTimeout(() => {
-        activeGameRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center'
-        });
-      }, 120); // 120ms para dar uma leve fração de tempo a mais pro layout assíncrono se ajustar
-      return () => clearTimeout(timer);
-    }
-  }, [selected]); // Roda sempre que o jogo selecionado mudar
-
 
   // Deixe este efeito SEPARADO do seu useEffect de load
   useEffect(() => {
@@ -653,6 +639,36 @@ function MatchupsPageContent() {
     })
     return result
   }, [games, season, week])
+
+  // Mede o espaço real do frame: centraliza apenas quando todos os jogos cabem.
+  useEffect(() => {
+    const frame = matchupsFrameRef.current
+    if (!frame) return
+
+    const updateCentering = () => {
+      setMatchupsCanCenter(frame.scrollWidth <= frame.clientWidth + 1)
+    }
+
+    updateCentering()
+    const observer = new ResizeObserver(updateCentering)
+    observer.observe(frame)
+    return () => observer.disconnect()
+  }, [matchups.length, season, week])
+
+  // Mantém o confronto selecionado em destaque quando os jogos não cabem no frame.
+  useEffect(() => {
+    if (!selected || matchupsCanCenter || !matchupsFrameRef.current || !activeGameRef.current) return
+
+    const timer = setTimeout(() => {
+      activeGameRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      })
+    }, 120)
+
+    return () => clearTimeout(timer)
+  }, [selected, matchupsCanCenter])
 
   // Jogo do outro lado do confronto selecionado (para pegar os jogadores do oponente)
   const selectedOpponentGame = useMemo(() => {
@@ -1065,7 +1081,7 @@ function MatchupsPageContent() {
                   filter: 'blur(0px)',
                 }}
                 viewport={{
-                  once: false,
+                  once: true,
                   amount: 0.15,
                 }}
                 transition={{
@@ -1118,7 +1134,7 @@ function MatchupsPageContent() {
                   filter: 'blur(0px)',
                 }}
                 viewport={{
-                  once: false,
+                  once: true,
                   amount: 0.15,
                 }}
                 transition={{
@@ -1135,7 +1151,10 @@ function MatchupsPageContent() {
                 </div>
 
                 {/* Centraliza quando cabe tudo na tela (poucos jogos); começa do início quando precisa rolar */}
-                <div className={`scroll-hide flex gap-4 overflow-x-auto p-6 ${matchups.length <= 4 ? 'justify-center' : 'justify-start'}`}>
+                <div
+                  ref={matchupsFrameRef}
+                  className={`scroll-hide flex gap-4 overflow-x-auto p-6 ${matchupsCanCenter ? 'justify-center' : 'justify-start'}`}
+                >
                   {matchups.map((g, i) => {
                     const pf = parseNumber(g?.PF)
                     const pa = parseNumber(g?.PA)
