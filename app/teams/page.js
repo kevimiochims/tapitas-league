@@ -1246,7 +1246,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="col-span-4 grid min-w-max grid-cols-subgrid items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:gap-3 sm:px-6"
+                    className="col-span-4 grid min-w-max grid-cols-subgrid items-center gap-x-3 gap-y-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
