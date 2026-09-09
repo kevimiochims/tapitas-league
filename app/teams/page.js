@@ -349,6 +349,10 @@ export default function TeamsPage() {
   const [playerSeasonFilter, setPlayerSeasonFilter] = useState('All')
   const [playerMinApps, setPlayerMinApps] = useState('All')
   const [playerLogSort, setPlayerLogSort] = useState({ key: 'season', dir: 'desc' })
+  const [playerLogOpponentFilter, setPlayerLogOpponentFilter] = useState('All')
+  const [playerLogStatusFilter, setPlayerLogStatusFilter] = useState('All')
+  const [playerLogResultFilter, setPlayerLogResultFilter] = useState('All')
+  const [playerLogStageFilter, setPlayerLogStageFilter] = useState('All')
 
   useEffect(() => {
     setLogSeason('All')
@@ -363,6 +367,10 @@ export default function TeamsPage() {
     setPlayerSeasonFilter('All')
     setPlayerMinApps('All')
     setPlayerLogSort({ key: 'season', dir: 'desc' })
+    setPlayerLogOpponentFilter('All')
+    setPlayerLogStatusFilter('All')
+    setPlayerLogResultFilter('All')
+    setPlayerLogStageFilter('All')
   }, [selected])
 
   useEffect(() => {
@@ -764,29 +772,31 @@ export default function TeamsPage() {
         })
       : []
 
-    const sortedSelectedPlayerGames = [...selectedPlayerGames].sort((a, b) => {
+    const playerLogOpponentOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.opponent).filter(Boolean))).sort()]
+    const playerLogStatusOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.status).filter(Boolean))).sort()]
+    const playerLogResultOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.result).filter(Boolean))).sort()]
+    const playerLogStageOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.gameStage).filter(Boolean))).sort()]
+
+    const filteredSelectedPlayerGames = selectedPlayerGames
+      .filter(g => playerLogOpponentFilter === 'All' || g.opponent === playerLogOpponentFilter)
+      .filter(g => playerLogStatusFilter === 'All' || g.status === playerLogStatusFilter)
+      .filter(g => playerLogResultFilter === 'All' || g.result === playerLogResultFilter)
+      .filter(g => playerLogStageFilter === 'All' || g.gameStage === playerLogStageFilter)
+
+    const sortedSelectedPlayerGames = [...filteredSelectedPlayerGames].sort((a, b) => {
       const direction = playerLogSort.dir === 'asc' ? 1 : -1
       const getSortValue = (row) => {
         switch (playerLogSort.key) {
           case 'week': return parseFloat(String(row.week || '').replace(/[^0-9.]/g, '')) || 0
-          case 'opponent': return String(row.opponent || '').toLowerCase()
-          case 'status': return String(row.status || '').toLowerCase()
           case 'pts': return row.pts || 0
           case 'teamPF': return row.teamPF || 0
-          case 'result': return String(row.result || '').toLowerCase()
-          case 'stage': return String(row.gameStage || '').toLowerCase()
           case 'season':
           default: return Number(row.season) || 0
         }
       }
       const av = getSortValue(a)
       const bv = getSortValue(b)
-      if (typeof av === 'string' || typeof bv === 'string') {
-        const cmp = String(av).localeCompare(String(bv))
-        if (cmp !== 0) return cmp * direction
-      } else if (av !== bv) {
-        return (av - bv) * direction
-      }
+      if (av !== bv) return (av - bv) * direction
       return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
     })
 
@@ -943,7 +953,7 @@ export default function TeamsPage() {
             {/* Player record cards stay in the same stats sequence */}
             {mostRostered && (
               <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-x-3 gap-y-2">
+                <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-x-3 gap-y-3">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
                       <Users className="h-4 w-4" />
@@ -953,12 +963,14 @@ export default function TeamsPage() {
                       <div className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostRostered.count}</div>
                     </div>
                   </div>
-                  <div className="row-span-2 flex h-full min-h-[88px] items-start justify-end">
-                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={88} />
+                  <div className="flex h-full min-h-[96px] items-start justify-end">
+                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={96} />
                   </div>
-                  <div className="col-span-1 min-w-0 flex items-center gap-1.5">
-                    <div className="min-w-0 text-sm font-black text-[#16274F]">{mostRostered.name}</div>
-                    {mostRostered.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostRostered.position)}`}>{mostRostered.position}</span>}
+                  <div className="col-span-2 min-w-0 border-t-2 border-[#0A0A0A]/10 pt-2">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{mostRostered.name}</div>
+                      {mostRostered.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostRostered.position)}`}>{mostRostered.position}</span>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -966,7 +978,7 @@ export default function TeamsPage() {
 
             {mostStarted && (
               <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-x-3 gap-y-2">
+                <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-x-3 gap-y-3">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
                       <Star className="h-4 w-4" />
@@ -976,12 +988,14 @@ export default function TeamsPage() {
                       <div className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostStarted.count}</div>
                     </div>
                   </div>
-                  <div className="row-span-2 flex h-full min-h-[88px] items-start justify-end">
-                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={88} />
+                  <div className="flex h-full min-h-[96px] items-start justify-end">
+                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={96} />
                   </div>
-                  <div className="col-span-1 min-w-0 flex items-center gap-1.5">
-                    <div className="min-w-0 text-sm font-black text-[#16274F]">{mostStarted.name}</div>
-                    {mostStarted.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostStarted.position)}`}>{mostStarted.position}</span>}
+                  <div className="col-span-2 min-w-0 border-t-2 border-[#0A0A0A]/10 pt-2">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{mostStarted.name}</div>
+                      {mostStarted.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostStarted.position)}`}>{mostStarted.position}</span>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1159,7 +1173,7 @@ export default function TeamsPage() {
 
             {/* Games list */}
             <div className="max-h-[520px] overflow-auto">
-              <div className="min-w-[720px] divide-y-2 divide-[#0A0A0A]/8">
+              <div className="w-max min-w-full divide-y-2 divide-[#0A0A0A]/8">
               {filteredLog.map((g, i) => {
                 const won = String(g?.Result || '').trim().toUpperCase() === 'W'
                 const pf = parseNumber(g?.PF)
@@ -1188,16 +1202,16 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="flex min-w-[720px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:gap-3 sm:px-6"
+                    className="flex w-max min-w-full items-center gap-2 px-4 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:gap-3 sm:px-6"
                   >
-                    <div className="w-16 flex-shrink-0 sm:w-20">
+                    <div className="w-[58px] flex-shrink-0 sm:w-20">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
                       <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
                     </div>
 
                     <TeamAvatar name={g.Opponent} size="sm" />
 
-                    <div className="min-w-0 flex-1">
+                    <div className="w-max flex-shrink-0">
                       <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
@@ -1322,75 +1336,77 @@ export default function TeamsPage() {
 
           {/* Player detail */}
           {selectedPlayer && (
-            <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto bg-[#0A0A0A]/55 p-3 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
-              <div className="max-h-[92vh] w-full max-w-5xl overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
-                <div className="flex items-start justify-between gap-4 border-b-2 border-[#0A0A0A]/10 p-5 sm:p-6">
+            <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-[#0A0A0A]/55 p-3 pt-4 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
+              <div className="max-h-[94vh] w-full max-w-5xl overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
+                <div className="border-b-2 border-[#0A0A0A]/10 p-4 sm:p-6">
+                  <div className="mb-4 flex items-center justify-between gap-4">
+                    <div className="text-[9px] font-black uppercase tracking-[0.25em] text-[#D01F2D]">Player Profile</div>
+                    <button onClick={() => setSelectedPlayerKey(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] text-xl font-black text-[#16274F] hover:bg-[#F7F6F2]" aria-label="Close player profile">×</button>
+                  </div>
                   <div className="flex min-w-0 items-center gap-4">
                     <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={72} />
-                    <div className="min-w-0">
-                      <div className="text-[9px] font-black uppercase tracking-[0.25em] text-[#D01F2D]">Player Profile</div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-2 text-2xl font-black text-[#16274F] sm:text-3xl">
                         <span className="truncate">{selectedPlayer.rawName}</span>
                         {selectedPlayer.position && <span className={`inline-flex flex-shrink-0 px-2 py-1 align-middle text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}
                       </div>
-                      <div className="mt-2 text-xs font-bold text-[#6B7280]">
-                        {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).length > 0 ? (
-                          <div>
-                            <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
-                            <div className="mt-1 flex flex-wrap gap-2">
-                              {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
-                                <button key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} type="button" onClick={() => {
-                                  const target = allTime.find(t => normalizeTeamName(t?.Team) === normalizeTeamName(c.team))
-                                  if (target) setSelected({ ...target, team: String(target.Team || '').trim() })
-                                  setSelectedPlayerKey(null)
-                                  if (typeof window !== 'undefined') {
-                                    window.history.replaceState(null, '', `/teams?team=${encodeURIComponent(c.team)}`)
-                                    requestAnimationFrame(() => {
-                                      requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' }))
-                                    })
-                                  }
-                                }} className="inline-flex items-center gap-1 border border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
-                                  {c.team} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedPlayerKey(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] text-xl font-black text-[#16274F] hover:bg-[#F7F6F2]" aria-label="Close player profile">×</button>
+                  {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).length > 0 && (
+                    <div className="mt-4">
+                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
+                          <Link key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}`} onClick={() => setSelectedPlayerKey(null)} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
+                            {c.team} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="border-b-2 border-[#0A0A0A]/10 bg-[#16274F] p-2 sm:p-0">
-                  <div className="grid grid-cols-3 gap-px overflow-hidden border-2 border-[#0A0A0A]/20 bg-[#0A0A0A]/15 sm:grid-cols-6 sm:border-0">
+
+                <div className="border-b-2 border-[#0A0A0A]/10 bg-white p-3 sm:p-4">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                   {[
-                    ['Apps', selectedPlayer.appearances],
-                    ['Starts', selectedPlayer.starts],
-                    ['Bench', selectedPlayer.bench],
-                    ['Avg Pts', selectedPlayer.avgPts.toFixed(2)],
-                    ['Best Pts', selectedPlayer.bestPts.toFixed(2)],
-                    ['Seasons', selectedPlayer.seasons.size ? Array.from(selectedPlayer.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—'],
-                  ].map(([label, value]) => (
-                    <div key={label} className="bg-white p-4">
+                    ['Apps', selectedPlayer.appearances, 'border-[#16274F] bg-[#F3F7FF] text-[#16274F]'],
+                    ['Starts', selectedPlayer.starts, 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]'],
+                    ['Bench', selectedPlayer.bench, 'border-[#D97706] bg-[#FFF7ED] text-[#D97706]'],
+                    ['Avg Pts', selectedPlayer.avgPts.toFixed(2), 'border-[#7C3AED] bg-[#F5F3FF] text-[#7C3AED]'],
+                    ['Best Pts', selectedPlayer.bestPts.toFixed(2), 'border-[#F5C518] bg-[#FFF9E5] text-[#16274F]'],
+                    ['Seasons', selectedPlayer.seasons.size ? Array.from(selectedPlayer.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—', 'border-[#D01F2D] bg-[#FFF3F4] text-[#D01F2D]'],
+                  ].map(([label, value, tone]) => (
+                    <div key={label} className={`border-2 p-3 ${tone}`}>
                       <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">{label}</div>
-                      <div className="mt-1 text-xl font-black text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
+                      <div className="mt-1 text-xl font-black" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
                     </div>
                   ))}
                   </div>
                 </div>
+
+                <div className="border-b-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 sm:p-4">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <Select value={playerLogOpponentFilter} onChange={setPlayerLogOpponentFilter} options={playerLogOpponentOptions} placeholder="Opponent" />
+                    <Select value={playerLogStatusFilter} onChange={setPlayerLogStatusFilter} options={playerLogStatusOptions} placeholder="Status" />
+                    <Select value={playerLogResultFilter} onChange={setPlayerLogResultFilter} options={playerLogResultOptions} placeholder="Result" />
+                    <Select value={playerLogStageFilter} onChange={setPlayerLogStageFilter} options={playerLogStageOptions} placeholder="Stage" />
+                  </div>
+                </div>
+
                 <div className="max-h-[55vh] overflow-auto">
                   <table className="min-w-[760px] w-full">
                     <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
                       <tr className="border-b-2 border-[#0A0A0A]/10">
-                        {[
-                          ['Season', 'season'], ['Week', 'week'], ['Opponent', 'opponent'], ['Status', 'status'],
-                          ['Player Pts', 'pts'], ['Team PF', 'teamPF'], ['Result', 'result'], ['Stage', 'stage'],
-                        ].map(([h, key]) => (
+                        {['Season', 'Week', 'Opponent', 'Status', 'Player Pts', 'Team PF', 'Result', 'Stage'].map((h, i) => (
                           <th key={h} className="px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280] whitespace-nowrap">
-                            <button type="button" onClick={() => handlePlayerLogSort(key)} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
-                              {h}
-                              <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === key ? (playerLogSort.dir === 'asc' ? '↑' : '↓') : '↕'}</span>
-                            </button>
+                            {(i === 0 || i === 1 || i === 4 || i === 5) ? (
+                              <button type="button" onClick={() => handlePlayerLogSort(['season','week','','','pts','teamPF'][i])} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
+                                {h}
+                                <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','pts','teamPF'][i] ? (playerLogSort.dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+                              </button>
+                            ) : (
+                              <span>{h}</span>
+                            )}
                           </th>
                         ))}
                       </tr>
