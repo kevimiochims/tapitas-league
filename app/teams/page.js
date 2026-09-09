@@ -1244,7 +1244,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid w-max grid-cols-[58px_32px_max-content_max-content_24px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:w-full sm:min-w-full sm:grid-cols-[80px_40px_minmax(0,1fr)_136px_24px] sm:gap-3 sm:px-6"
+                    className="grid min-w-[390px] grid-cols-[58px_32px_170px_auto_24px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:grid-cols-[80px_40px_minmax(0,1fr)_136px_24px] sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
@@ -1255,7 +1255,7 @@ export default function TeamsPage() {
                       <TeamAvatar name={g.Opponent} size="sm" />
                     </div>
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 w-[170px] sm:w-auto">
                       <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
@@ -1276,7 +1276,7 @@ export default function TeamsPage() {
                       </div>
                     </div>
 
-                    <div className="flex w-max flex-shrink-0 justify-self-start text-right sm:w-[136px] sm:justify-self-end">
+                    <div className="flex w-auto min-w-0 flex-shrink-0 justify-self-start text-right sm:w-[136px] sm:justify-self-end">
                       <div className={`text-sm font-black whitespace-nowrap ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
                         {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
                       </div>
