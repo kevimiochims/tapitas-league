@@ -83,6 +83,35 @@ function normalizeTeamName(value) {
     .trim()
 }
 
+function shortName(name) {
+  const mappings = {
+    'i am megatron': 'Megatron',
+    'h-lera do mahl': 'H-Lera',
+    'peytao da massa': 'Peytao',
+    'ocupa & resiste': 'Ocupa',
+    'ocupa e resiste': 'Ocupa',
+    'pequers verde': 'Pequers',
+    'rincao settlers': 'Rincão',
+    'old brady': 'OldBrady',
+    'oldbrady': 'OldBrady',
+    'moneyball': 'Moneyball',
+    'patrolao': 'Patrolão',
+    'patrolao squad': 'Patrolão',
+    'how much': 'Howmuch',
+    'howmuchyoutruck': 'Howmuch',
+    'hangover football club': 'Hangover FC',
+    'porto alegre coelhos': 'PA Coelhos',
+    'santa cruz frangos': 'SC Frangos',
+    'seguidores de charlao': 'Seg. Charlao',
+    'canoas andres limas': 'C Andres Limas',
+    'rj skipknows': 'RJ SkipKnows',
+    '4winclutch': '4WinClutch',
+  }
+
+  const key = normalizeTeamName(name)
+  return mappings[key] || String(name || '').trim()
+}
+
 function isTrueFlag(value) {
   const normalized = String(value ?? '').trim().toLowerCase()
   return ['true', 'yes', 'sim', '1'].includes(normalized)
@@ -1253,12 +1282,12 @@ export default function TeamsPage() {
                       <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
                     </div>
 
-                    <div className="ml-3 flex items-center justify-center">
+                    <div className="ml-2 flex items-center justify-center">
                       <TeamAvatar name={g.Opponent} size="sm" />
                     </div>
 
-                    <div className="ml-3 min-w-0 w-max sm:w-auto">
-                      <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
+                    <div className="ml-2 min-w-0 w-max sm:w-auto">
+                      <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {shortName(g.Opponent)}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
                           <span className="inline-block border border-[#0A0A0A]/20 bg-[#F7F6F2] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#6B7280]">
@@ -1403,7 +1432,7 @@ export default function TeamsPage() {
                           <div className="flex flex-wrap gap-2">
                             {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
                               <a key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}&scroll=top`} onClick={() => { sessionStorage.setItem('teams-scroll-top', '1') }} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
-                                {c.team} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
+                                {shortName(c.team)} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
                               </a>
                             ))}
                           </div>
