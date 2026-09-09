@@ -1217,7 +1217,7 @@ export default function TeamsPage() {
 
             {/* Games list */}
             <div className="max-h-[520px] overflow-auto">
-              <div className="w-max min-w-full divide-y-2 divide-[#0A0A0A]/8">
+              <div className="grid w-max min-w-full grid-cols-[58px_32px_max-content_auto] divide-y-2 divide-[#0A0A0A]/8 sm:grid-cols-[80px_40px_minmax(0,1fr)_auto]">
               {filteredLog.map((g, i) => {
                 const won = String(g?.Result || '').trim().toUpperCase() === 'W'
                 const pf = parseNumber(g?.PF)
@@ -1246,7 +1246,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid min-w-max grid-cols-[58px_32px_max-content_auto] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:grid-cols-[80px_40px_minmax(0,1fr)_auto] sm:gap-3 sm:px-6"
+                    className="col-span-4 grid min-w-max grid-cols-subgrid items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
