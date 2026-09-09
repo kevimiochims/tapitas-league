@@ -402,6 +402,19 @@ export default function TeamsPage() {
     setPlayerLogStageFilter('All')
   }, [selected])
 
+  // Force the page to the top after navigating between franchises from Historic.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const shouldResetScroll = params.get('scroll') === 'top' || sessionStorage.getItem('teams-scroll-top') === '1'
+    if (!shouldResetScroll) return
+
+    sessionStorage.removeItem('teams-scroll-top')
+    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }))
+    const timer = setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }), 80)
+    return () => clearTimeout(timer)
+  }, [])
+
   useEffect(() => {
     async function load() {
       const [at, hi, hr, h2h, ga, pc] = await Promise.all([
@@ -420,20 +433,7 @@ export default function TeamsPage() {
       setPlayerLookup(buildPlayerLookup(pc))
       setLoading(false)
 
-      // Force the page to the top after navigating between franchises from Historic.
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
-    const shouldResetScroll = params.get('scroll') === 'top' || sessionStorage.getItem('teams-scroll-top') === '1'
-    if (!shouldResetScroll) return
-
-    sessionStorage.removeItem('teams-scroll-top')
-    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }))
-    const timer = setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }), 80)
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Auto-select team from ?team= URL param
+      // Auto-select team from ?team= URL param
       const teamParam =
         typeof window !== 'undefined'
           ? new URLSearchParams(window.location.search).get('team')
@@ -1244,7 +1244,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid w-max min-w-full grid-cols-[58px_40px_190px_112px_20px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[80px_40px_360px_136px_20px] sm:gap-3 sm:px-6"
+                    className="grid w-max min-w-full grid-cols-[58px_40px_155px_78px_20px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[80px_40px_300px_136px_20px] sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
@@ -1276,7 +1276,7 @@ export default function TeamsPage() {
                       </div>
                     </div>
 
-                    <div className="w-[112px] flex-shrink-0 text-right sm:w-[136px]">
+                    <div className="w-[78px] flex-shrink-0 text-right sm:w-[136px]">
                       <div className={`text-sm font-black whitespace-nowrap ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
                         {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
                       </div>
@@ -1399,9 +1399,9 @@ export default function TeamsPage() {
                           <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
                           <div className="flex flex-wrap gap-2">
                             {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
-                              <Link key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}&scroll=top`} onClick={() => { sessionStorage.setItem('teams-scroll-top', '1'); setSelectedPlayerKey(null) }} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
+                              <a key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}&scroll=top`} onClick={() => { sessionStorage.setItem('teams-scroll-top', '1') }} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
                                 {c.team} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
-                              </Link>
+                              </a>
                             ))}
                           </div>
                         </div>
