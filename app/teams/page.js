@@ -280,6 +280,35 @@ function canonicalMatchupHref(game, games) {
   return `/matchups?season=${encodeURIComponent(String(target?.Season || '').trim())}&week=${encodeURIComponent(String(target?.Week || '').trim())}&team=${encodeURIComponent(String(target?.Team || '').trim())}&opp=${encodeURIComponent(String(target?.Opponent || '').trim())}`
 }
 
+function HeaderFilter({ value, onChange, options, label }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button type="button" onClick={() => setOpen(p => !p)} className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}>
+        {value === 'All' ? label : value}
+        <span className="text-[9px] text-[#D01F2D]">⌄</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+6px)] z-30 min-w-[150px] overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+          <div className="max-h-56 overflow-y-auto">
+            {options.map(opt => (
+              <button key={opt} type="button" onClick={() => { onChange(opt); setOpen(false) }} className={`block w-full px-3 py-2 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}>
+                {opt === 'All' ? label : opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Select({ value, onChange, options, placeholder, disabled }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -953,7 +982,7 @@ export default function TeamsPage() {
             {/* Player record cards stay in the same stats sequence */}
             {mostRostered && (
               <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-x-3 gap-y-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_84px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
                       <Users className="h-4 w-4" />
@@ -963,8 +992,8 @@ export default function TeamsPage() {
                       <div className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostRostered.count}</div>
                     </div>
                   </div>
-                  <div className="flex h-full min-h-[96px] items-start justify-end">
-                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={96} />
+                  <div className="flex h-full min-h-[84px] items-start justify-end sm:min-h-[96px]">
+                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={84} />
                   </div>
                   <div className="col-span-2 min-w-0 border-t-2 border-[#0A0A0A]/10 pt-2">
                     <div className="flex min-w-0 items-center gap-1.5">
@@ -978,7 +1007,7 @@ export default function TeamsPage() {
 
             {mostStarted && (
               <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-x-3 gap-y-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_84px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
                       <Star className="h-4 w-4" />
@@ -988,8 +1017,8 @@ export default function TeamsPage() {
                       <div className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostStarted.count}</div>
                     </div>
                   </div>
-                  <div className="flex h-full min-h-[96px] items-start justify-end">
-                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={96} />
+                  <div className="flex h-full min-h-[84px] items-start justify-end sm:min-h-[96px]">
+                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={84} />
                   </div>
                   <div className="col-span-2 min-w-0 border-t-2 border-[#0A0A0A]/10 pt-2">
                     <div className="flex min-w-0 items-center gap-1.5">
@@ -1202,16 +1231,18 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="flex w-max min-w-full items-center gap-2 px-4 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:gap-3 sm:px-6"
+                    className="grid w-max min-w-full grid-cols-[58px_40px_280px_124px_20px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[80px_40px_360px_136px_20px] sm:gap-3 sm:px-6"
                   >
-                    <div className="w-[58px] flex-shrink-0 sm:w-20">
+                    <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
                       <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
                     </div>
 
-                    <TeamAvatar name={g.Opponent} size="sm" />
+                    <div className="flex items-center justify-center">
+                      <TeamAvatar name={g.Opponent} size="sm" />
+                    </div>
 
-                    <div className="w-max flex-shrink-0">
+                    <div className="min-w-0">
                       <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
@@ -1232,8 +1263,8 @@ export default function TeamsPage() {
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0 text-right">
-                      <div className={`text-sm font-black ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
+                    <div className="w-[124px] flex-shrink-0 text-right sm:w-[136px]">
+                      <div className={`text-sm font-black whitespace-nowrap ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
                         {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
                       </div>
                     </div>
@@ -1343,27 +1374,27 @@ export default function TeamsPage() {
                     <div className="text-[9px] font-black uppercase tracking-[0.25em] text-[#D01F2D]">Player Profile</div>
                     <button onClick={() => setSelectedPlayerKey(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] text-xl font-black text-[#16274F] hover:bg-[#F7F6F2]" aria-label="Close player profile">×</button>
                   </div>
-                  <div className="flex min-w-0 items-center gap-4">
+                  <div className="flex min-w-0 items-start gap-4">
                     <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={72} />
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-2 text-2xl font-black text-[#16274F] sm:text-3xl">
                         <span className="truncate">{selectedPlayer.rawName}</span>
                         {selectedPlayer.position && <span className={`inline-flex flex-shrink-0 px-2 py-1 align-middle text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}
                       </div>
+                      {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).length > 0 && (
+                        <div className="mt-2">
+                          <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
+                              <Link key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}`} onClick={() => setSelectedPlayerKey(null)} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
+                                {c.team} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).length > 0 && (
-                    <div className="mt-4">
-                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
-                          <Link key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}`} onClick={() => setSelectedPlayerKey(null)} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
-                            {c.team} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div className="border-b-2 border-[#0A0A0A]/10 bg-white p-3 sm:p-4">
@@ -1384,28 +1415,25 @@ export default function TeamsPage() {
                   </div>
                 </div>
 
-                <div className="border-b-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 sm:p-4">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <Select value={playerLogOpponentFilter} onChange={setPlayerLogOpponentFilter} options={playerLogOpponentOptions} placeholder="Opponent" />
-                    <Select value={playerLogStatusFilter} onChange={setPlayerLogStatusFilter} options={playerLogStatusOptions} placeholder="Status" />
-                    <Select value={playerLogResultFilter} onChange={setPlayerLogResultFilter} options={playerLogResultOptions} placeholder="Result" />
-                    <Select value={playerLogStageFilter} onChange={setPlayerLogStageFilter} options={playerLogStageOptions} placeholder="Stage" />
-                  </div>
-                </div>
-
                 <div className="max-h-[55vh] overflow-auto">
                   <table className="min-w-[760px] w-full">
                     <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
                       <tr className="border-b-2 border-[#0A0A0A]/10">
                         {['Season', 'Week', 'Opponent', 'Status', 'Player Pts', 'Team PF', 'Result', 'Stage'].map((h, i) => (
                           <th key={h} className="px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280] whitespace-nowrap">
-                            {(i === 0 || i === 1 || i === 4 || i === 5) ? (
+                            {h === 'Opponent' ? (
+                              <HeaderFilter value={playerLogOpponentFilter} onChange={setPlayerLogOpponentFilter} options={playerLogOpponentOptions} label="Opponent" />
+                            ) : h === 'Status' ? (
+                              <HeaderFilter value={playerLogStatusFilter} onChange={setPlayerLogStatusFilter} options={playerLogStatusOptions} label="Status" />
+                            ) : h === 'Result' ? (
+                              <HeaderFilter value={playerLogResultFilter} onChange={setPlayerLogResultFilter} options={playerLogResultOptions} label="Result" />
+                            ) : h === 'Stage' ? (
+                              <HeaderFilter value={playerLogStageFilter} onChange={setPlayerLogStageFilter} options={playerLogStageOptions} label="Stage" />
+                            ) : (
                               <button type="button" onClick={() => handlePlayerLogSort(['season','week','','','pts','teamPF'][i])} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
                                 {h}
                                 <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','pts','teamPF'][i] ? (playerLogSort.dir === 'asc' ? '↑' : '↓') : '↕'}</span>
                               </button>
-                            ) : (
-                              <span>{h}</span>
                             )}
                           </th>
                         ))}
