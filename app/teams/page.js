@@ -1282,11 +1282,11 @@ export default function TeamsPage() {
                       <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
                     </div>
 
-                    <div className="ml-2 flex items-center justify-center">
+                    <div className="ml-3 flex items-center justify-center">
                       <TeamAvatar name={g.Opponent} size="sm" />
                     </div>
 
-                    <div className="ml-2 min-w-0 w-max sm:w-auto">
+                    <div className="ml-3 min-w-0 w-max sm:w-auto">
                       <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {shortName(g.Opponent)}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
