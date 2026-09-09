@@ -368,8 +368,9 @@ const shortName = (name) => {
     'old brady': 'OldBrady',
     'oldbrady': 'OldBrady',
     'moneyball': 'Moneyball',
-    'patrolão': 'Patrolão',
+    'patrolao': 'Patrolao',
     'patrolão squad': 'Patrolão',
+    'patrolao squad': 'Patrolao',
     'how much': 'Howmuch',
     'howmuchyoutruck': 'Howmuch',
     'hangover football club': 'Hangover FC',
@@ -408,7 +409,7 @@ export default function TeamsPage() {
   const [playerSort, setPlayerSort] = useState('Appearances')
   const [playerSeasonFilter, setPlayerSeasonFilter] = useState('All')
   const [playerMinApps, setPlayerMinApps] = useState('All')
-  const [playerLogSort, setPlayerLogSort] = useState({ key: 'season', dir: 'desc' })
+  const [playerLogSort, setPlayerLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
   const [playerLogOpponentFilter, setPlayerLogOpponentFilter] = useState('All')
   const [playerLogStatusFilter, setPlayerLogStatusFilter] = useState('All')
   const [playerLogResultFilter, setPlayerLogResultFilter] = useState('All')
@@ -857,39 +858,54 @@ export default function TeamsPage() {
       .filter(g => playerLogStageFilter === 'All' || g.gameStage === playerLogStageFilter)
 
     const sortedSelectedPlayerGames = [...filteredSelectedPlayerGames].sort((a, b) => {
-      const direction = playerLogSort.dir === 'asc' ? 1 : -1
       const seasonA = Number(a.season) || 0
       const seasonB = Number(b.season) || 0
       const weekA = parseFloat(String(a.week || '').replace(/[^0-9.]/g, '')) || 0
       const weekB = parseFloat(String(b.week || '').replace(/[^0-9.]/g, '')) || 0
+      const seasonDirection = playerLogSort.seasonDir === 'asc' ? 1 : -1
+      const weekDirection = playerLogSort.weekDir === 'asc' ? 1 : -1
+      const direction = playerLogSort.dir === 'asc' ? 1 : -1
 
-      // Season is always the primary grouping. This keeps all weeks from a
-      // season together even when the user sorts by Week.
-      if (seasonA !== seasonB) {
-        return (seasonA - seasonB) * (playerLogSort.key === 'season' ? direction : -1)
-      }
+      // Season is always the primary grouping. Week sorting happens inside
+      // each season, so years never get interleaved.
+      if (seasonA !== seasonB) return (seasonA - seasonB) * seasonDirection
 
       if (playerLogSort.key === 'week') {
-        if (weekA !== weekB) return (weekA - weekB) * direction
+        if (weekA !== weekB) return (weekA - weekB) * weekDirection
       } else if (playerLogSort.key === 'pts' || playerLogSort.key === 'teamPF') {
         const av = playerLogSort.key === 'pts' ? a.pts || 0 : a.teamPF || 0
         const bv = playerLogSort.key === 'pts' ? b.pts || 0 : b.teamPF || 0
         if (av !== bv) return (av - bv) * direction
-      } else if (playerLogSort.key === 'season') {
-        if (weekA !== weekB) return weekB - weekA
       } else {
-        if (weekA !== weekB) return weekB - weekA
+        if (weekA !== weekB) return (weekA - weekB) * weekDirection
       }
 
       return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
     })
 
     const handlePlayerLogSort = (key) => {
-      setPlayerLogSort(current => ({
-        key,
-        dir: current.key === key && current.dir === 'desc' ? 'asc' : 'desc',
-      }))
+      setPlayerLogSort(current => {
+        if (key === 'season') {
+          const nextDir = current.key === 'season' && current.seasonDir === 'desc' ? 'asc' : 'desc'
+          return { ...current, key, dir: nextDir, seasonDir: nextDir }
+        }
+        if (key === 'week') {
+          const nextDir = current.key === 'week' && current.weekDir === 'desc' ? 'asc' : 'desc'
+          return { ...current, key, dir: nextDir, weekDir: nextDir }
+        }
+        const nextDir = current.key === key && current.dir === 'desc' ? 'asc' : 'desc'
+        return { ...current, key, dir: nextDir }
+      })
     }
+
+    useEffect(() => {
+      if (!selectedPlayer) return undefined
+      const previousOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = previousOverflow
+      }
+    }, [selectedPlayer])
 
     // Historic clubs: scan the COMPLETE GAME_FACTS_ALL dataset using the
     // player's exact raw name as identity. This intentionally does not use
@@ -1427,8 +1443,8 @@ export default function TeamsPage() {
 
           {/* Player detail */}
           {selectedPlayer && (
-            <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-[#0A0A0A]/55 p-3 pt-4 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
-              <div className="max-h-[94vh] w-full max-w-5xl overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
+            <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/55 p-3 pt-4 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
+              <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
                 <div className="border-b-2 border-[#0A0A0A]/10 p-4 sm:p-6">
                   <div className="mb-4 flex items-center justify-between gap-4">
                     <div className="text-[11px] font-black uppercase tracking-[0.25em] text-[#D01F2D] sm:text-xs">Player Profile</div>
@@ -1475,7 +1491,7 @@ export default function TeamsPage() {
                   </div>
                 </div>
 
-                <div className="max-h-[55vh] overflow-auto">
+                <div className="min-h-0 flex-1 overflow-auto">
                   <table className="min-w-[760px] w-full">
                     <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
                       <tr className="border-b-2 border-[#0A0A0A]/10">
@@ -1492,7 +1508,7 @@ export default function TeamsPage() {
                             ) : (
                               <button type="button" onClick={() => handlePlayerLogSort(['season','week','','','pts','teamPF'][i])} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
                                 {h}
-                                <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','pts','teamPF'][i] ? (playerLogSort.dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+                                <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','pts','teamPF'][i] ? (['season','week','','','pts','teamPF'][i] === 'season' ? (playerLogSort.seasonDir === 'asc' ? '↑' : '↓') : ['season','week','','','pts','teamPF'][i] === 'week' ? (playerLogSort.weekDir === 'asc' ? '↑' : '↓') : (playerLogSort.dir === 'asc' ? '↑' : '↓')) : '↕'}</span>
                               </button>
                             )}
                           </th>
