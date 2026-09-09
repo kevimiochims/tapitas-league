@@ -920,9 +920,11 @@ export default function TeamsPage() {
               <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 30%, rgba(247,246,242,0.85) 55%, rgba(247,246,242,0.2) 100%)' }} />
             </div>
 
-            <div className="relative z-10 flex items-center gap-8 p-10 md:p-14">
-              <TeamAvatar name={selected.team} size="xl" />
-              <div className="flex-1">
+            <div className="relative z-10 flex flex-col items-center gap-5 p-6 sm:p-8 md:flex-row md:items-center md:gap-8 md:p-14">
+              <div className="flex-shrink-0">
+                <TeamAvatar name={selected.team} size="xl" />
+              </div>
+              <div className="w-full min-w-0 text-center md:text-left">
                 <div className="mt-3 mb-3 flex flex-wrap gap-2">
                   {titles.length > 0 && (
                     <div className="inline-flex items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#F5C518] px-3 py-1.5">
@@ -1244,7 +1246,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid min-w-[390px] grid-cols-[58px_32px_170px_auto_24px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:grid-cols-[80px_40px_minmax(0,1fr)_136px_24px] sm:gap-3 sm:px-6"
+                    className="grid min-w-[390px] grid-cols-[58px_32px_190px_auto] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:grid-cols-[80px_40px_minmax(0,1fr)_auto] sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
@@ -1276,13 +1278,14 @@ export default function TeamsPage() {
                       </div>
                     </div>
 
-                    <div className="flex w-auto min-w-0 flex-shrink-0 justify-self-start text-right sm:w-[136px] sm:justify-self-end">
+                    <div className="ml-auto flex min-w-max items-center justify-end gap-1 sm:gap-1">
                       <div className={`text-sm font-black whitespace-nowrap ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
                         {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
                       </div>
+                      <div className="flex h-6 w-6 flex-shrink-0 items-center justify-end">
+                        <ChevronRight className="h-4 w-4 text-[#6B7280]" />
+                      </div>
                     </div>
-
-                    <div className="flex w-6 flex-shrink-0 items-center justify-end sm:w-6"><ChevronRight className="h-4 w-4 text-[#6B7280]" /></div>
                   </a>
                 )
               })}
