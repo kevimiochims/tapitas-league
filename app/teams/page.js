@@ -348,6 +348,7 @@ export default function TeamsPage() {
   const [playerSort, setPlayerSort] = useState('Appearances')
   const [playerSeasonFilter, setPlayerSeasonFilter] = useState('All')
   const [playerMinApps, setPlayerMinApps] = useState('All')
+  const [playerLogSort, setPlayerLogSort] = useState({ key: 'season', dir: 'desc' })
 
   useEffect(() => {
     setLogSeason('All')
@@ -361,6 +362,7 @@ export default function TeamsPage() {
     setPlayerSort('Appearances')
     setPlayerSeasonFilter('All')
     setPlayerMinApps('All')
+    setPlayerLogSort({ key: 'season', dir: 'desc' })
   }, [selected])
 
   useEffect(() => {
@@ -762,6 +764,39 @@ export default function TeamsPage() {
         })
       : []
 
+    const sortedSelectedPlayerGames = [...selectedPlayerGames].sort((a, b) => {
+      const direction = playerLogSort.dir === 'asc' ? 1 : -1
+      const getSortValue = (row) => {
+        switch (playerLogSort.key) {
+          case 'week': return parseFloat(String(row.week || '').replace(/[^0-9.]/g, '')) || 0
+          case 'opponent': return String(row.opponent || '').toLowerCase()
+          case 'status': return String(row.status || '').toLowerCase()
+          case 'pts': return row.pts || 0
+          case 'teamPF': return row.teamPF || 0
+          case 'result': return String(row.result || '').toLowerCase()
+          case 'stage': return String(row.gameStage || '').toLowerCase()
+          case 'season':
+          default: return Number(row.season) || 0
+        }
+      }
+      const av = getSortValue(a)
+      const bv = getSortValue(b)
+      if (typeof av === 'string' || typeof bv === 'string') {
+        const cmp = String(av).localeCompare(String(bv))
+        if (cmp !== 0) return cmp * direction
+      } else if (av !== bv) {
+        return (av - bv) * direction
+      }
+      return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
+    })
+
+    const handlePlayerLogSort = (key) => {
+      setPlayerLogSort(current => ({
+        key,
+        dir: current.key === key && current.dir === 'desc' ? 'asc' : 'desc',
+      }))
+    }
+
     // Historic clubs: scan the COMPLETE GAME_FACTS_ALL dataset using the
     // player's exact raw name as identity. This intentionally does not use
     // normalized/abbreviated names, so different players with the same
@@ -908,7 +943,7 @@ export default function TeamsPage() {
             {/* Player record cards stay in the same stats sequence */}
             {mostRostered && (
               <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-x-3 gap-y-2">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
                       <Users className="h-4 w-4" />
@@ -916,14 +951,14 @@ export default function TeamsPage() {
                     <div className="mt-3">
                       <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered</div>
                       <div className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostRostered.count}</div>
-                      <div className="mt-1 flex min-w-0 items-center gap-1.5">
-                        <div className="truncate text-sm font-black text-[#16274F]">{mostRostered.name}</div>
-                        {mostRostered.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostRostered.position)}`}>{mostRostered.position}</span>}
-                      </div>
                     </div>
                   </div>
-                  <div className="flex w-full items-start justify-end">
-                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={72} />
+                  <div className="row-span-2 flex h-full min-h-[88px] items-start justify-end">
+                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={88} />
+                  </div>
+                  <div className="col-span-1 min-w-0 flex items-center gap-1.5">
+                    <div className="min-w-0 text-sm font-black text-[#16274F]">{mostRostered.name}</div>
+                    {mostRostered.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostRostered.position)}`}>{mostRostered.position}</span>}
                   </div>
                 </div>
               </div>
@@ -931,7 +966,7 @@ export default function TeamsPage() {
 
             {mostStarted && (
               <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-x-3 gap-y-2">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
                       <Star className="h-4 w-4" />
@@ -939,14 +974,14 @@ export default function TeamsPage() {
                     <div className="mt-3">
                       <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">Most Started</div>
                       <div className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostStarted.count}</div>
-                      <div className="mt-1 flex min-w-0 items-center gap-1.5">
-                        <div className="truncate text-sm font-black text-[#16274F]">{mostStarted.name}</div>
-                        {mostStarted.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostStarted.position)}`}>{mostStarted.position}</span>}
-                      </div>
                     </div>
                   </div>
-                  <div className="flex w-full items-start justify-end">
-                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={72} />
+                  <div className="row-span-2 flex h-full min-h-[88px] items-start justify-end">
+                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={88} />
+                  </div>
+                  <div className="col-span-1 min-w-0 flex items-center gap-1.5">
+                    <div className="min-w-0 text-sm font-black text-[#16274F]">{mostStarted.name}</div>
+                    {mostStarted.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostStarted.position)}`}>{mostStarted.position}</span>}
                   </div>
                 </div>
               </div>
@@ -1123,7 +1158,8 @@ export default function TeamsPage() {
             </div>
 
             {/* Games list */}
-            <div className="max-h-[520px] overflow-y-auto divide-y-2 divide-[#0A0A0A]/8">
+            <div className="max-h-[520px] overflow-auto">
+              <div className="min-w-[720px] divide-y-2 divide-[#0A0A0A]/8">
               {filteredLog.map((g, i) => {
                 const won = String(g?.Result || '').trim().toUpperCase() === 'W'
                 const pf = parseNumber(g?.PF)
@@ -1152,9 +1188,9 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="flex items-center gap-3 px-6 py-3.5 transition-colors hover:bg-[#F7F6F2]"
+                    className="flex min-w-[720px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:gap-3 sm:px-6"
                   >
-                    <div className="w-20 flex-shrink-0">
+                    <div className="w-16 flex-shrink-0 sm:w-20">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
                       <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
                     </div>
@@ -1162,7 +1198,7 @@ export default function TeamsPage() {
                     <TeamAvatar name={g.Opponent} size="sm" />
 
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
+                      <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
                           <span className="inline-block border border-[#0A0A0A]/20 bg-[#F7F6F2] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#6B7280]">
@@ -1192,6 +1228,7 @@ export default function TeamsPage() {
                   </a>
                 )
               })}
+              </div>
 
               {filteredLog.length === 0 && (
                 <div className="py-10 text-center text-sm font-bold text-[#6B7280]">
@@ -1285,7 +1322,7 @@ export default function TeamsPage() {
 
           {/* Player detail */}
           {selectedPlayer && (
-            <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[#0A0A0A]/55 p-0 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
+            <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto bg-[#0A0A0A]/55 p-3 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
               <div className="max-h-[92vh] w-full max-w-5xl overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
                 <div className="flex items-start justify-between gap-4 border-b-2 border-[#0A0A0A]/10 p-5 sm:p-6">
                   <div className="flex min-w-0 items-center gap-4">
@@ -1324,31 +1361,42 @@ export default function TeamsPage() {
                   </div>
                   <button onClick={() => setSelectedPlayerKey(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] text-xl font-black text-[#16274F] hover:bg-[#F7F6F2]" aria-label="Close player profile">×</button>
                 </div>
-                <div className="grid grid-cols-2 gap-px border-b-2 border-[#0A0A0A]/10 bg-[#0A0A0A]/10 sm:grid-cols-5">
+                <div className="border-b-2 border-[#0A0A0A]/10 bg-[#16274F] p-2 sm:p-0">
+                  <div className="grid grid-cols-3 gap-px overflow-hidden border-2 border-[#0A0A0A]/20 bg-[#0A0A0A]/15 sm:grid-cols-6 sm:border-0">
                   {[
                     ['Apps', selectedPlayer.appearances],
                     ['Starts', selectedPlayer.starts],
                     ['Bench', selectedPlayer.bench],
                     ['Avg Pts', selectedPlayer.avgPts.toFixed(2)],
                     ['Best Pts', selectedPlayer.bestPts.toFixed(2)],
+                    ['Seasons', selectedPlayer.seasons.size ? Array.from(selectedPlayer.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—'],
                   ].map(([label, value]) => (
                     <div key={label} className="bg-white p-4">
                       <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">{label}</div>
                       <div className="mt-1 text-xl font-black text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
                     </div>
                   ))}
+                  </div>
                 </div>
                 <div className="max-h-[55vh] overflow-auto">
                   <table className="min-w-[760px] w-full">
                     <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
                       <tr className="border-b-2 border-[#0A0A0A]/10">
-                        {['Season', 'Week', 'Opponent', 'Status', 'Player Pts', 'Team PF', 'Result', 'Stage'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280] whitespace-nowrap">{h}</th>
+                        {[
+                          ['Season', 'season'], ['Week', 'week'], ['Opponent', 'opponent'], ['Status', 'status'],
+                          ['Player Pts', 'pts'], ['Team PF', 'teamPF'], ['Result', 'result'], ['Stage', 'stage'],
+                        ].map(([h, key]) => (
+                          <th key={h} className="px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280] whitespace-nowrap">
+                            <button type="button" onClick={() => handlePlayerLogSort(key)} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
+                              {h}
+                              <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === key ? (playerLogSort.dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+                            </button>
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedPlayerGames.map((g, i) => (
+                      {sortedSelectedPlayerGames.map((g, i) => (
                         <tr key={`${g.season}-${g.week}-${g.opponent}-${i}`} onClick={() => { window.location.href = g.matchupHref }} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-[#F7F6F2]">
                           <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td>
                           <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td>
