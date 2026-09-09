@@ -925,7 +925,7 @@ export default function TeamsPage() {
                 <TeamAvatar name={selected.team} size="xl" />
               </div>
               <div className="w-full min-w-0 text-center md:text-left">
-                <div className="mt-3 mb-3 flex flex-wrap gap-2">
+                <div className="mt-3 mb-3 flex flex-wrap justify-center gap-2 md:justify-start">
                   {titles.length > 0 && (
                     <div className="inline-flex items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#F5C518] px-3 py-1.5">
                       <Trophy className="h-3.5 w-3.5 text-[#0A0A0A]" />
@@ -948,7 +948,7 @@ export default function TeamsPage() {
                   style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px, 6vw, 80px)' }}>
                   {selected.team}
                 </h1>
-                <div className="flex flex-wrap gap-4 text-sm font-bold text-[#3F4757]">
+                <div className="flex flex-wrap justify-center gap-4 text-sm font-bold text-[#3F4757] md:justify-start">
                   <span>{parseNumber(selected.W)}W – {parseNumber(selected.L)}L</span>
                   <span>·</span>
                   <span>{winPct} win rate</span>
@@ -1246,7 +1246,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid min-w-[390px] grid-cols-[58px_32px_190px_auto] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:grid-cols-[80px_40px_minmax(0,1fr)_auto] sm:gap-3 sm:px-6"
+                    className="grid min-w-max grid-cols-[58px_32px_max-content_auto] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:grid-cols-[80px_40px_minmax(0,1fr)_auto] sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
@@ -1257,7 +1257,7 @@ export default function TeamsPage() {
                       <TeamAvatar name={g.Opponent} size="sm" />
                     </div>
 
-                    <div className="min-w-0 w-[170px] sm:w-auto">
+                    <div className="min-w-0 w-max sm:w-auto">
                       <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
