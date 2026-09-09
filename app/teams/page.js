@@ -376,8 +376,8 @@ const shortName = (name) => {
     'hangover football club': 'Hangover FC',
     'porto alegre coelhos': 'PA Coelhos',
     'santa cruz frangos': 'SC Frangos',
-    'seguidores de charlao': 'Seg. Charlao',
-    'canoas andres limas': 'C Andres Limas',
+    'seguidores de charlao': 'Seg de Charlao',
+    'canoas andres limas': 'Canoas A Limas',
     'rj skipknows': 'RJ SkipKnows',
     '4winclutch': '4WinClutch',
   }
