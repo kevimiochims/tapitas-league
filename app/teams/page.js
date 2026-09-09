@@ -420,7 +420,20 @@ export default function TeamsPage() {
       setPlayerLookup(buildPlayerLookup(pc))
       setLoading(false)
 
-      // Auto-select team from ?team= URL param
+      // Force the page to the top after navigating between franchises from Historic.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const shouldResetScroll = params.get('scroll') === 'top' || sessionStorage.getItem('teams-scroll-top') === '1'
+    if (!shouldResetScroll) return
+
+    sessionStorage.removeItem('teams-scroll-top')
+    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }))
+    const timer = setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }), 80)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Auto-select team from ?team= URL param
       const teamParam =
         typeof window !== 'undefined'
           ? new URLSearchParams(window.location.search).get('team')
@@ -1231,7 +1244,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid w-max min-w-full grid-cols-[58px_40px_280px_124px_20px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[80px_40px_360px_136px_20px] sm:gap-3 sm:px-6"
+                    className="grid w-max min-w-full grid-cols-[58px_40px_190px_112px_20px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[80px_40px_360px_136px_20px] sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
@@ -1263,7 +1276,7 @@ export default function TeamsPage() {
                       </div>
                     </div>
 
-                    <div className="w-[124px] flex-shrink-0 text-right sm:w-[136px]">
+                    <div className="w-[112px] flex-shrink-0 text-right sm:w-[136px]">
                       <div className={`text-sm font-black whitespace-nowrap ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
                         {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
                       </div>
@@ -1371,7 +1384,7 @@ export default function TeamsPage() {
               <div className="max-h-[94vh] w-full max-w-5xl overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
                 <div className="border-b-2 border-[#0A0A0A]/10 p-4 sm:p-6">
                   <div className="mb-4 flex items-center justify-between gap-4">
-                    <div className="text-[9px] font-black uppercase tracking-[0.25em] text-[#D01F2D]">Player Profile</div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.25em] text-[#D01F2D] sm:text-xs">Player Profile</div>
                     <button onClick={() => setSelectedPlayerKey(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] text-xl font-black text-[#16274F] hover:bg-[#F7F6F2]" aria-label="Close player profile">×</button>
                   </div>
                   <div className="flex min-w-0 items-start gap-4">
@@ -1386,7 +1399,7 @@ export default function TeamsPage() {
                           <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
                           <div className="flex flex-wrap gap-2">
                             {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
-                              <Link key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}`} onClick={() => setSelectedPlayerKey(null)} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
+                              <Link key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}&scroll=top`} onClick={() => { sessionStorage.setItem('teams-scroll-top', '1'); setSelectedPlayerKey(null) }} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
                                 {c.team} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
                               </Link>
                             ))}
