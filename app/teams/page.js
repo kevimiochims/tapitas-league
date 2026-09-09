@@ -344,6 +344,10 @@ export default function TeamsPage() {
   const [logHighestOnly, setLogHighestOnly] = useState(false)
   const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
   const [playerSearch, setPlayerSearch] = useState('')
+  const [playerPositionFilter, setPlayerPositionFilter] = useState('All')
+  const [playerSort, setPlayerSort] = useState('Appearances')
+  const [playerSeasonFilter, setPlayerSeasonFilter] = useState('All')
+  const [playerMinApps, setPlayerMinApps] = useState('All')
 
   useEffect(() => {
     setLogSeason('All')
@@ -353,6 +357,10 @@ export default function TeamsPage() {
     setLogHighestOnly(false)
     setSelectedPlayerKey(null)
     setPlayerSearch('')
+    setPlayerPositionFilter('All')
+    setPlayerSort('Appearances')
+    setPlayerSeasonFilter('All')
+    setPlayerMinApps('All')
   }, [selected])
 
   useEffect(() => {
@@ -647,21 +655,35 @@ export default function TeamsPage() {
     })
 
     // ── Player Archive ───────────────────────────────────────────────
-    // A player is considered part of the franchise archive whenever their
-    // name appears in a Starter or Bench slot for that team in GAME_FACTS_ALL.
+    // IMPORTANT: archive identity is the EXACT player name stored in
+    // GAME_FACTS_ALL. Do NOT normalize/abbreviate this key and do NOT use
+    // the player cache ID here. This prevents different players such as
+    // "Javonte Williams" and "J. Williams" from being merged. The
+    // abbreviation is presentation-only.
+    // Player Archive follows the same eligibility used by Most Rostered:
+    // double-weeks are excluded, because those are combined fantasy weeks.
+    // IMPORTANT: the archive identity is the EXACT name stored in GAME_FACTS_ALL.
+    // Never normalize, abbreviate or merge names before counting.
+    const playerArchiveGames = teamGames.filter(g => !isDoubleWeek(g))
     const playerStatsMap = new Map()
-    teamGames.forEach(g => {
+    playerArchiveGames.forEach(g => {
       const season = String(g?.Season || '').trim()
       const week = String(g?.Week || '').trim()
+      const seenExactNamesInGame = new Set()
       extractPlayerAppearances(g).forEach(app => {
-        const key = getPlayerIdentity(app.name, playerLookup)
-        if (!key) return
+        const rawName = String(app.name || '').trim()
+        if (!rawName || getNFLTeamLogo(rawName) || seenExactNamesInGame.has(rawName)) return
+        seenExactNamesInGame.add(rawName)
+
+        // The raw GAME_FACTS_ALL name is the sole key. The player cache is
+        // used only afterwards for presentation metadata (photo/position/name).
+        const key = `raw:${rawName}`
         if (!playerStatsMap.has(key)) {
           playerStatsMap.set(key, {
             archiveKey: key,
-            name: getDisplayPlayerName(app.name, playerLookup),
-            rawName: app.name,
-            position: getPlayerPosition(app.name, playerLookup),
+            name: getDisplayPlayerName(rawName, playerLookup),
+            rawName,
+            position: getPlayerPosition(rawName, playerLookup),
             appearances: 0,
             starts: 0,
             bench: 0,
@@ -693,19 +715,32 @@ export default function TeamsPage() {
       .map(p => ({ ...p, avgPts: p.appearances ? p.totalPts / p.appearances : 0 }))
       .sort((a, b) => b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))
 
-    const filteredPlayers = playerArchive.filter(p =>
-      normalizePlayerKey(p.name).includes(normalizePlayerKey(playerSearch))
-    )
+    const playerPositionOptions = ['All', ...Array.from(new Set(playerArchive.map(p => p.position).filter(Boolean))).sort()]
+    const playerSeasonOptions = ['All', ...Array.from(new Set(playerArchive.flatMap(p => Array.from(p.seasons)).filter(Boolean))).sort((a, b) => Number(b) - Number(a))]
+    const playerMinAppOptions = ['All', ...[10, 20, 30].filter(n => playerArchive.some(p => p.appearances > n)).map(n => `>${n} appearances`)]
+
+    const filteredPlayers = playerArchive
+      .filter(p => normalizePlayerKey(p.name).includes(normalizePlayerKey(playerSearch)))
+      .filter(p => playerPositionFilter === 'All' || p.position === playerPositionFilter)
+      .filter(p => playerSeasonFilter === 'All' || p.seasons.has(playerSeasonFilter))
+      .filter(p => playerMinApps === 'All' || p.appearances > Number(String(playerMinApps).replace(/[^0-9]/g, '')))
+      .sort((a, b) => {
+        if (playerSort === 'Starts') return b.starts - a.starts || b.appearances - a.appearances || a.name.localeCompare(b.name)
+        if (playerSort === 'Benchs') return b.bench - a.bench || b.appearances - a.appearances || a.name.localeCompare(b.name)
+        if (playerSort === 'Average Points') return b.avgPts - a.avgPts || b.appearances - a.appearances || a.name.localeCompare(b.name)
+        if (playerSort === 'Highest Score') return b.bestPts - a.bestPts || b.appearances - a.appearances || a.name.localeCompare(b.name)
+        return b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name)
+      })
 
     const selectedPlayer = selectedPlayerKey
       ? playerArchive.find(p => p.archiveKey === selectedPlayerKey) || null
       : null
 
     const selectedPlayerGames = selectedPlayer
-      ? teamGames.flatMap(g => {
+      ? playerArchiveGames.flatMap(g => {
           const appearance = extractPlayerAppearances(g).find(a => {
-            return getPlayerIdentity(a.name, playerLookup) === selectedPlayer.archiveKey ||
-              normalizePlayerKey(getDisplayPlayerName(a.name, playerLookup)) === normalizePlayerKey(selectedPlayer.name)
+            const rawName = String(a?.name || '').trim()
+            return `raw:${rawName}` === selectedPlayer.archiveKey
           })
           if (!appearance) return []
           return [{
@@ -727,27 +762,32 @@ export default function TeamsPage() {
         })
       : []
 
+    // Historic clubs: scan the COMPLETE GAME_FACTS_ALL dataset using the
+    // player's exact raw name as identity. This intentionally does not use
+    // normalized/abbreviated names, so different players with the same
+    // display abbreviation are never merged.
     const selectedPlayerClubs = selectedPlayer
       ? Array.from(new Map(
           games
             .filter(g => extractPlayerAppearances(g).some(a => {
-              return getPlayerIdentity(a.name, playerLookup) === selectedPlayer.archiveKey ||
-                normalizePlayerKey(getDisplayPlayerName(a.name, playerLookup)) === normalizePlayerKey(selectedPlayer.name)
+              const rawName = String(a?.name || '').trim()
+              return `raw:${rawName}` === selectedPlayer.archiveKey
             }))
             .map(g => {
               const teamName = String(g?.Team || '').trim()
-              return [teamName, null] // populated below
+              return [teamName, null]
             })
         ).keys())
+          .filter(Boolean)
           .map(teamName => ({
             team: teamName,
             seasons: Array.from(new Set(
               games
                 .filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName))
                 .filter(g => extractPlayerAppearances(g).some(a => {
-              return getPlayerIdentity(a.name, playerLookup) === selectedPlayer.archiveKey ||
-                normalizePlayerKey(getDisplayPlayerName(a.name, playerLookup)) === normalizePlayerKey(selectedPlayer.name)
-            }))
+                  const rawName = String(a?.name || '').trim()
+                  return `raw:${rawName}` === selectedPlayer.archiveKey
+                }))
                 .map(g => String(g?.Season || '').trim())
                 .filter(Boolean)
             )).sort((a, b) => Number(a) - Number(b)),
@@ -880,7 +920,6 @@ export default function TeamsPage() {
                         <div className="truncate text-sm font-black text-[#16274F]">{mostRostered.name}</div>
                         {mostRostered.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostRostered.position)}`}>{mostRostered.position}</span>}
                       </div>
-                      <div className="mt-1 text-[10px] font-bold text-[#6B7280]">{mostRostered.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}</div>
                     </div>
                   </div>
                   <div className="flex w-full items-start justify-end">
@@ -904,7 +943,6 @@ export default function TeamsPage() {
                         <div className="truncate text-sm font-black text-[#16274F]">{mostStarted.name}</div>
                         {mostStarted.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostStarted.position)}`}>{mostStarted.position}</span>}
                       </div>
-                      <div className="mt-1 text-[10px] font-bold text-[#6B7280]">{mostStarted.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}</div>
                     </div>
                   </div>
                   <div className="flex w-full items-start justify-end">
@@ -1176,13 +1214,27 @@ export default function TeamsPage() {
                   <div className="text-sm text-[#6B7280]">{playerArchive.length} players who wore the jersey</div>
                 </div>
               </div>
-              <div className="w-full sm:w-64">
-                <input
-                  value={playerSearch}
-                  onChange={e => setPlayerSearch(e.target.value)}
-                  placeholder="Search player..."
-                  className="w-full border-2 border-[#0A0A0A] bg-[#F7F6F2] px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
-                />
+              <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:items-center">
+                <div className="w-full lg:w-32">
+                  <Select value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} placeholder="Position" />
+                </div>
+                <div className="w-full lg:w-40">
+                  <Select value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} placeholder="Sort by" />
+                </div>
+                <div className="w-full lg:w-32">
+                  <Select value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} placeholder="Season" />
+                </div>
+                <div className="w-full lg:w-32">
+                  <Select value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} placeholder="Appearances" />
+                </div>
+                <div className="w-full lg:w-64">
+                  <input
+                    value={playerSearch}
+                    onChange={e => setPlayerSearch(e.target.value)}
+                    placeholder="Search player..."
+                    className="w-full border-2 border-[#0A0A0A] bg-[#F7F6F2] px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
+                  />
+                </div>
               </div>
             </div>
             <div className="max-h-[720px] overflow-y-auto grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -1240,7 +1292,10 @@ export default function TeamsPage() {
                     <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={72} />
                     <div className="min-w-0">
                       <div className="text-[9px] font-black uppercase tracking-[0.25em] text-[#D01F2D]">Player Profile</div>
-                      <div className="truncate text-2xl font-black text-[#16274F] sm:text-3xl">{selectedPlayer.name} {selectedPlayer.position && <span className={`ml-2 inline-flex px-2 py-1 align-middle text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}</div>
+                      <div className="flex min-w-0 items-center gap-2 text-2xl font-black text-[#16274F] sm:text-3xl">
+                        <span className="truncate">{selectedPlayer.rawName}</span>
+                        {selectedPlayer.position && <span className={`inline-flex flex-shrink-0 px-2 py-1 align-middle text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}
+                      </div>
                       <div className="mt-2 text-xs font-bold text-[#6B7280]">
                         {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).length > 0 ? (
                           <div>
@@ -1251,7 +1306,12 @@ export default function TeamsPage() {
                                   const target = allTime.find(t => normalizeTeamName(t?.Team) === normalizeTeamName(c.team))
                                   if (target) setSelected({ ...target, team: String(target.Team || '').trim() })
                                   setSelectedPlayerKey(null)
-                                  if (typeof window !== 'undefined') window.history.replaceState(null, '', `/teams?team=${encodeURIComponent(c.team)}`)
+                                  if (typeof window !== 'undefined') {
+                                    window.history.replaceState(null, '', `/teams?team=${encodeURIComponent(c.team)}`)
+                                    requestAnimationFrame(() => {
+                                      requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' }))
+                                    })
+                                  }
                                 }} className="inline-flex items-center gap-1 border border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
                                   {c.team} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
                                 </button>
