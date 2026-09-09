@@ -427,12 +427,23 @@ export default function TeamsPage() {
     setPlayerSort('Appearances')
     setPlayerSeasonFilter('All')
     setPlayerMinApps('All')
-    setPlayerLogSort({ key: 'season', dir: 'desc' })
+    setPlayerLogSort({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
     setPlayerLogOpponentFilter('All')
     setPlayerLogStatusFilter('All')
     setPlayerLogResultFilter('All')
     setPlayerLogStageFilter('All')
   }, [selected])
+
+  // Lock the document behind the Player Profile modal. This hook must stay
+  // at the component's top level so the hook order never changes between renders.
+  useEffect(() => {
+    if (!selectedPlayerKey) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [selectedPlayerKey])
 
   // Force the page to the top after navigating between franchises from Historic.
   useEffect(() => {
@@ -897,15 +908,6 @@ export default function TeamsPage() {
         return { ...current, key, dir: nextDir }
       })
     }
-
-    useEffect(() => {
-      if (!selectedPlayer) return undefined
-      const previousOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-      return () => {
-        document.body.style.overflow = previousOverflow
-      }
-    }, [selectedPlayer])
 
     // Historic clubs: scan the COMPLETE GAME_FACTS_ALL dataset using the
     // player's exact raw name as identity. This intentionally does not use
