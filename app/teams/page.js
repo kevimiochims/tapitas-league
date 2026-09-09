@@ -1246,18 +1246,18 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="col-span-4 grid min-w-max grid-cols-subgrid items-center gap-x-3 gap-y-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:gap-3 sm:px-6"
+                    className="col-span-4 grid min-w-max grid-cols-subgrid items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
                       <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
                     </div>
 
-                    <div className="flex items-center justify-center">
+                    <div className="ml-1 flex items-center justify-center">
                       <TeamAvatar name={g.Opponent} size="sm" />
                     </div>
 
-                    <div className="min-w-0 w-max sm:w-auto">
+                    <div className="ml-1 min-w-0 w-max sm:w-auto">
                       <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
