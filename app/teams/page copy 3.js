@@ -995,7 +995,7 @@ export default function TeamsPage() {
             {/* Player record cards stay in the same stats sequence */}
             {mostRostered && (
               <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
+                <div className="grid grid-cols-[minmax(0,1fr)_84px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
                       <Users className="h-4 w-4" />
@@ -1005,8 +1005,8 @@ export default function TeamsPage() {
                       <div className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostRostered.count}</div>
                     </div>
                   </div>
-                  <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
-                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={68} />
+                  <div className="flex h-full min-h-[84px] items-start justify-end sm:min-h-[96px]">
+                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={84} />
                   </div>
                   <div className="col-span-2 min-w-0 border-t-2 border-[#0A0A0A]/10 pt-2">
                     <div className="flex min-w-0 items-center gap-1.5">
@@ -1020,7 +1020,7 @@ export default function TeamsPage() {
 
             {mostStarted && (
               <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
+                <div className="grid grid-cols-[minmax(0,1fr)_84px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
                       <Star className="h-4 w-4" />
@@ -1030,8 +1030,8 @@ export default function TeamsPage() {
                       <div className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostStarted.count}</div>
                     </div>
                   </div>
-                  <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
-                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={68} />
+                  <div className="flex h-full min-h-[84px] items-start justify-end sm:min-h-[96px]">
+                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={84} />
                   </div>
                   <div className="col-span-2 min-w-0 border-t-2 border-[#0A0A0A]/10 pt-2">
                     <div className="flex min-w-0 items-center gap-1.5">
@@ -1152,7 +1152,7 @@ export default function TeamsPage() {
                         </div>
                         <div className="text-[10px] text-[#6B7280]">{pct}%</div>
                       </div>
-                      <div className="flex w-7 flex-shrink-0 justify-end"><ChevronRight className="h-4 w-4 text-[#6B7280]" /></div>
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
                     </a>
                   )
                 })}
@@ -1244,7 +1244,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid w-max min-w-full grid-cols-[58px_40px_155px_78px_28px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[80px_40px_300px_136px_20px] sm:gap-3 sm:px-6"
+                    className="grid w-max min-w-full grid-cols-[58px_40px_155px_78px_20px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[80px_40px_300px_136px_20px] sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
