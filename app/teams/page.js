@@ -374,10 +374,10 @@ const shortName = (name) => {
     'how much': 'Howmuch',
     'howmuchyoutruck': 'Howmuch',
     'hangover football club': 'Hangover FC',
-    'Porto Alegre coelhos': 'PA Coelhos',
-    'Santa Cruz Frangos': 'SC Frangos',
-    'Seguidores de Charlao': 'Seg. Charlao',
-    'Canoas Andres Limas': 'C Andres Limas',
+    'porto alegre coelhos': 'PA Coelhos',
+    'santa cruz frangos': 'SC Frangos',
+    'seguidores de charlao': 'Seg. Charlao',
+    'canoas andres limas': 'C Andres Limas',
     'rj skipknows': 'RJ SkipKnows',
     '4winclutch': '4WinClutch',
   }
@@ -1072,7 +1072,7 @@ export default function TeamsPage() {
                   <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
                     <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={68} />
                   </div>
-                  <div className="col-span-2 min-w-0 border-t-2 border-[#0A0A0A]/10 pt-2">
+                  <div className="col-span-2 min-w-0">
                     <div className="flex min-w-0 items-center gap-1.5">
                       <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{mostRostered.name}</div>
                       {mostRostered.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostRostered.position)}`}>{mostRostered.position}</span>}
@@ -1097,7 +1097,7 @@ export default function TeamsPage() {
                   <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
                     <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={68} />
                   </div>
-                  <div className="col-span-2 min-w-0 border-t-2 border-[#0A0A0A]/10 pt-2">
+                  <div className="col-span-2 min-w-0">
                     <div className="flex min-w-0 items-center gap-1.5">
                       <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{mostStarted.name}</div>
                       {mostStarted.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostStarted.position)}`}>{mostStarted.position}</span>}
