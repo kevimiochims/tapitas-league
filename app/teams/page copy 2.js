@@ -58,30 +58,6 @@ async function safeFetch(url) {
   } catch { return [] }
 }
 
-// Build a Matchups URL using the first occurrence of the mirrored matchup,
-// matching the canonical selection logic used by the Matchups page.
-function buildMatchupHref(game, allGames = []) {
-  if (!game) return '/matchups'
-  const season = String(game?.Season || '').trim()
-  const week = String(game?.Week || '').trim()
-  const team = String(game?.Team || '').trim()
-  const opp = String(game?.Opponent || '').trim()
-
-  const canonical = Array.isArray(allGames)
-    ? allGames.find(g => {
-        const gs = String(g?.Season || '').trim()
-        const gw = String(g?.Week || '').trim()
-        const gt = String(g?.Team || '').trim()
-        const go = String(g?.Opponent || '').trim()
-        if (gs !== season || gw !== week) return false
-        return (gt === team && go === opp) || (gt === opp && go === team)
-      })
-    : null
-
-  const target = canonical || game
-  return `/matchups?season=${encodeURIComponent(String(target?.Season || '').trim())}&week=${encodeURIComponent(String(target?.Week || '').trim())}&team=${encodeURIComponent(String(target?.Team || '').trim())}&opp=${encodeURIComponent(String(target?.Opponent || '').trim())}`
-}
-
 // Returns an ordinal label like "most all-time", "2nd all-time", "3rd all-time"...
 // Ties share the same rank, and the next distinct value skips ahead accordingly
 // (e.g. two teams tied for 2nd push the next team to 4th, not 3rd).
@@ -313,9 +289,10 @@ export default function TeamsPage() {
   // ── GAME_FACTS_ALL derived stats: 200+ pt games & PR #1 weeks ───────
   const isDoubleWeek = g => { const w = String(g?.Week || ''); return w.includes('-') || w.includes('&') }
 
-  // Highest PF among all teams for a given Season+Week in Regular Season only.
-  // Playoff/Consolation weeks are excluded because not every franchise competes.
-  const weeklyMaxPF = useMemo(() => {
+  // Highest PF among all teams for a given Season+Week, Reg Season only.
+  // The weekly-high record is intentionally RS-only because all franchises
+  // are eligible during the regular season.
+  const weeklyMaxPFRS = useMemo(() => {
     const map = {}
     games.forEach(g => {
       if (String(g?.GameStage || '').trim() !== 'Reg Season') return
@@ -348,7 +325,7 @@ export default function TeamsPage() {
   const getTeam200Games = (teamName) => {
     const seen = new Set()
     let count = 0
-    games.filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName) && !isDoubleWeek(g)).forEach(g => {
+    games.filter(g => String(g?.Team || '').trim() === teamName && !isDoubleWeek(g)).forEach(g => {
       const key = `${String(g?.Season || '')}|${String(g?.Week || '')}`
       if (seen.has(key)) return
       seen.add(key)
@@ -358,7 +335,11 @@ export default function TeamsPage() {
   }
 
   const getTeamPR1Weeks = (teamName) =>
-    games.filter(g => String(g?.Team || '').trim() === teamName && parseNumber(g?.['Power Ranking']) === 1).length
+    games.filter(g =>
+      normalizeTeamName(g?.Team) === normalizeTeamName(teamName) &&
+      String(g?.GameStage || '').trim() === 'Reg Season' &&
+      parseNumber(g?.['Power Ranking']) === 1
+    ).length
 
   // Unicorn seasons for a given team (seasons where standing == max standing that season)
   const getTeamUnicornSeasons = (teamName) => {
@@ -476,18 +457,21 @@ export default function TeamsPage() {
 
     const logSeasonOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.Season || '').trim()).filter(Boolean))).sort((a, b) => b.localeCompare(a))]
     const logOpponentOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.Opponent || '').trim()).filter(Boolean))).sort()]
-    const logGameStageOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.GameStage || 'Reg Season').trim()).filter(Boolean)))]
+    // Filter by GameStage (column I in GAME_FACTS_ALL): Reg Season / Playoffs / Consolation.
+    const logGameTypeOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.GameStage || '').trim()).filter(Boolean)))]
 
     const filteredLog = teamGames.filter(g => {
       if (logSeason !== 'All' && String(g?.Season || '').trim() !== logSeason) return false
       if (logOpponent !== 'All' && String(g?.Opponent || '').trim() !== logOpponent) return false
-      const gStage = String(g?.GameStage || 'Reg Season').trim()
-      if (logGameType !== 'All' && gStage !== logGameType) return false
+      const gameStage = String(g?.GameStage || '').trim()
+      if (logGameType !== 'All' && gameStage !== logGameType) return false
+      // 200+ filter: only single-week games; double weeks are excluded.
       if (log200Only && (isDoubleWeek(g) || parseNumber(g?.PF) < 200)) return false
+      // Highest score of week (RS): Reg Season only, where every franchise is eligible.
       if (logHighestOnly) {
-        if (gStage !== 'Reg Season') return false
+        if (gameStage !== 'Reg Season') return false
         const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-        if (parseNumber(g?.PF) !== weeklyMaxPF[key]) return false
+        if (parseNumber(g?.PF) !== weeklyMaxPFRS[key]) return false
       }
       return true
     })
@@ -597,48 +581,56 @@ export default function TeamsPage() {
                 </div>
               )
             })}
+
+            {/* Player record cards stay in the same stats sequence */}
+            {mostRostered && (
+              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm min-h-[176px]">
+                <div className="pr-[82px]">
+                  <div className="mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered Ever</div>
+                  <div className="truncate font-black leading-tight text-[#16274F]" style={{ fontSize: 'clamp(15px, 1.8vw, 22px)' }}>
+                    {mostRostered.name}
+                  </div>
+                  <div className="mt-2 flex items-end gap-2">
+                    <span className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>
+                      {mostRostered.count}
+                    </span>
+                    <span className="pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">games</span>
+                  </div>
+                  <div className="mt-0.5 text-[10px] font-bold text-[#6B7280]">on roster · starter or bench</div>
+                </div>
+                <div className="absolute right-4 top-4">
+                  <PlayerAvatar name={mostRostered.name} playerLookup={playerLookup} size={64} />
+                </div>
+              </div>
+            )}
+
+            {mostStarted && (
+              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm min-h-[176px]">
+                <div className="pr-[82px]">
+                  <div className="mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
+                    <Star className="h-4 w-4" />
+                  </div>
+                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">Most Started</div>
+                  <div className="truncate font-black leading-tight text-[#16274F]" style={{ fontSize: 'clamp(15px, 1.8vw, 22px)' }}>
+                    {mostStarted.name}
+                  </div>
+                  <div className="mt-2 flex items-end gap-2">
+                    <span className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>
+                      {mostStarted.count}
+                    </span>
+                    <span className="pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">games</span>
+                  </div>
+                  <div className="mt-0.5 text-[10px] font-bold text-[#6B7280]">as a starter</div>
+                </div>
+                <div className="absolute right-4 top-4">
+                  <PlayerAvatar name={mostStarted.name} playerLookup={playerLookup} size={64} />
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Most Rostered / Most Started Player */}
-          {(mostRostered || mostStarted) && (
-            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {mostRostered && (
-                <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                  <PlayerAvatar name={mostRostered.name} playerLookup={playerLookup} size={56} />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">
-                      <Users className="h-3 w-3" />
-                      Most Rostered Ever
-                    </div>
-                    <div className="truncate font-black text-[#16274F]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                      {mostRostered.name}
-                    </div>
-                    <div className="mt-0.5 text-xs font-bold text-[#6B7280]">
-                      {mostRostered.count} game{mostRostered.count === 1 ? '' : 's'} on roster (starter or bench)
-                    </div>
-                  </div>
-                </div>
-              )}
-              {mostStarted && (
-                <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                  <PlayerAvatar name={mostStarted.name} playerLookup={playerLookup} size={56} />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">
-                      <Star className="h-3 w-3" />
-                      Most Started
-                    </div>
-                    <div className="truncate font-black text-[#16274F]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                      {mostStarted.name}
-                    </div>
-                    <div className="mt-0.5 text-xs font-bold text-[#6B7280]">
-                      {mostStarted.count} game{mostStarted.count === 1 ? '' : 's'} as a starter
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
 
           <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
 
@@ -773,7 +765,7 @@ export default function TeamsPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Select value={logSeason} onChange={setLogSeason} options={logSeasonOptions} placeholder="Season" />
                 <Select value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} placeholder="Opponent" />
-                <Select value={logGameType} onChange={setLogGameType} options={logGameStageOptions} placeholder="Game Stage" />
+                <Select value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} placeholder="Game Type" />
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
@@ -792,7 +784,7 @@ export default function TeamsPage() {
                     : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
                     }`}
                 >
-                  Highest score of week
+                  Highest score of week (RS)
                 </button>
                 {(logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly) && (
                   <button
@@ -814,35 +806,48 @@ export default function TeamsPage() {
                 const won = String(g?.Result || '').trim().toUpperCase() === 'W'
                 const pf = parseNumber(g?.PF)
                 const pa = parseNumber(g?.PA)
-                const gStage = String(g?.GameStage || 'Reg Season').trim()
+                const gType = String(g?.GameStage || '').trim()
                 const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-                const isWeekHigh = gStage === 'Reg Season' && pf > 0 && pf === weeklyMaxPF[key]
-                const matchupHref = buildMatchupHref(g, games)
+                const isWeekHigh = gType === 'Reg Season' && pf > 0 && pf === weeklyMaxPFRS[key]
+
+                // Matchups deduplicates mirrored rows and selects the first row it
+                // encounters for a given Season + Week + Team/Opponent pair.
+                // Use that same canonical row in the URL so the matchup opens selected.
+                const canonicalMatchup = games.find(row => {
+                  const sameSeason = String(row?.Season || '').trim() === String(g?.Season || '').trim()
+                  const sameWeek = String(row?.Week || '').trim() === String(g?.Week || '').trim()
+                  if (!sameSeason || !sameWeek) return false
+                  const rowTeam = normalizeTeamName(row?.Team)
+                  const rowOpp = normalizeTeamName(row?.Opponent)
+                  const selectedTeam = normalizeTeamName(selected.team)
+                  const opponent = normalizeTeamName(g?.Opponent)
+                  return (rowTeam === selectedTeam && rowOpp === opponent) ||
+                    (rowTeam === opponent && rowOpp === selectedTeam)
+                }) || g
+                const matchupHref = `/matchups?season=${encodeURIComponent(String(canonicalMatchup?.Season || '').trim())}&week=${encodeURIComponent(String(canonicalMatchup?.Week || '').trim())}&team=${encodeURIComponent(String(canonicalMatchup?.Team || '').trim())}&opp=${encodeURIComponent(String(canonicalMatchup?.Opponent || '').trim())}`
 
                 return (
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid grid-cols-[minmax(64px,auto)_40px_minmax(0,1fr)_auto_16px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:flex sm:gap-3 sm:px-6"
+                    className="flex items-center gap-3 px-6 py-3.5 transition-colors hover:bg-[#F7F6F2]"
                   >
-                    <div className="min-w-0 sm:w-20 sm:flex-shrink-0">
+                    <div className="w-20 flex-shrink-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
                       <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
                     </div>
 
                     <TeamAvatar name={g.Opponent} size="sm" />
 
-                    <div className="min-w-0">
-                      <div className="break-words text-sm font-black leading-tight text-[#16274F]">
-                        vs {g.Opponent}
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-1">
-                        {gStage !== 'Reg Season' && (
-                          <span className="inline-block max-w-full border border-[#0A0A0A]/20 bg-[#F7F6F2] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#6B7280]">
-                            {gStage}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                        {gType !== 'Reg Season' && (
+                          <span className="inline-block border border-[#0A0A0A]/20 bg-[#F7F6F2] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#6B7280]">
+                            {gType}
                           </span>
                         )}
-                        {pf >= 200 && !isDoubleWeek(g) && (
+                        {pf >= 200 && (
                           <span className="inline-block border border-[#0A0A0A] bg-[#F5C518] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#0A0A0A]">
                             200+
                           </span>
@@ -855,8 +860,8 @@ export default function TeamsPage() {
                       </div>
                     </div>
 
-                    <div className="whitespace-nowrap text-right">
-                      <div className={`text-xs font-black sm:text-sm ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
+                    <div className="flex-shrink-0 text-right">
+                      <div className={`text-sm font-black ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
                         {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
                       </div>
                     </div>
@@ -955,8 +960,8 @@ export default function TeamsPage() {
               <span style={{ display: 'block' }}>THE</span>
               <span className="text-[#D01F2D]" style={{ display: 'block' }}>FRANCHISES</span>
             </h1>
-            <p className="mt-4 max-w-xl text-sm font-semibold text-slate-600 sm:text-base">
-              The teams, stories and numbers that make Tapitas League what it is.
+            <p className="mt-4 max-w-xl text-sm font-semibold text-[#6B7280] sm:text-base">
+              The teams, rivalries and legacies that built Tapitas League.
             </p>
           </div>
         </div>
