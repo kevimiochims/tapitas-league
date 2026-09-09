@@ -1244,7 +1244,7 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="grid w-max min-w-full grid-cols-[58px_40px_155px_78px_28px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[80px_40px_300px_136px_20px] sm:gap-3 sm:px-6"
+                    className="grid w-max grid-cols-[58px_32px_max-content_max-content_24px] items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:w-full sm:min-w-full sm:grid-cols-[80px_40px_minmax(0,1fr)_136px_24px] sm:gap-3 sm:px-6"
                   >
                     <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
@@ -1276,13 +1276,13 @@ export default function TeamsPage() {
                       </div>
                     </div>
 
-                    <div className="w-[78px] flex-shrink-0 text-right sm:w-[136px]">
+                    <div className="flex w-max flex-shrink-0 justify-self-start text-right sm:w-[136px] sm:justify-self-end">
                       <div className={`text-sm font-black whitespace-nowrap ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
                         {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
                       </div>
                     </div>
 
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
+                    <div className="flex w-6 flex-shrink-0 items-center justify-end sm:w-6"><ChevronRight className="h-4 w-4 text-[#6B7280]" /></div>
                   </a>
                 )
               })}
