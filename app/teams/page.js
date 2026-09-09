@@ -83,35 +83,6 @@ function normalizeTeamName(value) {
     .trim()
 }
 
-function shortName(name) {
-  const mappings = {
-    'i am megatron': 'Megatron',
-    'h-lera do mahl': 'H-Lera',
-    'peytao da massa': 'Peytao',
-    'ocupa & resiste': 'Ocupa',
-    'ocupa e resiste': 'Ocupa',
-    'pequers verde': 'Pequers',
-    'rincao settlers': 'Rincão',
-    'old brady': 'OldBrady',
-    'oldbrady': 'OldBrady',
-    'moneyball': 'Moneyball',
-    'patrolao': 'Patrolão',
-    'patrolao squad': 'Patrolão',
-    'how much': 'Howmuch',
-    'howmuchyoutruck': 'Howmuch',
-    'hangover football club': 'Hangover FC',
-    'porto alegre coelhos': 'PA Coelhos',
-    'santa cruz frangos': 'SC Frangos',
-    'seguidores de charlao': 'Seg. Charlao',
-    'canoas andres limas': 'C Andres Limas',
-    'rj skipknows': 'RJ SkipKnows',
-    '4winclutch': '4WinClutch',
-  }
-
-  const key = normalizeTeamName(name)
-  return mappings[key] || String(name || '').trim()
-}
-
 function isTrueFlag(value) {
   const normalized = String(value ?? '').trim().toLowerCase()
   return ['true', 'yes', 'sim', '1'].includes(normalized)
@@ -381,6 +352,37 @@ function Select({ value, onChange, options, placeholder, disabled }) {
       )}
     </div>
   )
+}
+
+const shortName = (name) => {
+  const mappings = {
+    'i am megatron': 'Megatron',
+    'h-lera do mahl': 'H-Lera',
+    'peytão da massa': 'Peytao',
+    'peytao da massa': 'Peytao',
+    'ocupa & resiste': 'Ocupa',
+    'ocupa e resiste': 'Ocupa',
+    'pequers verde': 'Pequers',
+    'rincao settlers': 'Rincão',
+    'rincão settlers': 'Rincão',
+    'old brady': 'OldBrady',
+    'oldbrady': 'OldBrady',
+    'moneyball': 'Moneyball',
+    'patrolão': 'Patrolão',
+    'patrolão squad': 'Patrolão',
+    'how much': 'Howmuch',
+    'howmuchyoutruck': 'Howmuch',
+    'hangover football club': 'Hangover FC',
+    'Porto Alegre coelhos': 'PA Coelhos',
+    'Santa Cruz Frangos': 'SC Frangos',
+    'Seguidores de Charlao': 'Seg. Charlao',
+    'Canoas Andres Limas': 'C Andres Limas',
+    'rj skipknows': 'RJ SkipKnows',
+    '4winclutch': '4WinClutch',
+  }
+  const raw = String(name || '').trim()
+  const key = raw.toLocaleLowerCase()
+  return mappings[key] || raw
 }
 
 export default function TeamsPage() {
@@ -856,18 +858,29 @@ export default function TeamsPage() {
 
     const sortedSelectedPlayerGames = [...filteredSelectedPlayerGames].sort((a, b) => {
       const direction = playerLogSort.dir === 'asc' ? 1 : -1
-      const getSortValue = (row) => {
-        switch (playerLogSort.key) {
-          case 'week': return parseFloat(String(row.week || '').replace(/[^0-9.]/g, '')) || 0
-          case 'pts': return row.pts || 0
-          case 'teamPF': return row.teamPF || 0
-          case 'season':
-          default: return Number(row.season) || 0
-        }
+      const seasonA = Number(a.season) || 0
+      const seasonB = Number(b.season) || 0
+      const weekA = parseFloat(String(a.week || '').replace(/[^0-9.]/g, '')) || 0
+      const weekB = parseFloat(String(b.week || '').replace(/[^0-9.]/g, '')) || 0
+
+      // Season is always the primary grouping. This keeps all weeks from a
+      // season together even when the user sorts by Week.
+      if (seasonA !== seasonB) {
+        return (seasonA - seasonB) * (playerLogSort.key === 'season' ? direction : -1)
       }
-      const av = getSortValue(a)
-      const bv = getSortValue(b)
-      if (av !== bv) return (av - bv) * direction
+
+      if (playerLogSort.key === 'week') {
+        if (weekA !== weekB) return (weekA - weekB) * direction
+      } else if (playerLogSort.key === 'pts' || playerLogSort.key === 'teamPF') {
+        const av = playerLogSort.key === 'pts' ? a.pts || 0 : a.teamPF || 0
+        const bv = playerLogSort.key === 'pts' ? b.pts || 0 : b.teamPF || 0
+        if (av !== bv) return (av - bv) * direction
+      } else if (playerLogSort.key === 'season') {
+        if (weekA !== weekB) return weekB - weekA
+      } else {
+        if (weekA !== weekB) return weekB - weekA
+      }
+
       return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
     })
 
@@ -949,12 +962,13 @@ export default function TeamsPage() {
               <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 30%, rgba(247,246,242,0.85) 55%, rgba(247,246,242,0.2) 100%)' }} />
             </div>
 
-            <div className="relative z-10 flex flex-col items-center gap-5 p-6 sm:p-8 md:flex-row md:items-center md:gap-8 md:p-14">
+            <div className="relative z-10 flex flex-col items-center gap-3 p-6 sm:p-8 md:flex-row md:items-center md:gap-8 md:p-14">
               <div className="flex-shrink-0">
                 <TeamAvatar name={selected.team} size="xl" />
               </div>
               <div className="w-full min-w-0 text-center md:text-left">
-                <div className="mt-3 mb-3 flex flex-wrap justify-center gap-2 md:justify-start">
+                {(titles.length > 0 || unicorns.length > 0) && (
+                  <div className="mt-0 mb-3 flex flex-wrap justify-center gap-2 md:justify-start">
                   {titles.length > 0 && (
                     <div className="inline-flex items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#F5C518] px-3 py-1.5">
                       <Trophy className="h-3.5 w-3.5 text-[#0A0A0A]" />
@@ -972,7 +986,8 @@ export default function TeamsPage() {
                       </span>
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
                 <h1 className="mb-2 leading-none font-black text-[#16274F]"
                   style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px, 6vw, 80px)' }}>
                   {selected.team}
