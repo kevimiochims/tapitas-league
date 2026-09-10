@@ -160,24 +160,7 @@ function getHistoryColor(rank, total) {
 function matchupHref(row) {
   if (!row) return '/matchups'
 
-  const season = String(row?.Season || '').trim()
-  const week = String(row?.Week || '').trim()
-  const teamA = String(row?.Team || '').trim()
-  const teamB = String(row?.Opponent || '').trim()
-
-  if (!teamA || !teamB) {
-    return `/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`
-  }
-
-  // Matchups uses a canonical, order-independent pairing for selection.
-  // Power Rankings contains mirrored GAME_FACTS rows, so Team/Opponent can
-  // arrive in either order. Keep the URL deterministic regardless of which
-  // mirrored row supplied the matchup.
-  const [canonicalTeamA, canonicalTeamB] = [teamA, teamB].sort((a, b) =>
-    normalizeString(a).localeCompare(normalizeString(b))
-  )
-
-  return `/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}&teamA=${encodeURIComponent(canonicalTeamA)}&teamB=${encodeURIComponent(canonicalTeamB)}`
+  return `/matchups?season=${encodeURIComponent(String(row?.Season || '').trim())}&week=${encodeURIComponent(String(row?.Week || '').trim())}&team=${encodeURIComponent(String(row?.Team || '').trim())}&opp=${encodeURIComponent(String(row?.Opponent || '').trim())}`
 }
 
 export default function PowerRankingsPage() {
