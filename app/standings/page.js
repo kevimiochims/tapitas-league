@@ -157,17 +157,24 @@ function WinChart({ data, chartStats }) {
             fontSize={fsValue}
             fill={
               d.champion
-                ? "#f59e0b"
+                ? "#f59e0b" // 🏆 Amarelo Ouro se foi Campeão
                 : chartStats?.bestSeasons?.includes(d.season)
-                  ? '#1E8E3E'
+                  ? "#17e287" // 🟢 Verde Esmeralda para as Melhores Temporadas (Recorde do time)
                   : chartStats?.worstSeasons?.includes(d.season)
-                    ? '#D01F2D'
-                    : '#9CA3AF'
+                    ? "#ef4444" // 🔴 Vermelho Vivo para as Piores Temporadas (Fundo do poço do time)
+                    : "#22d3ee" // 🔵 Ciano padrão para as temporadas regulares
+            }
+            className={
+              d.champion ||
+                chartStats?.bestSeasons?.includes(d.season) ||
+                chartStats?.worstSeasons?.includes(d.season)
+                ? "font-black"
+                : ""
             }
           >
-            {d.value}
+            {Math.round(d.value)}
           </text>
-          <circle cx={xScale(i)} cy={yScale(d.value)} r="2" fill="#16274F" />
+          <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#16274F" />
         </g>
       ))}
     </svg>
@@ -175,428 +182,466 @@ function WinChart({ data, chartStats }) {
 }
 
 const CHART_STATS = [
-  { key: 'wins', label: 'Wins' },
-  { key: 'losses', label: 'Losses' },
-  { key: 'ties', label: 'Ties' },
-  { key: 'pf', label: 'PF' },
-  { key: 'pa', label: 'PA' },
-  { key: 'avg_pf', label: 'Avg PPW' },
+  { label: 'Wins', keys: { 'Reg Season': 'RS_W', 'Playoffs': 'PO_W', 'Total': 'W' } },
+  { label: 'Losses', keys: { 'Reg Season': 'RS_L', 'Playoffs': 'PO_L', 'Total': 'L' } },
+  { label: 'Points', keys: { 'Reg Season': 'RS_PF', 'Playoffs': 'PO_PF', 'Total': 'PF' } },
+  { label: 'Win %', keys: { 'Reg Season': 'RS_W%', 'Playoffs': 'PO_W%', 'Total': 'W%' } },
 ]
 
 export default function StandingsPage() {
-  const { drawerOpen, setDrawerOpen } = useDrawer()
-  const [allData, setAllData] = useState([])
-  const [allSeasons, setAllSeasons] = useState([])
-  const [season, setSeason] = useState('All-Time')
-  const [tab, setTab] = useState('Wins-Losses')
+  const [allTimeData, setAllTimeData] = useState([])
+  const [historyData, setHistoryData] = useState([])
   const [loading, setLoading] = useState(true)
-  const [sortCol, setSortCol] = useState('Pos')
-  const [sortDir, setSortDir] = useState('asc')
-  const [page, setPage] = useState(0)
+  const [tab, setTab] = useState('Overall')
+  const [season, setSeason] = useState('All-Time')
   const [chartTeam, setChartTeam] = useState('')
+  const [page, setPage] = useState(0)
+  const [sortCol, setSortCol] = useState('W')
+  const [sortDir, setSortDir] = useState('desc')
   const [chartStat, setChartStat] = useState('Wins')
   const [chartScope, setChartScope] = useState('Reg Season')
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [allSeasons, setAllSeasons] = useState([])
+  const { setLeftSlot } = useDrawer()
 
+  const TABS = ['Overall', 'Reg Season', 'Playoffs']
   const PER_PAGE = 10
 
   useEffect(() => {
     async function load() {
-      setLoading(true)
-      const res = await safeFetch(`${BASE_URL}/GAME_FACTS_ALL?offset=0`)
-      setAllData(res)
-      const seasons = [...new Set(res.map(r => r.Season))].sort((a, b) => b - a)
-      setAllSeasons(seasons)
+      const [allTime, history] = await Promise.all([
+        safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
+        safeFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+      ])
+      setAllTimeData(allTime)
+      setHistoryData(history)
+      if (allTime.length > 0) {
+        setChartTeam(String(allTime[0]?.Team || allTime[0]?.team || '').trim())
+      }
       setLoading(false)
     }
     load()
   }, [])
 
-  const tabCols = {
-    'Wins-Losses': ['W', 'L', 'T', 'Win %'],
-    'Points': ['PF', 'PA', 'Margin', 'Avg PPW'],
-  }
+
+  useEffect(() => {
+    setLeftSlot(
+      <button
+        onClick={() => setDrawerOpen(true)}
+        className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+      >
+        Summary
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    )
+    return () => setLeftSlot(null)
+  }, [])
+
+  useEffect(() => {
+    if (season === 'All-Time' && sortCol === 'Pos') {
+      setSortCol('W')
+      setSortDir('desc')
+    }
+  }, [season])
+
+  const seasons = useMemo(() => {
+    const s = new Set()
+    historyData.forEach(r => {
+      const v = String(r?.Season || r?.season || '').trim()
+      // Only include seasons that have Standing data (completed)
+      if (v && parseNumber(r?.Standing) > 0) s.add(v)
+    })
+    return ['All-Time', ...Array.from(s).sort((a, b) => Number(b) - Number(a))]
+  }, [historyData])
+
+  useEffect(() => {
+    const numericSeasons = seasons
+      .filter(s => s !== 'All-Time')
+      .map(s => Number(s))
+      .filter(s => !Number.isNaN(s))
+      .sort((a, b) => a - b)
+    setAllSeasons(numericSeasons)
+  }, [seasons])
 
   const allTeams = useMemo(() => {
-    return [...new Set(allData.map(r => r.Team))].sort()
-  }, [allData])
-
-  const getCol = (row, col) => {
-    const colMap = {
-      'W': parseNumber(row.wins),
-      'L': parseNumber(row.losses),
-      'T': parseNumber(row.ties),
-      'Win %': row.winPct ? `${(row.winPct * 100).toFixed(1)}%` : '0%',
-      'PF': parseNumber(row.pf).toFixed(1),
-      'PA': parseNumber(row.pa).toFixed(1),
-      'Margin': parseNumber(row.margin).toFixed(1),
-      'Avg PPW': parseNumber(row.avg_pf).toFixed(2),
-    }
-    return colMap[col] || ''
-  }
+    const t = new Set()
+    allTimeData.forEach(r => {
+      const v = String(r?.Team || r?.team || '').trim()
+      if (v) t.add(v)
+    })
+    return Array.from(t).sort()
+  }, [allTimeData])
 
   const tableData = useMemo(() => {
-    const teams = {}
-    const allTeamsList = [...new Set(allData.map(r => r.Team))]
+    let rows = []
+    if (season === 'All-Time') {
+      rows = allTimeData.map(r => ({
+        team: String(r?.Team || r?.team || '').trim(),
+        w: parseNumber(tab === 'Overall' ? r?.W : tab === 'Reg Season' ? r?.RS_W : r?.PO_W),
+        l: parseNumber(tab === 'Overall' ? r?.L : tab === 'Reg Season' ? r?.RS_L : r?.PO_L),
+        pf: parseNumber(tab === 'Overall' ? r?.PF : tab === 'Reg Season' ? r?.RS_PF : r?.PO_PF),
+        winPct: parseNumber(String(tab === 'Overall' ? r?.['W%'] : tab === 'Reg Season' ? r?.['RS_W%'] : r?.['PO_W%'] || '0').replace('%', '')),
+        titles: parseNumber(r?.Titles || 0),
+        finals: parseNumber(r?.Finals || 0),
+        poApps: parseNumber(r?.['Playoff Apps'] || 0),
+        champion: false,
+      }))
+    } else {
+      console.log('Filtrando season:', season)
+      console.log('Seasons disponíveis:', historyData.map(r => r.Season).slice(0, 5))
+      rows = historyData
+        .filter(r => {
+          const s = String(r?.Season || r?.season || '').trim()
+          return s === season
+        })
+        .map(r => {
+          const team = String(r?.Team || r?.team || '').trim()
+          console.log('Row:', team, 'RS_W:', r?.RS_W, 'RS_L:', r?.RS_L, 'RS_PF:', r?.RS_PF)
+          return {
+            team,
+            standing: parseNumber(r?.Standing || r?.standing || 0),
+            w: parseNumber(tab === 'Overall' ? r?.W : tab === 'Reg Season' ? r?.RS_W : r?.PO_W),
+            l: parseNumber(tab === 'Overall' ? r?.L : tab === 'Reg Season' ? r?.RS_L : r?.PO_L),
+            pf: parseNumber(tab === 'Overall' ? r?.PF : tab === 'Reg Season' ? r?.RS_PF : r?.PO_PF),
+            winPct: parseNumber(String(tab === 'Overall' ? r?.['W%'] : tab === 'Reg Season' ? r?.['RS_W%'] : r?.['PO_W%'] || '0').replace('%', '')),
+            titles: String(r?.Champion || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
+            finals: String(r?.Reached_Final || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
+            poApps: String(r?.Made_Playoffs || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
+            champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
+          }
+        })
+    }
+    return rows
+      .filter(r => r.team)
+      .sort((a, b) => {
+        const getVal = (row) => {
+          if (sortCol === 'Pos') return row.standing || 999
+          if (sortCol === 'W') return row.w
+          if (sortCol === 'L') return row.l
+          if (sortCol === 'W%') return row.winPct
+          if (sortCol === 'PF') return row.pf
+          if (sortCol === 'Titles') return row.titles
+          if (sortCol === 'Finals') return row.finals
+          if (sortCol === 'PO Apps') return row.poApps
+          return row.w
+        }
+        const diff = sortDir === 'desc' ? getVal(b) - getVal(a) : getVal(a) - getVal(b)
+        if (diff !== 0) return diff
+        if (b.w !== a.w) return b.w - a.w
+        if (a.l !== b.l) return a.l - b.l
+        return b.pf - a.pf
+      })
+  }, [allTimeData, historyData, tab, season, sortCol, sortDir])
 
-    allTeamsList.forEach(team => {
-      const rows = season === 'All-Time' ? allData.filter(r => r.Team === team) : allData.filter(r => r.Team === team && r.Season == season)
-      if (rows.length === 0) {
-        teams[team] = { team, standing: null, wins: 0, losses: 0, ties: 0, winPct: 0, pf: 0, pa: 0, margin: 0, avg_pf: 0, champion: false }
-        return
-      }
+  const chartData = useMemo(() => {
+    if (!chartTeam) return []
+    const stat = CHART_STATS.find(s => s.label === chartStat)
+    const key = stat?.keys?.[chartScope] ?? 'RS_W'
 
-      const uniqueYears = [...new Set(rows.map(r => r.Season))]
-      const wins = uniqueYears.reduce((s, y) => s + parseNumber(rows.find(r => r.Season == y)?.Wins ?? 0), 0)
-      const losses = uniqueYears.reduce((s, y) => s + parseNumber(rows.find(r => r.Season == y)?.Losses ?? 0), 0)
-      const ties = uniqueYears.reduce((s, y) => s + parseNumber(rows.find(r => r.Season == y)?.Ties ?? 0), 0)
-      const pf = uniqueYears.reduce((s, y) => s + parseNumber(rows.find(r => r.Season == y)?.PF ?? 0), 0)
-      const pa = uniqueYears.reduce((s, y) => s + parseNumber(rows.find(r => r.Season == y)?.PA ?? 0), 0)
-      const margin = pf - pa
-
-      const allGames = uniqueYears.reduce((s, y) => s + rows.filter(r => r.Season == y).length, 0)
-      const avg_pf = allGames > 0 ? pf / allGames : 0
-
-      const winPct = (wins + ties * 0.5) / (wins + losses + ties) || 0
-
-      teams[team] = {
-        team,
-        standing: season !== 'All-Time' ? rows[0]?.Pos : null,
-        wins,
-        losses,
-        ties,
-        winPct,
-        pf,
-        pa,
-        margin,
-        avg_pf,
-        champion: season === 'All-Time' ? allTeamsList.some(t => allData.filter(r => r.Team === t && r.Season == season).some(r => r.Champion)) : rows.some(r => r.Champion),
-      }
+    // Build a map of season -> reg season game count to detect incomplete seasons
+    const gamesPerSeason = {}
+    historyData.forEach(r => {
+      if (normalizeString(r?.Team || r?.team || '') !== normalizeString(chartTeam)) return
+      const s = String(r?.Season || '').trim()
+      if (!s) return
+      const hasStanding = parseNumber(r?.Standing) > 0
+      const gp = parseNumber(r?.RS_GP || r?.GP || 0)
+      gamesPerSeason[s] = { hasStanding, gp }
     })
 
-    const teamsArray = Object.values(teams).filter(t => t.wins + t.losses + t.ties > 0)
-    teamsArray.sort((a, b) => {
-      const aVal = sortCol === 'Pos' ? parseNumber(a.standing || 999) : getCol(a, sortCol)
-      const bVal = sortCol === 'Pos' ? parseNumber(b.standing || 999) : getCol(b, sortCol)
+    return historyData
+      .filter(r => {
+        if (normalizeString(r?.Team || r?.team || '') !== normalizeString(chartTeam)) return false
+        const s = String(r?.Season || '').trim()
+        const info = gamesPerSeason[s]
+        if (!info) return false
+        // Include if: season is complete (has Standing) OR has at least 8 games played
+        return info.hasStanding || info.gp >= 8
+      })
+      .map(r => ({
+        season: String(r?.Season || r?.season || '').trim(),
+        value: parseNumber(String(r?.[key] || '0').replace('%', '')),
+        champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
+        incomplete: !gamesPerSeason[String(r?.Season || '').trim()]?.hasStanding,
+      }))
+      .sort((a, b) => Number(a.season) - Number(b.season))
+  }, [historyData, chartTeam, chartStat, chartScope])
 
-      const aNum = parseNumber(aVal)
-      const bNum = parseNumber(bVal)
+  const chartStats = useMemo(() => {
+    if (!chartData.length) return null
 
-      if (aNum === bNum) return 0
-      if (sortCol === 'Pos' || ['W', 'L', 'T'].includes(sortCol)) {
-        return sortDir === 'asc' ? aNum - bNum : bNum - aNum
-      }
-      return sortDir === 'asc' ? aNum - bNum : bNum - aNum
-    })
+    // For best/worst/avg: only use completed seasons
+    const completedData = chartData.filter(d => !d.incomplete)
+    const vals = completedData.length > 0
+      ? completedData.map(d => d.value)
+      : chartData.map(d => d.value)
 
-    return teamsArray
-  }, [allData, season, sortCol, sortDir])
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length
+    const isLoss = chartStat === 'Losses'
 
+    const bestVal = isLoss ? Math.min(...vals) : Math.max(...vals)
+    const worstVal = isLoss ? Math.max(...vals) : Math.min(...vals)
+
+    const sourceData = completedData.length > 0 ? completedData : chartData
+    const bestSeasons = sourceData.filter(d => d.value === bestVal).map(d => d.season)
+    const worstSeasons = sourceData.filter(d => d.value === worstVal).map(d => d.season)
+    const championSeasons = chartData.filter(d => d.champion).map(d => d.season)
+    const titles = championSeasons.length
+
+    return { bestVal, worstVal, bestSeasons, worstSeasons, avg: Math.round(avg * 10) / 10, titles, championSeasons }
+  }, [chartData, chartStat])
+
+  const paged = tableData.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
   const totalPages = Math.ceil(tableData.length / PER_PAGE)
-  const paged = tableData.slice(page * PER_PAGE, (page + 1) * PER_PAGE)
+
+  useEffect(() => { setPage(0) }, [tab, season, sortCol, sortDir])
+
+  const tabCols = {
+    'Overall': ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles'],
+    'Reg Season': ['W', 'L', 'W%', 'PF'],
+    'Playoffs': ['W', 'L', 'PF'],
+  }
 
   const handleSort = (col) => {
     if (sortCol === col) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+      setSortDir(d => d === 'desc' ? 'asc' : 'desc')
     } else {
       setSortCol(col)
       setSortDir(col === 'Pos' ? 'asc' : 'desc')
     }
-    setPage(0)
   }
 
-  const chartData = useMemo(() => {
-    if (!chartTeam) return []
-    const teamData = allData.filter(r => r.Team === chartTeam)
-    const seasons = [...new Set(teamData.map(r => r.Season))].sort()
+  const getCol = (row, col) => {
+    if (col === 'Pos') return row.standing ? (['1st', '2nd', '3rd'][row.standing - 1] ?? `${row.standing}th`) : '—'
+    if (col === 'W') return row.w
+    if (col === 'L') return row.l
+    if (col === 'W%') return `${row.winPct.toFixed(1)}%`
+    if (col === 'PF') return Math.round(row.pf).toLocaleString()
+    if (col === 'Titles') return row.titles
+    if (col === 'Finals') return row.finals
+    if (col === 'PO Apps') return row.poApps
+    return '—'
+  }
 
-    return seasons.map(s => {
-      const rows = teamData.filter(r => r.Season === s)
-      let value = 0
-
-      if (chartScope === 'Reg Season') {
-        const regRows = rows.filter(r => r.GameStage === 'Reg Season')
-        if (chartStat === 'Wins') value = regRows.reduce((sum, r) => sum + parseNumber(r.Result).split('-')[0], 0)
-        if (chartStat === 'Losses') value = regRows.reduce((sum, r) => sum + parseNumber(r.Result).split('-')[1], 0)
-        if (chartStat === 'Ties') value = regRows.reduce((sum, r) => sum + parseNumber(r.Result).split('-')[2] || 0, 0)
-        if (chartStat === 'PF') value = regRows.reduce((sum, r) => sum + parseNumber(r.PF), 0)
-        if (chartStat === 'PA') value = regRows.reduce((sum, r) => sum + parseNumber(r.PA), 0)
-        if (chartStat === 'Avg PPW') value = regRows.length > 0 ? regRows.reduce((sum, r) => sum + parseNumber(r.PF), 0) / regRows.length : 0
-      } else if (chartScope === 'Playoffs') {
-        const playRows = rows.filter(r => r.GameStage?.includes('Playoff'))
-        if (chartStat === 'Wins') value = playRows.reduce((sum, r) => sum + (r.Result === 'W' ? 1 : 0), 0)
-        if (chartStat === 'Losses') value = playRows.reduce((sum, r) => sum + (r.Result === 'L' ? 1 : 0), 0)
-        if (chartStat === 'PF') value = playRows.reduce((sum, r) => sum + parseNumber(r.PF), 0)
-        if (chartStat === 'PA') value = playRows.reduce((sum, r) => sum + parseNumber(r.PA), 0)
-        if (chartStat === 'Avg PPW') value = playRows.length > 0 ? playRows.reduce((sum, r) => sum + parseNumber(r.PF), 0) / playRows.length : 0
-      } else {
-        if (chartStat === 'Wins') value = rows.reduce((sum, r) => sum + parseNumber(r.Result).split('-')[0], 0)
-        if (chartStat === 'Losses') value = rows.reduce((sum, r) => sum + parseNumber(r.Result).split('-')[1], 0)
-        if (chartStat === 'Ties') value = rows.reduce((sum, r) => sum + parseNumber(r.Result).split('-')[2] || 0, 0)
-        if (chartStat === 'PF') value = rows.reduce((sum, r) => sum + parseNumber(r.PF), 0)
-        if (chartStat === 'PA') value = rows.reduce((sum, r) => sum + parseNumber(r.PA), 0)
-        if (chartStat === 'Avg PPW') value = rows.length > 0 ? rows.reduce((sum, r) => sum + parseNumber(r.PF), 0) / rows.length : 0
-      }
-
-      return { season: s, value, champion: rows.some(r => r.Champion) }
-    })
-  }, [chartTeam, chartStat, chartScope, allData])
-
-  const chartStats = useMemo(() => {
-    if (!chartTeam) return null
-    const teamData = allData.filter(r => r.Team === chartTeam)
-    const seasons = [...new Set(teamData.map(r => r.Season))].sort()
-    const values = {}
-
-    seasons.forEach(s => {
-      const rows = teamData.filter(r => r.Season === s)
-      const key = chartStat
-
-      if (key === 'Wins') values[s] = rows.reduce((sum, r) => sum + parseNumber(r.Result?.split('-')[0] || 0), 0)
-      if (key === 'Losses') values[s] = rows.reduce((sum, r) => sum + parseNumber(r.Result?.split('-')[1] || 0), 0)
-      if (key === 'Ties') values[s] = rows.reduce((sum, r) => sum + parseNumber(r.Result?.split('-')[2] || 0), 0)
-      if (key === 'PF') values[s] = rows.reduce((sum, r) => sum + parseNumber(r.PF), 0)
-      if (key === 'PA') values[s] = rows.reduce((sum, r) => sum + parseNumber(r.PA), 0)
-      if (key === 'Avg PPW') values[s] = rows.length > 0 ? rows.reduce((sum, r) => sum + parseNumber(r.PF), 0) / rows.length : 0
-    })
-
-    const vals = Object.values(values)
-    const bestVal = Math.max(...vals)
-    const worstVal = Math.min(...vals)
-    const avg = vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 0
-
-    const bestSeasons = Object.entries(values).filter(([, v]) => v === bestVal).map(([s]) => s)
-    const worstSeasons = Object.entries(values).filter(([, v]) => v === worstVal).map(([s]) => s)
-    const titles = teamData.filter(r => r.Champion).reduce((s, r) => (s.includes(r.Season) ? s : [...s, r.Season]), [])
-
-    return { bestVal: bestVal.toFixed(2), worstVal: worstVal.toFixed(2), avg, bestSeasons, worstSeasons, championSeasons: titles, titles: titles.length }
-  }, [chartTeam, chartStat, allData])
 
   return (
-    <main className="min-h-screen bg-[#F7F6F2]">
-      <Header />
+    <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
 
-      <section className="mx-auto max-w-[1680px] px-3 py-8 sm:px-5 md:py-10 md:px-6">
+      <Header onSummaryOpen={() => setDrawerOpen(true)} />
+
+      <section className="mx-auto max-w-[1680px] px-3 pb-16 pt-4 sm:px-5 md:px-6">
+        {/* HERO */}
+        <div className="relative mb-10 min-h-[280px] overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] shadow-[6px_6px_0_#16274F]">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <svg className="absolute right-0 top-0 h-full w-[62%]" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2">
+                {[80, 150, 220, 290, 360, 430, 500, 570, 640, 710, 780].map((x) => (
+                  <line key={x} x1={x} y1="0" x2={x + 220} y2="340" />
+                ))}
+              </g>
+              <g opacity="0.08" fill="none" stroke="#D01F2D" strokeWidth="1.5">
+                {[
+                  "M460 0 L560 85 L460 170 L360 85 Z",
+                  "M600 85 L700 170 L600 255 L500 170 Z",
+                  "M740 0 L840 85 L740 170 L640 85 Z",
+                  "M740 170 L840 255 L740 340 L640 255 Z",
+                ].map((d, i) => <path key={i} d={d} />)}
+              </g>
+              <g opacity="0.07" fill="#D01F2D">
+                <circle cx="700" cy="72" r="5" />
+                <circle cx="760" cy="130" r="5" />
+                <circle cx="640" cy="190" r="5" />
+                <circle cx="820" cy="220" r="5" />
+              </g>
+              <text x="785" y="305" textAnchor="middle" fontFamily="'Bebas Neue', sans-serif" fontSize="310" fill="#16274F" opacity="0.035">12</text>
+            </svg>
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,#F7F6F2_0%,#F7F6F2_40%,rgba(247,246,242,0.9)_56%,rgba(247,246,242,0.15)_100%)]" />
+          </div>
+
+          <div className="relative z-10 flex min-h-[280px] items-center p-6 sm:p-10 md:p-12">
+            <div className="max-w-3xl">
+              <div className="mb-5 inline-flex items-center gap-2 border-2 border-[#D01F2D] bg-[#D01F2D] px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] text-white">
+                <Medal className="h-4 w-4" />
+                League
+              </div>
+
+              <h1
+                className="leading-[0.82] tracking-[-0.02em]"
+                style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(56px, 8vw, 110px)' }}
+              >
+                <span className="text-[#16274F]">League</span>{' '}
+                <span className="text-[#D01F2D]" style={{ textShadow: '3px 3px 0 #0A0A0A' }}>Standings</span>
+              </h1>
+
+              <p className="mt-5 max-w-xl text-base font-semibold leading-relaxed text-[#4B5563] sm:text-lg">
+                Every team. Every season. Every stat.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* STANDINGS */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.5 }}
-          className="overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[5px_5px_0_#16274F]"
+          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[5px_5px_0_#16274F]"
         >
-          {/* Header seção */}
-          <div className="flex flex-col gap-4 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center border-2 border-white/30 bg-white/10">
-                <Medal className="h-4.5 w-4.5" />
+          <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center border-2 border-white/30 bg-white/10">
+                  <Medal className="h-4.5 w-4.5" />
+                </div>
+                <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Team Rankings</div>
               </div>
-              <div>
-                <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Standings</div>
-                <div className="mt-1 text-lg font-bold text-white/80">League rankings & statistics</div>
+              <div className="mt-1 text-lg font-bold text-white/80">
+                {season === 'All-Time' ? 'All-Time standings' : `Season ${season}`}
               </div>
             </div>
-
-            {/* Filtros */}
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Select
-                value={season}
-                onChange={s => { setSeason(s); setPage(0) }}
-                options={['All-Time', ...allSeasons]}
-                placeholder="Select Season..."
-              />
-              <Select
-                value={tab}
-                onChange={t => { setTab(t); setPage(0) }}
-                options={Object.keys(tabCols)}
-                placeholder="Select Stats..."
-              />
-              <div className="flex gap-2 sm:col-span-3">
-                <span className="text-[11px] font-black uppercase tracking-[0.12em] text-white/60 flex items-center">Sort by:</span>
-              </div>
+            <div className="w-full md:w-56">
+              <Select value={season} onChange={setSeason} options={seasons} placeholder="Season..." />
             </div>
           </div>
 
-          {/* Mobile sort buttons */}
-          <div className="flex gap-2 overflow-x-auto border-b-2 border-[#E4E2DB] bg-[#F7F6F2] px-5 py-3 sm:px-7 md:hidden">
-            {season !== 'All-Time' && (
+          <div className="flex overflow-x-auto border-b-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 sm:px-7">
+            {TABS.map(t => (
               <button
-                onClick={() => { handleSort('Pos'); setPage(0) }}
-                className={`shrink-0 border-2 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] transition-all ${
-                  sortCol === 'Pos'
-                    ? 'border-[#D01F2D] bg-[#D01F2D] text-white'
-                    : 'border-[#C4C0B8] bg-white text-[#6B7280] hover:border-[#16274F]'
+                key={t}
+                onClick={() => setTab(t)}
+                className={`border-r-2 border-[#0A0A0A] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] transition-colors first:border-l-2 ${
+                  tab === t
+                    ? 'bg-[#D01F2D] text-white'
+                    : 'bg-transparent text-[#6B7280] hover:bg-white hover:text-[#16274F]'
                 }`}
               >
-                Rank {sortCol === 'Pos' && (sortDir === 'desc' ? '↓' : '↑')}
-              </button>
-            )}
-            {tabCols[tab].map(col => (
-              <button
-                key={col}
-                onClick={() => { handleSort(col); setPage(0) }}
-                className={`shrink-0 border-2 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] transition-all ${
-                  sortCol === col
-                    ? 'border-[#D01F2D] bg-[#D01F2D] text-white'
-                    : 'border-[#C4C0B8] bg-white text-[#6B7280] hover:border-[#16274F]'
-                }`}
-              >
-                {col} {sortCol === col && (sortDir === 'desc' ? '↓' : '↑')}
+                {t}
               </button>
             ))}
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-sm font-black uppercase tracking-[0.2em] text-[#6B7280]">
-              Loading...
-            </div>
+            <div className="flex items-center justify-center py-20 text-sm font-black uppercase tracking-[0.2em] text-[#6B7280]">Loading...</div>
           ) : (
-            <div>
-              {/* Desktop table header */}
+            <div className="p-3 sm:p-5">
+              {/* Desktop table heading */}
               <div
-                className="hidden gap-3 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white md:grid md:items-center md:px-7"
-                style={{ gridTemplateColumns: `2.25rem 1fr ${tabCols[tab].map(() => '5rem').join(' ')}` }}
+                className="hidden border-b-2 border-[#D7D5CF] px-4 pb-3 md:grid md:items-end md:gap-3"
+                style={{ gridTemplateColumns: `2.25rem minmax(0,1fr) ${tabCols[tab].map(() => '4.5rem').join(' ')}` }}
               >
                 <button
-                  onClick={() => season !== 'All-Time' && (handleSort('Pos'), setPage(0))}
-                  className={`text-left transition-colors ${
-                    season !== 'All-Time'
-                      ? sortCol === 'Pos'
-                        ? 'text-[#F5C518]'
-                        : 'text-white/70 hover:text-white'
-                      : 'cursor-default text-white/40'
-                  }`}
+                  onClick={() => season !== 'All-Time' && handleSort('Pos')}
+                  className={`text-left text-[10px] font-black uppercase tracking-[0.18em] ${season !== 'All-Time' ? 'text-[#6B7280] hover:text-[#D01F2D]' : 'cursor-default text-[#B5B5AF]'}`}
                 >
-                  # {sortCol === 'Pos' && (sortDir === 'desc' ? '↓' : '↑')}
+                  #
                 </button>
-                <div className="text-white/70">Franchise</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Franchise</div>
                 {tabCols[tab].map(col => (
                   <button
                     key={col}
-                    onClick={() => { handleSort(col); setPage(0) }}
-                    className={`text-right transition-colors ${
-                      sortCol === col
-                        ? 'text-[#F5C518]'
-                        : 'text-white/70 hover:text-white'
-                    }`}
+                    onClick={() => handleSort(col)}
+                    className="text-right text-[10px] font-black uppercase tracking-[0.14em] transition-colors"
+                    style={{ color: sortCol === col ? '#D01F2D' : '#6B7280' }}
                   >
-                    {col} {sortCol === col && (sortDir === 'desc' ? '↓' : '↑')}
+                    {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
                   </button>
                 ))}
               </div>
 
-              {/* Rows */}
-              <div className="space-y-2 p-5 sm:p-7">
+              {/* Mobile sort controls */}
+              <div className="flex gap-2 overflow-x-auto px-1 pb-3 pt-1 md:hidden">
+                {season !== 'All-Time' && (
+                  <button
+                    onClick={() => handleSort('Pos')}
+                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === 'Pos' ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#D7D5CF] bg-white text-[#6B7280]'}`}
+                  >
+                    #{sortCol === 'Pos' ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                  </button>
+                )}
+                {tabCols[tab].map(col => (
+                  <button
+                    key={col}
+                    onClick={() => handleSort(col)}
+                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === col ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#D7D5CF] bg-white text-[#6B7280]'}`}
+                  >
+                    {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-2">
                 {paged.map((row, i) => {
                   const rank = page * PER_PAGE + i + 1
                   const pos = season !== 'All-Time' && row.standing ? row.standing : rank
                   const avatar = getTeamAvatar(row.team)
-                  const rankClass = pos === 1 ? 'bg-[#F5C518] text-[#0A0A0A]' : pos === 2 ? 'bg-[#E8E8E8] text-[#0A0A0A]' : pos === 3 ? 'bg-[#E6D0B4] text-[#0A0A0A]' : 'bg-[#F7F6F2] text-[#6B7280] border border-[#D7D5CF]'
+                  const rankClass = pos === 1 ? 'bg-[#F5C518] text-[#0A0A0A]' : pos === 2 ? 'bg-[#E8E8E8] text-[#0A0A0A]' : pos === 3 ? 'bg-[#E6D0B4] text-[#0A0A0A]' : 'bg-[#F7F6F2] text-[#6B7280]'
 
                   return (
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="block border-2 border-[#D7D5CF] bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-[#16274F] hover:shadow-[3px_3px_0_#D01F2D] sm:p-5"
+                      className="block border-2 border-[#D7D5CF] bg-white p-3 transition-transform hover:-translate-y-0.5 hover:border-[#16274F] hover:shadow-[3px_3px_0_#D01F2D] sm:p-4"
                     >
-                      {/* Desktop view */}
                       <div
                         className="hidden md:grid md:items-center md:gap-3"
-                        style={{ gridTemplateColumns: `2.25rem 1fr ${tabCols[tab].map(() => '5rem').join(' ')}` }}
+                        style={{ gridTemplateColumns: `2.25rem minmax(0,1fr) ${tabCols[tab].map(() => '4.5rem').join(' ')}` }}
                       >
-                        <span
-                          className={`flex h-8 w-8 items-center justify-center text-xs font-black ${rankClass}`}
-                          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '16px' }}
-                        >
+                        <span className={`flex h-8 w-8 items-center justify-center text-sm font-black ${rankClass}`} style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                           {pos}
                         </span>
 
                         <div className="flex min-w-0 items-center gap-3">
                           {avatar ? (
-                            <img
-                              src={avatar}
-                              alt={row.team}
-                              className="h-10 w-10 shrink-0 rounded-full border-2 border-[#0A0A0A] object-contain"
-                            />
+                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full border-2 border-[#0A0A0A] object-cover" />
                           ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
                               {row.team.slice(0, 2).toUpperCase()}
                             </div>
                           )}
                           <div className="min-w-0">
-                            <div className="truncate text-sm font-black uppercase tracking-tight text-[#16274F]">
-                              {row.team}
-                            </div>
-                            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9CA3AF]">
-                              {season === 'All-Time' ? 'All-Time' : `Season ${season}`}
-                            </div>
+                            <div className="truncate text-sm font-black uppercase tracking-tight text-[#16274F]">{row.team}</div>
+                            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9CA3AF]">{season === 'All-Time' ? 'All-Time' : `Season ${season}`}</div>
                           </div>
-                          {row.champion && <span className="ml-auto text-lg">🏆</span>}
+                          {row.champion && <span className="ml-auto text-base">🏆</span>}
                         </div>
 
                         {tabCols[tab].map(col => (
                           <div key={col} className="text-right">
-                            <span
-                              className={`text-sm font-black ${
-                                sortCol === col ? 'text-[#D01F2D]' : 'text-[#4B5563]'
-                              }`}
-                            >
+                            <span className={`text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#4B5563]'}`}>
                               {getCol(row, col)}
                             </span>
                           </div>
                         ))}
                       </div>
 
-                      {/* Mobile view */}
                       <div className="md:hidden">
                         <div className="flex items-center gap-3">
-                          <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center text-xs font-black ${rankClass}`}
-                            style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '16px' }}
-                          >
+                          <span className={`flex h-8 w-8 shrink-0 items-center justify-center text-sm font-black ${rankClass}`} style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
                             {pos}
                           </span>
                           {avatar ? (
-                            <img
-                              src={avatar}
-                              alt={row.team}
-                              className="h-10 w-10 shrink-0 rounded-full border-2 border-[#0A0A0A] object-contain"
-                            />
+                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full border-2 border-[#0A0A0A] object-cover" />
                           ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
                               {row.team.slice(0, 2).toUpperCase()}
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="break-words text-sm font-black uppercase leading-snug text-[#16274F]">
-                              {row.team}
-                            </div>
+                            <div className="break-words text-sm font-black uppercase leading-snug text-[#16274F]">{row.team}</div>
                             <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9CA3AF]">
-                              {season === 'All-Time' ? 'All-Time' : `Season ${season}`}
+                              {season === 'All-Time' ? 'All-Time ranking' : `Season ${season}`}
                             </div>
                           </div>
-                          {row.champion && <span className="text-lg">🏆</span>}
+                          {row.champion && <span className="text-base">🏆</span>}
                         </div>
 
-                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <div className="mt-3 grid grid-cols-2 gap-2 pl-0 sm:grid-cols-4">
                           {tabCols[tab].map(col => (
-                            <div
-                              key={col}
-                              className={`border-2 px-3 py-2 ${
-                                sortCol === col
-                                  ? 'border-[#D01F2D] bg-[#FFF1F1]'
-                                  : 'border-[#E4E2DB] bg-[#F7F6F2]'
-                              }`}
-                            >
-                              <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[#9CA3AF]">
-                                {col}
-                              </div>
-                              <div
-                                className={`mt-0.5 text-sm font-black ${
-                                  sortCol === col ? 'text-[#D01F2D]' : 'text-[#374151]'
-                                }`}
-                              >
-                                {getCol(row, col)}
-                              </div>
+                            <div key={col} className={`border-2 px-3 py-2 ${sortCol === col ? 'border-[#D01F2D] bg-[#FFF1F1]' : 'border-[#E4E2DB] bg-[#F7F6F2]'}`}>
+                              <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[#9CA3AF]">{col}</div>
+                              <div className={`mt-0.5 text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#374151]'}`}>{getCol(row, col)}</div>
                             </div>
                           ))}
                         </div>
@@ -605,34 +650,31 @@ export default function StandingsPage() {
                   )
                 })}
               </div>
+            </div>
+          )}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex flex-col gap-3 border-t-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-                  <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
-                    Showing {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, tableData.length)} of {tableData.length}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPage(p => Math.max(0, p - 1))}
-                      disabled={page === 0}
-                      className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-all hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <span className="min-w-12 text-center text-xs font-black text-[#16274F]">
-                      {page + 1}/{totalPages}
-                    </span>
-                    <button
-                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={page >= totalPages - 1}
-                      className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-all hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
+          {totalPages > 1 && (
+            <div className="flex flex-col gap-3 border-t-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+              <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
+                Showing {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, tableData.length)} of {tableData.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="min-w-12 text-center text-xs font-black text-[#16274F]">{page + 1}/{totalPages}</span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           )}
         </motion.div>
@@ -643,7 +685,7 @@ export default function StandingsPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.5 }}
-          className="mt-8 overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[5px_5px_0_#16274F]"
+          className="overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[5px_5px_0_#16274F]"
         >
           <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
@@ -664,18 +706,9 @@ export default function StandingsPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 border-b-2 border-[#D7D5CF] bg-[#F7F6F2] px-4 py-4 text-xs font-black uppercase tracking-[0.1em]">
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#F5C518]" />
-              Championships
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#1E8E3E]" />
-              Best Seasons
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#D01F2D]" />
-              Worst Seasons
-            </div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#F5C518]" /> Championships</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#1E8E3E]" /> Best Seasons</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#D01F2D]" /> Worst Seasons</div>
           </div>
 
           <div className="overflow-x-auto px-3 pb-1 pt-6 sm:px-6">
@@ -687,38 +720,24 @@ export default function StandingsPage() {
           {chartStats && (
             <div className="grid grid-cols-2 gap-0 border-t-2 border-[#0A0A0A] md:grid-cols-4">
               <div className="border-b-2 border-r-2 border-[#0A0A0A] bg-[#F7F6F2] p-5 md:border-b-0">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">
-                  Best Season
-                </div>
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Best Season</div>
                 <div className="text-3xl font-black text-[#16274F]">{chartStats.bestVal}</div>
-                <div className="mt-1 text-xs font-bold text-[#6B7280]">
-                  {chartStats.bestSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
-                </div>
+                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.bestSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
               <div className="border-b-2 border-[#0A0A0A] bg-[#FFF6F6] p-5 md:border-b-0 md:border-r-2">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">
-                  Worst Season
-                </div>
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Worst Season</div>
                 <div className="text-3xl font-black text-[#D01F2D]">{chartStats.worstVal}</div>
-                <div className="mt-1 text-xs font-bold text-[#6B7280]">
-                  {chartStats.worstSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
-                </div>
+                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.worstSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
               <div className="border-r-2 border-[#0A0A0A] bg-white p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">
-                  Season Avg
-                </div>
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Season Avg</div>
                 <div className="text-3xl font-black text-[#16274F]">{chartStats.avg}</div>
                 <div className="mt-1 text-xs font-bold text-[#6B7280]">per season</div>
               </div>
               <div className="bg-[#FFF9E7] p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">
-                  Championships
-                </div>
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Championships</div>
                 <div className="text-3xl font-black text-[#0A0A0A]">{chartStats.titles}</div>
-                <div className="mt-1 text-xs font-bold text-[#6B7280]">
-                  {chartStats.championSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}
-                </div>
+                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.championSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
             </div>
           )}
