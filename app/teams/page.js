@@ -399,7 +399,7 @@ function Select({ value, onChange, options, placeholder, disabled }) {
   )
 }
 
-function CompactCheckFilter({ value, onChange, options, label, multiple = false }) {
+function CompactCheckFilter({ value, onChange, options, label, multiple = false, displayOption }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -410,11 +410,12 @@ function CompactCheckFilter({ value, onChange, options, label, multiple = false 
 
   const selectedValues = multiple ? (Array.isArray(value) ? value : []) : [value]
   const activeCount = multiple ? selectedValues.filter(v => v !== 'All').length : (value !== 'All' ? 1 : 0)
+  const formatOption = displayOption || (opt => opt)
   const display = value === 'All' || (multiple && selectedValues.length === 0)
     ? label
     : multiple
       ? `${activeCount} selected`
-      : value
+      : formatOption(value)
 
   return (
     <div ref={ref} className="relative min-w-0">
@@ -452,7 +453,7 @@ function CompactCheckFilter({ value, onChange, options, label, multiple = false 
                     }}
                     className="h-4 w-4 flex-shrink-0 accent-[#16274F]"
                   />
-                  <span className={checked ? 'font-black text-[#16274F]' : ''}>{opt === 'All' ? `All ${label}` : opt}</span>
+                  <span className={checked ? 'font-black text-[#16274F]' : ''}>{opt === 'All' ? `All ${label}` : formatOption(opt)}</span>
                 </label>
               )
             })}
@@ -1426,30 +1427,47 @@ export default function TeamsPage() {
             </div>
 
             {/* Filters */}
-            <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-4 py-3 sm:px-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="w-full sm:w-32"><CompactCheckFilter value={logSeason} onChange={setLogSeason} options={logSeasonOptions} label="Season" /></div>
-                <div className="w-full sm:w-36"><CompactCheckFilter value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} label="Opponent" /></div>
-                <div className="w-full sm:w-36"><CompactCheckFilter value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} label="Game Type" /></div>
+            <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
+              <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+                <CompactCheckFilter
+                  value={logSeason}
+                  onChange={setLogSeason}
+                  options={logSeasonOptions}
+                  label="Season"
+                />
+                <CompactCheckFilter
+                  value={logOpponent}
+                  onChange={setLogOpponent}
+                  options={logOpponentOptions}
+                  label="Opponent"
+                  displayOption={opt => opt === 'All' ? opt : shortName(opt)}
+                />
+                <CompactCheckFilter
+                  value={logGameType}
+                  onChange={setLogGameType}
+                  options={logGameTypeOptions}
+                  label="Game Type"
+                  displayOption={opt => ({ 'Reg Season': 'Regular', 'Playoffs': 'Playoffs', 'Consolation': 'Consol.' }[opt] || opt)}
+                />
                 <button
                   onClick={() => setLog200Only(p => !p)}
-                  className={`inline-flex min-h-9 items-center gap-2 border-2 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${log200Only
+                  className={`flex min-h-8 w-full items-center gap-1.5 border-2 px-2 py-1.5 text-left text-[9px] font-black uppercase tracking-[0.08em] transition-all sm:w-auto sm:min-h-9 sm:gap-2 sm:px-3 sm:py-2 sm:text-[10px] sm:tracking-[0.12em] ${log200Only
                     ? 'border-[#16274F] bg-[#EEF3FF] text-[#16274F] shadow-[2px_2px_0_#16274F]'
                     : 'border-[#16274F]/20 bg-white text-[#3F4757] hover:border-[#16274F]/50'
                     }`}
                 >
-                  <span className={`flex h-4 w-4 items-center justify-center border-2 ${log200Only ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#16274F]/40 bg-white'}`}>{log200Only ? '✓' : ''}</span>
-                  200+ pts only
+                  <span className={`flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center border-2 text-[8px] sm:h-4 sm:w-4 sm:text-[9px] ${log200Only ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#16274F]/40 bg-white'}`}>{log200Only ? '✓' : ''}</span>
+                  <span className="truncate">200+ pts</span>
                 </button>
                 <button
                   onClick={() => setLogHighestOnly(p => !p)}
-                  className={`inline-flex min-h-9 items-center gap-2 border-2 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${logHighestOnly
+                  className={`flex min-h-8 w-full items-center gap-1.5 border-2 px-2 py-1.5 text-left text-[9px] font-black uppercase tracking-[0.08em] transition-all sm:w-auto sm:min-h-9 sm:gap-2 sm:px-3 sm:py-2 sm:text-[10px] sm:tracking-[0.12em] ${logHighestOnly
                     ? 'border-[#16274F] bg-[#EEF3FF] text-[#16274F] shadow-[2px_2px_0_#16274F]'
                     : 'border-[#16274F]/20 bg-white text-[#3F4757] hover:border-[#16274F]/50'
                     }`}
                 >
-                  <span className={`flex h-4 w-4 items-center justify-center border-2 ${logHighestOnly ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#16274F]/40 bg-white'}`}>{logHighestOnly ? '✓' : ''}</span>
-                  Highest score of week (RS)
+                  <span className={`flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center border-2 text-[8px] sm:h-4 sm:w-4 sm:text-[9px] ${logHighestOnly ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#16274F]/40 bg-white'}`}>{logHighestOnly ? '✓' : ''}</span>
+                  <span className="truncate">Week high (RS)</span>
                 </button>
                 {(logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly) && (
                   <button
@@ -1457,9 +1475,9 @@ export default function TeamsPage() {
                       setLogSeason('All'); setLogOpponent('All'); setLogGameType('All')
                       setLog200Only(false); setLogHighestOnly(false)
                     }}
-                    className="border-2 border-[#0A0A0A]/20 bg-[#F7F6F2] px-4 py-2 text-xs font-black uppercase tracking-widest text-[#6B7280] transition-all hover:bg-white"
+                    className="col-span-2 min-h-8 border-2 border-[#0A0A0A]/20 bg-[#F7F6F2] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-[#6B7280] transition-all hover:bg-white sm:col-span-1 sm:min-h-9 sm:px-4 sm:py-2 sm:text-xs sm:tracking-widest"
                   >
-                    Clear filters
+                    Clear
                   </button>
                 )}
               </div>
@@ -1561,8 +1579,8 @@ export default function TeamsPage() {
                 <div className="text-sm text-[#6B7280]">{playerArchive.length} players who wore the jersey</div>
               </div>
             </div>
-            <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-4 py-3 sm:px-6">
-              <div className="grid grid-cols-2 gap-2 lg:flex lg:items-center">
+            <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
+              <div className="grid grid-cols-2 gap-1.5 lg:flex lg:items-center lg:gap-2">
                 <div className="w-full lg:w-32">
                   <CompactCheckFilter value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
                 </div>
