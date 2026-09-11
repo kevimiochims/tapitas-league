@@ -399,6 +399,70 @@ function Select({ value, onChange, options, placeholder, disabled }) {
   )
 }
 
+function CompactCheckFilter({ value, onChange, options, label, multiple = false }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const selectedValues = multiple ? (Array.isArray(value) ? value : []) : [value]
+  const activeCount = multiple ? selectedValues.filter(v => v !== 'All').length : (value !== 'All' ? 1 : 0)
+  const display = value === 'All' || (multiple && selectedValues.length === 0)
+    ? label
+    : multiple
+      ? `${activeCount} selected`
+      : value
+
+  return (
+    <div ref={ref} className="relative min-w-0">
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className={`flex min-h-9 w-full items-center justify-between gap-2 border-2 bg-white px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.12em] transition-all ${open ? 'border-[#D01F2D] shadow-[2px_2px_0_#D01F2D]' : 'border-[#16274F]/20 hover:border-[#16274F]/50'} ${activeCount ? 'text-[#D01F2D]' : 'text-[#16274F]'}`}
+      >
+        <span className="truncate">{display}</span>
+        <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center border text-[9px] transition-transform ${open ? 'rotate-180 border-[#D01F2D] text-[#D01F2D]' : 'border-[#16274F]/30 text-[#6B7280]'}`}>⌄</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+5px)] z-[70] w-[220px] overflow-hidden border-2 border-[#16274F] bg-white shadow-[4px_4px_0_#16274F]">
+          <div className="border-b border-[#16274F]/10 bg-[#F7F6F2] px-3 py-2 text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{label}</div>
+          <div className="max-h-64 overflow-y-auto p-1.5">
+            {options.map(opt => {
+              const checked = multiple ? selectedValues.includes(opt) : opt === value
+              return (
+                <label key={opt} className="flex cursor-pointer items-center gap-2 px-2.5 py-2 text-[10px] font-bold text-[#16274F] hover:bg-[#F7F6F2]">
+                  <input
+                    type={multiple ? 'checkbox' : 'checkbox'}
+                    checked={checked}
+                    onChange={() => {
+                      if (multiple) {
+                        const next = opt === 'All'
+                          ? ['All']
+                          : checked
+                            ? selectedValues.filter(v => v !== opt)
+                            : [...selectedValues.filter(v => v !== 'All'), opt]
+                        onChange(next.length ? next : ['All'])
+                      } else {
+                        onChange(opt)
+                        setOpen(false)
+                      }
+                    }}
+                    className="h-4 w-4 flex-shrink-0 accent-[#16274F]"
+                  />
+                  <span className={checked ? 'font-black text-[#16274F]' : ''}>{opt === 'All' ? `All ${label}` : opt}</span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const shortName = (name) => {
   const mappings = {
     'i am megatron': 'Megatron',
@@ -1182,7 +1246,7 @@ export default function TeamsPage() {
 
             {/* Player record cards stay in the same stats sequence */}
             {mostRostered && (
-              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
+              <button type="button" onClick={() => { setSelectedPlayerTeams([selected.team]); setSelectedPlayerKey(`raw:${mostRostered.rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
                 <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
@@ -1203,11 +1267,11 @@ export default function TeamsPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             )}
 
             {mostStarted && (
-              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
+              <button type="button" onClick={() => { setSelectedPlayerTeams([selected.team]); setSelectedPlayerKey(`raw:${mostStarted.rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
                 <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
@@ -1228,7 +1292,7 @@ export default function TeamsPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             )}
 
           </div>
@@ -1362,27 +1426,29 @@ export default function TeamsPage() {
             </div>
 
             {/* Filters */}
-            <div className="border-b-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-6 py-4">
+            <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-4 py-3 sm:px-6">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="w-full sm:w-32"><Select value={logSeason} onChange={setLogSeason} options={logSeasonOptions} placeholder="Season" /></div>
-                <div className="w-full sm:w-36"><Select value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} placeholder="Opponent" /></div>
-                <div className="w-full sm:w-36"><Select value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} placeholder="Game Type" /></div>
+                <div className="w-full sm:w-32"><CompactCheckFilter value={logSeason} onChange={setLogSeason} options={logSeasonOptions} label="Season" /></div>
+                <div className="w-full sm:w-36"><CompactCheckFilter value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} label="Opponent" /></div>
+                <div className="w-full sm:w-36"><CompactCheckFilter value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} label="Game Type" /></div>
                 <button
                   onClick={() => setLog200Only(p => !p)}
-                  className={`border-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${log200Only
-                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                  className={`inline-flex min-h-9 items-center gap-2 border-2 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${log200Only
+                    ? 'border-[#16274F] bg-[#EEF3FF] text-[#16274F] shadow-[2px_2px_0_#16274F]'
+                    : 'border-[#16274F]/20 bg-white text-[#3F4757] hover:border-[#16274F]/50'
                     }`}
                 >
+                  <span className={`flex h-4 w-4 items-center justify-center border-2 ${log200Only ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#16274F]/40 bg-white'}`}>{log200Only ? '✓' : ''}</span>
                   200+ pts only
                 </button>
                 <button
                   onClick={() => setLogHighestOnly(p => !p)}
-                  className={`border-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${logHighestOnly
-                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                  className={`inline-flex min-h-9 items-center gap-2 border-2 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${logHighestOnly
+                    ? 'border-[#16274F] bg-[#EEF3FF] text-[#16274F] shadow-[2px_2px_0_#16274F]'
+                    : 'border-[#16274F]/20 bg-white text-[#3F4757] hover:border-[#16274F]/50'
                     }`}
                 >
+                  <span className={`flex h-4 w-4 items-center justify-center border-2 ${logHighestOnly ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#16274F]/40 bg-white'}`}>{logHighestOnly ? '✓' : ''}</span>
                   Highest score of week (RS)
                 </button>
                 {(logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly) && (
@@ -1495,19 +1561,19 @@ export default function TeamsPage() {
                 <div className="text-sm text-[#6B7280]">{playerArchive.length} players who wore the jersey</div>
               </div>
             </div>
-            <div className="border-b-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-6 py-4">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:items-center">
+            <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-4 py-3 sm:px-6">
+              <div className="grid grid-cols-2 gap-2 lg:flex lg:items-center">
                 <div className="w-full lg:w-32">
-                  <Select value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} placeholder="Position" />
+                  <CompactCheckFilter value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
                 </div>
                 <div className="w-full lg:w-40">
-                  <Select value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} placeholder="Sort by" />
+                  <CompactCheckFilter value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} label="Sort by" />
                 </div>
                 <div className="w-full lg:w-32">
-                  <Select value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} placeholder="Season" />
+                  <CompactCheckFilter value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} label="Season" />
                 </div>
                 <div className="w-full lg:w-32">
-                  <Select value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} placeholder="Appearances" />
+                  <CompactCheckFilter value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} label="Appearances" />
                 </div>
                 <div className="w-full lg:w-64">
                   <input
