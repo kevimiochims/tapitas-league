@@ -447,254 +447,6 @@ function firstGameOfWeek(data, seasonVal, weekVal) {
   return null
 }
 
-
-let SLEEPER_PLAYERS_PROMISE = null
-const SLEEPER_WEEKLY_PROMISES = new Map()
-
-async function fetchSleeperPlayers() {
-  if (!SLEEPER_PLAYERS_PROMISE) {
-    SLEEPER_PLAYERS_PROMISE = fetch('https://api.sleeper.app/v1/players/nfl').then(r => {
-      if (!r.ok) throw new Error(`Sleeper players request failed: ${r.status}`)
-      return r.json()
-    }).catch(e => { SLEEPER_PLAYERS_PROMISE = null; throw e })
-  }
-  return SLEEPER_PLAYERS_PROMISE
-}
-
-async function fetchSleeperWeeklyStats(season, week, seasonType = 'regular') {
-  const key = `${season}:${seasonType}:${week}`
-  if (!SLEEPER_WEEKLY_PROMISES.has(key)) {
-    const promise = fetch(`https://api.sleeper.app/v1/stats/nfl/${seasonType}/${encodeURIComponent(season)}/${encodeURIComponent(week)}`)
-      .then(r => { if (!r.ok) throw new Error(`Sleeper weekly stats request failed: ${r.status}`); return r.json() })
-      .catch(e => { SLEEPER_WEEKLY_PROMISES.delete(key); throw e })
-    SLEEPER_WEEKLY_PROMISES.set(key, promise)
-  }
-  return SLEEPER_WEEKLY_PROMISES.get(key)
-}
-
-function getPlayerId(name, playerLookup) {
-  return playerLookup?.get(normalizePlayerKey(name))?.playerId || null
-}
-
-function getPositionBadgeClasses(position) {
-  const colors = {
-    QB: 'border-[#0A0A0A] bg-[#D01F2D] text-white',
-    RB: 'border-[#0A0A0A] bg-[#1E8E3E] text-white',
-    WR: 'border-[#0A0A0A] bg-[#5B2CA0] text-white',
-    TE: 'border-[#0A0A0A] bg-[#B8860B] text-white',
-    FLEX: 'border-[#0A0A0A] bg-[#3F4757] text-white',
-    K: 'border-[#0A0A0A] bg-[#6B7280] text-white',
-    DEF: 'border-[#0A0A0A] bg-[#3F4757] text-white',
-  }
-  return colors[String(position || '').toUpperCase()] || 'border-white/20 bg-white/10 text-white'
-}
-
-function formatPlayerStatLine(stats, pos) {
-  if (!stats) return []
-  const n = key => Number(stats?.[key] ?? 0)
-  const items = []
-  const p = String(pos || '').toUpperCase()
-  if (p === 'QB') {
-    if (n('pass_cmp') || n('pass_att')) items.push(`${n('pass_cmp')}/${n('pass_att')}`)
-    if (n('pass_yd')) items.push(`${n('pass_yd')} YDS`)
-    if (n('pass_td')) items.push(`${n('pass_td')} TD`)
-    if (n('pass_int')) items.push(`${n('pass_int')} INT`)
-  } else if (p === 'RB') {
-    if (n('rush_att')) items.push(`${n('rush_att')} CAR`)
-    if (n('rush_yd')) items.push(`${n('rush_yd')} RUSH YDS`)
-    if (n('rec_tgt')) items.push(`${n('rec_tgt')} TAR`)
-    if (n('rec')) items.push(`${n('rec')} REC`)
-    if (n('rec_yd')) items.push(`${n('rec_yd')} REC YDS`)
-    if (n('rush_td') || n('rec_td')) items.push(`${n('rush_td') + n('rec_td')} TD`)
-  } else if (p === 'WR' || p === 'TE' || p === 'FLEX') {
-    if (n('rec_tgt')) items.push(`${n('rec_tgt')} TAR`)
-    if (n('rec')) items.push(`${n('rec')} REC`)
-    if (n('rec_yd')) items.push(`${n('rec_yd')} YDS`)
-    if (n('rec_td')) items.push(`${n('rec_td')} TD`)
-  } else if (p === 'K') {
-    if (n('fgm') || n('fga')) items.push(`${n('fgm')}/${n('fga')} FG`)
-    if (n('xpm') || n('xpa')) items.push(`${n('xpm')}/${n('xpa')} XP`)
-  } else if (p === 'DEF') {
-    if (n('def_tkl')) items.push(`${n('def_tkl')} TKL`)
-    if (n('def_sack')) items.push(`${n('def_sack')} SACK`)
-    if (n('def_int')) items.push(`${n('def_int')} INT`)
-    if (n('def_td')) items.push(`${n('def_td')} TD`)
-  }
-  return items.filter(Boolean)
-}
-
-function extractPlayerAppearances(game, max = 13) {
-  const appearances = []
-  for (let i = 1; i <= max; i++) {
-    const starterName = game?.[`S${i}_Name`]
-    const starterPts = game?.[`S${i}_Pts`]
-    if (starterName && starterName !== '--empty--' && String(starterName).trim()) appearances.push({ name: String(starterName).trim(), status: 'Starter', pts: parseNumber(starterPts) })
-    const benchName = game?.[`B${i}_Name`]
-    const benchPts = game?.[`B${i}_Pts`]
-    if (benchName && benchName !== '--empty--' && String(benchName).trim()) appearances.push({ name: String(benchName).trim(), status: 'Bench', pts: parseNumber(benchPts) })
-  }
-  return appearances
-}
-
-function normalizeTeamName(value) {
-  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-}
-
-function getTeamShortName(name) {
-  const map = {
-    'peytao da massa': 'Peytao', 'moneyball': 'Moneyball', 'ocupa e resiste': 'Ocupa',
-    'i am megatron': 'Megatron', 'oldbrady': 'OldBrady', 'patrolao squad': 'Patrolao',
-    'howmuch': 'Howmuch', 'pequers verde': 'Pequers', 'h-lera do mahl': 'H-Lera', 'rincao settlers': 'Rincao'
-  }
-  return map[normalizeTeamName(name)] || String(name || '')
-}
-
-function getTeamSeasonHistory(playerName, games) {
-  const seen = new Map()
-  for (const g of games || []) {
-    if (String(g?.Week || '').includes('-')) continue
-    const appears = extractPlayerAppearances(g).some(a => String(a.name).trim() === String(playerName).trim())
-    if (!appears) continue
-    const team = String(g?.Team || '').trim()
-    if (!team) continue
-    if (!seen.has(normalizeTeamName(team))) seen.set(normalizeTeamName(team), { team, seasons: new Set() })
-    const season = String(g?.Season || '').trim()
-    if (season) seen.get(normalizeTeamName(team)).seasons.add(season)
-  }
-  return Array.from(seen.values()).map(x => ({ ...x, seasons: Array.from(x.seasons).sort((a,b) => Number(a)-Number(b)) }))
-}
-
-function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
-  const [sleeperInfo, setSleeperInfo] = useState(null)
-  const [weeklyStats, setWeeklyStats] = useState(null)
-  const [selectedTeams, setSelectedTeams] = useState([profile.team])
-  const [loadingStats, setLoadingStats] = useState(false)
-
-  useEffect(() => {
-    setSelectedTeams([profile.team])
-  }, [profile.team, profile.rawName])
-
-  useEffect(() => {
-    let cancelled = false
-    const id = getPlayerId(profile.rawName, playerLookup)
-    if (!id) return undefined
-    setLoadingStats(true)
-    const weeks = String(profile.week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
-    const seasonType = /playoff|post|championship|consol/i.test(String(profile.gameStage || '')) ? 'post' : 'regular'
-    Promise.all([fetchSleeperPlayers(), Promise.all(weeks.map(w => fetchSleeperWeeklyStats(profile.season, w, seasonType)))])
-      .then(([players, weeklyList]) => {
-        const stats = weeklyList.reduce((acc, row) => {
-          if (!row) return acc
-          Object.entries(row || {}).forEach(([k, v]) => {
-            if (typeof v === 'number') acc[k] = (acc[k] || 0) + v
-          })
-          return acc
-        }, {})
-        if (cancelled) return
-        setSleeperInfo(players?.[String(id)] || null)
-        setWeeklyStats(stats?.[String(id)] || null)
-      })
-      .catch(() => { if (!cancelled) { setSleeperInfo(null); setWeeklyStats(null) } })
-      .finally(() => { if (!cancelled) setLoadingStats(false) })
-    return () => { cancelled = true }
-  }, [profile.rawName, profile.season, profile.week, profile.gameStage, playerLookup])
-
-  useEffect(() => {
-    const onKey = e => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
-  }, [onClose])
-
-  const selectedGames = useMemo(() => (games || []).filter(g => !String(g?.Week || '').includes('-')).flatMap(g => {
-    const appearance = extractPlayerAppearances(g).find(a => String(a.name).trim() === profile.rawName)
-    if (!appearance) return []
-    const team = String(g?.Team || '').trim()
-    if (!selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(team))) return []
-    return [{ g, appearance, team, season: String(g?.Season || '').trim(), week: String(g?.Week || '').trim(), opponent: String(g?.Opponent || '').trim() }]
-  }), [games, profile.rawName, selectedTeams])
-
-  const stats = useMemo(() => {
-    const total = selectedGames.reduce((a, x) => a + x.appearance.pts, 0)
-    const starts = selectedGames.filter(x => x.appearance.status === 'Starter').length
-    const best = selectedGames.reduce((m, x) => Math.max(m, x.appearance.pts), 0)
-    return { apps: selectedGames.length, starts, bench: selectedGames.length - starts, avg: selectedGames.length ? total / selectedGames.length : 0, best, seasons: new Set(selectedGames.map(x => x.season)) }
-  }, [selectedGames])
-
-  const versus = useMemo(() => {
-    const rows = (games || []).filter(g => !String(g?.Week || '').includes('-')).flatMap(g => {
-      if (normalizeTeamName(g?.Team) !== normalizeTeamName(profile.team)) return []
-      if (normalizeTeamName(g?.Opponent) !== normalizeTeamName(profile.opponent)) return []
-      const a = extractPlayerAppearances(g).find(x => String(x.name).trim() === profile.rawName)
-      return a ? [{ pts: a.pts, status: a.status }] : []
-    })
-    const total = rows.reduce((a, x) => a + x.pts, 0)
-    return { games: rows.length, avg: rows.length ? total / rows.length : 0, best: rows.reduce((m,x) => Math.max(m,x.pts),0), starts: rows.filter(x => x.status === 'Starter').length }
-  }, [games, profile.rawName, profile.team, profile.opponent])
-
-  const position = String(profile.position || '').toUpperCase()
-  const statLine = formatPlayerStatLine(weeklyStats, position)
-  const fantasyPts = weeklyStats?.pts_ppr ?? weeklyStats?.pts_half_ppr ?? weeklyStats?.pts_std
-  const history = useMemo(() => getTeamSeasonHistory(profile.rawName, games), [profile.rawName, games])
-
-  const toggleTeam = team => setSelectedTeams(cur => {
-    const exists = cur.some(t => normalizeTeamName(t) === normalizeTeamName(team))
-    if (exists) return cur.length === 1 ? cur : cur.filter(t => normalizeTeamName(t) !== normalizeTeamName(team))
-    return [...cur, team]
-  })
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/60 p-2 pt-3 sm:items-center sm:p-5" onClick={onClose}>
-      <div className="flex h-[calc(100dvh-24px)] max-h-[960px] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F] sm:h-auto sm:max-h-[94vh]" onClick={e => e.stopPropagation()}>
-        <div className="relative flex-shrink-0 overflow-hidden border-b-2 border-[#0A0A0A] bg-[#16274F] text-white">
-          <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(135deg, transparent 0 58%, rgba(255,255,255,.13) 58% 59%, transparent 59% 68%, rgba(255,255,255,.08) 68% 69%, transparent 69%)' }} />
-          <div className="relative border-b border-white/15 px-4 py-2.5 sm:px-6 sm:py-3 flex items-center justify-between">
-            <div className="text-[11px] font-black uppercase tracking-[0.25em]">Player Profile</div>
-            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center border-2 border-white/70 bg-white/10 text-lg font-black hover:bg-white/20">×</button>
-          </div>
-          <div className="relative px-3 py-3 sm:px-6 sm:py-4">
-            <div className="flex items-center gap-3 sm:gap-5">
-              <PlayerRowAvatar name={profile.rawName} pos={position} playerLookup={playerLookup} size={76} />
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-2"><h2 className="truncate text-[22px] font-black leading-none tracking-tight sm:text-3xl">{profile.displayName}</h2><span className={`inline-flex flex-shrink-0 px-2 py-1 text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(position)}`}>{position}</span></div>
-                <div className="mt-2 flex items-center gap-2 text-[10px] font-black sm:text-xs">
-                  {sleeperInfo?.team && <span className="flex items-center gap-1.5">{getNFLTeamLogo(sleeperInfo.team) && <img src={getNFLTeamLogo(sleeperInfo.team)} alt="" className="h-5 w-5 object-contain" />}{String(sleeperInfo.team).toUpperCase()}</span>}
-                  <span className="text-white/35">·</span><span className={String(sleeperInfo?.status || '').toLowerCase() === 'active' ? 'text-[#69C174]' : 'text-[#FFB84D]'}>{sleeperInfo?.status ? (String(sleeperInfo.status).toLowerCase() === 'active' ? 'Active' : 'Inactive') : (loadingStats ? 'Loading…' : 'Status —')}</span>
-                </div>
-                <div className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-[9px] font-bold text-white/75 sm:text-[11px]"><span><b className="text-white">Jersey</b> {sleeperInfo?.number != null ? `#${sleeperInfo.number}` : '—'}</span><span className="text-white/30">·</span><span><b className="text-white">Age</b> {sleeperInfo?.age != null ? `${sleeperInfo.age} yrs` : '—'}</span><span className="text-white/30">·</span><span><b className="text-white">Experience</b> {sleeperInfo?.years_exp != null ? `${sleeperInfo.years_exp} yrs` : '—'}</span></div>
-              </div>
-              <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" alt="NFL" className="h-10 w-10 flex-shrink-0 object-contain sm:h-14 sm:w-14" />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2 sm:px-6">
-          <div className="flex items-center justify-between gap-2"><div className="whitespace-nowrap"><span className="text-[11px] font-black uppercase tracking-[0.1em] text-[#16274F]">Tapitas League Teams</span><span className="ml-1 text-[8px] font-bold text-[#6B7280]">— Select franchises to include</span></div><span className="text-[8px] font-black uppercase text-[#D01F2D]">{selectedTeams.length} selected</span></div>
-          <div className="mt-1 flex max-w-full flex-nowrap gap-1 overflow-x-auto overflow-y-hidden pb-0.5">
-            {history.map(h => { const checked = selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(h.team)); return <label key={h.team} className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 ${checked ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white'}`}><input type="checkbox" checked={checked} onChange={() => toggleTeam(h.team)} className="h-3.5 w-3.5 accent-[#16274F]"/><span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center overflow-hidden"><TeamAvatar name={h.team} className="h-[22px] w-[22px]" textClassName="text-[7px]"/></span><span className="text-[9px] font-black text-[#16274F]">{getTeamShortName(h.team)}</span><span className="text-[8px] font-bold text-[#6B7280]">{h.seasons.map(y=>`'${String(y).slice(-2)}`).join(', ')}</span></label> })}
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-[#F7F8FB] p-2.5">
-          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',Array.from(stats.seasons).sort((a,b)=>Number(a)-Number(b)).map(y=>`'${String(y).slice(-2)}`).join(', ')||'—']].map(([l,v],i)=><div key={l} className={`border-2 px-2 py-2 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]','border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]','border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]','border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]','border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]','border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F]">{v}</div></div>)}</div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-auto px-3 py-3 sm:px-6">
-          <div className="border-2 border-[#16274F]/15 bg-white p-3 shadow-[3px_3px_0_#16274F]">
-            <div className="mb-1 text-[9px] font-black uppercase tracking-[0.22em] text-[#16274F]">This Game</div>
-            <div className="flex items-center justify-between gap-2"><span className="text-sm font-black text-[#16274F]">{getTeamShortName(profile.team)} vs {getTeamShortName(profile.opponent)}</span><span className="text-lg font-black text-[#D01F2D]">{fantasyPts != null ? Number(fantasyPts).toFixed(2) : profile.pts.toFixed(2)} PTS</span></div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[9px] font-black uppercase tracking-wider text-[#6B7280]"><span>{profile.status}</span><span>·</span><span>{profile.season} Week {profile.week}</span>{statLine.length > 0 && <><span>·</span>{statLine.map((x,i)=><span key={i}>{x}</span>)}</>}</div>
-          </div>
-          <div className="mt-2 border-2 border-[#5B2CA0]/20 bg-[#FAF7FE] p-3"><div className="text-[9px] font-black uppercase tracking-[0.22em] text-[#5B2CA0]">Vs {getTeamShortName(profile.opponent)}</div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-black text-[#16274F]"><span>{versus.games} GAMES</span><span>{versus.avg.toFixed(2)} AVG</span><span>{versus.best.toFixed(2)} BEST</span><span>{versus.starts} STARTS</span></div></div>
-          <div className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#16274F]">Game Log</div>
-          <div className="mt-2 overflow-x-auto border-t-2 border-[#0A0A0A]/10"><table className="w-full min-w-[620px]"><thead><tr className="border-b border-[#0A0A0A]/10">{['Season','Week','Team','Opponent','Status','Pts'].map(h=><th key={h} className="px-2 py-2 text-left text-[8px] font-black uppercase tracking-wider text-[#6B7280]">{h}</th>)}</tr></thead><tbody>{selectedGames.map((x,i)=><tr key={i} className="border-b border-[#0A0A0A]/8"><td className="px-2 py-2 text-[10px] font-black text-[#16274F]">{x.season}</td><td className="px-2 py-2 text-[10px]">{x.week}</td><td className="px-2 py-2 text-[10px] font-black">{getTeamShortName(x.team)}</td><td className="px-2 py-2 text-[10px] font-black">{getTeamShortName(x.opponent)}</td><td className="px-2 py-2 text-[8px] font-black uppercase">{x.appearance.status}</td><td className="px-2 py-2 text-[11px] font-black text-[#16274F]">{x.appearance.pts.toFixed(2)}</td></tr>)}</tbody></table></div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function MatchupsPageContent() {
   const [games, setGames] = useState([])
   const [playerLookup, setPlayerLookup] = useState(new Map())
@@ -702,7 +454,6 @@ function MatchupsPageContent() {
   const [season, setSeason] = useState('')
   const [week, setWeek] = useState('')
   const [selected, setSelected] = useState(null)
-  const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
 
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
@@ -1022,24 +773,6 @@ function MatchupsPageContent() {
   const bench = selected ? extractPlayers(selected, 'B') : []
   const oppStarters = selected ? extractPlayers(selected, 'OS') : []
   const oppBench = selected ? extractPlayers(selected, 'OB') : []
-
-  const openPlayerProfile = (player, pos, teamSide) => {
-    if (!player?.name || !selected) return
-    const team = teamSide === 'away' ? String(selected?.Opponent || '').trim() : String(selected?.Team || '').trim()
-    const opponent = teamSide === 'away' ? String(selected?.Team || '').trim() : String(selected?.Opponent || '').trim()
-    setSelectedPlayerProfile({
-      rawName: String(player.name).trim(),
-      displayName: getDisplayPlayerName(player.name, pos, playerLookup),
-      position: getDisplayPlayerPos(player.name, pos, playerLookup),
-      pts: player.pts,
-      status: teamSide === 'away' ? 'Starter' : 'Starter',
-      team,
-      opponent,
-      season: String(selected?.Season || '').trim(),
-      week: String(selected?.Week || '').trim(),
-      gameStage: String(selected?.GameStage || '').trim(),
-    })
-  }
 
   const recap = selected
     ? String(selected?.['Recap da Partida'] || '').trim()
@@ -1690,7 +1423,7 @@ function MatchupsPageContent() {
                           <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-2 items-center">
 
                             {/* Time A — Nome → Pts */}
-                            <div onClick={() => home && openPlayerProfile(home, pos, 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
+                            <div className={`px-2 md:px-3 py-2 min-w-0 ${
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
@@ -1728,7 +1461,7 @@ function MatchupsPageContent() {
                             <div className="self-stretch w-px bg-[#0A0A0A]/8" />
 
                             {/* Time B — Pts → Nome (espelhado) */}
-                            <div onClick={() => away && openPlayerProfile(away, pos, 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
+                            <div className={`px-2 md:px-3 py-2 min-w-0 ${
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
@@ -1791,7 +1524,7 @@ function MatchupsPageContent() {
                         <React.Fragment key={i}>
                           <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-2 items-center">
 
-                            <div onClick={() => home && openPlayerProfile(home, getDisplayPlayerPos(home?.name, 'BN', playerLookup), 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
+                            <div className={`px-2 md:px-3 py-2 min-w-0 ${
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
@@ -1828,7 +1561,7 @@ function MatchupsPageContent() {
                             {/* Divisória central */}
                             <div className="self-stretch w-px bg-[#0A0A0A]/8" />
 
-                            <div onClick={() => away && openPlayerProfile(away, getDisplayPlayerPos(away?.name, 'BN', playerLookup), 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
+                            <div className={`px-2 md:px-3 py-2 min-w-0 ${
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
@@ -1899,15 +1632,6 @@ function MatchupsPageContent() {
               </motion.div>
             )}
           </>
-        )}
-
-        {selectedPlayerProfile && (
-          <PlayerProfileModal
-            profile={selectedPlayerProfile}
-            games={games}
-            playerLookup={playerLookup}
-            onClose={() => setSelectedPlayerProfile(null)}
-          />
         )}
 
       </section>
