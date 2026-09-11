@@ -1570,10 +1570,10 @@ export default function TeamsPage() {
                 {/* Profile identity */}
                 <div className="relative flex-shrink-0 overflow-hidden border-b-2 border-[#0A0A0A] bg-[#16274F] text-white">
                   <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(135deg, transparent 0 58%, rgba(255,255,255,.13) 58% 59%, transparent 59% 68%, rgba(255,255,255,.08) 68% 69%, transparent 69%)' }} />
-                  <div className="relative border-b border-[#0A0A0A] bg-white px-4 py-2.5 sm:px-6 sm:py-3">
+                  <div className="relative border-b border-white/15 bg-[#16274F] px-4 py-2.5 sm:px-6 sm:py-3">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-[11px] font-black uppercase tracking-[0.25em] text-[#D01F2D] sm:text-sm">Player Profile</div>
-                      <button onClick={() => setSelectedPlayerKey(null)} className="flex h-8 w-8 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-white text-lg font-black text-[#16274F] hover:bg-[#F7F6F2] sm:h-9 sm:w-9" aria-label="Close player profile">×</button>
+                      <div className="text-[11px] font-black uppercase tracking-[0.25em] text-white sm:text-sm">Player Profile</div>
+                      <button onClick={() => setSelectedPlayerKey(null)} className="flex h-8 w-8 flex-shrink-0 items-center justify-center border-2 border-white/70 bg-white/10 text-lg font-black text-white hover:bg-white/20 sm:h-9 sm:w-9" aria-label="Close player profile">×</button>
                     </div>
                   </div>
 
@@ -1583,8 +1583,8 @@ export default function TeamsPage() {
                       <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={76} />
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-center gap-2">
-                          <h2 className="truncate text-[28px] font-black leading-none tracking-tight sm:text-4xl">{selectedPlayer.rawName}</h2>
-                          {selectedPlayer.position && <span className="flex-shrink-0 border border-white/35 bg-white/10 px-2 py-1 text-[9px] font-black uppercase sm:text-[10px]">{selectedPlayer.position}</span>}
+                          <h2 className="truncate text-[25px] font-black leading-none tracking-tight sm:text-4xl">{selectedPlayer.rawName}</h2>
+                          {selectedPlayer.position && <span className={`inline-flex flex-shrink-0 px-2 py-1 text-[9px] font-black uppercase tracking-wide sm:text-[10px] ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}
                         </div>
 
                         <div className="mt-2 flex min-w-0 items-center gap-2 text-[10px] font-black sm:text-xs">
@@ -1623,20 +1623,20 @@ export default function TeamsPage() {
                 <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2 sm:px-6 sm:py-2.5">
                   <div className="flex min-w-0 items-center gap-2">
                     <div className="min-w-0 flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                      <span className="text-[8px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[9px]">Tapitas League Teams</span>
-                      <span className="ml-1 text-[7px] font-bold text-[#6B7280] sm:text-[8px]">— Select franchises to include</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[11px]">Tapitas League Teams</span>
+                      <span className="ml-1 text-[8px] font-bold text-[#6B7280] sm:text-[9px]">— Select franchises to include</span>
                     </div>
-                    <span className="flex-shrink-0 text-[7px] font-black uppercase tracking-wider text-[#D01F2D] sm:text-[8px]">{selectedPlayerTeams.length} selected</span>
+                    <span className="flex-shrink-0 text-[8px] font-black uppercase tracking-wider text-[#D01F2D] sm:text-[9px]">{selectedPlayerTeams.length} selected</span>
                   </div>
-                  <div className="mt-1 flex gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+                  <div className="mt-1 flex max-w-full flex-nowrap gap-1 overflow-x-auto overflow-y-hidden pb-0.5 scrollbar-none">
                     {selectedPlayerClubs.map(c => {
                       const checked = selectedPlayerTeams.some(team => normalizeTeamName(team) === normalizeTeamName(c.team))
                       return (
-                        <label key={normalizeTeamName(c.team)} className={`flex h-7 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 transition-colors ${checked ? 'border-[#16274F] bg-[#EEF3FF]' : 'border-[#D6D6D6] bg-white hover:bg-[#F7F6F2]'}`}>
-                          <input type="checkbox" checked={checked} onChange={() => togglePlayerTeam(c.team)} className="h-3 w-3 accent-[#16274F]" />
-                          <TeamAvatar name={c.team} size="sm" />
-                          <span className="text-[8px] font-black text-[#16274F]">{shortName(c.team)}</span>
-                          <span className="text-[7px] font-bold text-[#6B7280]">{c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}</span>
+                        <label key={normalizeTeamName(c.team)} className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 transition-colors ${checked ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white hover:bg-[#F7F6F2]'}`}>
+                          <input type="checkbox" checked={checked} onChange={() => togglePlayerTeam(c.team)} className="h-3.5 w-3.5 accent-[#16274F]" />
+                          <TeamAvatar name={c.team} size="xs" />
+                          <span className="text-[9px] font-black text-[#16274F]">{shortName(c.team)}</span>
+                          <span className="text-[8px] font-bold text-[#6B7280]">{c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}</span>
                         </label>
                       )
                     })}
@@ -1653,12 +1653,22 @@ export default function TeamsPage() {
                       ['Avg Pts', selectedPlayerStats.avgPts.toFixed(2)],
                       ['Best Pts', selectedPlayerStats.bestPts.toFixed(2)],
                       ['Seasons', selectedPlayerStats.seasons.size ? Array.from(selectedPlayerStats.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—'],
-                    ].map(([label, value]) => (
-                      <div key={label} className="border-2 border-[#16274F]/15 bg-white px-2 py-2 sm:px-2.5 sm:py-2.5">
+                    ].map(([label, value], idx) => {
+                      const cardThemes = [
+                        'border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]',
+                        'border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]',
+                        'border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]',
+                        'border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]',
+                        'border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]',
+                        'border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]',
+                      ]
+                      return (
+                      <div key={label} className={`border-2 px-2 py-2 sm:px-2.5 sm:py-2.5 ${cardThemes[idx]}`}>
                         <div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{label}</div>
                         <div className="mt-0.5 text-xl font-black text-[#16274F] sm:text-2xl" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
 
