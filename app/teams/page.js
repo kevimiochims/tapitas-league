@@ -147,7 +147,7 @@ function getOrdinalRankLabel(value, allValues) {
 
 function TeamAvatar({ name, size = 'md' }) {
   const img = getTeamImage(name)
-  const sizes = { sm: 40, md: 64, lg: 96, xl: 128 }
+  const sizes = { xs: 22, sm: 40, md: 64, lg: 96, xl: 128 }
   const px = sizes[size]
 
   if (img) return (
@@ -275,7 +275,7 @@ function getPositionBadgeClasses(position) {
   const colors = {
     QB: 'border-[#0A0A0A] bg-[#D01F2D] text-white',
     RB: 'border-[#0A0A0A] bg-[#1E8E3E] text-white',
-    WR: 'border-[#0A0A0A] bg-[#16274F] text-white',
+    WR: 'border-[#0A0A0A] bg-[#5B2CA0] text-white',
     TE: 'border-[#0A0A0A] bg-[#B8860B] text-white',
     FLEX: 'border-[#0A0A0A] bg-[#3F4757] text-white',
     K: 'border-[#0A0A0A] bg-[#6B7280] text-white',
@@ -488,8 +488,13 @@ export default function TeamsPage() {
     if (!selectedPlayerKey) return undefined
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setSelectedPlayerKey(null)
+    }
+    document.addEventListener('keydown', handleEscape)
     return () => {
       document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleEscape)
     }
   }, [selectedPlayerKey])
 
@@ -1634,7 +1639,7 @@ export default function TeamsPage() {
                       return (
                         <label key={normalizeTeamName(c.team)} className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 transition-colors ${checked ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white hover:bg-[#F7F6F2]'}`}>
                           <input type="checkbox" checked={checked} onChange={() => togglePlayerTeam(c.team)} className="h-3.5 w-3.5 accent-[#16274F]" />
-                          <TeamAvatar name={c.team} size="xs" />
+                          <span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center overflow-hidden"><TeamAvatar name={c.team} size="xs" /></span>
                           <span className="text-[9px] font-black text-[#16274F]">{shortName(c.team)}</span>
                           <span className="text-[8px] font-bold text-[#6B7280]">{c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}</span>
                         </label>
