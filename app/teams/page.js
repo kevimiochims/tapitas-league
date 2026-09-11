@@ -8,6 +8,27 @@ import Header from '../components/Header'
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 
+// Sleeper player data is loaded directly from Sleeper when a Player Profile
+// is opened. The API returns the complete NFL player map; cache the promise
+// in this module so the 5MB payload is not downloaded repeatedly.
+let SLEEPER_PLAYERS_PROMISE = null
+
+async function fetchSleeperPlayers() {
+  if (!SLEEPER_PLAYERS_PROMISE) {
+    SLEEPER_PLAYERS_PROMISE = fetch('https://api.sleeper.app/v1/players/nfl')
+      .then(res => {
+        if (!res.ok) throw new Error(`Sleeper players request failed: ${res.status}`)
+        return res.json()
+      })
+      .then(data => data && typeof data === 'object' ? data : {})
+      .catch(error => {
+        SLEEPER_PLAYERS_PROMISE = null
+        throw error
+      })
+  }
+  return SLEEPER_PLAYERS_PROMISE
+}
+
 const TEAM_IMAGES = {
   'howmuch': '/images/howmuch.png',
   'i am megatron': '/images/megatron.png',
@@ -64,6 +85,12 @@ const NFL_TEAM_NAME_MAP = {
   'titans': 'ten', 'tennessee': 'ten', 'tennessee titans': 'ten',
   'commanders': 'wsh', 'washington': 'wsh', 'washington commanders': 'wsh',
   'redskins': 'wsh', 'washington redskins': 'wsh', 'football team': 'wsh',
+  'ari': 'ari', 'atl': 'atl', 'bal': 'bal', 'buf': 'buf', 'car': 'car', 'chi': 'chi',
+  'cin': 'cin', 'cle': 'cle', 'dal': 'dal', 'den': 'den', 'det': 'det', 'gb': 'gb',
+  'hou': 'hou', 'ind': 'ind', 'jax': 'jax', 'kc': 'kc', 'lac': 'lac', 'lar': 'lar',
+  'lv': 'lv', 'mia': 'mia', 'min': 'min', 'ne': 'ne', 'no': 'no', 'nyg': 'nyg',
+  'nyj': 'nyj', 'phi': 'phi', 'pit': 'pit', 'sea': 'sea', 'sf': 'sf', 'tb': 'tb',
+  'ten': 'ten', 'wsh': 'wsh',
 }
 
 function getNFLTeamLogo(name) {
@@ -257,6 +284,24 @@ function getPositionBadgeClasses(position) {
   return colors[String(position || '').toUpperCase()] || 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#16274F]'
 }
 
+function formatPlayerHeight(value) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return ''
+  if (/^\d+'\d+\"$/.test(raw)) return raw
+  const inches = Number(raw.replace(/[^0-9.]/g, ''))
+  if (!Number.isFinite(inches) || inches <= 0) return raw
+  const feet = Math.floor(inches / 12)
+  const remaining = Math.round(inches % 12)
+  return `${feet}'${remaining}\"`
+}
+
+function formatPlayerWeight(value) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return ''
+  const numeric = Number(raw.replace(/[^0-9.]/g, ''))
+  return Number.isFinite(numeric) && numeric > 0 ? `${numeric} lbs` : raw
+}
+
 function getPlayerIdentity(name, playerLookup) {
   const raw = String(name || '').trim()
   const playerId = getPlayerId(raw, playerLookup)
@@ -404,6 +449,9 @@ export default function TeamsPage() {
   const [log200Only, setLog200Only] = useState(false)
   const [logHighestOnly, setLogHighestOnly] = useState(false)
   const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
+  const [selectedPlayerTeams, setSelectedPlayerTeams] = useState([])
+  const [sleeperPlayerInfo, setSleeperPlayerInfo] = useState(null)
+  const [sleeperPlayerLoading, setSleeperPlayerLoading] = useState(false)
   const [playerSearch, setPlayerSearch] = useState('')
   const [playerPositionFilter, setPlayerPositionFilter] = useState('All')
   const [playerSort, setPlayerSort] = useState('Appearances')
@@ -444,6 +492,50 @@ export default function TeamsPage() {
       document.body.style.overflow = previousOverflow
     }
   }, [selectedPlayerKey])
+
+  // Player Profile state/effects MUST stay at TeamsPage's top level.
+  // They cannot live inside `if (selected)` because that changes the hook order.
+  useEffect(() => {
+    if (!selectedPlayerKey || !selected?.team) {
+      setSelectedPlayerTeams([])
+      return
+    }
+    setSelectedPlayerTeams([String(selected.team).trim()])
+  }, [selectedPlayerKey, selected?.team])
+
+  // Resolve the player's Sleeper ID from the existing identity lookup, then
+  // fetch the richer player object directly from Sleeper (not _PLAYER_CACHE).
+  useEffect(() => {
+    let cancelled = false
+    const rawName = selectedPlayerKey?.startsWith('raw:') ? selectedPlayerKey.slice(4) : ''
+    if (!rawName) {
+      setSleeperPlayerInfo(null)
+      setSleeperPlayerLoading(false)
+      return () => { cancelled = true }
+    }
+
+    const playerId = getPlayerId(rawName, playerLookup)
+    if (!playerId) {
+      setSleeperPlayerInfo(null)
+      setSleeperPlayerLoading(false)
+      return () => { cancelled = true }
+    }
+
+    setSleeperPlayerLoading(true)
+    fetchSleeperPlayers()
+      .then(players => {
+        if (cancelled) return
+        setSleeperPlayerInfo(players?.[String(playerId)] || null)
+      })
+      .catch(() => {
+        if (!cancelled) setSleeperPlayerInfo(null)
+      })
+      .finally(() => {
+        if (!cancelled) setSleeperPlayerLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [selectedPlayerKey, playerLookup])
 
   // Force the page to the top after navigating between franchises from Historic.
   useEffect(() => {
@@ -832,15 +924,18 @@ export default function TeamsPage() {
       : null
 
     const selectedPlayerGames = selectedPlayer
-      ? playerArchiveGames.flatMap(g => {
+      ? games.filter(g => !isDoubleWeek(g)).flatMap(g => {
           const appearance = extractPlayerAppearances(g).find(a => {
             const rawName = String(a?.name || '').trim()
             return `raw:${rawName}` === selectedPlayer.archiveKey
           })
           if (!appearance) return []
+          const team = String(g?.Team || '').trim()
+          if (!selectedPlayerTeams.some(teamName => normalizeTeamName(teamName) === normalizeTeamName(team))) return []
           return [{
             season: String(g?.Season || '').trim(),
             week: String(g?.Week || '').trim(),
+            team,
             opponent: String(g?.Opponent || '').trim(),
             status: appearance.status,
             pts: appearance.pts,
@@ -856,6 +951,17 @@ export default function TeamsPage() {
           return (parseFloat(b.week.replace(/[^0-9.]/g, '')) || 0) - (parseFloat(a.week.replace(/[^0-9.]/g, '')) || 0)
         })
       : []
+
+    const selectedPlayerStats = selectedPlayerGames.reduce((acc, game) => {
+      acc.appearances += 1
+      if (game.status === 'Starter') acc.starts += 1
+      else acc.bench += 1
+      acc.totalPts += game.pts || 0
+      acc.bestPts = Math.max(acc.bestPts, game.pts || 0)
+      if (game.season) acc.seasons.add(game.season)
+      return acc
+    }, { appearances: 0, starts: 0, bench: 0, totalPts: 0, bestPts: 0, seasons: new Set() })
+    selectedPlayerStats.avgPts = selectedPlayerStats.appearances ? selectedPlayerStats.totalPts / selectedPlayerStats.appearances : 0
 
     const playerLogOpponentOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.opponent).filter(Boolean))).sort()]
     const playerLogStatusOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.status).filter(Boolean))).sort()]
@@ -945,6 +1051,19 @@ export default function TeamsPage() {
           })
       : []
 
+
+    const togglePlayerTeam = (teamName) => {
+      const normalized = normalizeTeamName(teamName)
+      setSelectedPlayerTeams(current => {
+        const exists = current.some(team => normalizeTeamName(team) === normalized)
+        if (exists) {
+          // Never leave the profile without a franchise selected.
+          if (current.length === 1) return current
+          return current.filter(team => normalizeTeamName(team) !== normalized)
+        }
+        return [...current, teamName]
+      })
+    }
 
     return (
       <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
@@ -1228,7 +1347,7 @@ export default function TeamsPage() {
           {/* Game Log */}
           <div ref={gameLogRef} className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm scroll-mt-6">
             <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
                 <Filter className="h-4 w-4 text-white" />
               </div>
               <div>
@@ -1238,13 +1357,11 @@ export default function TeamsPage() {
             </div>
 
             {/* Filters */}
-            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <Select value={logSeason} onChange={setLogSeason} options={logSeasonOptions} placeholder="Season" />
-                <Select value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} placeholder="Opponent" />
-                <Select value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} placeholder="Game Type" />
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <div className="border-b-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-6 py-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="w-full sm:w-32"><Select value={logSeason} onChange={setLogSeason} options={logSeasonOptions} placeholder="Season" /></div>
+                <div className="w-full sm:w-36"><Select value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} placeholder="Opponent" /></div>
+                <div className="w-full sm:w-36"><Select value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} placeholder="Game Type" /></div>
                 <button
                   onClick={() => setLog200Only(p => !p)}
                   className={`border-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${log200Only
@@ -1364,17 +1481,17 @@ export default function TeamsPage() {
 
           {/* Player Archive */}
           <div className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
-                  <Users className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
-                  <div className="text-sm text-[#6B7280]">{playerArchive.length} players who wore the jersey</div>
-                </div>
+            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
+                <Users className="h-4 w-4 text-white" />
               </div>
-              <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:items-center">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
+                <div className="text-sm text-[#6B7280]">{playerArchive.length} players who wore the jersey</div>
+              </div>
+            </div>
+            <div className="border-b-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-6 py-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:items-center">
                 <div className="w-full lg:w-32">
                   <Select value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} placeholder="Position" />
                 </div>
@@ -1392,7 +1509,7 @@ export default function TeamsPage() {
                     value={playerSearch}
                     onChange={e => setPlayerSearch(e.target.value)}
                     placeholder="Search player..."
-                    className="w-full border-2 border-[#0A0A0A] bg-[#F7F6F2] px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
+                    className="w-full border-2 border-[#0A0A0A] bg-white px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
                   />
                 </div>
               </div>
@@ -1401,7 +1518,7 @@ export default function TeamsPage() {
               {filteredPlayers.map(player => (
                 <button
                   key={player.archiveKey}
-                  onClick={() => setSelectedPlayerKey(player.archiveKey)}
+                  onClick={() => { setSelectedPlayerTeams([selected.team]); setSelectedPlayerKey(player.archiveKey) }}
                   className="group relative overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 text-left transition-colors hover:bg-white"
                 >
                   <div className="flex items-center gap-3">
@@ -1445,60 +1562,113 @@ export default function TeamsPage() {
 
           {/* Player detail */}
           {selectedPlayer && (
-            <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/55 p-3 pt-4 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
-              <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
-                <div className="border-b-2 border-[#0A0A0A]/10 p-4 sm:p-6">
-                  <div className="mb-4 flex items-center justify-between gap-4">
-                    <div className="text-[11px] font-black uppercase tracking-[0.25em] text-[#D01F2D] sm:text-xs">Player Profile</div>
-                    <button onClick={() => setSelectedPlayerKey(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] text-xl font-black text-[#16274F] hover:bg-[#F7F6F2]" aria-label="Close player profile">×</button>
+            <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/60 p-2 pt-3 sm:items-center sm:p-5" onClick={() => setSelectedPlayerKey(null)}>
+              <div
+                className="flex h-[calc(100dvh-24px)] max-h-[960px] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F] sm:h-auto sm:max-h-[94vh]"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Profile identity */}
+                <div className="relative flex-shrink-0 overflow-hidden border-b-2 border-[#0A0A0A] bg-[#16274F] text-white">
+                  <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(135deg, transparent 0 58%, rgba(255,255,255,.13) 58% 59%, transparent 59% 68%, rgba(255,255,255,.08) 68% 69%, transparent 69%)' }} />
+                  <div className="relative border-b border-[#0A0A0A] bg-white px-4 py-2.5 sm:px-6 sm:py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-[11px] font-black uppercase tracking-[0.25em] text-[#D01F2D] sm:text-sm">Player Profile</div>
+                      <button onClick={() => setSelectedPlayerKey(null)} className="flex h-8 w-8 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-white text-lg font-black text-[#16274F] hover:bg-[#F7F6F2] sm:h-9 sm:w-9" aria-label="Close player profile">×</button>
+                    </div>
                   </div>
-                  <div className="flex min-w-0 items-start gap-4">
-                    <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={72} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-center gap-2 text-2xl font-black text-[#16274F] sm:text-3xl">
-                        <span className="truncate">{selectedPlayer.rawName}</span>
-                        {selectedPlayer.position && <span className={`inline-flex flex-shrink-0 px-2 py-1 align-middle text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}
-                      </div>
-                      {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).length > 0 && (
-                        <div className="mt-2">
-                          <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
-                              <a key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}&scroll=top`} onClick={() => { sessionStorage.setItem('teams-scroll-top', '1') }} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
-                                {shortName(c.team)} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
-                              </a>
-                            ))}
-                          </div>
+
+                  <div className="relative px-3 py-3 sm:px-6 sm:py-4">
+                    {/* Identity row: compact on mobile, with the player and NFL branding always visible */}
+                    <div className="flex items-center gap-3 sm:gap-5">
+                      <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={76} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <h2 className="truncate text-[28px] font-black leading-none tracking-tight sm:text-4xl">{selectedPlayer.rawName}</h2>
+                          {selectedPlayer.position && <span className="flex-shrink-0 border border-white/35 bg-white/10 px-2 py-1 text-[9px] font-black uppercase sm:text-[10px]">{selectedPlayer.position}</span>}
                         </div>
-                      )}
+
+                        <div className="mt-2 flex min-w-0 items-center gap-2 text-[10px] font-black sm:text-xs">
+                          {sleeperPlayerInfo?.team && (
+                            <span className="flex min-w-0 items-center gap-1.5 text-white">
+                              {getNFLTeamLogo(sleeperPlayerInfo.team) && <img src={getNFLTeamLogo(sleeperPlayerInfo.team)} alt="" className="h-5 w-5 flex-shrink-0 object-contain sm:h-6 sm:w-6" />}
+                              <span>{String(sleeperPlayerInfo.team).toUpperCase()}</span>
+                            </span>
+                          )}
+                          {sleeperPlayerInfo?.status && (
+                            <>
+                              <span className="text-white/35">·</span>
+                              <span className={String(sleeperPlayerInfo.status).toLowerCase() === 'active' ? 'text-[#69C174]' : 'text-[#FFB84D]'}>
+                                {String(sleeperPlayerInfo.status).toLowerCase() === 'active' ? 'Active' : 'Inactive'}
+                              </span>
+                            </>
+                          )}
+                          {sleeperPlayerLoading && <span className="text-white/50">Loading…</span>}
+                        </div>
+
+                        <div className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-[9px] font-bold text-white/75 sm:text-[11px]">
+                          <span><b className="text-white">Jersey</b> {sleeperPlayerInfo?.number != null ? `#${sleeperPlayerInfo.number}` : '—'}</span>
+                          <span className="text-white/30">·</span>
+                          <span><b className="text-white">Age</b> {sleeperPlayerInfo?.age != null ? `${sleeperPlayerInfo.age} yrs` : '—'}</span>
+                          <span className="text-white/30">·</span>
+                          <span><b className="text-white">Experience</b> {sleeperPlayerInfo?.years_exp != null ? `${sleeperPlayerInfo.years_exp} yr${Number(sleeperPlayerInfo.years_exp) === 1 ? '' : 's'}` : '—'}</span>
+                        </div>
+                      </div>
+
+                      <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" alt="NFL" className="h-10 w-10 flex-shrink-0 object-contain opacity-95 sm:h-14 sm:w-14" />
                     </div>
                   </div>
                 </div>
 
-                <div className="border-b-2 border-[#0A0A0A]/10 bg-white p-3 sm:p-4">
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {[
-                    ['Apps', selectedPlayer.appearances, 'border-[#16274F] bg-[#F3F7FF] text-[#16274F]'],
-                    ['Starts', selectedPlayer.starts, 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]'],
-                    ['Bench', selectedPlayer.bench, 'border-[#D97706] bg-[#FFF7ED] text-[#D97706]'],
-                    ['Avg Pts', selectedPlayer.avgPts.toFixed(2), 'border-[#7C3AED] bg-[#F5F3FF] text-[#7C3AED]'],
-                    ['Best Pts', selectedPlayer.bestPts.toFixed(2), 'border-[#F5C518] bg-[#FFF9E5] text-[#16274F]'],
-                    ['Seasons', selectedPlayer.seasons.size ? Array.from(selectedPlayer.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—', 'border-[#D01F2D] bg-[#FFF3F4] text-[#D01F2D]'],
-                  ].map(([label, value, tone]) => (
-                    <div key={label} className={`border-2 p-3 ${tone}`}>
-                      <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">{label}</div>
-                      <div className="mt-1 text-xl font-black" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
+                {/* Compact franchise selector */}
+                <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2 sm:px-6 sm:py-2.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="min-w-0 flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                      <span className="text-[8px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[9px]">Tapitas League Teams</span>
+                      <span className="ml-1 text-[7px] font-bold text-[#6B7280] sm:text-[8px]">— Select franchises to include</span>
                     </div>
-                  ))}
+                    <span className="flex-shrink-0 text-[7px] font-black uppercase tracking-wider text-[#D01F2D] sm:text-[8px]">{selectedPlayerTeams.length} selected</span>
+                  </div>
+                  <div className="mt-1 flex gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+                    {selectedPlayerClubs.map(c => {
+                      const checked = selectedPlayerTeams.some(team => normalizeTeamName(team) === normalizeTeamName(c.team))
+                      return (
+                        <label key={normalizeTeamName(c.team)} className={`flex h-7 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 transition-colors ${checked ? 'border-[#16274F] bg-[#EEF3FF]' : 'border-[#D6D6D6] bg-white hover:bg-[#F7F6F2]'}`}>
+                          <input type="checkbox" checked={checked} onChange={() => togglePlayerTeam(c.team)} className="h-3 w-3 accent-[#16274F]" />
+                          <TeamAvatar name={c.team} size="sm" />
+                          <span className="text-[8px] font-black text-[#16274F]">{shortName(c.team)}</span>
+                          <span className="text-[7px] font-bold text-[#6B7280]">{c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}</span>
+                        </label>
+                      )
+                    })}
                   </div>
                 </div>
 
+                {/* Summary cards */}
+                <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-[#F7F8FB] p-2.5 sm:p-3">
+                  <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">
+                    {[
+                      ['Apps', selectedPlayerStats.appearances],
+                      ['Starts', selectedPlayerStats.starts],
+                      ['Bench', selectedPlayerStats.bench],
+                      ['Avg Pts', selectedPlayerStats.avgPts.toFixed(2)],
+                      ['Best Pts', selectedPlayerStats.bestPts.toFixed(2)],
+                      ['Seasons', selectedPlayerStats.seasons.size ? Array.from(selectedPlayerStats.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—'],
+                    ].map(([label, value]) => (
+                      <div key={label} className="border-2 border-[#16274F]/15 bg-white px-2 py-2 sm:px-2.5 sm:py-2.5">
+                        <div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{label}</div>
+                        <div className="mt-0.5 text-xl font-black text-[#16274F] sm:text-2xl" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Scrollable game log */}
                 <div className="min-h-0 flex-1 overflow-auto">
-                  <table className="min-w-[760px] w-full">
+                  <table className="min-w-[900px] w-full">
                     <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
                       <tr className="border-b-2 border-[#0A0A0A]/10">
-                        {['Season', 'Week', 'Opponent', 'Status', 'Player Pts', 'Team PF', 'Result', 'Stage'].map((h, i) => (
-                          <th key={h} className="px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280] whitespace-nowrap">
+                        {['Season', 'Week', 'Team', 'Opponent', 'Status', 'Player Pts', 'Team PF', 'Result', 'Stage'].map((h, i) => (
+                          <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
                             {h === 'Opponent' ? (
                               <HeaderFilter value={playerLogOpponentFilter} onChange={setPlayerLogOpponentFilter} options={playerLogOpponentOptions} label="Opponent" />
                             ) : h === 'Status' ? (
@@ -1507,10 +1677,12 @@ export default function TeamsPage() {
                               <HeaderFilter value={playerLogResultFilter} onChange={setPlayerLogResultFilter} options={playerLogResultOptions} label="Result" />
                             ) : h === 'Stage' ? (
                               <HeaderFilter value={playerLogStageFilter} onChange={setPlayerLogStageFilter} options={playerLogStageOptions} label="Stage" />
+                            ) : h === 'Team' ? (
+                              <span>{h}</span>
                             ) : (
-                              <button type="button" onClick={() => handlePlayerLogSort(['season','week','','','pts','teamPF'][i])} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
+                              <button type="button" onClick={() => handlePlayerLogSort(['season','week','','','', 'pts','teamPF'][i])} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
                                 {h}
-                                <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','pts','teamPF'][i] ? (['season','week','','','pts','teamPF'][i] === 'season' ? (playerLogSort.seasonDir === 'asc' ? '↑' : '↓') : ['season','week','','','pts','teamPF'][i] === 'week' ? (playerLogSort.weekDir === 'asc' ? '↑' : '↓') : (playerLogSort.dir === 'asc' ? '↑' : '↓')) : '↕'}</span>
+                                <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','', 'pts','teamPF'][i] ? (['season','week','','','', 'pts','teamPF'][i] === 'season' ? (playerLogSort.seasonDir === 'asc' ? '↑' : '↓') : ['season','week','','','', 'pts','teamPF'][i] === 'week' ? (playerLogSort.weekDir === 'asc' ? '↑' : '↓') : (playerLogSort.dir === 'asc' ? '↑' : '↓')) : '↕'}</span>
                               </button>
                             )}
                           </th>
@@ -1522,6 +1694,7 @@ export default function TeamsPage() {
                         <tr key={`${g.season}-${g.week}-${g.opponent}-${i}`} onClick={() => { window.location.href = g.matchupHref }} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-[#F7F6F2]">
                           <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td>
                           <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td>
+                          <td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.team)}</td>
                           <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.opponent}</td>
                           <td className="px-4 py-3">
                             <span className={`inline-block border px-2 py-1 text-[8px] font-black uppercase tracking-wide ${g.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]'}`}>{g.status}</span>

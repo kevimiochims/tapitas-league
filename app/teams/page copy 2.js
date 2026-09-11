@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useRef } from 'react'
+import Link from 'next/link'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
 import Header from '../components/Header'
 
@@ -27,6 +28,51 @@ function getTeamImage(name) {
 
 function getInitials(name) {
   return String(name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+const NFL_TEAM_NAME_MAP = {
+  'cardinals': 'ari', 'arizona': 'ari', 'arizona cardinals': 'ari',
+  'falcons': 'atl', 'atlanta': 'atl', 'atlanta falcons': 'atl',
+  'ravens': 'bal', 'baltimore': 'bal', 'baltimore ravens': 'bal',
+  'bills': 'buf', 'buffalo': 'buf', 'buffalo bills': 'buf',
+  'panthers': 'car', 'carolina': 'car', 'carolina panthers': 'car',
+  'bears': 'chi', 'chicago': 'chi', 'chicago bears': 'chi',
+  'bengals': 'cin', 'cincinnati': 'cin', 'cincinnati bengals': 'cin',
+  'browns': 'cle', 'cleveland': 'cle', 'cleveland browns': 'cle',
+  'cowboys': 'dal', 'dallas': 'dal', 'dallas cowboys': 'dal',
+  'broncos': 'den', 'denver': 'den', 'denver broncos': 'den',
+  'lions': 'det', 'detroit': 'det', 'detroit lions': 'det',
+  'packers': 'gb', 'green bay': 'gb', 'green bay packers': 'gb',
+  'texans': 'hou', 'houston': 'hou', 'houston texans': 'hou',
+  'colts': 'ind', 'indianapolis': 'ind', 'indianapolis colts': 'ind',
+  'jaguars': 'jax', 'jacksonville': 'jax', 'jacksonville jaguars': 'jax',
+  'chiefs': 'kc', 'kansas city': 'kc', 'kansas city chiefs': 'kc',
+  'chargers': 'lac', 'los angeles chargers': 'lac', 'la chargers': 'lac',
+  'rams': 'lar', 'los angeles rams': 'lar', 'la rams': 'lar',
+  'raiders': 'lv', 'las vegas': 'lv', 'las vegas raiders': 'lv', 'oakland': 'lv', 'oakland raiders': 'lv',
+  'dolphins': 'mia', 'miami': 'mia', 'miami dolphins': 'mia',
+  'vikings': 'min', 'minnesota': 'min', 'minnesota vikings': 'min',
+  'patriots': 'ne', 'new england': 'ne', 'new england patriots': 'ne',
+  'saints': 'no', 'new orleans': 'no', 'new orleans saints': 'no',
+  'giants': 'nyg', 'new york giants': 'nyg', 'ny giants': 'nyg',
+  'jets': 'nyj', 'new york jets': 'nyj', 'ny jets': 'nyj',
+  'eagles': 'phi', 'philadelphia': 'phi', 'philadelphia eagles': 'phi',
+  'steelers': 'pit', 'pittsburgh': 'pit', 'pittsburgh steelers': 'pit',
+  'seahawks': 'sea', 'seattle': 'sea', 'seattle seahawks': 'sea',
+  '49ers': 'sf', 'san francisco': 'sf', 'san francisco 49ers': 'sf',
+  'buccaneers': 'tb', 'tampa bay': 'tb', 'tampa bay buccaneers': 'tb',
+  'titans': 'ten', 'tennessee': 'ten', 'tennessee titans': 'ten',
+  'commanders': 'wsh', 'washington': 'wsh', 'washington commanders': 'wsh',
+  'redskins': 'wsh', 'washington redskins': 'wsh', 'football team': 'wsh',
+}
+
+function getNFLTeamLogo(name) {
+  const raw = normalizePlayerKey(name)
+    .replace(/\b(d\/st|dst|def|defense|special teams)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+  const mapped = NFL_TEAM_NAME_MAP[raw]
+  return mapped ? `https://a.espncdn.com/i/teamlogos/nfl/500/${mapped}.png` : null
 }
 
 function normalizeTeamName(value) {
@@ -102,7 +148,12 @@ function buildPlayerLookup(rows) {
     const abbreviated = String(row?.name || '').trim()
     const fullName = String(row?.full_name || '').trim()
     if (!playerId) return
-    const entry = { playerId }
+    const entry = {
+      playerId,
+      abbreviated,
+      fullName,
+      position: String(row?.pos || row?.position || row?.Position || '').trim().toUpperCase(),
+    }
       ;[abbreviated, fullName].filter(Boolean).forEach(value => {
         const baseKey = normalizePlayerKey(value)
         if (baseKey && !map.has(baseKey)) map.set(baseKey, entry)
@@ -119,6 +170,7 @@ function getPlayerId(name, playerLookup) {
 function PlayerAvatar({ name, playerLookup, size = 56 }) {
   const [failed, setFailed] = useState(false)
   const playerId = getPlayerId(name, playerLookup)
+  const defenseLogo = getNFLTeamLogo(name)
   const src = playerId && !failed ? `https://sleepercdn.com/content/nfl/players/${playerId}.jpg` : null
   const initials = String(name || '?').trim().split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
 
@@ -126,6 +178,8 @@ function PlayerAvatar({ name, playerLookup, size = 56 }) {
     <div className="flex-shrink-0 overflow-hidden rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2]" style={{ width: size, height: size }}>
       {src ? (
         <img src={src} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+      ) : defenseLogo ? (
+        <img src={defenseLogo} alt={name} className="h-full w-full object-contain bg-white p-1" />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-[#16274F] font-black text-white" style={{ fontSize: size * 0.32 }}>
           {initials}
@@ -145,6 +199,114 @@ function extractRosterNames(game, prefix, max = 13) {
     }
   }
   return names
+}
+
+function extractPlayerAppearances(game, max = 13) {
+  const appearances = []
+  for (let i = 1; i <= max; i++) {
+    const starterName = game?.[`S${i}_Name`]
+    const starterPts = game?.[`S${i}_Pts`]
+    if (starterName && starterName !== '--empty--' && String(starterName).trim() !== '') {
+      appearances.push({ name: String(starterName).trim(), status: 'Starter', pts: parseNumber(starterPts) })
+    }
+    const benchName = game?.[`B${i}_Name`]
+    const benchPts = game?.[`B${i}_Pts`]
+    if (benchName && benchName !== '--empty--' && String(benchName).trim() !== '') {
+      appearances.push({ name: String(benchName).trim(), status: 'Bench', pts: parseNumber(benchPts) })
+    }
+  }
+  return appearances
+}
+
+function getDisplayPlayerName(name, playerLookup) {
+  const raw = String(name || '').trim()
+  // Defenses are teams, not individual players. Keep their football name intact
+  // so the NFL logo mapping remains available and avoid showing names like "I. Colts".
+  if (getNFLTeamLogo(raw)) return raw
+  const data = playerLookup?.get(normalizePlayerKey(raw))
+  return data?.abbreviated || data?.fullName && formatFallbackPlayerName(data.fullName) || formatFallbackPlayerName(raw)
+}
+
+function formatFallbackPlayerName(name) {
+  const raw = String(name || '').trim()
+  if (!raw) return raw
+  if (/^[A-Za-z]\.\s/.test(raw)) return raw
+  const parts = raw.split(/\s+/)
+  if (parts.length < 2) return raw
+  return `${parts[0][0].toUpperCase()}. ${parts[parts.length - 1]}`
+}
+
+function getPlayerPosition(name, playerLookup) {
+  const raw = String(name || '').trim()
+  const data = playerLookup?.get(normalizePlayerKey(raw))
+  const position = String(data?.position || data?.pos || '').trim().toUpperCase()
+  if (position) return position
+  return getNFLTeamLogo(raw) ? 'DEF' : ''
+}
+
+function getPositionBadgeClasses(position) {
+  const colors = {
+    QB: 'border-[#0A0A0A] bg-[#D01F2D] text-white',
+    RB: 'border-[#0A0A0A] bg-[#1E8E3E] text-white',
+    WR: 'border-[#0A0A0A] bg-[#16274F] text-white',
+    TE: 'border-[#0A0A0A] bg-[#B8860B] text-white',
+    FLEX: 'border-[#0A0A0A] bg-[#3F4757] text-white',
+    K: 'border-[#0A0A0A] bg-[#6B7280] text-white',
+    DEF: 'border-[#0A0A0A] bg-[#3F4757] text-white',
+  }
+  return colors[String(position || '').toUpperCase()] || 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#16274F]'
+}
+
+function getPlayerIdentity(name, playerLookup) {
+  const raw = String(name || '').trim()
+  const playerId = getPlayerId(raw, playerLookup)
+  return playerId ? `id:${playerId}` : `name:${normalizePlayerKey(raw)}`
+}
+
+function canonicalMatchupHref(game, games) {
+  if (!game) return '/matchups'
+  const season = String(game?.Season || '').trim()
+  const week = String(game?.Week || '').trim()
+  const team = String(game?.Team || '').trim()
+  const opp = String(game?.Opponent || '').trim()
+  const canonical = Array.isArray(games) ? games.find(row => {
+    if (String(row?.Season || '').trim() !== season || String(row?.Week || '').trim() !== week) return false
+    const rowTeam = normalizeTeamName(row?.Team)
+    const rowOpp = normalizeTeamName(row?.Opponent)
+    return (rowTeam === normalizeTeamName(team) && rowOpp === normalizeTeamName(opp)) ||
+      (rowTeam === normalizeTeamName(opp) && rowOpp === normalizeTeamName(team))
+  }) : null
+  const target = canonical || game
+  return `/matchups?season=${encodeURIComponent(String(target?.Season || '').trim())}&week=${encodeURIComponent(String(target?.Week || '').trim())}&team=${encodeURIComponent(String(target?.Team || '').trim())}&opp=${encodeURIComponent(String(target?.Opponent || '').trim())}`
+}
+
+function HeaderFilter({ value, onChange, options, label }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button type="button" onClick={() => setOpen(p => !p)} className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}>
+        {value === 'All' ? label : value}
+        <span className="text-[9px] text-[#D01F2D]">⌄</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+6px)] z-30 min-w-[150px] overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+          <div className="max-h-56 overflow-y-auto">
+            {options.map(opt => (
+              <button key={opt} type="button" onClick={() => { onChange(opt); setOpen(false) }} className={`block w-full px-3 py-2 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}>
+                {opt === 'All' ? label : opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function Select({ value, onChange, options, placeholder, disabled }) {
@@ -192,6 +354,38 @@ function Select({ value, onChange, options, placeholder, disabled }) {
   )
 }
 
+const shortName = (name) => {
+  const mappings = {
+    'i am megatron': 'Megatron',
+    'h-lera do mahl': 'H-Lera',
+    'peytão da massa': 'Peytao',
+    'peytao da massa': 'Peytao',
+    'ocupa & resiste': 'Ocupa',
+    'ocupa e resiste': 'Ocupa',
+    'pequers verde': 'Pequers',
+    'rincao settlers': 'Rincão',
+    'rincão settlers': 'Rincão',
+    'old brady': 'OldBrady',
+    'oldbrady': 'OldBrady',
+    'moneyball': 'Moneyball',
+    'patrolao': 'Patrolao',
+    'patrolão squad': 'Patrolão',
+    'patrolao squad': 'Patrolao',
+    'how much': 'Howmuch',
+    'howmuchyoutruck': 'Howmuch',
+    'hangover football club': 'Hangover FC',
+    'porto alegre coelhos': 'PA Coelhos',
+    'santa cruz frangos': 'SC Frangos',
+    'seguidores de charlao': 'Seg de Charlao',
+    'canoas andres limas': 'Canoas A Limas',
+    'rj skipknows': 'RJ SkipKnows',
+    '4winclutch': '4WinClutch',
+  }
+  const raw = String(name || '').trim()
+  const key = raw.toLocaleLowerCase()
+  return mappings[key] || raw
+}
+
 export default function TeamsPage() {
   const [allTime, setAllTime] = useState([])
   const [history, setHistory] = useState([])
@@ -209,6 +403,17 @@ export default function TeamsPage() {
   const [logGameType, setLogGameType] = useState('All')
   const [log200Only, setLog200Only] = useState(false)
   const [logHighestOnly, setLogHighestOnly] = useState(false)
+  const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
+  const [playerSearch, setPlayerSearch] = useState('')
+  const [playerPositionFilter, setPlayerPositionFilter] = useState('All')
+  const [playerSort, setPlayerSort] = useState('Appearances')
+  const [playerSeasonFilter, setPlayerSeasonFilter] = useState('All')
+  const [playerMinApps, setPlayerMinApps] = useState('All')
+  const [playerLogSort, setPlayerLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
+  const [playerLogOpponentFilter, setPlayerLogOpponentFilter] = useState('All')
+  const [playerLogStatusFilter, setPlayerLogStatusFilter] = useState('All')
+  const [playerLogResultFilter, setPlayerLogResultFilter] = useState('All')
+  const [playerLogStageFilter, setPlayerLogStageFilter] = useState('All')
 
   useEffect(() => {
     setLogSeason('All')
@@ -216,7 +421,42 @@ export default function TeamsPage() {
     setLogGameType('All')
     setLog200Only(false)
     setLogHighestOnly(false)
+    setSelectedPlayerKey(null)
+    setPlayerSearch('')
+    setPlayerPositionFilter('All')
+    setPlayerSort('Appearances')
+    setPlayerSeasonFilter('All')
+    setPlayerMinApps('All')
+    setPlayerLogSort({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
+    setPlayerLogOpponentFilter('All')
+    setPlayerLogStatusFilter('All')
+    setPlayerLogResultFilter('All')
+    setPlayerLogStageFilter('All')
   }, [selected])
+
+  // Lock the document behind the Player Profile modal. This hook must stay
+  // at the component's top level so the hook order never changes between renders.
+  useEffect(() => {
+    if (!selectedPlayerKey) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [selectedPlayerKey])
+
+  // Force the page to the top after navigating between franchises from Historic.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const shouldResetScroll = params.get('scroll') === 'top' || sessionStorage.getItem('teams-scroll-top') === '1'
+    if (!shouldResetScroll) return
+
+    sessionStorage.removeItem('teams-scroll-top')
+    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }))
+    const timer = setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }), 80)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -306,21 +546,54 @@ export default function TeamsPage() {
   // Most rostered (started or benched) and most started player for a team, from GAME_FACTS_ALL
   const getMostRosteredPlayers = (teamName) => {
     const teamGames = games.filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName) && !isDoubleWeek(g))
-    const rosterCounts = {}
-    const starterCounts = {}
+    const rosterCounts = new Map()
+    const starterCounts = new Map()
+    const metadata = new Map()
+
+    // Use each team's actual game season instead of a global/selected season.
     teamGames.forEach(g => {
+      const season = String(g?.Season || '').trim()
       const starters = extractRosterNames(g, 'S')
       const bench = extractRosterNames(g, 'B')
-        ;[...starters, ...bench].forEach(name => { rosterCounts[name] = (rosterCounts[name] || 0) + 1 })
-      starters.forEach(name => { starterCounts[name] = (starterCounts[name] || 0) + 1 })
+      ;[...starters, ...bench].forEach(name => {
+        const identity = getPlayerIdentity(name, playerLookup)
+        if (!identity) return
+        if (!metadata.has(identity)) {
+          metadata.set(identity, {
+            rawName: String(name || '').trim(),
+            name: getDisplayPlayerName(name, playerLookup),
+            position: getPlayerPosition(name, playerLookup),
+            seasons: new Set(),
+          })
+        }
+        metadata.get(identity).seasons.add(season)
+        rosterCounts.set(identity, (rosterCounts.get(identity) || 0) + 1)
+      })
+      starters.forEach(name => {
+        const identity = getPlayerIdentity(name, playerLookup)
+        if (identity) starterCounts.set(identity, (starterCounts.get(identity) || 0) + 1)
+      })
     })
-    const topRostered = Object.entries(rosterCounts).sort((a, b) => b[1] - a[1])[0]
-    const topStarter = Object.entries(starterCounts).sort((a, b) => b[1] - a[1])[0]
+
+    const topRostered = Array.from(rosterCounts.entries()).sort((a, b) => b[1] - a[1])[0]
+    const topStarter = Array.from(starterCounts.entries()).sort((a, b) => b[1] - a[1])[0]
+    const build = entry => {
+      if (!entry) return null
+      const [identity, count] = entry
+      const meta = metadata.get(identity)
+      return meta ? {
+        ...meta,
+        count,
+        seasons: Array.from(meta.seasons).filter(Boolean).sort((a, b) => Number(a) - Number(b)),
+      } : null
+    }
+
     return {
-      mostRostered: topRostered ? { name: topRostered[0], count: topRostered[1] } : null,
-      mostStarted: topStarter ? { name: topStarter[0], count: topStarter[1] } : null,
+      mostRostered: build(topRostered),
+      mostStarted: build(topStarter),
     }
   }
+
 
   const getTeam200Games = (teamName) => {
     const seen = new Set()
@@ -476,6 +749,203 @@ export default function TeamsPage() {
       return true
     })
 
+    // ── Player Archive ───────────────────────────────────────────────
+    // IMPORTANT: archive identity is the EXACT player name stored in
+    // GAME_FACTS_ALL. Do NOT normalize/abbreviate this key and do NOT use
+    // the player cache ID here. This prevents different players such as
+    // "Javonte Williams" and "J. Williams" from being merged. The
+    // abbreviation is presentation-only.
+    // Player Archive follows the same eligibility used by Most Rostered:
+    // double-weeks are excluded, because those are combined fantasy weeks.
+    // IMPORTANT: the archive identity is the EXACT name stored in GAME_FACTS_ALL.
+    // Never normalize, abbreviate or merge names before counting.
+    const playerArchiveGames = teamGames.filter(g => !isDoubleWeek(g))
+    const playerStatsMap = new Map()
+    playerArchiveGames.forEach(g => {
+      const season = String(g?.Season || '').trim()
+      const week = String(g?.Week || '').trim()
+      const seenExactNamesInGame = new Set()
+      extractPlayerAppearances(g).forEach(app => {
+        const rawName = String(app.name || '').trim()
+        if (!rawName || getNFLTeamLogo(rawName) || seenExactNamesInGame.has(rawName)) return
+        seenExactNamesInGame.add(rawName)
+
+        // The raw GAME_FACTS_ALL name is the sole key. The player cache is
+        // used only afterwards for presentation metadata (photo/position/name).
+        const key = `raw:${rawName}`
+        if (!playerStatsMap.has(key)) {
+          playerStatsMap.set(key, {
+            archiveKey: key,
+            name: getDisplayPlayerName(rawName, playerLookup),
+            rawName,
+            position: getPlayerPosition(rawName, playerLookup),
+            appearances: 0,
+            starts: 0,
+            bench: 0,
+            totalPts: 0,
+            bestPts: 0,
+            seasons: new Set(),
+            first: null,
+            last: null,
+          })
+        }
+        const entry = playerStatsMap.get(key)
+        entry.seasons.add(season)
+        entry.appearances += 1
+        if (app.status === 'Starter') entry.starts += 1
+        else entry.bench += 1
+        entry.totalPts += app.pts
+        entry.bestPts = Math.max(entry.bestPts, app.pts)
+        const marker = {
+          season: Number(season) || 0,
+          week: parseFloat(week.replace(/[^0-9.]/g, '')) || 0,
+        }
+        if (!entry.first || marker.season < entry.first.season || (marker.season === entry.first.season && marker.week < entry.first.week)) entry.first = marker
+        if (!entry.last || marker.season > entry.last.season || (marker.season === entry.last.season && marker.week > entry.last.week)) entry.last = marker
+      })
+    })
+
+    const playerArchive = Array.from(playerStatsMap.values())
+      .filter(p => p.position !== 'DEF')
+      .map(p => ({ ...p, avgPts: p.appearances ? p.totalPts / p.appearances : 0 }))
+      .sort((a, b) => b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))
+
+    const playerPositionOptions = ['All', ...Array.from(new Set(playerArchive.map(p => p.position).filter(Boolean))).sort()]
+    const playerSeasonOptions = ['All', ...Array.from(new Set(playerArchive.flatMap(p => Array.from(p.seasons)).filter(Boolean))).sort((a, b) => Number(b) - Number(a))]
+    const playerMinAppOptions = ['All', ...[10, 20, 30].filter(n => playerArchive.some(p => p.appearances > n)).map(n => `>${n} appearances`)]
+
+    const filteredPlayers = playerArchive
+      .filter(p => normalizePlayerKey(p.name).includes(normalizePlayerKey(playerSearch)))
+      .filter(p => playerPositionFilter === 'All' || p.position === playerPositionFilter)
+      .filter(p => playerSeasonFilter === 'All' || p.seasons.has(playerSeasonFilter))
+      .filter(p => playerMinApps === 'All' || p.appearances > Number(String(playerMinApps).replace(/[^0-9]/g, '')))
+      .sort((a, b) => {
+        if (playerSort === 'Starts') return b.starts - a.starts || b.appearances - a.appearances || a.name.localeCompare(b.name)
+        if (playerSort === 'Benchs') return b.bench - a.bench || b.appearances - a.appearances || a.name.localeCompare(b.name)
+        if (playerSort === 'Average Points') return b.avgPts - a.avgPts || b.appearances - a.appearances || a.name.localeCompare(b.name)
+        if (playerSort === 'Highest Score') return b.bestPts - a.bestPts || b.appearances - a.appearances || a.name.localeCompare(b.name)
+        return b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name)
+      })
+
+    const selectedPlayer = selectedPlayerKey
+      ? playerArchive.find(p => p.archiveKey === selectedPlayerKey) || null
+      : null
+
+    const selectedPlayerGames = selectedPlayer
+      ? playerArchiveGames.flatMap(g => {
+          const appearance = extractPlayerAppearances(g).find(a => {
+            const rawName = String(a?.name || '').trim()
+            return `raw:${rawName}` === selectedPlayer.archiveKey
+          })
+          if (!appearance) return []
+          return [{
+            season: String(g?.Season || '').trim(),
+            week: String(g?.Week || '').trim(),
+            opponent: String(g?.Opponent || '').trim(),
+            status: appearance.status,
+            pts: appearance.pts,
+            position: getPlayerPosition(appearance.name, playerLookup),
+            matchupHref: canonicalMatchupHref(g, games),
+            teamPF: parseNumber(g?.PF),
+            result: String(g?.Result || '').trim().toUpperCase(),
+            gameStage: String(g?.GameStage || '').trim(),
+          }]
+        }).sort((a, b) => {
+          const sa = Number(a.season) || 0, sb = Number(b.season) || 0
+          if (sb !== sa) return sb - sa
+          return (parseFloat(b.week.replace(/[^0-9.]/g, '')) || 0) - (parseFloat(a.week.replace(/[^0-9.]/g, '')) || 0)
+        })
+      : []
+
+    const playerLogOpponentOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.opponent).filter(Boolean))).sort()]
+    const playerLogStatusOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.status).filter(Boolean))).sort()]
+    const playerLogResultOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.result).filter(Boolean))).sort()]
+    const playerLogStageOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.gameStage).filter(Boolean))).sort()]
+
+    const filteredSelectedPlayerGames = selectedPlayerGames
+      .filter(g => playerLogOpponentFilter === 'All' || g.opponent === playerLogOpponentFilter)
+      .filter(g => playerLogStatusFilter === 'All' || g.status === playerLogStatusFilter)
+      .filter(g => playerLogResultFilter === 'All' || g.result === playerLogResultFilter)
+      .filter(g => playerLogStageFilter === 'All' || g.gameStage === playerLogStageFilter)
+
+    const sortedSelectedPlayerGames = [...filteredSelectedPlayerGames].sort((a, b) => {
+      const seasonA = Number(a.season) || 0
+      const seasonB = Number(b.season) || 0
+      const weekA = parseFloat(String(a.week || '').replace(/[^0-9.]/g, '')) || 0
+      const weekB = parseFloat(String(b.week || '').replace(/[^0-9.]/g, '')) || 0
+      const seasonDirection = playerLogSort.seasonDir === 'asc' ? 1 : -1
+      const weekDirection = playerLogSort.weekDir === 'asc' ? 1 : -1
+      const direction = playerLogSort.dir === 'asc' ? 1 : -1
+
+      // Season is always the primary grouping. Week sorting happens inside
+      // each season, so years never get interleaved.
+      if (seasonA !== seasonB) return (seasonA - seasonB) * seasonDirection
+
+      if (playerLogSort.key === 'week') {
+        if (weekA !== weekB) return (weekA - weekB) * weekDirection
+      } else if (playerLogSort.key === 'pts' || playerLogSort.key === 'teamPF') {
+        const av = playerLogSort.key === 'pts' ? a.pts || 0 : a.teamPF || 0
+        const bv = playerLogSort.key === 'pts' ? b.pts || 0 : b.teamPF || 0
+        if (av !== bv) return (av - bv) * direction
+      } else {
+        if (weekA !== weekB) return (weekA - weekB) * weekDirection
+      }
+
+      return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
+    })
+
+    const handlePlayerLogSort = (key) => {
+      setPlayerLogSort(current => {
+        if (key === 'season') {
+          const nextDir = current.key === 'season' && current.seasonDir === 'desc' ? 'asc' : 'desc'
+          return { ...current, key, dir: nextDir, seasonDir: nextDir }
+        }
+        if (key === 'week') {
+          const nextDir = current.key === 'week' && current.weekDir === 'desc' ? 'asc' : 'desc'
+          return { ...current, key, dir: nextDir, weekDir: nextDir }
+        }
+        const nextDir = current.key === key && current.dir === 'desc' ? 'asc' : 'desc'
+        return { ...current, key, dir: nextDir }
+      })
+    }
+
+    // Historic clubs: scan the COMPLETE GAME_FACTS_ALL dataset using the
+    // player's exact raw name as identity. This intentionally does not use
+    // normalized/abbreviated names, so different players with the same
+    // display abbreviation are never merged.
+    const selectedPlayerClubs = selectedPlayer
+      ? Array.from(new Map(
+          games
+            .filter(g => extractPlayerAppearances(g).some(a => {
+              const rawName = String(a?.name || '').trim()
+              return `raw:${rawName}` === selectedPlayer.archiveKey
+            }))
+            .map(g => {
+              const teamName = String(g?.Team || '').trim()
+              return [teamName, null]
+            })
+        ).keys())
+          .filter(Boolean)
+          .map(teamName => ({
+            team: teamName,
+            seasons: Array.from(new Set(
+              games
+                .filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName))
+                .filter(g => extractPlayerAppearances(g).some(a => {
+                  const rawName = String(a?.name || '').trim()
+                  return `raw:${rawName}` === selectedPlayer.archiveKey
+                }))
+                .map(g => String(g?.Season || '').trim())
+                .filter(Boolean)
+            )).sort((a, b) => Number(a) - Number(b)),
+          }))
+          .sort((a, b) => {
+            const selectedKey = normalizeTeamName(selected.team)
+            return normalizeTeamName(a.team) === selectedKey ? -1 : normalizeTeamName(b.team) === selectedKey ? 1 : normalizeTeamName(a.team).localeCompare(normalizeTeamName(b.team))
+          })
+      : []
+
+
     return (
       <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
         <style>{`
@@ -510,10 +980,13 @@ export default function TeamsPage() {
               <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 30%, rgba(247,246,242,0.85) 55%, rgba(247,246,242,0.2) 100%)' }} />
             </div>
 
-            <div className="relative z-10 flex items-center gap-8 p-10 md:p-14">
-              <TeamAvatar name={selected.team} size="xl" />
-              <div className="flex-1">
-                <div className="mt-3 mb-3 flex flex-wrap gap-2">
+            <div className="relative z-10 flex flex-col items-center gap-3 p-6 sm:p-8 md:flex-row md:items-center md:gap-8 md:p-14">
+              <div className="flex-shrink-0">
+                <TeamAvatar name={selected.team} size="xl" />
+              </div>
+              <div className="w-full min-w-0 text-center md:text-left">
+                {(titles.length > 0 || unicorns.length > 0) && (
+                  <div className="mt-0 mb-3 flex flex-wrap justify-center gap-2 md:justify-start">
                   {titles.length > 0 && (
                     <div className="inline-flex items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#F5C518] px-3 py-1.5">
                       <Trophy className="h-3.5 w-3.5 text-[#0A0A0A]" />
@@ -531,12 +1004,13 @@ export default function TeamsPage() {
                       </span>
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
                 <h1 className="mb-2 leading-none font-black text-[#16274F]"
                   style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(36px, 6vw, 80px)' }}>
                   {selected.team}
                 </h1>
-                <div className="flex flex-wrap gap-4 text-sm font-bold text-[#3F4757]">
+                <div className="flex flex-wrap justify-center gap-4 text-sm font-bold text-[#3F4757] md:justify-start">
                   <span>{parseNumber(selected.W)}W – {parseNumber(selected.L)}L</span>
                   <span>·</span>
                   <span>{winPct} win rate</span>
@@ -584,52 +1058,55 @@ export default function TeamsPage() {
 
             {/* Player record cards stay in the same stats sequence */}
             {mostRostered && (
-              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm min-h-[176px]">
-                <div className="pr-[82px]">
-                  <div className="mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
-                    <Users className="h-4 w-4" />
+              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
+                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
+                  <div className="min-w-0">
+                    <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div className="mt-3">
+                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered</div>
+                      <div className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostRostered.count}</div>
+                    </div>
                   </div>
-                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered Ever</div>
-                  <div className="truncate font-black leading-tight text-[#16274F]" style={{ fontSize: 'clamp(15px, 1.8vw, 22px)' }}>
-                    {mostRostered.name}
+                  <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
+                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={68} />
                   </div>
-                  <div className="mt-2 flex items-end gap-2">
-                    <span className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>
-                      {mostRostered.count}
-                    </span>
-                    <span className="pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">games</span>
+                  <div className="col-span-2 min-w-0">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{mostRostered.name}</div>
+                      {mostRostered.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostRostered.position)}`}>{mostRostered.position}</span>}
+                    </div>
                   </div>
-                  <div className="mt-0.5 text-[10px] font-bold text-[#6B7280]">on roster · starter or bench</div>
-                </div>
-                <div className="absolute right-4 top-4">
-                  <PlayerAvatar name={mostRostered.name} playerLookup={playerLookup} size={64} />
                 </div>
               </div>
             )}
 
             {mostStarted && (
-              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm min-h-[176px]">
-                <div className="pr-[82px]">
-                  <div className="mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
-                    <Star className="h-4 w-4" />
+              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
+                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
+                  <div className="min-w-0">
+                    <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
+                      <Star className="h-4 w-4" />
+                    </div>
+                    <div className="mt-3">
+                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">Most Started</div>
+                      <div className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostStarted.count}</div>
+                    </div>
                   </div>
-                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">Most Started</div>
-                  <div className="truncate font-black leading-tight text-[#16274F]" style={{ fontSize: 'clamp(15px, 1.8vw, 22px)' }}>
-                    {mostStarted.name}
+                  <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
+                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={68} />
                   </div>
-                  <div className="mt-2 flex items-end gap-2">
-                    <span className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>
-                      {mostStarted.count}
-                    </span>
-                    <span className="pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">games</span>
+                  <div className="col-span-2 min-w-0">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{mostStarted.name}</div>
+                      {mostStarted.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostStarted.position)}`}>{mostStarted.position}</span>}
+                    </div>
                   </div>
-                  <div className="mt-0.5 text-[10px] font-bold text-[#6B7280]">as a starter</div>
-                </div>
-                <div className="absolute right-4 top-4">
-                  <PlayerAvatar name={mostStarted.name} playerLookup={playerLookup} size={64} />
                 </div>
               </div>
             )}
+
           </div>
 
           <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -739,7 +1216,7 @@ export default function TeamsPage() {
                         </div>
                         <div className="text-[10px] text-[#6B7280]">{pct}%</div>
                       </div>
-                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
+                      <div className="flex w-7 flex-shrink-0 justify-end"><ChevronRight className="h-4 w-4 text-[#6B7280]" /></div>
                     </a>
                   )
                 })}
@@ -801,7 +1278,8 @@ export default function TeamsPage() {
             </div>
 
             {/* Games list */}
-            <div className="max-h-[520px] overflow-y-auto divide-y-2 divide-[#0A0A0A]/8">
+            <div className="max-h-[520px] overflow-auto">
+              <div className="grid w-max min-w-full grid-cols-[58px_32px_max-content_auto] divide-y-2 divide-[#0A0A0A]/8 sm:grid-cols-[80px_40px_minmax(0,1fr)_auto]">
               {filteredLog.map((g, i) => {
                 const won = String(g?.Result || '').trim().toUpperCase() === 'W'
                 const pf = parseNumber(g?.PF)
@@ -830,17 +1308,19 @@ export default function TeamsPage() {
                   <a
                     key={i}
                     href={matchupHref}
-                    className="flex items-center gap-3 px-6 py-3.5 transition-colors hover:bg-[#F7F6F2]"
+                    className="col-span-4 grid min-w-max grid-cols-subgrid items-center gap-2 px-3 py-3.5 transition-colors hover:bg-[#F7F6F2] sm:min-w-0 sm:w-full sm:gap-3 sm:px-6"
                   >
-                    <div className="w-20 flex-shrink-0">
+                    <div className="min-w-0">
                       <div className="text-xs font-black text-[#16274F]">{g.Season}</div>
                       <div className="text-[10px] font-bold text-[#6B7280]">Week {g.Week}</div>
                     </div>
 
-                    <TeamAvatar name={g.Opponent} size="sm" />
+                    <div className="ml-3 flex items-center justify-center">
+                      <TeamAvatar name={g.Opponent} size="sm" />
+                    </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-black text-[#16274F]">vs {g.Opponent}</div>
+                    <div className="ml-3 min-w-0 w-max sm:w-auto">
+                      <div className="whitespace-nowrap text-sm font-black text-[#16274F]">vs {shortName(g.Opponent)}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         {gType !== 'Reg Season' && (
                           <span className="inline-block border border-[#0A0A0A]/20 bg-[#F7F6F2] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#6B7280]">
@@ -860,16 +1340,18 @@ export default function TeamsPage() {
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0 text-right">
-                      <div className={`text-sm font-black ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
+                    <div className="ml-auto flex min-w-max items-center justify-end gap-1 sm:gap-1">
+                      <div className={`text-sm font-black whitespace-nowrap ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
                         {won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}
                       </div>
+                      <div className="flex h-6 w-6 flex-shrink-0 items-center justify-end">
+                        <ChevronRight className="h-4 w-4 text-[#6B7280]" />
+                      </div>
                     </div>
-
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
                   </a>
                 )
               })}
+              </div>
 
               {filteredLog.length === 0 && (
                 <div className="py-10 text-center text-sm font-bold text-[#6B7280]">
@@ -878,6 +1360,184 @@ export default function TeamsPage() {
               )}
             </div>
           </div>
+
+
+          {/* Player Archive */}
+          <div className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
+                  <Users className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
+                  <div className="text-sm text-[#6B7280]">{playerArchive.length} players who wore the jersey</div>
+                </div>
+              </div>
+              <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:items-center">
+                <div className="w-full lg:w-32">
+                  <Select value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} placeholder="Position" />
+                </div>
+                <div className="w-full lg:w-40">
+                  <Select value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} placeholder="Sort by" />
+                </div>
+                <div className="w-full lg:w-32">
+                  <Select value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} placeholder="Season" />
+                </div>
+                <div className="w-full lg:w-32">
+                  <Select value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} placeholder="Appearances" />
+                </div>
+                <div className="w-full lg:w-64">
+                  <input
+                    value={playerSearch}
+                    onChange={e => setPlayerSearch(e.target.value)}
+                    placeholder="Search player..."
+                    className="w-full border-2 border-[#0A0A0A] bg-[#F7F6F2] px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="max-h-[720px] overflow-y-auto grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredPlayers.map(player => (
+                <button
+                  key={player.archiveKey}
+                  onClick={() => setSelectedPlayerKey(player.archiveKey)}
+                  className="group relative overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 text-left transition-colors hover:bg-white"
+                >
+                  <div className="flex items-center gap-3">
+                    <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={54} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <div className="truncate text-sm font-black text-[#16274F] group-hover:text-[#D01F2D]">{player.name}</div>
+                        {player.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(player.position)}`}>{player.position}</span>}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-[10px] font-bold text-[#6B7280]">
+                        <span>{player.appearances} apps</span>
+                        <span>·</span>
+                        <span>{player.starts} starts</span>
+                        <span>·</span>
+                        <span>{player.bench} bench</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280] transition-transform group-hover:translate-x-1 group-hover:text-[#D01F2D]" />
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[#0A0A0A]/10 pt-3">
+                    <div>
+                      <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Avg Pts</div>
+                      <div className="mt-0.5 text-sm font-black text-[#16274F]">{player.avgPts.toFixed(2)}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Best</div>
+                      <div className="mt-0.5 text-sm font-black text-[#16274F]">{player.bestPts.toFixed(2)}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">Seasons</div>
+                      <div className="mt-0.5 truncate text-sm font-black text-[#16274F]">{player.seasons.size ? Array.from(player.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—'}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+              {filteredPlayers.length === 0 && (
+                <div className="col-span-full py-10 text-center text-sm font-bold text-[#6B7280]">No players found</div>
+              )}
+            </div>
+          </div>
+
+          {/* Player detail */}
+          {selectedPlayer && (
+            <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/55 p-3 pt-4 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
+              <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
+                <div className="border-b-2 border-[#0A0A0A]/10 p-4 sm:p-6">
+                  <div className="mb-4 flex items-center justify-between gap-4">
+                    <div className="text-[11px] font-black uppercase tracking-[0.25em] text-[#D01F2D] sm:text-xs">Player Profile</div>
+                    <button onClick={() => setSelectedPlayerKey(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] text-xl font-black text-[#16274F] hover:bg-[#F7F6F2]" aria-label="Close player profile">×</button>
+                  </div>
+                  <div className="flex min-w-0 items-start gap-4">
+                    <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={72} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-2 text-2xl font-black text-[#16274F] sm:text-3xl">
+                        <span className="truncate">{selectedPlayer.rawName}</span>
+                        {selectedPlayer.position && <span className={`inline-flex flex-shrink-0 px-2 py-1 align-middle text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}
+                      </div>
+                      {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).length > 0 && (
+                        <div className="mt-2">
+                          <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
+                              <a key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}&scroll=top`} onClick={() => { sessionStorage.setItem('teams-scroll-top', '1') }} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
+                                {shortName(c.team)} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-b-2 border-[#0A0A0A]/10 bg-white p-3 sm:p-4">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                  {[
+                    ['Apps', selectedPlayer.appearances, 'border-[#16274F] bg-[#F3F7FF] text-[#16274F]'],
+                    ['Starts', selectedPlayer.starts, 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]'],
+                    ['Bench', selectedPlayer.bench, 'border-[#D97706] bg-[#FFF7ED] text-[#D97706]'],
+                    ['Avg Pts', selectedPlayer.avgPts.toFixed(2), 'border-[#7C3AED] bg-[#F5F3FF] text-[#7C3AED]'],
+                    ['Best Pts', selectedPlayer.bestPts.toFixed(2), 'border-[#F5C518] bg-[#FFF9E5] text-[#16274F]'],
+                    ['Seasons', selectedPlayer.seasons.size ? Array.from(selectedPlayer.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—', 'border-[#D01F2D] bg-[#FFF3F4] text-[#D01F2D]'],
+                  ].map(([label, value, tone]) => (
+                    <div key={label} className={`border-2 p-3 ${tone}`}>
+                      <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">{label}</div>
+                      <div className="mt-1 text-xl font-black" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
+                    </div>
+                  ))}
+                  </div>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-auto">
+                  <table className="min-w-[760px] w-full">
+                    <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
+                      <tr className="border-b-2 border-[#0A0A0A]/10">
+                        {['Season', 'Week', 'Opponent', 'Status', 'Player Pts', 'Team PF', 'Result', 'Stage'].map((h, i) => (
+                          <th key={h} className="px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280] whitespace-nowrap">
+                            {h === 'Opponent' ? (
+                              <HeaderFilter value={playerLogOpponentFilter} onChange={setPlayerLogOpponentFilter} options={playerLogOpponentOptions} label="Opponent" />
+                            ) : h === 'Status' ? (
+                              <HeaderFilter value={playerLogStatusFilter} onChange={setPlayerLogStatusFilter} options={playerLogStatusOptions} label="Status" />
+                            ) : h === 'Result' ? (
+                              <HeaderFilter value={playerLogResultFilter} onChange={setPlayerLogResultFilter} options={playerLogResultOptions} label="Result" />
+                            ) : h === 'Stage' ? (
+                              <HeaderFilter value={playerLogStageFilter} onChange={setPlayerLogStageFilter} options={playerLogStageOptions} label="Stage" />
+                            ) : (
+                              <button type="button" onClick={() => handlePlayerLogSort(['season','week','','','pts','teamPF'][i])} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
+                                {h}
+                                <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','pts','teamPF'][i] ? (['season','week','','','pts','teamPF'][i] === 'season' ? (playerLogSort.seasonDir === 'asc' ? '↑' : '↓') : ['season','week','','','pts','teamPF'][i] === 'week' ? (playerLogSort.weekDir === 'asc' ? '↑' : '↓') : (playerLogSort.dir === 'asc' ? '↑' : '↓')) : '↕'}</span>
+                              </button>
+                            )}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedSelectedPlayerGames.map((g, i) => (
+                        <tr key={`${g.season}-${g.week}-${g.opponent}-${i}`} onClick={() => { window.location.href = g.matchupHref }} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-[#F7F6F2]">
+                          <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td>
+                          <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td>
+                          <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.opponent}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block border px-2 py-1 text-[8px] font-black uppercase tracking-wide ${g.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]'}`}>{g.status}</span>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-black text-[#16274F]">{g.pts.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.teamPF.toFixed(2)}</td>
+                          <td className={`px-4 py-3 text-xs font-black ${g.result === 'W' ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{g.result || '—'}</td>
+                          <td className="px-4 py-3 text-[10px] font-bold text-[#6B7280]">{g.gameStage || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Best/Worst Season */}
           {(bestSeason || worstSeason) && (
