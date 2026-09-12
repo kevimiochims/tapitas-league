@@ -841,12 +841,12 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
           </div>
         </div>
 
-        <div className="flex-shrink-0 bg-[#F7F8FB] p-2.5">
+        <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-1">
           <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',Array.from(stats.seasons).sort((a,b)=>Number(a)-Number(b)).map(y=>`'${String(y).slice(-2)}`).join(', ')||'—']].map(([l,v],i)=><div key={l} className={`border-2 px-2 py-2 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]','border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]','border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]','border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]','border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]','border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F]">{v}</div></div>)}</div>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-[#F7F8FB] p-2.5">
+          <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-[#F7F8FB] px-2.5 pt-1 pb-2.5">
             <div className="grid grid-cols-2 items-stretch gap-3">
               <div className="min-w-0">
                 <div className="flex min-h-[78px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:min-h-[86px] sm:px-4 sm:py-3">
