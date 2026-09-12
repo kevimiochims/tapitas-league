@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft, Swords, Activity } from 'lucide-react'
+import { ChevronRight, ChevronLeft, ChevronDown, Swords, Activity } from 'lucide-react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import { motion } from 'framer-motion'
@@ -37,6 +37,46 @@ const ROSTER_CONFIG = {
   2023: { qb: 2, rb: 2, wr: 2, te: 1, flex: 3, k: 1, def: 1 },
   2024: { qb: 2, rb: 2, wr: 2, te: 1, flex: 3, k: 1, def: 1 },
   2025: { qb: 2, rb: 2, wr: 2, te: 1, flex: 3, k: 1, def: 1 },
+}
+
+function HeaderFilter({ value, onChange, options, label }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}
+      >
+        {value === 'All' ? label : value}
+        <span className="text-[9px] text-[#D01F2D]">⌄</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[150px] overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+          <div className="max-h-56 overflow-y-auto">
+            {options.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { onChange(opt); setOpen(false) }}
+                className={`block w-full px-3 py-2 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}
+              >
+                {opt === 'All' ? label : opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function getRosterPositions(seasonYear) {
@@ -117,7 +157,7 @@ function getInitials(name) {
 function TeamAvatar({ name, className = '', textClassName = '' }) {
   const avatarSrc = getTeamAvatar(name)
   if (avatarSrc) {
-    return <img src={avatarSrc} alt={name} className={`${className} object-cover`} />
+    return <img src={avatarSrc} alt={name} className={`${className} object-contain block max-w-full max-h-full`} />
   }
   return (
     <div className={`${className} bg-[#16274F] flex items-center justify-center flex-shrink-0`}>
@@ -185,6 +225,14 @@ function getNFLTeamLogo(nameOrAbbr) {
   // Already an abbr (e.g. "kc", "sf") — remap wsh
   const abbr = raw === 'was' ? 'wsh' : raw
   return `https://a.espncdn.com/i/teamlogos/nfl/500/${abbr}.png`
+}
+
+const NFL_TEAM_SHORT = { ari:'Cardinals', atl:'Falcons', bal:'Ravens', buf:'Bills', car:'Panthers', chi:'Bears', cin:'Bengals', cle:'Browns', dal:'Cowboys', den:'Broncos', det:'Lions', gb:'Packers', hou:'Texans', ind:'Colts', jax:'Jaguars', kc:'Chiefs', lac:'Chargers', lar:'Rams', lv:'Raiders', mia:'Dolphins', min:'Vikings', ne:'Patriots', no:'Saints', nyg:'Giants', nyj:'Jets', phi:'Eagles', pit:'Steelers', sea:'Seahawks', sf:'49ers', tb:'Buccaneers', ten:'Titans', wsh:'Commanders' }
+function getNFLTeamShortName(nameOrAbbr) {
+  if (!nameOrAbbr) return ''
+  const raw = String(nameOrAbbr).toLowerCase().trim()
+  const mapped = NFL_TEAM_NAME_MAP[raw] || (raw === 'was' ? 'wsh' : raw)
+  return NFL_TEAM_SHORT[mapped] || String(nameOrAbbr)
 }
 
 // Lookup: name|pos first, then name alone — NO sorting by id, first occurrence wins
@@ -450,6 +498,29 @@ function firstGameOfWeek(data, seasonVal, weekVal) {
 
 let SLEEPER_PLAYERS_PROMISE = null
 const SLEEPER_WEEKLY_PROMISES = new Map()
+const SLEEPER_SCHEDULE_PROMISES = new Map()
+
+async function fetchSleeperRegularSchedule(season) {
+  const key = String(season)
+  if (!SLEEPER_SCHEDULE_PROMISES.has(key)) {
+    const promise = fetch(`https://api.sleeper.app/schedule/nfl/regular/${encodeURIComponent(season)}`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+      .then(r => { if (!r.ok) throw new Error(`Sleeper schedule request failed: ${r.status}`); return r.json() })
+      .catch(e => { SLEEPER_SCHEDULE_PROMISES.delete(key); throw e })
+    SLEEPER_SCHEDULE_PROMISES.set(key, promise)
+  }
+  return SLEEPER_SCHEDULE_PROMISES.get(key)
+}
+
+function getSleeperNflOpponent(schedule, team, week) {
+  const t = String(team || '').toUpperCase()
+  const w = Number.parseInt(String(week || '').split(/[-–]/)[0], 10)
+  if (!t || !Number.isFinite(w) || !Array.isArray(schedule)) return null
+  const game = schedule.find(g => Number(g?.week) === w && (String(g?.home || '').toUpperCase() === t || String(g?.away || '').toUpperCase() === t))
+  if (!game) return null
+  const opponent = String(game.home || '').toUpperCase() === t ? game.away : game.home
+  if (!opponent) return null
+  return { abbr: String(opponent).toLowerCase(), home: String(game.home || '').toUpperCase() === t ? 'home' : 'away' }
+}
 
 async function fetchSleeperPlayers() {
   if (!SLEEPER_PLAYERS_PROMISE) {
@@ -569,35 +640,72 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   const [weeklyStats, setWeeklyStats] = useState(null)
   const [selectedTeams, setSelectedTeams] = useState([profile.team])
   const [loadingStats, setLoadingStats] = useState(false)
+  const [logSeasonFilter, setLogSeasonFilter] = useState('All')
+  const [logOpponentFilter, setLogOpponentFilter] = useState('All')
+  const [logStatusFilter, setLogStatusFilter] = useState('All')
+  const [logResultFilter, setLogResultFilter] = useState('All')
+  const [logStageFilter, setLogStageFilter] = useState('All')
+  const [logSort, setLogSort] = useState({ key: 'season', dir: 'desc' })
 
   useEffect(() => {
     setSelectedTeams([profile.team])
+    setLogSeasonFilter('All')
+    setLogOpponentFilter('All')
+    setLogStatusFilter('All')
+    setLogResultFilter('All')
+    setLogStageFilter('All')
+    setLogSort({ key: 'season', dir: 'desc' })
   }, [profile.team, profile.rawName])
 
   useEffect(() => {
     let cancelled = false
-    const id = getPlayerId(profile.rawName, playerLookup)
-    if (!id) return undefined
+    const positionForLookup = String(profile.position || '').toUpperCase()
+    const id = getPlayerData(profile.rawName, positionForLookup, playerLookup)?.playerId || getPlayerId(profile.rawName, playerLookup)
+    if (!id) {
+      setSleeperInfo(null)
+      setWeeklyStats(null)
+      setLoadingStats(false)
+      return undefined
+    }
     setLoadingStats(true)
     const weeks = String(profile.week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
-    const seasonType = /playoff|post|championship|consol/i.test(String(profile.gameStage || '')) ? 'post' : 'regular'
-    Promise.all([fetchSleeperPlayers(), Promise.all(weeks.map(w => fetchSleeperWeeklyStats(profile.season, w, seasonType)))])
-      .then(([players, weeklyList]) => {
-        const stats = weeklyList.reduce((acc, row) => {
-          if (!row) return acc
-          Object.entries(row || {}).forEach(([k, v]) => {
-            if (typeof v === 'number') acc[k] = (acc[k] || 0) + v
+    // Tapitas playoff/consolation weeks 15–17 are still NFL regular-season weeks.
+    // Sleeper's season_type refers to the NFL season, not our fantasy stage.
+    // Use post only when the actual NFL week is 18+ (or explicitly outside numeric week data).
+    const numericWeeks = weeks.map(w => Number.parseInt(w, 10)).filter(Number.isFinite)
+    const seasonType = numericWeeks.some(w => w >= 18) ? 'post' : 'regular'
+    Promise.all([
+      fetchSleeperPlayers(),
+      fetchSleeperRegularSchedule(profile.season).catch(() => []),
+      Promise.all(weeks.map(w => fetchSleeperWeeklyStats(profile.season, w, seasonType)))
+    ])
+      .then(([players, schedule, weeklyList]) => {
+        const mergedPlayerStats = {}
+        weeklyList.forEach(row => {
+          if (!row || typeof row !== 'object') return
+          const playerWeek = row?.[String(id)]
+          if (!playerWeek || typeof playerWeek !== 'object') return
+          Object.entries(playerWeek).forEach(([key, value]) => {
+            const numeric = Number(value)
+            if (Number.isFinite(numeric)) mergedPlayerStats[key] = (mergedPlayerStats[key] || 0) + numeric
+            else if (mergedPlayerStats[key] == null) mergedPlayerStats[key] = value
           })
-          return acc
-        }, {})
+        })
         if (cancelled) return
-        setSleeperInfo(players?.[String(id)] || null)
-        setWeeklyStats(stats?.[String(id)] || null)
+        const info = players?.[String(id)] || getPlayerData(profile.rawName, positionForLookup, playerLookup) || null
+        const nflTeam = info?.team || mergedPlayerStats?.team || null
+        const nflOpponent = getSleeperNflOpponent(schedule, nflTeam, profile.week)
+        setSleeperInfo(info ? { ...info, matchupOpponent: nflOpponent?.abbr || null, matchupHomeAway: nflOpponent?.home || null } : null)
+        setWeeklyStats(Object.keys(mergedPlayerStats).length ? mergedPlayerStats : null)
       })
-      .catch(() => { if (!cancelled) { setSleeperInfo(null); setWeeklyStats(null) } })
+      .catch(() => {
+        if (cancelled) return
+        setSleeperInfo(getPlayerData(profile.rawName, positionForLookup, playerLookup) || null)
+        setWeeklyStats(null)
+      })
       .finally(() => { if (!cancelled) setLoadingStats(false) })
     return () => { cancelled = true }
-  }, [profile.rawName, profile.season, profile.week, profile.gameStage, playerLookup])
+  }, [profile.rawName, profile.position, profile.season, profile.week, profile.gameStage, playerLookup])
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose() }
@@ -612,14 +720,24 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     if (!appearance) return []
     const team = String(g?.Team || '').trim()
     if (!selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(team))) return []
-    return [{ g, appearance, team, season: String(g?.Season || '').trim(), week: String(g?.Week || '').trim(), opponent: String(g?.Opponent || '').trim() }]
-  }), [games, profile.rawName, selectedTeams])
+    const season = String(g?.Season || '').trim()
+    const week = String(g?.Week || '').trim()
+    const opponent = String(g?.Opponent || '').trim()
+    const profileWeeks = String(profile.week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
+    const gameWeeks = String(week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
+    const sameWeek = profileWeeks.length > 0 && gameWeeks.length > 0 && profileWeeks.some(w => gameWeeks.includes(w))
+    const isCurrentGame = season === String(profile.season || '').trim() && sameWeek && normalizeTeamName(team) === normalizeTeamName(profile.team) && normalizeTeamName(opponent) === normalizeTeamName(profile.opponent)
+    return [{ g, appearance, team, season, week, opponent, isCurrentGame, result: String(g?.Result || '').trim().toUpperCase() }]
+  }), [games, profile.rawName, profile.week, profile.season, profile.team, profile.opponent, selectedTeams])
+
+  const currentGameRow = useMemo(() => selectedGames.find(x => x.isCurrentGame) || null, [selectedGames])
 
   const stats = useMemo(() => {
-    const total = selectedGames.reduce((a, x) => a + x.appearance.pts, 0)
+    const validForAverage = selectedGames.filter(x => !(x.appearance.status === 'Bench' && x.appearance.pts === 0))
+    const total = validForAverage.reduce((a, x) => a + x.appearance.pts, 0)
     const starts = selectedGames.filter(x => x.appearance.status === 'Starter').length
     const best = selectedGames.reduce((m, x) => Math.max(m, x.appearance.pts), 0)
-    return { apps: selectedGames.length, starts, bench: selectedGames.length - starts, avg: selectedGames.length ? total / selectedGames.length : 0, best, seasons: new Set(selectedGames.map(x => x.season)) }
+    return { apps: selectedGames.length, starts, bench: selectedGames.length - starts, avg: validForAverage.length ? total / validForAverage.length : 0, best, seasons: new Set(selectedGames.map(x => x.season)) }
   }, [selectedGames])
 
   const versus = useMemo(() => {
@@ -629,20 +747,67 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
       const a = extractPlayerAppearances(g).find(x => String(x.name).trim() === profile.rawName)
       return a ? [{ pts: a.pts, status: a.status }] : []
     })
-    const total = rows.reduce((a, x) => a + x.pts, 0)
-    return { games: rows.length, avg: rows.length ? total / rows.length : 0, best: rows.reduce((m,x) => Math.max(m,x.pts),0), starts: rows.filter(x => x.status === 'Starter').length }
+    const validForAverage = rows.filter(x => !(x.status === 'Bench' && x.pts === 0))
+    const total = validForAverage.reduce((a, x) => a + x.pts, 0)
+    return { games: rows.length, avg: validForAverage.length ? total / validForAverage.length : 0, best: rows.reduce((m,x) => Math.max(m,x.pts),0), starts: rows.filter(x => x.status === 'Starter').length }
   }, [games, profile.rawName, profile.team, profile.opponent])
 
   const position = String(profile.position || '').toUpperCase()
   const statLine = formatPlayerStatLine(weeklyStats, position)
-  const fantasyPts = weeklyStats?.pts_ppr ?? weeklyStats?.pts_half_ppr ?? weeklyStats?.pts_std
   const history = useMemo(() => getTeamSeasonHistory(profile.rawName, games), [profile.rawName, games])
+
+  const logSeasonOptions = useMemo(() => ['All', ...Array.from(new Set(selectedGames.map(x => x.season))).sort((a,b) => Number(b)-Number(a))], [selectedGames])
+  const logOpponentOptions = useMemo(() => ['All', ...Array.from(new Set(selectedGames.map(x => x.opponent).filter(Boolean))).sort()], [selectedGames])
+  const logStatusOptions = useMemo(() => ['All', ...Array.from(new Set(selectedGames.map(x => x.appearance.status).filter(Boolean))).sort()], [selectedGames])
+  const logResultOptions = ['All', 'W', 'L']
+  const logStageOptions = useMemo(() => ['All', ...Array.from(new Set(selectedGames.map(x => String(x.g?.GameStage || '').trim()).filter(Boolean))).sort()], [selectedGames])
+
+  const filteredGames = useMemo(() => selectedGames
+    .filter(x => logSeasonFilter === 'All' || x.season === logSeasonFilter)
+    .filter(x => logOpponentFilter === 'All' || x.opponent === logOpponentFilter)
+    .filter(x => logStatusFilter === 'All' || x.appearance.status === logStatusFilter)
+    .filter(x => logResultFilter === 'All' || x.result === logResultFilter)
+    .filter(x => logStageFilter === 'All' || String(x.g?.GameStage || '').trim() === logStageFilter), [selectedGames, logSeasonFilter, logOpponentFilter, logStatusFilter, logResultFilter, logStageFilter])
+
+  const sortedGames = useMemo(() => [...filteredGames].sort((a,b) => {
+    const dir = logSort.dir === 'asc' ? 1 : -1
+    if (logSort.key === 'season') {
+      const sa = Number(a.season)||0, sb = Number(b.season)||0
+      if (sa !== sb) return (sa - sb) * dir
+      return ((parseFloat(String(a.week).replace(/[^0-9.]/g,''))||0) - (parseFloat(String(b.week).replace(/[^0-9.]/g,''))||0)) * -1
+    }
+    if (logSort.key === 'week') return ((parseFloat(String(a.week).replace(/[^0-9.]/g,''))||0) - (parseFloat(String(b.week).replace(/[^0-9.]/g,''))||0)) * dir
+    if (logSort.key === 'pts') return (a.appearance.pts - b.appearance.pts) * dir
+    if (logSort.key === 'opponent') return getTeamShortName(a.opponent).localeCompare(getTeamShortName(b.opponent)) * dir
+    return 0
+  }), [filteredGames, logSort])
 
   const toggleTeam = team => setSelectedTeams(cur => {
     const exists = cur.some(t => normalizeTeamName(t) === normalizeTeamName(team))
     if (exists) return cur.length === 1 ? cur : cur.filter(t => normalizeTeamName(t) !== normalizeTeamName(team))
     return [...cur, team]
   })
+
+  const toggleSort = key => setLogSort(cur => ({ key, dir: cur.key === key && cur.dir === 'desc' ? 'asc' : 'desc' }))
+
+  const MinimalMenu = ({ label, value, options, onChange }) => (
+    <details className="relative min-w-0">
+      <summary className="flex min-h-7 cursor-pointer list-none items-center gap-1 border border-[#D6D6D6] bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.08em] text-[#16274F] [&::-webkit-details-marker]:hidden">
+        <span className="truncate">{label}: {value === 'All' ? 'All' : value}</span><ChevronDown className="h-3 w-3 flex-shrink-0 text-[#6B7280]" />
+      </summary>
+      <div className="absolute left-0 top-full z-30 mt-1 max-h-56 min-w-[150px] overflow-auto border-2 border-[#0A0A0A] bg-white p-1.5 shadow-[3px_3px_0_#16274F]">
+        {options.map(opt => (
+          <label key={opt} className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-[8px] font-black uppercase text-[#16274F] hover:bg-[#F3F6FC]">
+            <input type="checkbox" checked={value === opt} onChange={() => onChange(opt)} className="h-3.5 w-3.5 accent-[#16274F]" />
+            <span>{opt === 'All' ? 'All' : opt === label ? opt : getTeamShortName(opt)}</span>
+          </label>
+        ))}
+      </div>
+    </details>
+  )
+
+  const sortLabel = { season: 'Season', week: 'Week', opponent: 'Opponent', pts: 'Pts' }[logSort.key]
+  const sortDirLabel = logSort.dir === 'desc' ? '↓' : '↑'
 
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/60 p-2 pt-3 sm:items-center sm:p-5" onClick={onClose}>
@@ -680,15 +845,105 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
           <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',Array.from(stats.seasons).sort((a,b)=>Number(a)-Number(b)).map(y=>`'${String(y).slice(-2)}`).join(', ')||'—']].map(([l,v],i)=><div key={l} className={`border-2 px-2 py-2 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]','border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]','border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]','border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]','border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]','border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F]">{v}</div></div>)}</div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto px-3 py-3 sm:px-6">
-          <div className="border-2 border-[#16274F]/15 bg-white p-3 shadow-[3px_3px_0_#16274F]">
-            <div className="mb-1 text-[9px] font-black uppercase tracking-[0.22em] text-[#16274F]">This Game</div>
-            <div className="flex items-center justify-between gap-2"><span className="text-sm font-black text-[#16274F]">{getTeamShortName(profile.team)} vs {getTeamShortName(profile.opponent)}</span><span className="text-lg font-black text-[#D01F2D]">{fantasyPts != null ? Number(fantasyPts).toFixed(2) : profile.pts.toFixed(2)} PTS</span></div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[9px] font-black uppercase tracking-wider text-[#6B7280]"><span>{profile.status}</span><span>·</span><span>{profile.season} Week {profile.week}</span>{statLine.length > 0 && <><span>·</span>{statLine.map((x,i)=><span key={i}>{x}</span>)}</>}</div>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-[#F7F8FB] p-2.5">
+            <div className="grid grid-cols-2 items-stretch gap-3">
+              <div className="min-w-0">
+                <div className="flex min-h-[78px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:min-h-[86px] sm:px-4 sm:py-3">
+                  <div className="flex min-w-0 items-center justify-between gap-2">
+                    <div className="min-w-0 truncate text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#16274F]">{profile.season} Week {profile.week} Stats</div>
+                    {sleeperInfo?.matchupOpponent ? (
+                      <div className="flex min-w-0 shrink-0 items-center gap-1.5 text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.08em] text-[#16274F]/80">
+                        <span className="truncate">vs {getNFLTeamShortName(sleeperInfo.matchupOpponent)}</span>
+                        <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: 'clamp(18px, 1.5vw, 24px)', height: 'clamp(18px, 1.5vw, 24px)', maxWidth: '24px', maxHeight: '24px', flexShrink: 0, objectFit: 'contain', display: 'block' }} />
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="mt-2.5 flex min-w-0 w-full flex-nowrap items-baseline justify-between gap-[clamp(4px,0.8vw,12px)] overflow-hidden whitespace-nowrap">
+                    {statLine.length ? statLine.map((x,i) => {
+                      const parts = String(x).match(/^(.+?)\s+(YDS|REC YDS|RUSH YDS|TD|TAR|REC|CAR|INT|FG|XP|TKL|SACK)$/)
+                      return (
+                        <div key={i} className="flex min-w-0 shrink-0 flex-row items-baseline gap-1 whitespace-nowrap">
+                          <strong className="truncate text-[clamp(18px,1.35vw,27px)] font-black leading-none tracking-tight text-[#16274F]">{parts ? parts[1] : x}</strong>
+                          {parts && <span className="shrink-0 text-[clamp(7px,0.48vw,9px)] font-black uppercase tracking-[0.07em] text-[#6B7280]">{parts[2]}</span>}
+                        </div>
+                      )
+                    }) : (
+                      <span className="text-[clamp(7px,0.7vw,10px)] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
+                    )}
+                    {currentGameRow && (
+                      <div className="flex min-w-0 shrink items-baseline gap-1 whitespace-nowrap">
+                        <strong className="truncate text-[clamp(18px,1.35vw,27px)] font-black leading-none tracking-tight text-[#16274F]">{currentGameRow.appearance.pts.toFixed(2)}</strong>
+                        <span className="shrink-0 text-[clamp(7px,0.48vw,9px)] font-black uppercase tracking-[0.07em] text-[#6B7280]">PTS</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex min-h-[78px] min-w-0 flex-col border-2 border-[#5B2CA0]/25 bg-[#F6F1FC] px-3 py-2.5 shadow-[3px_3px_0_#5B2CA0] sm:min-h-[86px] sm:px-4 sm:py-3">
+                  <div className="flex min-w-0 items-center justify-between gap-2 text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#5B2CA0]">
+                    <span className="min-w-0 truncate">HISTORIC</span>
+                    <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+                      <span className="truncate">VS {getTeamShortName(profile.opponent)}</span>
+                      <div style={{ width: 'clamp(18px, 1.5vw, 24px)', height: 'clamp(18px, 1.5vw, 24px)', maxWidth: '24px', maxHeight: '24px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[6px]" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 flex min-w-0 w-full flex-nowrap items-baseline justify-between gap-[clamp(7px,0.9vw,16px)] overflow-hidden whitespace-nowrap">
+                    <div className="flex min-w-0 shrink-0 flex-row items-baseline gap-1 whitespace-nowrap">
+                      <strong className="truncate text-[clamp(19px,1.45vw,28px)] font-black leading-none tracking-tight text-[#5B2CA0]">{versus.avg.toFixed(2)}</strong>
+                      <span className="shrink-0 text-[clamp(7px,0.52vw,9px)] font-black uppercase tracking-[0.08em] text-[#6B7280]">AVG</span>
+                    </div>
+                    <span className="text-[clamp(9px,1vw,16px)] font-black text-[#5B2CA0]/35">·</span>
+                    <div className="flex min-w-0 shrink-0 flex-row items-baseline gap-1 whitespace-nowrap">
+                      <strong className="truncate text-[clamp(19px,1.45vw,28px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
+                      <span className="shrink-0 text-[clamp(7px,0.52vw,9px)] font-black uppercase tracking-[0.08em] text-[#6B7280]">BEST</span>
+                    </div>
+                    <span className="text-[clamp(9px,1vw,16px)] font-black text-[#5B2CA0]/35">·</span>
+                    <div className="flex min-w-0 shrink-0 flex-row items-baseline gap-1 whitespace-nowrap">
+                      <strong className="truncate text-[clamp(19px,1.45vw,28px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
+                      <span className="shrink-0 text-[clamp(7px,0.52vw,9px)] font-black uppercase tracking-[0.08em] text-[#6B7280]">GAMES</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="mt-2 border-2 border-[#5B2CA0]/20 bg-[#FAF7FE] p-3"><div className="text-[9px] font-black uppercase tracking-[0.22em] text-[#5B2CA0]">Vs {getTeamShortName(profile.opponent)}</div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-black text-[#16274F]"><span>{versus.games} GAMES</span><span>{versus.avg.toFixed(2)} AVG</span><span>{versus.best.toFixed(2)} BEST</span><span>{versus.starts} STARTS</span></div></div>
-          <div className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#16274F]">Game Log</div>
-          <div className="mt-2 overflow-x-auto border-t-2 border-[#0A0A0A]/10"><table className="w-full min-w-[620px]"><thead><tr className="border-b border-[#0A0A0A]/10">{['Season','Week','Team','Opponent','Status','Pts'].map(h=><th key={h} className="px-2 py-2 text-left text-[8px] font-black uppercase tracking-wider text-[#6B7280]">{h}</th>)}</tr></thead><tbody>{selectedGames.map((x,i)=><tr key={i} className="border-b border-[#0A0A0A]/8"><td className="px-2 py-2 text-[10px] font-black text-[#16274F]">{x.season}</td><td className="px-2 py-2 text-[10px]">{x.week}</td><td className="px-2 py-2 text-[10px] font-black">{getTeamShortName(x.team)}</td><td className="px-2 py-2 text-[10px] font-black">{getTeamShortName(x.opponent)}</td><td className="px-2 py-2 text-[8px] font-black uppercase">{x.appearance.status}</td><td className="px-2 py-2 text-[11px] font-black text-[#16274F]">{x.appearance.pts.toFixed(2)}</td></tr>)}</tbody></table></div>
+          <div className="min-h-0 flex-1 overflow-auto">
+            <table className="w-full min-w-[900px] table-fixed">
+              <thead className="sticky top-0 z-20 bg-[#F7F6F2]">
+                <tr className="border-b-2 border-[#0A0A0A]/10">
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('season')} className="hover:text-[#D01F2D]">Season <span className="text-[#D01F2D]">{logSort.key === 'season' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[7%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('week')} className="hover:text-[#D01F2D]">Week <span className="text-[#D01F2D]">{logSort.key === 'week' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team</th>
+                  <th className="w-[18%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Opponent" value={logOpponentFilter} options={logOpponentOptions} onChange={setLogOpponentFilter} /></th>
+                  <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Status" value={logStatusFilter} options={logStatusOptions} onChange={setLogStatusFilter} /></th>
+                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('pts')} className="hover:text-[#D01F2D]">Player Pts <span className="text-[#D01F2D]">{logSort.key === 'pts' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team PF</th>
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Result" value={logResultFilter} options={logResultOptions} onChange={setLogResultFilter} /></th>
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Stage" value={logStageFilter} options={logStageOptions} onChange={setLogStageFilter} /></th>
+                </tr>
+              </thead>
+              <tbody>
+                    {sortedGames.map((x,i) => (
+                      <tr key={i} className={`border-b border-[#0A0A0A]/8 ${x.isCurrentGame ? 'bg-[#FFF3F4]' : 'bg-white'}`}>
+                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{x.season}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-bold text-[#3F4757]">{x.week}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.team)}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.opponent)}</td>
+                        <td className="px-2 py-2.5"><span className={`inline-block border px-2 py-1 text-[8px] font-black uppercase tracking-wide ${x.appearance.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]'}`}>{x.appearance.status}</span></td>
+                        <td className="px-3 py-2.5 text-right text-[11px] font-black text-[#16274F]">{x.appearance.pts.toFixed(2)}</td>
+                        <td className="px-3 py-2.5 text-right text-[10px] font-bold text-[#3F4757]">{parseNumber(x.g?.PF).toFixed(2)}</td>
+                        <td className={`px-2 py-2.5 text-[10px] font-black ${x.result === 'W' ? 'text-[#1E8E3E]' : x.result === 'L' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>{x.result || '—'}</td>
+                        <td className="px-2 py-2.5 text-[9px] font-bold text-[#6B7280]">{x.g?.GameStage || '—'}</td>
+                      </tr>
+                    ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
