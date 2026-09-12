@@ -646,6 +646,8 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   const [logResultFilter, setLogResultFilter] = useState('All')
   const [logStageFilter, setLogStageFilter] = useState('All')
   const [logSort, setLogSort] = useState({ key: 'season', dir: 'desc' })
+  const gameLogViewportRef = useRef(null)
+  const highlightedLogRowRef = useRef(null)
 
   useEffect(() => {
     setSelectedTeams([profile.team])
@@ -782,6 +784,21 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     return 0
   }), [filteredGames, logSort])
 
+  useEffect(() => {
+    if (!highlightedLogRowRef.current || !gameLogViewportRef.current) return
+
+    const timer = setTimeout(() => {
+      const viewport = gameLogViewportRef.current
+      const row = highlightedLogRowRef.current
+      if (!viewport || !row) return
+
+      const targetTop = Math.max(0, row.offsetTop - Math.max(0, (viewport.clientHeight - row.offsetHeight) / 2))
+      viewport.scrollTo({ top: targetTop, behavior: 'smooth' })
+    }, 80)
+
+    return () => clearTimeout(timer)
+  }, [profile.rawName, profile.season, profile.week, profile.team, profile.opponent, sortedGames])
+
   const toggleTeam = team => setSelectedTeams(cur => {
     const exists = cur.some(t => normalizeTeamName(t) === normalizeTeamName(team))
     if (exists) return cur.length === 1 ? cur : cur.filter(t => normalizeTeamName(t) !== normalizeTeamName(team))
@@ -912,7 +929,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               </div>
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-auto">
+          <div ref={gameLogViewportRef} className="min-h-0 flex-1 overflow-auto">
             <table className="w-full min-w-[900px] table-fixed">
               <thead className="sticky top-0 z-20 bg-[#F7F6F2]">
                 <tr className="border-b-2 border-[#0A0A0A]/10">
@@ -929,7 +946,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               </thead>
               <tbody>
                     {sortedGames.map((x,i) => (
-                      <tr key={i} className={`border-b border-[#0A0A0A]/8 ${x.isCurrentGame ? 'bg-[#FFF3F4]' : 'bg-white'}`}>
+                      <tr key={i} ref={x.isCurrentGame ? highlightedLogRowRef : null} className={`border-b border-[#0A0A0A]/8 ${x.isCurrentGame ? 'bg-[#FFF3F4]' : 'bg-white'}`}>
                         <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{x.season}</td>
                         <td className="px-2 py-2.5 text-[10px] font-bold text-[#3F4757]">{x.week}</td>
                         <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.team)}</td>
