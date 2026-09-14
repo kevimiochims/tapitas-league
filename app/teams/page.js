@@ -961,18 +961,34 @@ export default function TeamsPage() {
       })
     })
 
-    const topRosteredCount = Math.max(0, ...Array.from(rosterCounts.values()))
-    const topStarterCount = Math.max(0, ...Array.from(starterCounts.values()))
-    const topRostered = Array.from(rosterCounts.entries()).filter(([, count]) => count === topRosteredCount)
+    // Most Rostered: one player only. Tie-breakers:
+// 1) most starts, 2) alphabetical player name.
+    const topRostered = Array.from(rosterCounts.entries())
+      .sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1]
+        const startsA = starterCounts.get(a[0]) || 0
+        const startsB = starterCounts.get(b[0]) || 0
+        if (startsB !== startsA) return startsB - startsA
+        const nameA = metadata.get(a[0])?.name || a[0]
+        const nameB = metadata.get(b[0])?.name || b[0]
+        return String(nameA).localeCompare(String(nameB))
+      })
+      .slice(0, 1)
+
+    // Most Started: one player only. Tie-breakers:
+    // 1) most rostered, 2) alphabetical player name.
     const topStarter = Array.from(starterCounts.entries())
       .sort((a, b) => {
         if (b[1] !== a[1]) return b[1] - a[1]
         const rosterA = rosterCounts.get(a[0]) || 0
         const rosterB = rosterCounts.get(b[0]) || 0
         if (rosterB !== rosterA) return rosterB - rosterA
-        return String(a[0]).localeCompare(String(b[0]))
+        const nameA = metadata.get(a[0])?.name || a[0]
+        const nameB = metadata.get(b[0])?.name || b[0]
+        return String(nameA).localeCompare(String(nameB))
       })
       .slice(0, 1)
+
     const build = entries => entries.map(([identity, count]) => {
       const meta = metadata.get(identity)
       return meta ? {

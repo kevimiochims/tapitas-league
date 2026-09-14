@@ -235,6 +235,35 @@ function getNFLTeamShortName(nameOrAbbr) {
   return NFL_TEAM_SHORT[mapped] || String(nameOrAbbr)
 }
 
+function getCompactTeamName(name) {
+  const tapitas = {
+    'i am megatron': 'MEG',
+    'peytao da massa': 'PEY',
+    'moneyball': 'MON',
+    'oldbrady': 'OLD',
+    'ocupa e resiste': 'O&R',
+    'patrolao squad': 'PAT',
+    'howmuch': 'HOW',
+    'pequers verde': 'PEQ',
+    'rincao settlers': 'SET',
+    'h-lera do mahl': 'HLE',
+  }
+  const normalized = normalizeTeamName(name)
+  if (tapitas[normalized]) return tapitas[normalized]
+
+  const nfl = {
+    ari:'ARI', atl:'ATL', bal:'BAL', buf:'BUF', car:'CAR', chi:'CHI',
+    cin:'CIN', cle:'CLE', dal:'DAL', den:'DEN', det:'DET', gb:'GB',
+    hou:'HOU', ind:'IND', jax:'JAX', kc:'KC', lac:'LAC', lar:'LAR',
+    lv:'LV', mia:'MIA', min:'MIN', ne:'NE', no:'NO', nyg:'NYG',
+    nyj:'NYJ', phi:'PHI', pit:'PIT', sea:'SEA', sf:'SF', tb:'TB',
+    ten:'TEN', wsh:'WSH'
+  }
+  const raw = String(name || '').toLowerCase().trim()
+  const mapped = NFL_TEAM_NAME_MAP[raw] || (raw === 'was' ? 'wsh' : raw)
+  return nfl[mapped] || String(name || '')
+}
+
 // Lookup: name|pos first, then name alone — NO sorting by id, first occurrence wins
 function buildPlayerLookup(rows) {
   const map = new Map()
@@ -957,10 +986,12 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               <div className="min-w-0 h-full">
                 <div className={`flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:px-4 sm:py-3`}>
                   <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap">
-                    <div className="min-w-0 truncate text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#16274F]">{profile.season} Week {profile.week} Stats</div>
+                    <div className="min-w-0 truncate text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#16274F]">
+                      {profile.season} Week {profile.week}<span className="hidden sm:inline"> Stats</span>
+                    </div>
                     {sleeperInfo?.matchupOpponent ? (
                       <div className="flex min-w-0 shrink-0 items-center gap-1.5 text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.08em] text-[#16274F]/80">
-                        <span className="truncate">vs {getNFLTeamShortName(sleeperInfo.matchupOpponent)}</span>
+                        <span className="truncate">vs {getCompactTeamName(sleeperInfo.matchupOpponent)}</span>
                         <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '24px', height: '24px', flexShrink: 0, objectFit: 'contain', display: 'block' }} />
                       </div>
                     ) : null}
@@ -993,7 +1024,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                   <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#5B2CA0]">
                     <span className="min-w-0 truncate">Historic</span>
                     <div className="flex min-w-0 shrink-0 items-center gap-1.5">
-                      <span className="truncate">vs {getTeamShortName(profile.opponent)}</span>
+                      <span className="truncate">vs {getCompactTeamName(profile.opponent)}</span>
                       <div style={{ width: '24px', height: '24px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                         <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[6px]" />
                       </div>
