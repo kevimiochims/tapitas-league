@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ChevronRight, ChevronLeft, ChevronDown, Swords, Activity } from 'lucide-react'
 import React from 'react'
+import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import { motion } from 'framer-motion'
 import Header from '../components/Header'
@@ -66,26 +67,35 @@ function HeaderFilter({ value, onChange, options, label }) {
 
       const rect = button.getBoundingClientRect()
       const padding = 8
-      const width = Math.min(220, window.innerWidth - padding * 2)
+      const width = Math.min(220, Math.max(150, window.innerWidth - padding * 2))
+      const rowHeight = 34
+      const desiredHeight = Math.min(280, Math.max(rowHeight, options.length * rowHeight))
+      const below = window.innerHeight - rect.bottom - padding
+      const above = rect.top - padding
+
+      let top
+      if (below >= Math.min(desiredHeight, 160) || below >= above) {
+        top = Math.min(rect.bottom + 6, window.innerHeight - padding - Math.min(desiredHeight, below))
+      } else {
+        top = Math.max(padding, rect.top - 6 - desiredHeight)
+      }
+
+      const maxHeight = Math.max(
+        rowHeight,
+        Math.min(desiredHeight, window.innerHeight - padding * 2, Math.max(below, above))
+      )
+
       const left = Math.max(
         padding,
         Math.min(rect.left, window.innerWidth - width - padding)
-      )
-      const spaceBelow = window.innerHeight - rect.bottom - padding
-      const spaceAbove = rect.top - padding
-      const maxHeight = Math.max(
-        120,
-        Math.min(280, Math.max(spaceBelow, spaceAbove))
       )
 
       setMenuStyle({
         position: 'fixed',
         left,
+        top,
         width,
-        maxHeight,
-        ...(spaceBelow >= 150
-          ? { top: rect.bottom + 6 }
-          : { bottom: window.innerHeight - rect.top + 6 }),
+        height: maxHeight,
       })
     }
 
@@ -99,41 +109,43 @@ function HeaderFilter({ value, onChange, options, label }) {
     }
   }, [open, options.length])
 
-  return (
-    <div ref={ref} className="relative inline-block max-w-full">
-      <button
-        type="button"
-        onClick={() => setOpen(p => !p)}
-        className={`inline-flex max-w-full items-center gap-1 truncate uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}
-      >
-        <span className="min-w-0 truncate">{value === 'All' ? label : value}</span>
-        <span className="shrink-0 text-[9px] text-[#D01F2D]">⌄</span>
-      </button>
-
-      {open && menuStyle && (
-        <div
-          ref={menuRef}
-          style={menuStyle}
-          className="z-[100] overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
+  const menu = open && menuStyle ? (
+    <div
+      ref={menuRef}
+      style={menuStyle}
+      className="z-[1000] overflow-y-auto overscroll-contain border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
+      onMouseDown={e => e.stopPropagation()}
+    >
+      {options.map(opt => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => {
+            onChange(opt)
+            setOpen(false)
+          }}
+          className={`block h-[34px] w-full truncate px-3 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}
         >
-          <div className="max-h-full overflow-y-auto overscroll-contain">
-            {options.map(opt => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => {
-                  onChange(opt)
-                  setOpen(false)
-                }}
-                className={`block w-full truncate px-3 py-2 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}
-              >
-                {opt === 'All' ? label : opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+          {opt === 'All' ? label : opt}
+        </button>
+      ))}
     </div>
+  ) : null
+
+  return (
+    <>
+      <div ref={ref} className="relative inline-block max-w-full">
+        <button
+          type="button"
+          onClick={() => setOpen(p => !p)}
+          className={`inline-flex max-w-full items-center gap-1 truncate uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}
+        >
+          <span className="min-w-0 truncate">{value === 'All' ? label : value}</span>
+          <span className="shrink-0 text-[9px] text-[#D01F2D]">⌄</span>
+        </button>
+      </div>
+      {typeof document !== 'undefined' && menu ? createPortal(menu, document.body) : null}
+    </>
   )
 }
 function getRosterPositions(seasonYear) {
@@ -1184,8 +1196,8 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               </div>
             </div>
           </div>
-          <div className="min-h-0 flex-1 min-w-0 max-w-full overflow-auto overscroll-x-contain">
-            <table className="w-full min-w-[900px] table-fixed">
+          <div className="min-w-0 max-w-full min-h-0 flex-1 overflow-x-auto overflow-y-auto">
+            <table className="min-w-[760px] w-full table-fixed">
               <thead className="sticky top-0 z-20 bg-[#F7F6F2]">
                 <tr className="border-b-2 border-[#0A0A0A]/10">
                   <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('season')} className="hover:text-[#D01F2D]">Season <span className="text-[#D01F2D]">{logSort.key === 'season' ? sortDirLabel : '↕'}</span></button></th>
