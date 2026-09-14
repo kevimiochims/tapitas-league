@@ -122,6 +122,30 @@ function parseNumber(value) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
+// GAME_FACTS_ALL weekly fantasy scores may use a decimal point (e.g. 215.7).
+// Keep that decimal instead of treating the dot as a thousands separator.
+function parseWeeklyPoints(value) {
+  if (value === null || value === undefined || value === '') return 0
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  const raw = String(value).trim().replace(/[^0-9,.-]/g, '')
+  if (!raw) return 0
+  if (raw.includes(',') && raw.includes('.')) {
+    const lastComma = raw.lastIndexOf(',')
+    const lastDot = raw.lastIndexOf('.')
+    const normalized = lastComma > lastDot
+      ? raw.replace(/\./g, '').replace(',', '.')
+      : raw.replace(/,/g, '')
+    const parsed = Number(normalized)
+    return Number.isNaN(parsed) ? 0 : parsed
+  }
+  if (raw.includes(',')) {
+    const parsed = Number(raw.replace(/\./g, '').replace(',', '.'))
+    return Number.isNaN(parsed) ? 0 : parsed
+  }
+  const parsed = Number(raw)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
 async function safeFetch(url) {
   try {
     const res = await fetch(url)
@@ -849,7 +873,7 @@ export default function TeamsPage() {
     games.forEach(g => {
       if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-      const pf = parseNumber(g?.PF)
+      const pf = parseWeeklyPoints(g?.PF)
       if (map[key] === undefined || pf > map[key]) map[key] = pf
     })
     return map
@@ -867,7 +891,7 @@ export default function TeamsPage() {
       const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
       if (seen.has(key)) return
       seen.add(key)
-      max = Math.max(max, parseNumber(g?.PF))
+      max = Math.max(max, parseWeeklyPoints(g?.PF))
     })
     return max
   }
@@ -1465,7 +1489,7 @@ export default function TeamsPage() {
               [Target, 'RS Wins', parseNumber(selected.RS_W), rsWinsRank || 'regular season', 'green'],
               [TrendingDown, 'RS Losses', parseNumber(selected.RS_L), rsLossesRank || 'regular season', 'red'],
               [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), totalPointsRank || 'all-time', 'navy'],
-              [Target, 'Weekly Points Record', parseNumber(weeklyMax).toLocaleString('pt-BR', { maximumFractionDigits: 20 }), weeklyMaxRank || 'single weeks only', 'navy'],
+              [Target, 'Weekly Points Record', Number(weeklyMax).toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(Number(weeklyMax)) ? 0 : 1, maximumFractionDigits: 1 }), weeklyMaxRank || 'single weeks only', 'navy'],
               [Zap, '200+ Pt Games', games200, games200Rank || 'single weeks only', 'gold'],
               [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
               [Star, 'Weeks as #1 Scorer', topScoringWeeks, topScoringWeeksRank || 'regular season', 'gold'],
@@ -1479,7 +1503,12 @@ export default function TeamsPage() {
               }
               const c = colors[accent]
               return (
-                <div key={label} className="border-2 border-[#0A0A0A] bg-white p-3.5 lg:p-3 tp-shadow-navy-sm">
+                <Link
+                  key={label}
+                  href="/records"
+                  className="block border-2 border-[#0A0A0A] bg-white p-3.5 lg:p-3 tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]"
+                  aria-label={`Open ${label} records`}
+                >
                   <div className={`mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] ${c.iconBg}`}>
                     <Icon className="h-4 w-4" />
                   </div>
@@ -1488,7 +1517,7 @@ export default function TeamsPage() {
                     {value}
                   </div>
                   <div className="mt-1 text-[11px] font-bold text-[#6B7280]">{sub}</div>
-                </div>
+                </Link>
               )
             })}
 
