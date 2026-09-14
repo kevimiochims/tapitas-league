@@ -1465,11 +1465,11 @@ export default function TeamsPage() {
               [Target, 'RS Wins', parseNumber(selected.RS_W), rsWinsRank || 'regular season', 'green'],
               [TrendingDown, 'RS Losses', parseNumber(selected.RS_L), rsLossesRank || 'regular season', 'red'],
               [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), totalPointsRank || 'all-time', 'navy'],
-              [Skull, 'Unicorns', unicorns.length, unicornsSub, 'red'],
+              [Target, 'Weekly Points Record', parseNumber(weeklyMax).toLocaleString('pt-BR', { maximumFractionDigits: 20 }), weeklyMaxRank || 'single weeks only', 'navy'],
               [Zap, '200+ Pt Games', games200, games200Rank || 'single weeks only', 'gold'],
               [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
-              [Target, 'Weekly Points Record', Math.round(weeklyMax).toLocaleString(), weeklyMaxRank || 'single weeks only', 'navy'],
               [Star, 'Weeks as #1 Scorer', topScoringWeeks, topScoringWeeksRank || 'regular season', 'gold'],
+              [Skull, 'Unicorns', unicorns.length, unicornsSub, 'red'],
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
                 gold: { text: 'text-[#B8860B]', iconBg: 'bg-[#F5C518] text-[#0A0A0A]' },
