@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Header from '../components/Header'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Flame, Swords, Activity, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
+import { Trophy, Flame, Swords, Activity, Users, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -16,6 +16,76 @@ function parseNumber(value) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
+function normalizePlayerKey(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
+
+const NFL_TEAM_NAME_MAP = {
+  'cardinals':'ari','arizona':'ari','arizona cardinals':'ari',
+  'falcons':'atl','atlanta':'atl','atlanta falcons':'atl',
+  'ravens':'bal','baltimore':'bal','baltimore ravens':'bal',
+  'bills':'buf','buffalo':'buf','buffalo bills':'buf',
+  'panthers':'car','carolina':'car','carolina panthers':'car',
+  'bears':'chi','chicago':'chi','chicago bears':'chi',
+  'bengals':'cin','cincinnati':'cin','cincinnati bengals':'cin',
+  'browns':'cle','cleveland':'cle','cleveland browns':'cle',
+  'cowboys':'dal','dallas':'dal','dallas cowboys':'dal',
+  'broncos':'den','denver':'den','denver broncos':'den',
+  'lions':'det','detroit':'det','detroit lions':'det',
+  'packers':'gb','green bay':'gb','green bay packers':'gb',
+  'texans':'hou','houston':'hou','houston texans':'hou',
+  'colts':'ind','indianapolis':'ind','indianapolis colts':'ind',
+  'jaguars':'jax','jacksonville':'jax','jacksonville jaguars':'jax',
+  'chiefs':'kc','kansas city':'kc','kansas city chiefs':'kc',
+  'chargers':'lac','los angeles chargers':'lac','la chargers':'lac',
+  'rams':'lar','los angeles rams':'lar','la rams':'lar',
+  'raiders':'lv','las vegas':'lv','las vegas raiders':'lv','oakland':'lv','oakland raiders':'lv',
+  'dolphins':'mia','miami':'mia','miami dolphins':'mia',
+  'vikings':'min','minnesota':'min','minnesota vikings':'min',
+  'patriots':'ne','new england':'ne','new england patriots':'ne',
+  'saints':'no','new orleans':'no','new orleans saints':'no',
+  'giants':'nyg','new york giants':'nyg','ny giants':'nyg',
+  'jets':'nyj','new york jets':'nyj','ny jets':'nyj',
+  'eagles':'phi','philadelphia':'phi','philadelphia eagles':'phi',
+  'steelers':'pit','pittsburgh':'pit','pittsburgh steelers':'pit',
+  'seahawks':'sea','seattle':'sea','seattle seahawks':'sea',
+  '49ers':'sf','san francisco':'sf','san francisco 49ers':'sf',
+  'buccaneers':'tb','tampa bay':'tb','tampa bay buccaneers':'tb',
+  'titans':'ten','tennessee':'ten','tennessee titans':'ten',
+  'commanders':'wsh','washington':'wsh','washington commanders':'wsh',
+  'redskins':'wsh','washington redskins':'wsh','football team':'wsh',
+  'ari':'ari','atl':'atl','bal':'bal','buf':'buf','car':'car','chi':'chi','cin':'cin','cle':'cle',
+  'dal':'dal','den':'den','det':'det','gb':'gb','hou':'hou','ind':'ind','jax':'jax','kc':'kc',
+  'lac':'lac','lar':'lar','lv':'lv','mia':'mia','min':'min','ne':'ne','no':'no','nyg':'nyg',
+  'nyj':'nyj','phi':'phi','pit':'pit','sea':'sea','sf':'sf','tb':'tb','ten':'ten','wsh':'wsh'
+}
+
+function getNFLTeamLogo(name) {
+  const raw = normalizePlayerKey(name)
+    .replace(/\b(d\/st|dst|def|defense|special teams)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+  const mapped = NFL_TEAM_NAME_MAP[raw]
+  return mapped ? `https://a.espncdn.com/i/teamlogos/nfl/500/${mapped}.png` : null
+}
+
+function extractPlayerAppearances(game, max = 13) {
+  const appearances = []
+  for (let i = 1; i <= max; i++) {
+    const starterName = game?.[`S${i}_Name`]
+    const starterPts = game?.[`S${i}_Pts`]
+    if (starterName && starterName !== '--empty--' && String(starterName).trim() !== '') {
+      appearances.push({ name: String(starterName).trim(), status: 'Starter', pts: parseNumber(starterPts) })
+    }
+    const benchName = game?.[`B${i}_Name`]
+    const benchPts = game?.[`B${i}_Pts`]
+    if (benchName && benchName !== '--empty--' && String(benchName).trim() !== '') {
+      appearances.push({ name: String(benchName).trim(), status: 'Bench', pts: parseNumber(benchPts) })
+    }
+  }
+  return appearances
+}
+
 function parseMarginVal(val) {
   const cleaned = String(val || '0').replace(',', '.').replace(/[^0-9.]/g, '')
   return parseFloat(cleaned) || 0
@@ -25,9 +95,27 @@ function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
 
+// Shared team/week helpers used by all record groups.
+function normalizeTeamName(value) {
+  return normalizeString(value)
+}
+
+function isDoubleWeek(game) {
+  const week = String(game?.Week || '')
+  return week.includes('-') || week.includes('&')
+}
+
 function teamHref(name) {
   return `/teams?team=${encodeURIComponent(String(name || '').trim())}`
 }
+
+function rivalryHref(teamA, teamB) {
+  const a = String(teamA || '').trim()
+  const b = String(teamB || '').trim()
+  if (!a || !b) return '/rivalries'
+  return `/rivalries?teamA=${encodeURIComponent(a)}&teamB=${encodeURIComponent(b)}`
+}
+
 
 function matchupHref(game, allGames = []) {
   if (!game) return '/matchups'
@@ -79,6 +167,58 @@ function getTeamAvatar(name) {
   return TEAM_AVATARS[normalizeString(clean)] || null
 }
 
+
+function getPlayerAvatar(playerId) {
+  const id = String(playerId || '').trim()
+  return id ? `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(id)}.jpg` : null
+}
+
+function PlayerAvatar({ playerId, name, size = 'md' }) {
+  const avatar = getPlayerAvatar(playerId)
+  const sizeClass = size === 'sm'
+    ? 'h-8 w-8 rounded-full border-2 border-[#16274F]'
+    : 'h-10 w-10 rounded-full border-2 border-[#16274F]'
+
+  return (
+    <span
+      className={`${sizeClass} flex flex-shrink-0 items-center justify-center overflow-hidden bg-white text-[9px] font-black uppercase text-[#16274F]`}
+      title={name || ''}
+    >
+      {avatar ? (
+        <img
+          src={avatar}
+          alt={name || ''}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        String(name || '?').split(/\s+/).map(part => part[0]).join('').slice(0, 2)
+      )}
+    </span>
+  )
+}
+
+function PositionBadge({ position }) {
+  const pos = String(position || '').trim().toUpperCase()
+  if (!pos) return null
+
+  const styles = {
+    QB: 'bg-[#D91F2D] text-white',
+    RB: 'bg-[#1E8E3E] text-white',
+    WR: 'bg-[#16274F] text-white',
+    TE: 'bg-[#7C3AED] text-white',
+    K: 'bg-[#D97706] text-white',
+    DEF: 'bg-[#4B5563] text-white',
+    DST: 'bg-[#4B5563] text-white',
+  }
+
+  return (
+    <span className={`inline-flex min-w-[42px] items-center justify-center border-2 border-[#0A0A0A] px-2 py-1 text-[11px] font-black leading-none ${styles[pos] || 'bg-[#F7F6F2] text-[#16274F]'}`}>
+      {pos}
+    </span>
+  )
+}
+
 function TeamAvatar({ team, size = 'md' }) {
   const avatar = getTeamAvatar(team)
 
@@ -120,7 +260,7 @@ async function safeFetch(url) {
   } catch { return [] }
 }
 
-function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: Icon, top5, wide, team }) {
+function RecordCard({ label, value, sub, sub2, sub2Href, subHref, subItems, accent, icon: Icon, top5, wide, team, player }) {
   const [expanded, setExpanded] = useState(false)
 
   const accents = {
@@ -189,7 +329,15 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: 
             </div>
           ) : <div />}
 
-          {teamArr.length > 0 && (
+          {Array.isArray(player) && player.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-end">
+              {player.map((item, i) => (
+                <span key={`${item.playerId || item.name}-${i}`} className={i > 0 ? '-ml-2' : ''}>
+                  <PlayerAvatar playerId={item.playerId} name={item.name} size="md" />
+                </span>
+              ))}
+            </div>
+          ) : teamArr.length > 0 && (
             <div className="flex flex-wrap items-center justify-end">
               {teamArr.map((teamName, i) => (
                 <Link key={`${teamName}-${i}`} href={teamHref(teamName)} className={i > 0 ? '-ml-2' : ''} aria-label={`Open ${teamName}`}>
@@ -209,19 +357,31 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: 
           {value}
         </div>
 
-        {subArr.length > 0 && (
+        {(subArr.length > 0 || (Array.isArray(subItems) && subItems.length > 0)) && (
           <div className="mt-3 flex min-h-[2.75rem] flex-col justify-end gap-0.5">
-            {subArr.map((s, i) => (
-              subHref ? (
-                <Link key={i} href={subHref} className="text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
-                  {s}
-                </Link>
-              ) : (
-                <div key={i} className="text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
-                  {s}
-                </div>
-              )
-            ))}
+            {Array.isArray(subItems) && subItems.length > 0
+              ? subItems.map((item, i) => (
+                  item?.href ? (
+                    <Link key={i} href={item.href} className="text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
+                      {item.text}
+                    </Link>
+                  ) : (
+                    <div key={i} className="text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
+                      {item?.text || ''}
+                    </div>
+                  )
+                ))
+              : subArr.map((s, i) => (
+                  subHref ? (
+                    <Link key={i} href={subHref} className="text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
+                      {s}
+                    </Link>
+                  ) : (
+                    <div key={i} className="text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
+                      {s}
+                    </div>
+                  )
+                ))}
           </div>
         )}
 
@@ -248,6 +408,7 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: 
             <div className="border-t-2 border-[#16274F]/10 px-4 pb-3">
               {top5.slice(0, 5).map((item, i) => {
                 const labelText = Array.isArray(item.label) ? item.label.join(', ') : item.label
+                const isPlayer = Boolean(item.playerId || item.position)
                 const showAvatar = !Array.isArray(item.label) && !String(labelText).includes(' vs ')
 
                 return (
@@ -258,15 +419,20 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: 
                           <span className={`w-5 flex-shrink-0 text-sm font-black ${i === 0 ? a.text : 'text-slate-500'}`}>
                             {i + 1}
                           </span>
-                          {showAvatar && (item.href ? (
-                            <span className="flex-shrink-0"><TeamAvatar team={labelText} size="sm" /></span>
+                          {showAvatar && (isPlayer ? (
+                            <span className="flex-shrink-0" aria-hidden="true">
+                              <PlayerAvatar playerId={item.playerId} name={labelText} size="sm" />
+                            </span>
                           ) : (
-                            <Link href={teamHref(labelText)} className="flex-shrink-0" aria-label={`Open ${labelText}`}>
-                              <TeamAvatar team={labelText} size="sm" />
-                            </Link>
+                            <span className="flex-shrink-0" aria-hidden="true">
+                              <TeamAvatar team={item.team || labelText} size="sm" />
+                            </span>
                           ))}
                           <div className="min-w-0 flex-1">
-                            <div className={`truncate text-sm font-bold leading-tight ${item.href || showAvatar ? 'text-[#0A0A0A]' : 'text-[#0A0A0A]'}`}>{labelText}</div>
+                            <div className="flex min-w-0 items-center gap-2">
+                              <div className="min-w-0 truncate text-sm font-bold leading-tight text-[#0A0A0A]">{labelText}</div>
+                              {isPlayer && <PositionBadge position={item.position} />}
+                            </div>
                             {item.sub && <div className="mt-0.5 text-xs font-semibold leading-tight text-slate-500">{item.sub}</div>}
                           </div>
                         </div>
@@ -313,6 +479,7 @@ const TABS = [
   { key: 'franchise', label: 'Franchise', Icon: Shield },
   { key: 'streaks', label: 'Streaks', Icon: Flame },
   { key: 'games', label: 'Games', Icon: Activity },
+  { key: 'players', label: 'Players', Icon: Users },
   { key: 'seasons', label: 'Seasons', Icon: Star },
   { key: 'rivalry', label: 'Rivalries', Icon: Swords },
   { key: 'glory', label: 'Glory', Icon: Trophy },
@@ -324,6 +491,7 @@ export default function RecordsPage() {
   const [history, setHistory] = useState([])
   const [games, setGames] = useState([])
   const [h2h, setH2h] = useState([])
+  const [playerCache, setPlayerCache] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('franchise')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -331,11 +499,12 @@ export default function RecordsPage() {
 
   useEffect(() => {
     async function load() {
-      const [at, hi, ga, h2hData] = await Promise.all([
+      const [at, hi, ga, h2hData, pc] = await Promise.all([
         safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
         safeFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
         safeFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
+        safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
       ])
       setAllTime(at)
       setHistory(hi)
@@ -350,6 +519,7 @@ export default function RecordsPage() {
       setAllSeasons(seasons)
       setGames(ga)
       setH2h(h2hData)
+      setPlayerCache(pc)
       setLoading(false)
     }
     load()
@@ -715,8 +885,6 @@ export default function RecordsPage() {
   const gameRecords = useMemo(() => {
     if (!games.length) return {}
 
-    const isDoubleWeek = g => { const w = String(g?.Week || ''); return w.includes('-') || w.includes('&') }
-
     // Each game in GAME_FACTS_ALL has two rows (one per team's perspective),
     // both sharing the same Season/Week/Team-Opponent pair once sorted.
     // For matchup-level stats (margin, closest/biggest game) we want exactly
@@ -840,6 +1008,176 @@ export default function RecordsPage() {
       most200,
     }
   }, [games])
+
+  // ── PLAYERS ────────────────────────────────────────────────────────
+  // Player records are derived from the same GAME_FACTS_ALL roster/points
+  // logic used by the Teams Player Profile. A player-franchise pair is the
+  // unit of record, so the same player can hold different records for
+  // different franchises.
+  const playerRecords = useMemo(() => {
+    if (!games.length) return {}
+
+    const lookup = new Map()
+    playerCache.forEach(row => {
+      const playerId = String(row?.player_id || '').trim()
+      const abbreviated = String(row?.name || '').trim()
+      const fullName = String(row?.full_name || '').trim()
+      const position = String(row?.pos || row?.position || row?.Position || '').trim().toUpperCase()
+      if (!playerId) return
+      const entry = { playerId, abbreviated, fullName, position }
+      ;[abbreviated, fullName].filter(Boolean).forEach(value => {
+        const key = normalizePlayerKey(value)
+        if (key && !lookup.has(key)) lookup.set(key, entry)
+      })
+    })
+
+    const displayName = raw => {
+      const value = String(raw || '').trim()
+      const data = lookup.get(normalizePlayerKey(value))
+      return data?.abbreviated || data?.fullName || value
+    }
+
+    const positionOf = raw => {
+      const value = String(raw || '').trim()
+      const data = lookup.get(normalizePlayerKey(value))
+      if (data?.position) return data.position
+      return getNFLTeamLogo(value) ? 'DEF' : ''
+    }
+
+    const identityOf = raw => {
+      const value = String(raw || '').trim()
+      const data = lookup.get(normalizePlayerKey(value))
+      return data?.playerId ? `id:${data.playerId}` : `name:${normalizePlayerKey(value)}`
+    }
+
+    const buildEra = minSeason => {
+      const map = new Map()
+
+      games.forEach(game => {
+        const season = Number(game?.Season) || 0
+        if (minSeason && season < minSeason) return
+
+        const team = String(game?.Team || '').trim()
+        if (!team) return
+
+        // One GAME_FACTS_ALL row is one franchise's game. Therefore a double
+        // week is already one roster/start appearance and must not be counted
+        // twice. This matches the Player Profile logic.
+        const appearances = extractPlayerAppearances(game)
+        const seen = new Set()
+
+        appearances.forEach(app => {
+          const rawName = String(app?.name || '').trim()
+          if (!rawName || getNFLTeamLogo(rawName)) return
+
+          const identity = identityOf(rawName)
+          const key = `${normalizeTeamName(team)}|${identity}`
+          if (seen.has(identity)) return
+          seen.add(identity)
+
+          if (!map.has(key)) {
+            map.set(key, {
+              identity,
+              playerId: lookup.get(normalizePlayerKey(rawName))?.playerId || '',
+              team,
+              name: displayName(rawName),
+              position: positionOf(rawName),
+              rostered: 0,
+              started: 0,
+              totalPts: 0,
+              avgCount: 0,
+              bestPts: 0,
+              bestGame: null,
+              appearances: 0,
+            })
+          }
+
+          const entry = map.get(key)
+          entry.rostered += 1
+          entry.appearances += 1
+          if (app.status === 'Starter') entry.started += 1
+
+          const doubleWeek = isDoubleWeek(game)
+          const adjustedPts = doubleWeek ? app.pts / 2 : app.pts
+
+          // Exact AVG rule:
+          // Bench + 0 is excluded; everything else counts.
+          if (!(app.status === 'Bench' && adjustedPts === 0)) {
+            entry.totalPts += adjustedPts
+            entry.avgCount += 1
+          }
+
+          // BEST excludes double weeks entirely.
+          if (!doubleWeek && app.pts > entry.bestPts) {
+            entry.bestPts = app.pts
+            entry.bestGame = game
+          }
+        })
+      })
+
+      return Array.from(map.values())
+        .map(row => ({
+          ...row,
+          avgPts: row.avgCount ? row.totalPts / row.avgCount : 0,
+        }))
+        .filter(row => row.position !== 'DEF')
+    }
+
+    const makeMetric = (rows, metric, higher = true) => {
+      const eligible = rows.filter(r => Number(r?.[metric]) > 0)
+      const sorted = [...eligible].sort((a, b) => {
+        const av = Number(a?.[metric]) || 0
+        const bv = Number(b?.[metric]) || 0
+        if (bv !== av) return higher ? bv - av : av - bv
+        return String(a.name || '').localeCompare(String(b.name || ''))
+      })
+
+      const topValue = Number(sorted[0]?.[metric] || 0)
+      const winners = sorted.filter(r => Math.abs(Number(r[metric]) - topValue) < 0.0001)
+
+      return {
+        value: metric === 'avgPts' || metric === 'bestPts'
+          ? topValue.toFixed(2)
+          : topValue,
+        sub: winners.map(r => `${r.name}${r.position ? ` [${r.position}]` : ''}`),
+        subItems: winners.map(r => ({
+          text: `${r.name}${r.position ? ` [${r.position}]` : ''}`,
+          href: metric === 'bestPts' && r.bestGame
+            ? matchupHref(r.bestGame, games)
+            : teamHref(r.team),
+        })),
+        teams: winners.map(r => r.team),
+        players: winners.map(r => ({ playerId: r.playerId, name: r.name, position: r.position })),
+        top5: sorted.slice(0, 5).map(r => ({
+          label: r.name,
+          position: r.position,
+          playerId: r.playerId,
+          value: metric === 'avgPts' || metric === 'bestPts' ? Number(r[metric]).toFixed(2) : Number(r[metric]),
+          sub: r.team,
+          team: r.team,
+          href: metric === 'bestPts' && r.bestGame
+            ? matchupHref(r.bestGame, games)
+            : teamHref(r.team),
+        })),
+      }
+    }
+
+    const buildEraRecords = minSeason => {
+      const rows = buildEra(minSeason)
+      return {
+        mostRostered: makeMetric(rows, 'rostered'),
+        mostStarted: makeMetric(rows, 'started'),
+        bestPts: makeMetric(rows, 'bestPts'),
+        avgPts: makeMetric(rows, 'avgPts'),
+      }
+    }
+
+    return {
+      all: buildEraRecords(null),
+      from21: buildEraRecords(2021),
+      from23: buildEraRecords(2023),
+    }
+  }, [games, playerCache])
 
   // ── SEASONS ────────────────────────────────────────────────────────
   const seasonRecords = useMemo(() => {
@@ -997,7 +1335,8 @@ export default function RecordsPage() {
     const mostGames = {
       value: topMG,
       teams: mgSorted.filter(r => parseNumber(r.Games) === topMG).map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
-      top5: mgSorted.slice(0, 5).map(r => ({ label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`, value: parseNumber(r.Games), href: '/rivalries' }))
+      subHref: mgSorted[0] ? rivalryHref(mgSorted[0]['Team A'], mgSorted[0]['Team B']) : '/rivalries',
+      top5: mgSorted.slice(0, 5).map(r => ({ label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`, value: parseNumber(r.Games), href: rivalryHref(r['Team A'], r['Team B']) }))
     }
 
     // Best H2H streak — compara todas as linhas corretamente
@@ -1032,13 +1371,14 @@ export default function RecordsPage() {
       teams: allStreaks
         .filter(s => s.val === topSV)
         .map(s => `${s.team} vs ${s.opponent}`),
+      subHref: allStreaks[0] ? rivalryHref(allStreaks[0].team, allStreaks[0].opponent) : '/rivalries',
       top5: allStreaks.slice(0, 5).map(s => {
         const { value, period } = extractStreakParts(s.streak)
         return {
           label: `${s.team} vs ${s.opponent}`,
           sub: period,
           value,
-          href: '/rivalries',
+          href: rivalryHref(s.team, s.opponent),
         }
       })
     }
@@ -1063,10 +1403,11 @@ export default function RecordsPage() {
       teams: balSorted
         .filter(r => r.recA === balSorted[0].recA && r.recB === balSorted[0].recB)
         .map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
+      subHref: balSorted[0] ? rivalryHref(balSorted[0]['Team A'], balSorted[0]['Team B']) : '/rivalries',
       top5: balSorted.slice(0, 5).map(r => ({
         label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`,
         value: `${r.recA}–${r.recB}`,
-        href: '/rivalries'
+        href: rivalryHref(r['Team A'], r['Team B'])
       }))
     }
 
@@ -1091,7 +1432,8 @@ export default function RecordsPage() {
     const highestMargin = {
       value: `${topHM.toFixed(2)} pts`,
       teams: hmSorted.filter(r => Math.abs(r._norm.margin - topHM) < 0.01).map(r => `${r._norm.dominant} vs ${r._norm.other}`),
-      top5: hmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: '/rivalries' }))
+      subHref: hmSorted[0] ? rivalryHref(hmSorted[0]._norm.dominant, hmSorted[0]._norm.other) : '/rivalries',
+      top5: hmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: rivalryHref(r._norm.dominant, r._norm.other) }))
     }
 
     // Lowest avg margin — same normalization, ascending
@@ -1103,7 +1445,8 @@ export default function RecordsPage() {
     const lowestMargin = {
       value: `${topLM.toFixed(2)} pts`,
       teams: lmSorted.filter(r => Math.abs(r._norm.margin - topLM) < 0.01).map(r => `${r._norm.dominant} vs ${r._norm.other}`),
-      top5: lmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: '/rivalries' }))
+      subHref: lmSorted[0] ? rivalryHref(lmSorted[0]._norm.dominant, lmSorted[0]._norm.other) : '/rivalries',
+      top5: lmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: rivalryHref(r._norm.dominant, r._norm.other) }))
     }
 
     return { mostGames, bestH2HStreak, mostBalanced, highestMargin, lowestMargin }
@@ -1340,6 +1683,132 @@ export default function RecordsPage() {
   </>
 )}
 
+{/* PLAYERS */}
+{tab === 'players' && (
+  <>
+    <RecordSection title="All-Time">
+      <RecordCard
+        label="Most Rostered"
+        value={playerRecords.all?.mostRostered?.value}
+        subItems={playerRecords.all?.mostRostered?.subItems}
+        team={playerRecords.all?.mostRostered?.teams}
+        player={playerRecords.all?.mostRostered?.players}
+        accent="gold" icon={Users}
+        top5={playerRecords.all?.mostRostered?.top5}
+      />
+      <RecordCard
+        label="Most Started"
+        value={playerRecords.all?.mostStarted?.value}
+        subItems={playerRecords.all?.mostStarted?.subItems}
+        team={playerRecords.all?.mostStarted?.teams}
+        player={playerRecords.all?.mostStarted?.players}
+        accent="cyan" icon={Star}
+        top5={playerRecords.all?.mostStarted?.top5}
+      />
+      <RecordCard
+        label="Best Points Scored"
+        value={playerRecords.all?.bestPts?.value}
+        subItems={playerRecords.all?.bestPts?.subItems}
+        team={playerRecords.all?.bestPts?.teams}
+        player={playerRecords.all?.bestPts?.players}
+        accent="red" icon={Flame}
+        top5={playerRecords.all?.bestPts?.top5}
+      />
+      <RecordCard
+        label="Best Average Points"
+        value={playerRecords.all?.avgPts?.value}
+        subItems={playerRecords.all?.avgPts?.subItems}
+        team={playerRecords.all?.avgPts?.teams}
+        player={playerRecords.all?.avgPts?.players}
+        accent="emerald" icon={Activity}
+        top5={playerRecords.all?.avgPts?.top5}
+      />
+    </RecordSection>
+
+    <RecordSection title="Since 2021">
+      <RecordCard
+        label="Most Rostered"
+        value={playerRecords.from21?.mostRostered?.value}
+        subItems={playerRecords.from21?.mostRostered?.subItems}
+        team={playerRecords.from21?.mostRostered?.teams}
+        player={playerRecords.from21?.mostRostered?.players}
+        accent="gold" icon={Users}
+        top5={playerRecords.from21?.mostRostered?.top5}
+      />
+      <RecordCard
+        label="Most Started"
+        value={playerRecords.from21?.mostStarted?.value}
+        subItems={playerRecords.from21?.mostStarted?.subItems}
+        team={playerRecords.from21?.mostStarted?.teams}
+        player={playerRecords.from21?.mostStarted?.players}
+        accent="cyan" icon={Star}
+        top5={playerRecords.from21?.mostStarted?.top5}
+      />
+      <RecordCard
+        label="Best Points Scored"
+        value={playerRecords.from21?.bestPts?.value}
+        subItems={playerRecords.from21?.bestPts?.subItems}
+        team={playerRecords.from21?.bestPts?.teams}
+        player={playerRecords.from21?.bestPts?.players}
+        accent="red" icon={Flame}
+        top5={playerRecords.from21?.bestPts?.top5}
+      />
+      <RecordCard
+        label="Best Average Points"
+        value={playerRecords.from21?.avgPts?.value}
+        subItems={playerRecords.from21?.avgPts?.subItems}
+        team={playerRecords.from21?.avgPts?.teams}
+        player={playerRecords.from21?.avgPts?.players}
+        accent="emerald" icon={Activity}
+        top5={playerRecords.from21?.avgPts?.top5}
+      />
+    </RecordSection>
+
+    <RecordSection title="Since 2023">
+      <RecordCard
+        label="Most Rostered"
+        value={playerRecords.from23?.mostRostered?.value}
+        subItems={playerRecords.from23?.mostRostered?.subItems}
+        team={playerRecords.from23?.mostRostered?.teams}
+        player={playerRecords.from23?.mostRostered?.players}
+        accent="gold" icon={Users}
+        top5={playerRecords.from23?.mostRostered?.top5}
+      />
+      <RecordCard
+        label="Most Started"
+        value={playerRecords.from23?.mostStarted?.value}
+        subItems={playerRecords.from23?.mostStarted?.subItems}
+        team={playerRecords.from23?.mostStarted?.teams}
+        player={playerRecords.from23?.mostStarted?.players}
+        accent="cyan" icon={Star}
+        top5={playerRecords.from23?.mostStarted?.top5}
+      />
+      <RecordCard
+        label="Best Points Scored"
+        value={playerRecords.from23?.bestPts?.value}
+        subItems={playerRecords.from23?.bestPts?.subItems}
+        team={playerRecords.from23?.bestPts?.teams}
+        player={playerRecords.from23?.bestPts?.players}
+        accent="red" icon={Flame}
+        top5={playerRecords.from23?.bestPts?.top5}
+      />
+      <RecordCard
+        label="Best Average Points"
+        value={playerRecords.from23?.avgPts?.value}
+        subItems={playerRecords.from23?.avgPts?.subItems}
+        team={playerRecords.from23?.avgPts?.teams}
+        player={playerRecords.from23?.avgPts?.players}
+        accent="emerald" icon={Activity}
+        top5={playerRecords.from23?.avgPts?.top5}
+      />
+    </RecordSection>
+
+    <div className="mt-2 text-xs font-semibold text-slate-500">
+      Player records use the same roster, starter, double-week, BEST and AVG rules as the Player Profile. BEST excludes double weeks; AVG excludes only Bench + 0.00.
+    </div>
+  </>
+)}
+
 {/* SEASONS */}
 {tab === 'seasons' && (
   <>
@@ -1392,17 +1861,17 @@ export default function RecordsPage() {
 {tab === 'rivalry' && (
   <>
     <RecordSection title="Most Played">
-      <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} subHref="/rivalries" wide />
+      <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} subHref={rivalryRecords.mostGames?.subHref} wide />
     </RecordSection>
 
     <RecordSection title="H2H Streaks">
-      <RecordCard label="Longest H2H Winning Streak" value={rivalryRecords.bestH2HStreak?.value} sub={rivalryRecords.bestH2HStreak?.teams} accent="gold" icon={Flame} top5={rivalryRecords.bestH2HStreak?.top5} subHref="/rivalries" wide />
+      <RecordCard label="Longest H2H Winning Streak" value={rivalryRecords.bestH2HStreak?.value} sub={rivalryRecords.bestH2HStreak?.teams} accent="gold" icon={Flame} top5={rivalryRecords.bestH2HStreak?.top5} subHref={rivalryRecords.bestH2HStreak?.subHref} wide />
     </RecordSection>
 
     <RecordSection title="Dominance & Balance">
-      <RecordCard label="Most Balanced Rivalry" value={rivalryRecords.mostBalanced?.value} sub={rivalryRecords.mostBalanced?.teams} accent="emerald" icon={Target} top5={rivalryRecords.mostBalanced?.top5} subHref="/rivalries" />
-      <RecordCard label="Highest Avg Margin H2H" value={rivalryRecords.highestMargin?.value} sub={rivalryRecords.highestMargin?.teams} accent="red" icon={TrendingUp} top5={rivalryRecords.highestMargin?.top5} subHref="/rivalries" />
-      <RecordCard label="Closest Avg Margin H2H" value={rivalryRecords.lowestMargin?.value} sub={rivalryRecords.lowestMargin?.teams} accent="cyan" icon={Target} top5={rivalryRecords.lowestMargin?.top5} subHref="/rivalries" />
+      <RecordCard label="Most Balanced Rivalry" value={rivalryRecords.mostBalanced?.value} sub={rivalryRecords.mostBalanced?.teams} accent="emerald" icon={Target} top5={rivalryRecords.mostBalanced?.top5} subHref={rivalryRecords.mostBalanced?.subHref} />
+      <RecordCard label="Highest Avg Margin H2H" value={rivalryRecords.highestMargin?.value} sub={rivalryRecords.highestMargin?.teams} accent="red" icon={TrendingUp} top5={rivalryRecords.highestMargin?.top5} subHref={rivalryRecords.highestMargin?.subHref} />
+      <RecordCard label="Closest Avg Margin H2H" value={rivalryRecords.lowestMargin?.value} sub={rivalryRecords.lowestMargin?.teams} accent="cyan" icon={Target} top5={rivalryRecords.lowestMargin?.top5} subHref={rivalryRecords.lowestMargin?.subHref} />
     </RecordSection>
   </>
 )}

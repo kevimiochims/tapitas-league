@@ -29,6 +29,14 @@ function teamHref(name) {
   return `/teams?team=${encodeURIComponent(String(name || '').trim())}`
 }
 
+function rivalryHref(teamA, teamB) {
+  const a = String(teamA || '').trim()
+  const b = String(teamB || '').trim()
+  if (!a || !b) return '/rivalries'
+  return `/rivalries?teamA=${encodeURIComponent(a)}&teamB=${encodeURIComponent(b)}`
+}
+
+
 function matchupHref(game, allGames = []) {
   if (!game) return '/matchups'
 
@@ -418,9 +426,12 @@ export default function RecordsPage() {
       return { value: topVal, teams: sorted.filter(e => e[1] === topVal).map(e => e[0]), top5: sorted.slice(0, 5).map(([l, v]) => ({ label: l, value: v })) }
     }
 
-    // PR #1 weeks
+    // PR #1 weeks — Reg Season only
+    // Same eligibility rule used by Weekly High Scorer (RS): playoff and
+    // consolation weeks do not count because not every team can compete for #1.
     const pr1All = {}, pr1from21 = {}, pr1from23 = {}
     games.forEach(g => {
+      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       if (parseNumber(g?.['Power Ranking']) !== 1) return
       const team = String(g?.Team || '').trim()
       const season = Number(String(g?.Season || '0').trim())
@@ -994,7 +1005,8 @@ export default function RecordsPage() {
     const mostGames = {
       value: topMG,
       teams: mgSorted.filter(r => parseNumber(r.Games) === topMG).map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
-      top5: mgSorted.slice(0, 5).map(r => ({ label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`, value: parseNumber(r.Games), href: '/rivalries' }))
+      subHref: mgSorted[0] ? rivalryHref(mgSorted[0]['Team A'], mgSorted[0]['Team B']) : '/rivalries',
+      top5: mgSorted.slice(0, 5).map(r => ({ label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`, value: parseNumber(r.Games), href: rivalryHref(r['Team A'], r['Team B']) }))
     }
 
     // Best H2H streak — compara todas as linhas corretamente
@@ -1029,13 +1041,14 @@ export default function RecordsPage() {
       teams: allStreaks
         .filter(s => s.val === topSV)
         .map(s => `${s.team} vs ${s.opponent}`),
+      subHref: allStreaks[0] ? rivalryHref(allStreaks[0].team, allStreaks[0].opponent) : '/rivalries',
       top5: allStreaks.slice(0, 5).map(s => {
         const { value, period } = extractStreakParts(s.streak)
         return {
           label: `${s.team} vs ${s.opponent}`,
           sub: period,
           value,
-          href: '/rivalries',
+          href: rivalryHref(s.team, s.opponent),
         }
       })
     }
@@ -1060,10 +1073,11 @@ export default function RecordsPage() {
       teams: balSorted
         .filter(r => r.recA === balSorted[0].recA && r.recB === balSorted[0].recB)
         .map(r => `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`),
+      subHref: balSorted[0] ? rivalryHref(balSorted[0]['Team A'], balSorted[0]['Team B']) : '/rivalries',
       top5: balSorted.slice(0, 5).map(r => ({
         label: `${String(r['Team A'] || '').trim()} vs ${String(r['Team B'] || '').trim()}`,
         value: `${r.recA}–${r.recB}`,
-        href: '/rivalries'
+        href: rivalryHref(r['Team A'], r['Team B'])
       }))
     }
 
@@ -1088,7 +1102,8 @@ export default function RecordsPage() {
     const highestMargin = {
       value: `${topHM.toFixed(2)} pts`,
       teams: hmSorted.filter(r => Math.abs(r._norm.margin - topHM) < 0.01).map(r => `${r._norm.dominant} vs ${r._norm.other}`),
-      top5: hmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: '/rivalries' }))
+      subHref: hmSorted[0] ? rivalryHref(hmSorted[0]._norm.dominant, hmSorted[0]._norm.other) : '/rivalries',
+      top5: hmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: rivalryHref(r._norm.dominant, r._norm.other) }))
     }
 
     // Lowest avg margin — same normalization, ascending
@@ -1100,7 +1115,8 @@ export default function RecordsPage() {
     const lowestMargin = {
       value: `${topLM.toFixed(2)} pts`,
       teams: lmSorted.filter(r => Math.abs(r._norm.margin - topLM) < 0.01).map(r => `${r._norm.dominant} vs ${r._norm.other}`),
-      top5: lmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: '/rivalries' }))
+      subHref: lmSorted[0] ? rivalryHref(lmSorted[0]._norm.dominant, lmSorted[0]._norm.other) : '/rivalries',
+      top5: lmSorted.slice(0, 5).map(r => ({ label: `${r._norm.dominant} vs ${r._norm.other}`, value: `${r._norm.margin.toFixed(2)} pts`, href: rivalryHref(r._norm.dominant, r._norm.other) }))
     }
 
     return { mostGames, bestH2HStreak, mostBalanced, highestMargin, lowestMargin }
@@ -1279,7 +1295,7 @@ export default function RecordsPage() {
       <RecordCard label="Since 2023" value={franchiseRecords.mostWeeklyHigh23?.value} sub={franchiseRecords.mostWeeklyHigh23?.teams} team={franchiseRecords.mostWeeklyHigh23?.teams} accent="cyan" icon={Flame} top5={franchiseRecords.mostWeeklyHigh23?.top5} />
     </RecordSection>
 
-    <RecordSection title="Power Rankings — Most Weeks at #1">
+    <RecordSection title="Power Rankings — Most Weeks at #1 (RS)">
       <RecordCard label="All-Time" value={franchiseRecords.pr1All?.value} sub={franchiseRecords.pr1All?.teams} team={franchiseRecords.pr1All?.teams} sub2="All seasons" accent="gold" icon={Zap} top5={franchiseRecords.pr1All?.top5} />
       <RecordCard label="Since 2021" value={franchiseRecords.pr1from21?.value} sub={franchiseRecords.pr1from21?.teams} team={franchiseRecords.pr1from21?.teams} sub2="From 2021 on" accent="orange" icon={Zap} top5={franchiseRecords.pr1from21?.top5} />
       <RecordCard label="Since 2023" value={franchiseRecords.pr1from23?.value} sub={franchiseRecords.pr1from23?.teams} team={franchiseRecords.pr1from23?.teams} sub2="New era (2023+)" accent="cyan" icon={Zap} top5={franchiseRecords.pr1from23?.top5} />
@@ -1389,17 +1405,17 @@ export default function RecordsPage() {
 {tab === 'rivalry' && (
   <>
     <RecordSection title="Most Played">
-      <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} subHref="/rivalries" wide />
+      <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} subHref={rivalryRecords.mostGames?.subHref} wide />
     </RecordSection>
 
     <RecordSection title="H2H Streaks">
-      <RecordCard label="Longest H2H Winning Streak" value={rivalryRecords.bestH2HStreak?.value} sub={rivalryRecords.bestH2HStreak?.teams} accent="gold" icon={Flame} top5={rivalryRecords.bestH2HStreak?.top5} subHref="/rivalries" wide />
+      <RecordCard label="Longest H2H Winning Streak" value={rivalryRecords.bestH2HStreak?.value} sub={rivalryRecords.bestH2HStreak?.teams} accent="gold" icon={Flame} top5={rivalryRecords.bestH2HStreak?.top5} subHref={rivalryRecords.bestH2HStreak?.subHref} wide />
     </RecordSection>
 
     <RecordSection title="Dominance & Balance">
-      <RecordCard label="Most Balanced Rivalry" value={rivalryRecords.mostBalanced?.value} sub={rivalryRecords.mostBalanced?.teams} accent="emerald" icon={Target} top5={rivalryRecords.mostBalanced?.top5} subHref="/rivalries" />
-      <RecordCard label="Highest Avg Margin H2H" value={rivalryRecords.highestMargin?.value} sub={rivalryRecords.highestMargin?.teams} accent="red" icon={TrendingUp} top5={rivalryRecords.highestMargin?.top5} subHref="/rivalries" />
-      <RecordCard label="Closest Avg Margin H2H" value={rivalryRecords.lowestMargin?.value} sub={rivalryRecords.lowestMargin?.teams} accent="cyan" icon={Target} top5={rivalryRecords.lowestMargin?.top5} subHref="/rivalries" />
+      <RecordCard label="Most Balanced Rivalry" value={rivalryRecords.mostBalanced?.value} sub={rivalryRecords.mostBalanced?.teams} accent="emerald" icon={Target} top5={rivalryRecords.mostBalanced?.top5} subHref={rivalryRecords.mostBalanced?.subHref} />
+      <RecordCard label="Highest Avg Margin H2H" value={rivalryRecords.highestMargin?.value} sub={rivalryRecords.highestMargin?.teams} accent="red" icon={TrendingUp} top5={rivalryRecords.highestMargin?.top5} subHref={rivalryRecords.highestMargin?.subHref} />
+      <RecordCard label="Closest Avg Margin H2H" value={rivalryRecords.lowestMargin?.value} sub={rivalryRecords.lowestMargin?.teams} accent="cyan" icon={Target} top5={rivalryRecords.lowestMargin?.top5} subHref={rivalryRecords.lowestMargin?.subHref} />
     </RecordSection>
   </>
 )}

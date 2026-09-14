@@ -726,7 +726,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     const gameWeeks = String(week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
     const sameWeek = profileWeeks.length > 0 && gameWeeks.length > 0 && profileWeeks.some(w => gameWeeks.includes(w))
     const isCurrentGame = season === String(profile.season || '').trim() && sameWeek && normalizeTeamName(team) === normalizeTeamName(profile.team) && normalizeTeamName(opponent) === normalizeTeamName(profile.opponent)
-    const isDoubleWeek = week.includes('-') || week.includes('&')
+    const isDoubleWeek = /[-–]/.test(week)
     const adjustedPts = isDoubleWeek ? appearance.pts / 2 : appearance.pts
     return [{ g, appearance, team, season, week, opponent, isCurrentGame, result: String(g?.Result || '').trim().toUpperCase(), isDoubleWeek, adjustedPts }]
   }), [games, profile.rawName, profile.week, profile.season, profile.team, profile.opponent, selectedTeams])
@@ -747,8 +747,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
       if (normalizeTeamName(g?.Opponent) !== normalizeTeamName(profile.opponent)) return []
       const a = extractPlayerAppearances(g).find(x => String(x.name).trim() === profile.rawName)
       if (!a) return []
-      const doubleWeekValue = String(g?.Week || '')
-      const isDoubleWeek = doubleWeekValue.includes('-') || doubleWeekValue.includes('&')
+      const isDoubleWeek = /[-–]/.test(String(g?.Week || ''))
       return [{ pts: isDoubleWeek ? a.pts / 2 : a.pts, status: a.status, isDoubleWeek }]
     })
     const validForAverage = rows.filter(x => !(x.status === 'Bench' && x.pts === 0))

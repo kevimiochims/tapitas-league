@@ -1,12 +1,33 @@
 'use client'
 
-import { useEffect, useState, useMemo, useRef } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
 import Header from '../components/Header'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+
+// Sleeper player data is loaded directly from Sleeper when a Player Profile
+// is opened. The API returns the complete NFL player map; cache the promise
+// in this module so the 5MB payload is not downloaded repeatedly.
+let SLEEPER_PLAYERS_PROMISE = null
+
+async function fetchSleeperPlayers() {
+  if (!SLEEPER_PLAYERS_PROMISE) {
+    SLEEPER_PLAYERS_PROMISE = fetch('https://api.sleeper.app/v1/players/nfl')
+      .then(res => {
+        if (!res.ok) throw new Error(`Sleeper players request failed: ${res.status}`)
+        return res.json()
+      })
+      .then(data => data && typeof data === 'object' ? data : {})
+      .catch(error => {
+        SLEEPER_PLAYERS_PROMISE = null
+        throw error
+      })
+  }
+  return SLEEPER_PLAYERS_PROMISE
+}
 
 const TEAM_IMAGES = {
   'howmuch': '/images/howmuch.png',
@@ -64,6 +85,12 @@ const NFL_TEAM_NAME_MAP = {
   'titans': 'ten', 'tennessee': 'ten', 'tennessee titans': 'ten',
   'commanders': 'wsh', 'washington': 'wsh', 'washington commanders': 'wsh',
   'redskins': 'wsh', 'washington redskins': 'wsh', 'football team': 'wsh',
+  'ari': 'ari', 'atl': 'atl', 'bal': 'bal', 'buf': 'buf', 'car': 'car', 'chi': 'chi',
+  'cin': 'cin', 'cle': 'cle', 'dal': 'dal', 'den': 'den', 'det': 'det', 'gb': 'gb',
+  'hou': 'hou', 'ind': 'ind', 'jax': 'jax', 'kc': 'kc', 'lac': 'lac', 'lar': 'lar',
+  'lv': 'lv', 'mia': 'mia', 'min': 'min', 'ne': 'ne', 'no': 'no', 'nyg': 'nyg',
+  'nyj': 'nyj', 'phi': 'phi', 'pit': 'pit', 'sea': 'sea', 'sf': 'sf', 'tb': 'tb',
+  'ten': 'ten', 'wsh': 'wsh',
 }
 
 function getNFLTeamLogo(name) {
@@ -120,7 +147,7 @@ function getOrdinalRankLabel(value, allValues) {
 
 function TeamAvatar({ name, size = 'md' }) {
   const img = getTeamImage(name)
-  const sizes = { sm: 40, md: 64, lg: 96, xl: 128 }
+  const sizes = { xs: 22, sm: 40, md: 64, lg: 96, xl: 128 }
   const px = sizes[size]
 
   if (img) return (
@@ -248,13 +275,31 @@ function getPositionBadgeClasses(position) {
   const colors = {
     QB: 'border-[#0A0A0A] bg-[#D01F2D] text-white',
     RB: 'border-[#0A0A0A] bg-[#1E8E3E] text-white',
-    WR: 'border-[#0A0A0A] bg-[#16274F] text-white',
+    WR: 'border-[#0A0A0A] bg-[#5B2CA0] text-white',
     TE: 'border-[#0A0A0A] bg-[#B8860B] text-white',
     FLEX: 'border-[#0A0A0A] bg-[#3F4757] text-white',
     K: 'border-[#0A0A0A] bg-[#6B7280] text-white',
     DEF: 'border-[#0A0A0A] bg-[#3F4757] text-white',
   }
   return colors[String(position || '').toUpperCase()] || 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#16274F]'
+}
+
+function formatPlayerHeight(value) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return ''
+  if (/^\d+'\d+\"$/.test(raw)) return raw
+  const inches = Number(raw.replace(/[^0-9.]/g, ''))
+  if (!Number.isFinite(inches) || inches <= 0) return raw
+  const feet = Math.floor(inches / 12)
+  const remaining = Math.round(inches % 12)
+  return `${feet}'${remaining}\"`
+}
+
+function formatPlayerWeight(value) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return ''
+  const numeric = Number(raw.replace(/[^0-9.]/g, ''))
+  return Number.isFinite(numeric) && numeric > 0 ? `${numeric} lbs` : raw
 }
 
 function getPlayerIdentity(name, playerLookup) {
@@ -354,6 +399,71 @@ function Select({ value, onChange, options, placeholder, disabled }) {
   )
 }
 
+function CompactCheckFilter({ value, onChange, options, label, multiple = false, displayOption }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const selectedValues = multiple ? (Array.isArray(value) ? value : []) : [value]
+  const activeCount = multiple ? selectedValues.filter(v => v !== 'All').length : (value !== 'All' ? 1 : 0)
+  const formatOption = displayOption || (opt => opt)
+  const display = value === 'All' || (multiple && selectedValues.length === 0)
+    ? label
+    : multiple
+      ? `${activeCount} selected`
+      : formatOption(value)
+
+  return (
+    <div ref={ref} className="relative min-w-0">
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className={`flex min-h-9 w-full items-center justify-between gap-2 border-2 bg-white px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.12em] transition-all ${open ? 'border-[#D01F2D] shadow-[2px_2px_0_#D01F2D]' : 'border-[#16274F]/20 hover:border-[#16274F]/50'} ${activeCount ? 'text-[#D01F2D]' : 'text-[#16274F]'}`}
+      >
+        <span className="truncate">{display}</span>
+        <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center border text-[9px] transition-transform ${open ? 'rotate-180 border-[#D01F2D] text-[#D01F2D]' : 'border-[#16274F]/30 text-[#6B7280]'}`}>⌄</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+5px)] z-[70] w-[220px] overflow-hidden border-2 border-[#16274F] bg-white shadow-[4px_4px_0_#16274F]">
+          <div className="border-b border-[#16274F]/10 bg-[#F7F6F2] px-3 py-2 text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{label}</div>
+          <div className="max-h-64 overflow-y-auto p-1.5">
+            {options.map(opt => {
+              const checked = multiple ? selectedValues.includes(opt) : opt === value
+              return (
+                <label key={opt} className="flex cursor-pointer items-center gap-2 px-2.5 py-2 text-[10px] font-bold text-[#16274F] hover:bg-[#F7F6F2]">
+                  <input
+                    type={multiple ? 'checkbox' : 'checkbox'}
+                    checked={checked}
+                    onChange={() => {
+                      if (multiple) {
+                        const next = opt === 'All'
+                          ? ['All']
+                          : checked
+                            ? selectedValues.filter(v => v !== opt)
+                            : [...selectedValues.filter(v => v !== 'All'), opt]
+                        onChange(next.length ? next : ['All'])
+                      } else {
+                        onChange(opt)
+                        setOpen(false)
+                      }
+                    }}
+                    className="h-4 w-4 flex-shrink-0 accent-[#16274F]"
+                  />
+                  <span className={checked ? 'font-black text-[#16274F]' : ''}>{opt === 'All' ? `All ${label}` : formatOption(opt)}</span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const shortName = (name) => {
   const mappings = {
     'i am megatron': 'Megatron',
@@ -404,6 +514,9 @@ export default function TeamsPage() {
   const [log200Only, setLog200Only] = useState(false)
   const [logHighestOnly, setLogHighestOnly] = useState(false)
   const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
+  const [selectedPlayerTeams, setSelectedPlayerTeams] = useState([])
+  const [sleeperPlayerInfo, setSleeperPlayerInfo] = useState(null)
+  const [sleeperPlayerLoading, setSleeperPlayerLoading] = useState(false)
   const [playerSearch, setPlayerSearch] = useState('')
   const [playerPositionFilter, setPlayerPositionFilter] = useState('All')
   const [playerSort, setPlayerSort] = useState('Appearances')
@@ -414,6 +527,156 @@ export default function TeamsPage() {
   const [playerLogStatusFilter, setPlayerLogStatusFilter] = useState('All')
   const [playerLogResultFilter, setPlayerLogResultFilter] = useState('All')
   const [playerLogStageFilter, setPlayerLogStageFilter] = useState('All')
+
+  // Browser history for the in-page Teams selection.
+  // There are only two navigation levels inside /teams:
+  //   base = All Teams
+  //   child = currently selected team OR Player Profile
+  // A team-to-team change NEVER creates another history entry; it replaces the
+  // existing child entry. All Teams likewise replaces the child entry.
+  // This keeps the browser stack deterministic:
+  //   previous page -> All Teams -> current team -> profile
+  const makeTeamsState = (view, team = null, player = null) => ({
+    __teamsHistory: true,
+    teamsView: view,
+    team: team ? String(team).trim() : null,
+    player: player || null,
+  })
+
+  const selectTeam = (team) => {
+    const cleanTeam = typeof team === 'object'
+      ? { ...team, team: String(team?.team || team?.Team || '').trim() }
+      : { team: String(team || '').trim() }
+    if (!cleanTeam.team) return
+
+    if (typeof window !== 'undefined') {
+      const current = window.history.state || {}
+      const nextState = makeTeamsState('team', cleanTeam.team)
+
+      if (current.__teamsHistory && current.teamsView === 'all') {
+        // Base -> team: add exactly one child entry.
+        window.history.pushState(nextState, '', window.location.href)
+      } else if (current.__teamsHistory && (current.teamsView === 'team' || current.teamsView === 'profile')) {
+        // Team/Profile -> another team: replace the child. Never leave the old
+        // franchise behind in the browser history.
+        window.history.replaceState(nextState, '', window.location.href)
+      } else {
+        // This can happen if /teams was opened with an existing browser state.
+        // Establish the current page as the base, then add exactly one child.
+        window.history.replaceState(makeTeamsState('all'), '', window.location.href)
+        window.history.pushState(nextState, '', window.location.href)
+      }
+    }
+
+    setSelected(cleanTeam)
+    setSelectedPlayerKey(null)
+  }
+
+  const openPlayerProfile = (playerKey, teamName = selected?.team) => {
+    if (!playerKey) return
+    const cleanTeam = String(teamName || '').trim()
+    if (typeof window !== 'undefined') {
+      const current = window.history.state || {}
+      const profileState = makeTeamsState('profile', cleanTeam, playerKey)
+
+      if (current.__teamsHistory && (current.teamsView === 'team' || current.teamsView === 'profile')) {
+        // Profile is the single child entry above the selected team. Replacing
+        // an already-open profile also prevents duplicate profile entries.
+        window.history.pushState(profileState, '', window.location.href)
+      } else if (current.__teamsHistory && current.teamsView === 'all') {
+        // Defensive path: selecting a profile from All Teams still gets one
+        // child entry so Back returns to All Teams.
+        window.history.pushState(profileState, '', window.location.href)
+      } else {
+        window.history.replaceState(makeTeamsState('all'), '', window.location.href)
+        window.history.pushState(profileState, '', window.location.href)
+      }
+    }
+    setSelectedPlayerTeams(cleanTeam ? [cleanTeam] : [])
+    setSelectedPlayerKey(playerKey)
+  }
+
+  const closePlayerProfile = () => {
+    if (typeof window !== 'undefined' && window.history.state?.__teamsHistory && window.history.state?.teamsView === 'profile') {
+      window.history.back()
+      return
+    }
+    setSelectedPlayerKey(null)
+  }
+
+  const showAllTeams = () => {
+    if (typeof window !== 'undefined') {
+      const current = window.history.state || {}
+
+      if (current.__teamsHistory && current.teamsView === 'profile') {
+        // Profile -> Team -> All Teams: go back two in-page entries.
+        // Do NOT replace the profile/team entries, because the existing base
+        // All Teams entry is exactly the one we want to return to.
+        window.history.go(-2)
+        return
+      }
+
+      if (current.__teamsHistory && current.teamsView === 'team') {
+        // Team -> All Teams: return to the existing base entry.
+        // Using replaceState here created a SECOND All Teams entry, because the
+        // original base entry was still sitting immediately behind this team.
+        window.history.back()
+        return
+      }
+
+      if (!current.__teamsHistory) {
+        // Establish the page as the base without destroying the real page before
+        // /teams in the browser history.
+        window.history.pushState(makeTeamsState('all'), '', window.location.href)
+      }
+    }
+
+    setSelected(null)
+    setSelectedPlayerKey(null)
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const current = window.history.state || {}
+    if (!current.__teamsHistory) {
+      // Preserve the real page before /teams and add exactly one base entry.
+      window.history.pushState(makeTeamsState('all'), '', window.location.href)
+    }
+
+    const handlePopState = (event) => {
+      const state = event.state || {}
+
+      if (state.__teamsHistory && state.teamsView === 'profile') {
+        const teamName = String(state.team || '').trim()
+        if (teamName) {
+          const teamRow = allTime.find(r =>
+            String(r?.Team || '').trim().toLowerCase() === teamName.toLowerCase()
+          )
+          if (teamRow) setSelected({ ...teamRow, team: String(teamRow.Team || '').trim() })
+        }
+        if (state.player) setSelectedPlayerKey(state.player)
+        return
+      }
+
+      if (state.__teamsHistory && state.teamsView === 'team' && state.team) {
+        const teamName = String(state.team).trim()
+        const teamRow = allTime.find(r =>
+          String(r?.Team || '').trim().toLowerCase() === teamName.toLowerCase()
+        )
+        if (teamRow) setSelected({ ...teamRow, team: String(teamRow.Team || '').trim() })
+        setSelectedPlayerKey(null)
+        return
+      }
+
+      // Base / All Teams, or a genuine history entry outside this page.
+      setSelectedPlayerKey(null)
+      setSelected(null)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [allTime])
 
   useEffect(() => {
     setLogSeason('All')
@@ -440,10 +703,59 @@ export default function TeamsPage() {
     if (!selectedPlayerKey) return undefined
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') closePlayerProfile()
+    }
+    document.addEventListener('keydown', handleEscape)
     return () => {
       document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleEscape)
     }
   }, [selectedPlayerKey])
+
+  // Player Profile state/effects MUST stay at TeamsPage's top level.
+  // They cannot live inside `if (selected)` because that changes the hook order.
+  useEffect(() => {
+    if (!selectedPlayerKey || !selected?.team) {
+      setSelectedPlayerTeams([])
+      return
+    }
+    setSelectedPlayerTeams([String(selected.team).trim()])
+  }, [selectedPlayerKey, selected?.team])
+
+  // Resolve the player's Sleeper ID from the existing identity lookup, then
+  // fetch the richer player object directly from Sleeper (not _PLAYER_CACHE).
+  useEffect(() => {
+    let cancelled = false
+    const rawName = selectedPlayerKey?.startsWith('raw:') ? selectedPlayerKey.slice(4) : ''
+    if (!rawName) {
+      setSleeperPlayerInfo(null)
+      setSleeperPlayerLoading(false)
+      return () => { cancelled = true }
+    }
+
+    const playerId = getPlayerId(rawName, playerLookup)
+    if (!playerId) {
+      setSleeperPlayerInfo(null)
+      setSleeperPlayerLoading(false)
+      return () => { cancelled = true }
+    }
+
+    setSleeperPlayerLoading(true)
+    fetchSleeperPlayers()
+      .then(players => {
+        if (cancelled) return
+        setSleeperPlayerInfo(players?.[String(playerId)] || null)
+      })
+      .catch(() => {
+        if (!cancelled) setSleeperPlayerInfo(null)
+      })
+      .finally(() => {
+        if (!cancelled) setSleeperPlayerLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [selectedPlayerKey, playerLookup])
 
   // Force the page to the top after navigating between franchises from Historic.
   useEffect(() => {
@@ -545,7 +857,10 @@ export default function TeamsPage() {
 
   // Most rostered (started or benched) and most started player for a team, from GAME_FACTS_ALL
   const getMostRosteredPlayers = (teamName) => {
-    const teamGames = games.filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName) && !isDoubleWeek(g))
+    // Every franchise game counts as one roster appearance, including double weeks.
+    // A double week is one Tapitas matchup, so it must contribute exactly one
+    // rostered/started appearance rather than being excluded from these totals.
+    const teamGames = games.filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName))
     const rosterCounts = new Map()
     const starterCounts = new Map()
     const metadata = new Map()
@@ -575,18 +890,18 @@ export default function TeamsPage() {
       })
     })
 
-    const topRostered = Array.from(rosterCounts.entries()).sort((a, b) => b[1] - a[1])[0]
-    const topStarter = Array.from(starterCounts.entries()).sort((a, b) => b[1] - a[1])[0]
-    const build = entry => {
-      if (!entry) return null
-      const [identity, count] = entry
+    const topRosteredCount = Math.max(0, ...Array.from(rosterCounts.values()))
+    const topStarterCount = Math.max(0, ...Array.from(starterCounts.values()))
+    const topRostered = Array.from(rosterCounts.entries()).filter(([, count]) => count === topRosteredCount)
+    const topStarter = Array.from(starterCounts.entries()).filter(([, count]) => count === topStarterCount)
+    const build = entries => entries.map(([identity, count]) => {
       const meta = metadata.get(identity)
       return meta ? {
         ...meta,
         count,
         seasons: Array.from(meta.seasons).filter(Boolean).sort((a, b) => Number(a) - Number(b)),
       } : null
-    }
+    }).filter(Boolean)
 
     return {
       mostRostered: build(topRostered),
@@ -755,11 +1070,13 @@ export default function TeamsPage() {
     // the player cache ID here. This prevents different players such as
     // "Javonte Williams" and "J. Williams" from being merged. The
     // abbreviation is presentation-only.
-    // Player Archive follows the same eligibility used by Most Rostered:
-    // double-weeks are excluded, because those are combined fantasy weeks.
+    // Player Archive includes double-weeks as one appearance. Their fantasy
+    // points are normalized to the per-week value (total divided by 2), so
+    // AVG remains comparable with single-week games. Double-weeks are never
+    // eligible for BEST.
     // IMPORTANT: the archive identity is the EXACT name stored in GAME_FACTS_ALL.
     // Never normalize, abbreviate or merge names before counting.
-    const playerArchiveGames = teamGames.filter(g => !isDoubleWeek(g))
+    const playerArchiveGames = teamGames
     const playerStatsMap = new Map()
     playerArchiveGames.forEach(g => {
       const season = String(g?.Season || '').trim()
@@ -783,6 +1100,8 @@ export default function TeamsPage() {
             starts: 0,
             bench: 0,
             totalPts: 0,
+            avgTotal: 0,
+            avgCount: 0,
             bestPts: 0,
             seasons: new Set(),
             first: null,
@@ -790,12 +1109,18 @@ export default function TeamsPage() {
           })
         }
         const entry = playerStatsMap.get(key)
+        const normalizedPts = isDoubleWeek(g) ? app.pts / 2 : app.pts
         entry.seasons.add(season)
         entry.appearances += 1
         if (app.status === 'Starter') entry.starts += 1
         else entry.bench += 1
-        entry.totalPts += app.pts
-        entry.bestPts = Math.max(entry.bestPts, app.pts)
+        entry.totalPts += normalizedPts
+        if (!(app.status === 'Bench' && normalizedPts === 0)) {
+          entry.avgTotal += normalizedPts
+          entry.avgCount += 1
+        }
+        // Double-weeks contribute to AVG but are intentionally excluded from BEST.
+        if (!isDoubleWeek(g)) entry.bestPts = Math.max(entry.bestPts, app.pts)
         const marker = {
           season: Number(season) || 0,
           week: parseFloat(week.replace(/[^0-9.]/g, '')) || 0,
@@ -807,7 +1132,10 @@ export default function TeamsPage() {
 
     const playerArchive = Array.from(playerStatsMap.values())
       .filter(p => p.position !== 'DEF')
-      .map(p => ({ ...p, avgPts: p.appearances ? p.totalPts / p.appearances : 0 }))
+      .map(p => {
+        const validApps = p.avgCount
+        return { ...p, avgPts: validApps ? p.avgTotal / validApps : 0 }
+      })
       .sort((a, b) => b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))
 
     const playerPositionOptions = ['All', ...Array.from(new Set(playerArchive.map(p => p.position).filter(Boolean))).sort()]
@@ -832,18 +1160,23 @@ export default function TeamsPage() {
       : null
 
     const selectedPlayerGames = selectedPlayer
-      ? playerArchiveGames.flatMap(g => {
+      ? games.flatMap(g => {
           const appearance = extractPlayerAppearances(g).find(a => {
             const rawName = String(a?.name || '').trim()
             return `raw:${rawName}` === selectedPlayer.archiveKey
           })
           if (!appearance) return []
+          const team = String(g?.Team || '').trim()
+          if (!selectedPlayerTeams.some(teamName => normalizeTeamName(teamName) === normalizeTeamName(team))) return []
           return [{
             season: String(g?.Season || '').trim(),
             week: String(g?.Week || '').trim(),
+            team,
             opponent: String(g?.Opponent || '').trim(),
             status: appearance.status,
-            pts: appearance.pts,
+            pts: isDoubleWeek(g) ? appearance.pts / 2 : appearance.pts,
+            rawPts: appearance.pts,
+            isDoubleWeek: isDoubleWeek(g),
             position: getPlayerPosition(appearance.name, playerLookup),
             matchupHref: canonicalMatchupHref(g, games),
             teamPF: parseNumber(g?.PF),
@@ -856,6 +1189,22 @@ export default function TeamsPage() {
           return (parseFloat(b.week.replace(/[^0-9.]/g, '')) || 0) - (parseFloat(a.week.replace(/[^0-9.]/g, '')) || 0)
         })
       : []
+
+    const selectedPlayerStats = selectedPlayerGames.reduce((acc, game) => {
+      acc.appearances += 1
+      if (game.status === 'Starter') acc.starts += 1
+      else acc.bench += 1
+      acc.totalPts += game.pts || 0
+      if (!(game.status === 'Bench' && game.pts === 0)) {
+        acc.avgTotal += game.pts || 0
+        acc.avgCount += 1
+      }
+      // Double-weeks are valid for AVG but never qualify for BEST.
+      if (!game.isDoubleWeek) acc.bestPts = Math.max(acc.bestPts, game.pts || 0)
+      if (game.season) acc.seasons.add(game.season)
+      return acc
+    }, { appearances: 0, starts: 0, bench: 0, totalPts: 0, avgTotal: 0, avgCount: 0, bestPts: 0, seasons: new Set() })
+    selectedPlayerStats.avgPts = selectedPlayerStats.avgCount ? selectedPlayerStats.avgTotal / selectedPlayerStats.avgCount : 0
 
     const playerLogOpponentOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.opponent).filter(Boolean))).sort()]
     const playerLogStatusOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.status).filter(Boolean))).sort()]
@@ -946,6 +1295,19 @@ export default function TeamsPage() {
       : []
 
 
+    const togglePlayerTeam = (teamName) => {
+      const normalized = normalizeTeamName(teamName)
+      setSelectedPlayerTeams(current => {
+        const exists = current.some(team => normalizeTeamName(team) === normalized)
+        if (exists) {
+          // Never leave the profile without a franchise selected.
+          if (current.length === 1) return current
+          return current.filter(team => normalizeTeamName(team) !== normalized)
+        }
+        return [...current, teamName]
+      })
+    }
+
     return (
       <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
         <style>{`
@@ -959,7 +1321,7 @@ export default function TeamsPage() {
 
 
         <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
-          <button onClick={() => setSelected(null)}
+          <button onClick={showAllTeams}
             className="mb-8 border-2 border-[#0A0A0A] bg-white px-4 py-2 text-sm font-bold text-[#3F4757] hover:bg-[#F7F6F2] transition-all">
             ← All Teams
           </button>
@@ -1057,54 +1419,76 @@ export default function TeamsPage() {
             })}
 
             {/* Player record cards stay in the same stats sequence */}
-            {mostRostered && (
-              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
+            {mostRostered.length > 0 && (
+              <button type="button" onClick={() => { openPlayerProfile(`raw:${mostRostered[0].rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
+                <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_104px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
                       <Users className="h-4 w-4" />
                     </div>
                     <div className="mt-3">
                       <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered</div>
-                      <div className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostRostered.count}</div>
+                      <div className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostRostered[0].count}</div>
                     </div>
                   </div>
                   <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
-                    <PlayerAvatar name={mostRostered.rawName} playerLookup={playerLookup} size={68} />
+                    <div className="flex items-center justify-end pl-3">
+                      {mostRostered.map((player, index) => (
+                        <div key={player.rawName} className={index === 0 ? '' : '-ml-7'} style={{ zIndex: mostRostered.length - index }}>
+                          <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={68} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="col-span-2 min-w-0">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{mostRostered.name}</div>
-                      {mostRostered.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostRostered.position)}`}>{mostRostered.position}</span>}
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      {mostRostered.map((player, index) => (
+                        <React.Fragment key={player.rawName}>
+                          {index > 0 && <span className="text-sm font-black text-[#6B7280]">&amp;</span>}
+                          <div className="min-w-0 text-sm font-black text-[#16274F]">{player.name}</div>
+                          {player.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(player.position)}`}>{player.position}</span>}
+                        </React.Fragment>
+                      ))}
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             )}
 
-            {mostStarted && (
-              <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_96px]">
+            {mostStarted.length > 0 && (
+              <button type="button" onClick={() => { openPlayerProfile(`raw:${mostStarted[0].rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
+                <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_104px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
                       <Star className="h-4 w-4" />
                     </div>
                     <div className="mt-3">
                       <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">Most Started</div>
-                      <div className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostStarted.count}</div>
+                      <div className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostStarted[0].count}</div>
                     </div>
                   </div>
                   <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
-                    <PlayerAvatar name={mostStarted.rawName} playerLookup={playerLookup} size={68} />
+                    <div className="flex items-center justify-end pl-3">
+                      {mostStarted.map((player, index) => (
+                        <div key={player.rawName} className={index === 0 ? '' : '-ml-7'} style={{ zIndex: mostStarted.length - index }}>
+                          <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={68} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="col-span-2 min-w-0">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{mostStarted.name}</div>
-                      {mostStarted.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(mostStarted.position)}`}>{mostStarted.position}</span>}
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      {mostStarted.map((player, index) => (
+                        <React.Fragment key={player.rawName}>
+                          {index > 0 && <span className="text-sm font-black text-[#6B7280]">&amp;</span>}
+                          <div className="min-w-0 text-sm font-black text-[#16274F]">{player.name}</div>
+                          {player.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(player.position)}`}>{player.position}</span>}
+                        </React.Fragment>
+                      ))}
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             )}
 
           </div>
@@ -1228,7 +1612,7 @@ export default function TeamsPage() {
           {/* Game Log */}
           <div ref={gameLogRef} className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm scroll-mt-6">
             <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
                 <Filter className="h-4 w-4 text-white" />
               </div>
               <div>
@@ -1238,30 +1622,47 @@ export default function TeamsPage() {
             </div>
 
             {/* Filters */}
-            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <Select value={logSeason} onChange={setLogSeason} options={logSeasonOptions} placeholder="Season" />
-                <Select value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} placeholder="Opponent" />
-                <Select value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} placeholder="Game Type" />
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
+              <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+                <CompactCheckFilter
+                  value={logSeason}
+                  onChange={setLogSeason}
+                  options={logSeasonOptions}
+                  label="Season"
+                />
+                <CompactCheckFilter
+                  value={logOpponent}
+                  onChange={setLogOpponent}
+                  options={logOpponentOptions}
+                  label="Opponent"
+                  displayOption={opt => opt === 'All' ? opt : shortName(opt)}
+                />
+                <CompactCheckFilter
+                  value={logGameType}
+                  onChange={setLogGameType}
+                  options={logGameTypeOptions}
+                  label="Game Type"
+                  displayOption={opt => ({ 'Reg Season': 'Regular', 'Playoffs': 'Playoffs', 'Consolation': 'Consol.' }[opt] || opt)}
+                />
                 <button
                   onClick={() => setLog200Only(p => !p)}
-                  className={`border-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${log200Only
-                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                  className={`flex min-h-8 w-full items-center gap-1.5 border-2 px-2 py-1.5 text-left text-[9px] font-black uppercase tracking-[0.08em] transition-all sm:w-auto sm:min-h-9 sm:gap-2 sm:px-3 sm:py-2 sm:text-[10px] sm:tracking-[0.12em] ${log200Only
+                    ? 'border-[#16274F] bg-[#EEF3FF] text-[#16274F] shadow-[2px_2px_0_#16274F]'
+                    : 'border-[#16274F]/20 bg-white text-[#3F4757] hover:border-[#16274F]/50'
                     }`}
                 >
-                  200+ pts only
+                  <span className={`flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center border-2 text-[8px] sm:h-4 sm:w-4 sm:text-[9px] ${log200Only ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#16274F]/40 bg-white'}`}>{log200Only ? '✓' : ''}</span>
+                  <span className="truncate">200+ pts</span>
                 </button>
                 <button
                   onClick={() => setLogHighestOnly(p => !p)}
-                  className={`border-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${logHighestOnly
-                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                  className={`flex min-h-8 w-full items-center gap-1.5 border-2 px-2 py-1.5 text-left text-[9px] font-black uppercase tracking-[0.08em] transition-all sm:w-auto sm:min-h-9 sm:gap-2 sm:px-3 sm:py-2 sm:text-[10px] sm:tracking-[0.12em] ${logHighestOnly
+                    ? 'border-[#16274F] bg-[#EEF3FF] text-[#16274F] shadow-[2px_2px_0_#16274F]'
+                    : 'border-[#16274F]/20 bg-white text-[#3F4757] hover:border-[#16274F]/50'
                     }`}
                 >
-                  Highest score of week (RS)
+                  <span className={`flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center border-2 text-[8px] sm:h-4 sm:w-4 sm:text-[9px] ${logHighestOnly ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#16274F]/40 bg-white'}`}>{logHighestOnly ? '✓' : ''}</span>
+                  <span className="truncate">Week high (RS)</span>
                 </button>
                 {(logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly) && (
                   <button
@@ -1269,9 +1670,9 @@ export default function TeamsPage() {
                       setLogSeason('All'); setLogOpponent('All'); setLogGameType('All')
                       setLog200Only(false); setLogHighestOnly(false)
                     }}
-                    className="border-2 border-[#0A0A0A]/20 bg-[#F7F6F2] px-4 py-2 text-xs font-black uppercase tracking-widest text-[#6B7280] transition-all hover:bg-white"
+                    className="col-span-2 min-h-8 border-2 border-[#0A0A0A]/20 bg-[#F7F6F2] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-[#6B7280] transition-all hover:bg-white sm:col-span-1 sm:min-h-9 sm:px-4 sm:py-2 sm:text-xs sm:tracking-widest"
                   >
-                    Clear filters
+                    Clear
                   </button>
                 )}
               </div>
@@ -1364,35 +1765,35 @@ export default function TeamsPage() {
 
           {/* Player Archive */}
           <div className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
-                  <Users className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
-                  <div className="text-sm text-[#6B7280]">{playerArchive.length} players who wore the jersey</div>
-                </div>
+            <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]">
+                <Users className="h-4 w-4 text-white" />
               </div>
-              <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:items-center">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
+                <div className="text-sm text-[#6B7280]">{playerArchive.length} players who wore the jersey</div>
+              </div>
+            </div>
+            <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
+              <div className="grid grid-cols-2 gap-1.5 lg:flex lg:items-center lg:gap-2">
                 <div className="w-full lg:w-32">
-                  <Select value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} placeholder="Position" />
+                  <CompactCheckFilter value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
                 </div>
                 <div className="w-full lg:w-40">
-                  <Select value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} placeholder="Sort by" />
+                  <CompactCheckFilter value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} label="Sort by" />
                 </div>
                 <div className="w-full lg:w-32">
-                  <Select value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} placeholder="Season" />
+                  <CompactCheckFilter value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} label="Season" />
                 </div>
                 <div className="w-full lg:w-32">
-                  <Select value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} placeholder="Appearances" />
+                  <CompactCheckFilter value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} label="Appearances" />
                 </div>
                 <div className="w-full lg:w-64">
                   <input
                     value={playerSearch}
                     onChange={e => setPlayerSearch(e.target.value)}
                     placeholder="Search player..."
-                    className="w-full border-2 border-[#0A0A0A] bg-[#F7F6F2] px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
+                    className="w-full border-2 border-[#0A0A0A] bg-white px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
                   />
                 </div>
               </div>
@@ -1401,7 +1802,7 @@ export default function TeamsPage() {
               {filteredPlayers.map(player => (
                 <button
                   key={player.archiveKey}
-                  onClick={() => setSelectedPlayerKey(player.archiveKey)}
+                  onClick={() => { openPlayerProfile(player.archiveKey) }}
                   className="group relative overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 text-left transition-colors hover:bg-white"
                 >
                   <div className="flex items-center gap-3">
@@ -1445,60 +1846,123 @@ export default function TeamsPage() {
 
           {/* Player detail */}
           {selectedPlayer && (
-            <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/55 p-3 pt-4 sm:items-center sm:p-6" onClick={() => setSelectedPlayerKey(null)}>
-              <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]" onClick={e => e.stopPropagation()}>
-                <div className="border-b-2 border-[#0A0A0A]/10 p-4 sm:p-6">
-                  <div className="mb-4 flex items-center justify-between gap-4">
-                    <div className="text-[11px] font-black uppercase tracking-[0.25em] text-[#D01F2D] sm:text-xs">Player Profile</div>
-                    <button onClick={() => setSelectedPlayerKey(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] text-xl font-black text-[#16274F] hover:bg-[#F7F6F2]" aria-label="Close player profile">×</button>
+            <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/60 p-2 pt-3 sm:items-center sm:p-5" onClick={closePlayerProfile}>
+              <div
+                className="flex h-[calc(100dvh-24px)] max-h-[960px] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F] sm:h-auto sm:max-h-[94vh]"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Profile identity */}
+                <div className="relative flex-shrink-0 overflow-hidden border-b-2 border-[#0A0A0A] bg-[#16274F] text-white">
+                  <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(135deg, transparent 0 58%, rgba(255,255,255,.13) 58% 59%, transparent 59% 68%, rgba(255,255,255,.08) 68% 69%, transparent 69%)' }} />
+                  <div className="relative border-b border-white/15 bg-[#16274F] px-4 py-2.5 sm:px-6 sm:py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-[11px] font-black uppercase tracking-[0.25em] text-white sm:text-sm">Player Profile</div>
+                      <button onClick={closePlayerProfile} className="flex h-8 w-8 flex-shrink-0 items-center justify-center border-2 border-white/70 bg-white/10 text-lg font-black text-white hover:bg-white/20 sm:h-9 sm:w-9" aria-label="Close player profile">×</button>
+                    </div>
                   </div>
-                  <div className="flex min-w-0 items-start gap-4">
-                    <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={72} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-center gap-2 text-2xl font-black text-[#16274F] sm:text-3xl">
-                        <span className="truncate">{selectedPlayer.rawName}</span>
-                        {selectedPlayer.position && <span className={`inline-flex flex-shrink-0 px-2 py-1 align-middle text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}
-                      </div>
-                      {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).length > 0 && (
-                        <div className="mt-2">
-                          <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F]">Historic:</div>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedPlayerClubs.filter(c => normalizeTeamName(c.team) !== normalizeTeamName(selected.team)).map(c => (
-                              <a key={`${normalizeTeamName(c.team)}|${c.seasons.join('-')}`} href={`/teams?team=${encodeURIComponent(c.team)}&scroll=top`} onClick={() => { sessionStorage.setItem('teams-scroll-top', '1') }} className="inline-flex items-center gap-1 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-2 py-1 text-[10px] font-black text-[#16274F] hover:border-[#D01F2D] hover:text-[#D01F2D]">
-                                {shortName(c.team)} · {c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}
-                              </a>
-                            ))}
-                          </div>
+
+                  <div className="relative px-3 py-3 sm:px-6 sm:py-4">
+                    {/* Identity row: compact on mobile, with the player and NFL branding always visible */}
+                    <div className="flex items-center gap-3 sm:gap-5">
+                      <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={76} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <h2 className="truncate text-[25px] font-black leading-none tracking-tight sm:text-4xl">{selectedPlayer.rawName}</h2>
+                          {selectedPlayer.position && <span className={`inline-flex flex-shrink-0 px-2 py-1 text-[9px] font-black uppercase tracking-wide sm:text-[10px] ${getPositionBadgeClasses(selectedPlayer.position)}`}>{selectedPlayer.position}</span>}
                         </div>
-                      )}
+
+                        <div className="mt-2 flex min-w-0 items-center gap-2 text-[10px] font-black sm:text-xs">
+                          {sleeperPlayerInfo?.team && (
+                            <span className="flex min-w-0 items-center gap-1.5 text-white">
+                              {getNFLTeamLogo(sleeperPlayerInfo.team) && <img src={getNFLTeamLogo(sleeperPlayerInfo.team)} alt="" className="h-5 w-5 flex-shrink-0 object-contain sm:h-6 sm:w-6" />}
+                              <span>{String(sleeperPlayerInfo.team).toUpperCase()}</span>
+                            </span>
+                          )}
+                          {sleeperPlayerInfo?.status && (
+                            <>
+                              <span className="text-white/35">·</span>
+                              <span className={String(sleeperPlayerInfo.status).toLowerCase() === 'active' ? 'text-[#69C174]' : 'text-[#FFB84D]'}>
+                                {String(sleeperPlayerInfo.status).toLowerCase() === 'active' ? 'Active' : 'Inactive'}
+                              </span>
+                            </>
+                          )}
+                          {sleeperPlayerLoading && <span className="text-white/50">Loading…</span>}
+                        </div>
+
+                        <div className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-[9px] font-bold text-white/75 sm:text-[11px]">
+                          <span><b className="text-white">Jersey</b> {sleeperPlayerInfo?.number != null ? `#${sleeperPlayerInfo.number}` : '—'}</span>
+                          <span className="text-white/30">·</span>
+                          <span><b className="text-white">Age</b> {sleeperPlayerInfo?.age != null ? `${sleeperPlayerInfo.age} yrs` : '—'}</span>
+                          <span className="text-white/30">·</span>
+                          <span><b className="text-white">Experience</b> {sleeperPlayerInfo?.years_exp != null ? `${sleeperPlayerInfo.years_exp} yr${Number(sleeperPlayerInfo.years_exp) === 1 ? '' : 's'}` : '—'}</span>
+                        </div>
+                      </div>
+
+                      <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" alt="NFL" className="h-10 w-10 flex-shrink-0 object-contain opacity-95 sm:h-14 sm:w-14" />
                     </div>
                   </div>
                 </div>
 
-                <div className="border-b-2 border-[#0A0A0A]/10 bg-white p-3 sm:p-4">
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {[
-                    ['Apps', selectedPlayer.appearances, 'border-[#16274F] bg-[#F3F7FF] text-[#16274F]'],
-                    ['Starts', selectedPlayer.starts, 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]'],
-                    ['Bench', selectedPlayer.bench, 'border-[#D97706] bg-[#FFF7ED] text-[#D97706]'],
-                    ['Avg Pts', selectedPlayer.avgPts.toFixed(2), 'border-[#7C3AED] bg-[#F5F3FF] text-[#7C3AED]'],
-                    ['Best Pts', selectedPlayer.bestPts.toFixed(2), 'border-[#F5C518] bg-[#FFF9E5] text-[#16274F]'],
-                    ['Seasons', selectedPlayer.seasons.size ? Array.from(selectedPlayer.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—', 'border-[#D01F2D] bg-[#FFF3F4] text-[#D01F2D]'],
-                  ].map(([label, value, tone]) => (
-                    <div key={label} className={`border-2 p-3 ${tone}`}>
-                      <div className="text-[8px] font-black uppercase tracking-[0.15em] text-[#6B7280]">{label}</div>
-                      <div className="mt-1 text-xl font-black" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
+                {/* Compact franchise selector */}
+                <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2 sm:px-6 sm:py-2.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="min-w-0 flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                      <span className="text-[10px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[11px]">Tapitas League Teams</span>
+                      <span className="ml-1 text-[8px] font-bold text-[#6B7280] sm:text-[9px]">— Select franchises to include</span>
                     </div>
-                  ))}
+                    <span className="flex-shrink-0 text-[8px] font-black uppercase tracking-wider text-[#D01F2D] sm:text-[9px]">{selectedPlayerTeams.length} selected</span>
+                  </div>
+                  <div className="mt-1 flex max-w-full flex-nowrap gap-1 overflow-x-auto overflow-y-hidden pb-0.5 scrollbar-none">
+                    {selectedPlayerClubs.map(c => {
+                      const checked = selectedPlayerTeams.some(team => normalizeTeamName(team) === normalizeTeamName(c.team))
+                      return (
+                        <label key={normalizeTeamName(c.team)} className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 transition-colors ${checked ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white hover:bg-[#F7F6F2]'}`}>
+                          <input type="checkbox" checked={checked} onChange={() => togglePlayerTeam(c.team)} className="h-3.5 w-3.5 accent-[#16274F]" />
+                          <span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center overflow-hidden"><TeamAvatar name={c.team} size="xs" /></span>
+                          <span className="text-[9px] font-black text-[#16274F]">{shortName(c.team)}</span>
+                          <span className="text-[8px] font-bold text-[#6B7280]">{c.seasons.map(y => `'${String(y).slice(-2)}`).join(', ')}</span>
+                        </label>
+                      )
+                    })}
                   </div>
                 </div>
 
+                {/* Summary cards */}
+                <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-[#F7F8FB] p-2.5 sm:p-3">
+                  <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">
+                    {[
+                      ['Apps', selectedPlayerStats.appearances],
+                      ['Starts', selectedPlayerStats.starts],
+                      ['Bench', selectedPlayerStats.bench],
+                      ['Avg Pts', selectedPlayerStats.avgPts.toFixed(2)],
+                      ['Best Pts', selectedPlayerStats.bestPts.toFixed(2)],
+                      ['Seasons', selectedPlayerStats.seasons.size ? Array.from(selectedPlayerStats.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—'],
+                    ].map(([label, value], idx) => {
+                      const cardThemes = [
+                        'border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]',
+                        'border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]',
+                        'border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]',
+                        'border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]',
+                        'border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]',
+                        'border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]',
+                      ]
+                      return (
+                      <div key={label} className={`border-2 px-2 py-2 sm:px-2.5 sm:py-2.5 ${cardThemes[idx]}`}>
+                        <div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{label}</div>
+                        <div className="mt-0.5 text-xl font-black text-[#16274F] sm:text-2xl" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{value}</div>
+                      </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Scrollable game log */}
                 <div className="min-h-0 flex-1 overflow-auto">
-                  <table className="min-w-[760px] w-full">
+                  <table className="min-w-[900px] w-full">
                     <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
                       <tr className="border-b-2 border-[#0A0A0A]/10">
-                        {['Season', 'Week', 'Opponent', 'Status', 'Player Pts', 'Team PF', 'Result', 'Stage'].map((h, i) => (
-                          <th key={h} className="px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280] whitespace-nowrap">
+                        {['Season', 'Week', 'Team', 'Opponent', 'Status', 'Player Pts', 'Team PF', 'Result', 'Stage'].map((h, i) => (
+                          <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
                             {h === 'Opponent' ? (
                               <HeaderFilter value={playerLogOpponentFilter} onChange={setPlayerLogOpponentFilter} options={playerLogOpponentOptions} label="Opponent" />
                             ) : h === 'Status' ? (
@@ -1507,10 +1971,12 @@ export default function TeamsPage() {
                               <HeaderFilter value={playerLogResultFilter} onChange={setPlayerLogResultFilter} options={playerLogResultOptions} label="Result" />
                             ) : h === 'Stage' ? (
                               <HeaderFilter value={playerLogStageFilter} onChange={setPlayerLogStageFilter} options={playerLogStageOptions} label="Stage" />
+                            ) : h === 'Team' ? (
+                              <span>{h}</span>
                             ) : (
-                              <button type="button" onClick={() => handlePlayerLogSort(['season','week','','','pts','teamPF'][i])} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
+                              <button type="button" onClick={() => handlePlayerLogSort(['season','week','','','', 'pts','teamPF'][i])} className="inline-flex items-center gap-1 hover:text-[#D01F2D]">
                                 {h}
-                                <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','pts','teamPF'][i] ? (['season','week','','','pts','teamPF'][i] === 'season' ? (playerLogSort.seasonDir === 'asc' ? '↑' : '↓') : ['season','week','','','pts','teamPF'][i] === 'week' ? (playerLogSort.weekDir === 'asc' ? '↑' : '↓') : (playerLogSort.dir === 'asc' ? '↑' : '↓')) : '↕'}</span>
+                                <span className="text-[9px] text-[#D01F2D]">{playerLogSort.key === ['season','week','','','', 'pts','teamPF'][i] ? (['season','week','','','', 'pts','teamPF'][i] === 'season' ? (playerLogSort.seasonDir === 'asc' ? '↑' : '↓') : ['season','week','','','', 'pts','teamPF'][i] === 'week' ? (playerLogSort.weekDir === 'asc' ? '↑' : '↓') : (playerLogSort.dir === 'asc' ? '↑' : '↓')) : '↕'}</span>
                               </button>
                             )}
                           </th>
@@ -1522,6 +1988,7 @@ export default function TeamsPage() {
                         <tr key={`${g.season}-${g.week}-${g.opponent}-${i}`} onClick={() => { window.location.href = g.matchupHref }} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-[#F7F6F2]">
                           <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td>
                           <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td>
+                          <td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.team)}</td>
                           <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.opponent}</td>
                           <td className="px-4 py-3">
                             <span className={`inline-block border px-2 py-1 text-[8px] font-black uppercase tracking-wide ${g.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]'}`}>{g.status}</span>
@@ -1650,7 +2117,7 @@ export default function TeamsPage() {
               }).length
 
               return (
-                <button key={i} onClick={() => setSelected(team)}
+                <button key={i} onClick={() => selectTeam(team)}
                   className={`overflow-hidden border-2 border-[#0A0A0A] bg-white text-left transition-all hover:-translate-y-[1px] ${isChampion ? 'tp-shadow-navy' : 'tp-shadow-navy-sm'
                     }`}
                 >
