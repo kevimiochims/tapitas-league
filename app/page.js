@@ -680,25 +680,12 @@ function canonicalMatchupHref(game, allGames) {
   const season = String(game?.Season ?? game?.season ?? '').trim()
   const week = String(game?.Week ?? game?.week ?? '').trim()
   const gameType = String(game?.gameType ?? game?.GameType ?? game?.game_type ?? '').trim()
-  const sourceTeam = String(game?.Team ?? game?.team ?? '').trim()
-  const sourceOpp = String(game?.Opponent ?? game?.opponent ?? '').trim()
 
-  // GAME_FACTS_ALL stores each matchup twice (one row from each team's
-  // perspective). The Matchups page expects the canonical orientation: the
-  // exact first row in GAME_FACTS_ALL for this matchup. Do NOT simply take the
-  // first game of the week.
-  const rows = Array.isArray(allGames) ? allGames : []
-  const first = rows.find(row => {
+  const first = (Array.isArray(allGames) ? allGames : []).find(row => {
     if (String(row?.Season ?? row?.season ?? '').trim() !== season) return false
     if (String(row?.Week ?? row?.week ?? '').trim() !== week) return false
     if (gameType && String(row?.gameType ?? row?.GameType ?? row?.game_type ?? '').trim() !== gameType) return false
-
-    const team = String(row?.Team ?? row?.team ?? '').trim()
-    const opp = String(row?.Opponent ?? row?.opponent ?? '').trim()
-    if (!team || !opp || !sourceTeam || !sourceOpp) return false
-
-    return (team === sourceTeam && opp === sourceOpp) ||
-      (team === sourceOpp && opp === sourceTeam)
+    return String(row?.Team ?? row?.team ?? '').trim() && String(row?.Opponent ?? row?.opponent ?? '').trim()
   }) || game
 
   const team = String(first?.Team ?? first?.team ?? '').trim()
@@ -807,43 +794,43 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
   const allPlayerGames = useMemo(() => {
     if (!rawName || !Array.isArray(games) || !games.length) return []
 
-    // Draft data and GAME_FACTS_ALL do not always use the same display name
-    // (for example "Ja'Marr Chase" vs "J. Chase"). Build aliases from
-    // the draft name + Sleeper metadata, then match the RAW GAME_FACTS name
-    // without ever merging two different players with the same surname.
-    const aliases = [
-      rawName,
-      playerData?.fullName,
-      playerData?.shortName,
-      playerData?.name,
-    ].map(normalizePlayerKey).filter(Boolean)
-
-    const aliasSet = new Set(aliases)
-    const firstInitials = new Set(
-      aliases
-        .map(v => v.split(' ').filter(Boolean))
-        .filter(parts => parts.length >= 2)
-        .map(parts => `${parts[0][0]}|${parts[parts.length - 1]}`)
+    const fullName = String(playerData?.fullName || '').trim()
+    const draftName = String(rawName || '').trim()
+    const allAppearances = games.flatMap(game =>
+      extractPlayerAppearances(game).map(appearance => ({
+        ...appearance,
+        normalized: normalizePlayerKey(appearance.name),
+      }))
     )
 
-    const matchesPlayer = (name) => {
-      const candidate = normalizePlayerKey(name)
-      if (!candidate) return false
-      if (aliasSet.has(candidate)) return true
+    const fullKey = normalizePlayerKey(fullName)
+    const draftKey = normalizePlayerKey(draftName)
 
-      const parts = candidate.split(' ').filter(Boolean)
-      if (parts.length < 2) return false
-      const last = parts[parts.length - 1]
-      const first = parts[0]
-      const initial = first[0]
+    // Resolve identity BEFORE abbreviation. If GAME_FACTS_ALL contains the
+    // full name, use that exact name. This prevents B. Robinson collisions
+    // between Bijan Robinson and Brian Robinson.
+    const hasFullNameInFacts = !!fullKey &&
+      allAppearances.some(a => a.normalized === fullKey)
 
-      // Match an abbreviated GAME_FACTS name to the known Sleeper/draft
-      // identity only when BOTH first initial and surname agree.
-      return firstInitials.has(`${initial}|${last}`)
+    let identityMatcher
+
+    if (hasFullNameInFacts) {
+      identityMatcher = (name) => normalizePlayerKey(name) === fullKey
+    } else {
+      const sourceName = fullName || draftName
+      const parts = sourceName.split(/\s+/).filter(Boolean)
+      const lastName = parts.at(-1) || ''
+      const firstName = parts[0] || ''
+      const abbreviatedKey = parts.length >= 2
+        ? normalizePlayerKey(`${firstName[0]}. ${lastName}`)
+        : draftKey
+
+      identityMatcher = (name) =>
+        normalizePlayerKey(name) === abbreviatedKey
     }
 
     return games.flatMap(g => {
-      const appearance = extractPlayerAppearances(g).find(a => matchesPlayer(a.name))
+      const appearance = extractPlayerAppearances(g).find(a => identityMatcher(a.name))
       if (!appearance) return []
 
       const team = String(g?.Team || '').trim()
@@ -851,7 +838,7 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
       if (!team) return []
 
       const doubleWeek = isDoubleWeek(g)
-      const pts = doubleWeek ? appearance.pts / 2 : appearance.pts
+      const rawPts = appearance.pts
 
       return [{
         season: String(g?.Season || '').trim(),
@@ -859,8 +846,9 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
         team,
         opponent,
         status: appearance.status,
-        pts,
-        rawPts: appearance.pts,
+        pts: rawPts,                         // REAL score shown in Game Log
+        avgPts: doubleWeek ? rawPts / 2 : rawPts, // ONLY for AVG
+        rawPts,
         isDoubleWeek: doubleWeek,
         position: getPlayerPosition(appearance.name, playerLookup),
         teamPF: parseNumber(g?.PF),
@@ -876,13 +864,6 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
         (parseFloat(String(a.week).replace(/[^0-9.]/g, '')) || 0)
     })
   }, [rawName, games, playerData, playerLookup])
-
-  const franchiseGames = useMemo(() => {
-    if (!selectedTeams.length) return []
-    return allPlayerGames.filter(g =>
-      selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(g.team))
-    )
-  }, [allPlayerGames, selectedTeams])
 
   const clubs = useMemo(() => {
     const map = new Map()
@@ -935,47 +916,9 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
     return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
   }), [filteredGames, playerLogSort])
 
-
-  const formatSeasonRanges = (seasonSet) => {
-    const years = Array.from(seasonSet)
-      .map(y => Number(String(y).trim()))
-      .filter(Number.isFinite)
-      .sort((a, b) => a - b)
-
-    if (!years.length) return '—'
-
-    const parts = []
-    let start = years[0]
-    let end = years[0]
-
-    const pushRange = (from, to) => {
-      const count = to - from + 1
-      if (count >= 3) {
-        parts.push(`'${String(from).slice(-2)} - '${String(to).slice(-2)}`)
-      } else if (count === 2) {
-        parts.push(`'${String(from).slice(-2)}`, `'${String(to).slice(-2)}`)
-      } else {
-        parts.push(`'${String(from).slice(-2)}`)
-      }
-    }
-
-    for (let i = 1; i < years.length; i += 1) {
-      if (years[i] === end + 1) {
-        end = years[i]
-      } else {
-        pushRange(start, end)
-        start = years[i]
-        end = years[i]
-      }
-    }
-
-    pushRange(start, end)
-    return parts.join(', ')
-  }
-
   const stats = useMemo(() => {
     const acc = {
-      appearances: franchiseGames.length,
+      appearances: allPlayerGames.length,
       starts: 0,
       bench: 0,
       totalPts: 0,
@@ -985,14 +928,14 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
       seasons: new Set(),
     }
 
-    franchiseGames.forEach(g => {
+    allPlayerGames.forEach(g => {
       if (g.status === 'Starter') acc.starts += 1
       else acc.bench += 1
       acc.totalPts += g.pts || 0
 
       // Same Teams rule: exclude ONLY Bench + exactly 0.00 from AVG.
       if (!(g.status === 'Bench' && g.pts === 0)) {
-        acc.avgTotal += g.pts || 0
+        acc.avgTotal += g.avgPts ?? g.pts ?? 0
         acc.avgCount += 1
       }
 
@@ -1006,7 +949,7 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
       ...acc,
       avgPts: acc.avgCount ? acc.avgTotal / acc.avgCount : 0,
     }
-  }, [franchiseGames])
+  }, [allPlayerGames])
 
   const opponentOptions = ['All', ...Array.from(new Set(allPlayerGames.map(g => g.opponent).filter(Boolean))).sort()]
   const statusOptions = ['All', ...Array.from(new Set(allPlayerGames.map(g => g.status).filter(Boolean))).sort()]
@@ -1141,7 +1084,7 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
               ['Bench', stats.bench],
               ['Avg Pts', stats.avgPts.toFixed(2)],
               ['Best Pts', stats.bestPts.toFixed(2)],
-              ['Seasons', stats.seasons.size ? formatSeasonRanges(stats.seasons) : '—'],
+              ['Seasons', stats.seasons.size ? Array.from(stats.seasons).sort((a,b) => Number(a)-Number(b)).map(y => `'${String(y).slice(-2)}`).join(', ') : '—'],
             ].map(([label, value], idx) => {
               const cardThemes = [
                 'border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]',
@@ -1212,7 +1155,7 @@ function HomePlayerProfile({ selected, games, playerLookup, playerData, onClose 
                   <td className="px-4 py-3">
                     <span className={`inline-block border px-2 py-1 text-[8px] font-black uppercase tracking-wide ${g.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]'}`}>{g.status}</span>
                   </td>
-                  <td className="px-4 py-3 text-sm font-black text-[#16274F]">{Number(g.rawPts ?? g.pts ?? 0).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-sm font-black text-[#16274F]">{g.pts.toFixed(2)}</td>
                   <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.teamPF.toFixed(2)}</td>
                   <td className={`px-4 py-3 text-xs font-black ${g.result === 'W' ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{g.result || '—'}</td>
                   <td className="px-4 py-3 text-[10px] font-bold text-[#6B7280]">{g.gameStage || '—'}</td>

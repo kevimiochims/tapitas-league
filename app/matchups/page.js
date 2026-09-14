@@ -568,8 +568,11 @@ function formatPlayerStatLine(stats, pos) {
   if (p === 'QB') {
     if (n('pass_cmp') || n('pass_att')) items.push(`${n('pass_cmp')}/${n('pass_att')}`)
     if (n('pass_yd')) items.push(`${n('pass_yd')} YDS`)
-    if (n('pass_td')) items.push(`${n('pass_td')} TD`)
+    const totalTd = n('pass_td') + n('rush_td')
+    if (totalTd) items.push(`${totalTd} TD`)
     if (n('pass_int')) items.push(`${n('pass_int')} INT`)
+    if (n('rush_att')) items.push(`${n('rush_att')} CAR`)
+    if (n('rush_yd')) items.push(`${n('rush_yd')} RUSH YDS`)
   } else if (p === 'RB') {
     if (n('rush_att')) items.push(`${n('rush_att')} CAR`)
     if (n('rush_yd')) items.push(`${n('rush_yd')} RUSH YDS`)
@@ -645,6 +648,8 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   const [logResultFilter, setLogResultFilter] = useState('All')
   const [logStageFilter, setLogStageFilter] = useState('All')
   const [logSort, setLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
+  const selectedTeamRef = useRef(null)
+  const selectedGameRef = useRef(null)
 
   useEffect(() => {
     setSelectedTeams([profile.team])
@@ -655,6 +660,28 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     setLogStageFilter('All')
     setLogSort({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
   }, [profile.team, profile.rawName])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      selectedTeamRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      })
+    }, 120)
+    return () => clearTimeout(timer)
+  }, [profile.team, profile.rawName])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      selectedGameRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      })
+    }, 180)
+    return () => clearTimeout(timer)
+  }, [profile.season, profile.week, profile.team, profile.opponent])
 
   useEffect(() => {
     let cancelled = false
@@ -901,7 +928,22 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
         <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2 sm:px-6">
           <div className="flex items-center justify-between gap-2"><div className="whitespace-nowrap"><span className="text-[11px] font-black uppercase tracking-[0.1em] text-[#16274F]">Tapitas League Teams</span><span className="ml-1 text-[8px] font-bold text-[#6B7280]">— Select franchises to include</span></div><span className="text-[8px] font-black uppercase text-[#D01F2D]">{selectedTeams.length} selected</span></div>
           <div className="mt-1 flex max-w-full flex-nowrap gap-1 overflow-x-auto overflow-y-hidden pb-0.5">
-            {history.map(h => { const checked = selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(h.team)); return <label key={h.team} className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 ${checked ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white'}`}><input type="checkbox" checked={checked} onChange={() => toggleTeam(h.team)} className="h-3.5 w-3.5 accent-[#16274F]"/><span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center overflow-hidden"><TeamAvatar name={h.team} className="h-[22px] w-[22px]" textClassName="text-[7px]"/></span><span className="text-[9px] font-black text-[#16274F]">{getTeamShortName(h.team)}</span><span className="text-[8px] font-bold text-[#6B7280]">{h.seasons.map(y=>`'${String(y).slice(-2)}`).join(', ')}</span></label> })}
+            {history.map(h => {
+              const checked = selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(h.team))
+              const isProfileTeam = normalizeTeamName(h.team) === normalizeTeamName(profile.team)
+              return <label
+                key={h.team}
+                ref={isProfileTeam ? selectedTeamRef : null}
+                className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 ${checked ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white'}`}
+              >
+                <input type="checkbox" checked={checked} onChange={() => toggleTeam(h.team)} className="h-3.5 w-3.5 accent-[#16274F]"/>
+                <span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center overflow-hidden">
+                  <TeamAvatar name={h.team} className="h-[22px] w-[22px]" textClassName="text-[7px]"/>
+                </span>
+                <span className="text-[9px] font-black text-[#16274F]">{getTeamShortName(h.team)}</span>
+                <span className="text-[8px] font-bold text-[#6B7280]">{h.seasons.map(y=>`'${String(y).slice(-2)}`).join(', ')}</span>
+              </label>
+            })}
           </div>
         </div>
 
@@ -992,7 +1034,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               </thead>
               <tbody>
                     {sortedGames.map((x,i) => (
-                      <tr key={i} onClick={() => openGameFromLog(x)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') openGameFromLog(x) }} tabIndex={0} role="button" className={`cursor-pointer border-b border-[#0A0A0A]/8 transition-colors hover:bg-[#F3F6FC] ${x.isCurrentGame ? 'bg-[#FFF3F4]' : 'bg-white'}`}>
+                      <tr key={i} ref={x.isCurrentGame ? selectedGameRef : null} onClick={() => openGameFromLog(x)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') openGameFromLog(x) }} tabIndex={0} role="button" className={`cursor-pointer border-b border-[#0A0A0A]/8 transition-colors hover:bg-[#F3F6FC] ${x.isCurrentGame ? 'bg-[#FFF3F4]' : 'bg-white'}`}>
                         <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{x.season}</td>
                         <td className="px-2 py-2.5 text-[10px] font-bold text-[#3F4757]">{x.week}</td>
                         <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.team)}</td>
