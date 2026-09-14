@@ -42,32 +42,90 @@ const ROSTER_CONFIG = {
 function HeaderFilter({ value, onChange, options, label }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
+  const menuRef = useRef(null)
+  const [menuStyle, setMenuStyle] = useState(null)
+
   useEffect(() => {
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    const handler = e => {
+      if (ref.current?.contains(e.target) || menuRef.current?.contains(e.target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  useEffect(() => {
+    if (!open) {
+      setMenuStyle(null)
+      return
+    }
+
+    const updatePosition = () => {
+      const button = ref.current?.querySelector('button')
+      if (!button) return
+
+      const rect = button.getBoundingClientRect()
+      const padding = 8
+      const width = Math.min(220, window.innerWidth - padding * 2)
+      const left = Math.max(
+        padding,
+        Math.min(rect.left, window.innerWidth - width - padding)
+      )
+      const spaceBelow = window.innerHeight - rect.bottom - padding
+      const spaceAbove = rect.top - padding
+      const maxHeight = Math.max(
+        120,
+        Math.min(280, Math.max(spaceBelow, spaceAbove))
+      )
+
+      setMenuStyle({
+        position: 'fixed',
+        left,
+        width,
+        maxHeight,
+        ...(spaceBelow >= 150
+          ? { top: rect.bottom + 6 }
+          : { bottom: window.innerHeight - rect.top + 6 }),
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, options.length])
+
   return (
-    <div ref={ref} className="relative inline-block">
+    <div ref={ref} className="relative inline-block max-w-full">
       <button
         type="button"
         onClick={() => setOpen(p => !p)}
-        className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}
+        className={`inline-flex max-w-full items-center gap-1 truncate uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}
       >
-        {value === 'All' ? label : value}
-        <span className="text-[9px] text-[#D01F2D]">⌄</span>
+        <span className="min-w-0 truncate">{value === 'All' ? label : value}</span>
+        <span className="shrink-0 text-[9px] text-[#D01F2D]">⌄</span>
       </button>
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[150px] overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="max-h-56 overflow-y-auto">
+
+      {open && menuStyle && (
+        <div
+          ref={menuRef}
+          style={menuStyle}
+          className="z-[100] overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
+        >
+          <div className="max-h-full overflow-y-auto overscroll-contain">
             {options.map(opt => (
               <button
                 key={opt}
                 type="button"
-                onClick={() => { onChange(opt); setOpen(false) }}
-                className={`block w-full px-3 py-2 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}
+                onClick={() => {
+                  onChange(opt)
+                  setOpen(false)
+                }}
+                className={`block w-full truncate px-3 py-2 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}
               >
                 {opt === 'All' ? label : opt}
               </button>
@@ -78,7 +136,6 @@ function HeaderFilter({ value, onChange, options, label }) {
     </div>
   )
 }
-
 function getRosterPositions(seasonYear) {
   const config = ROSTER_CONFIG[Number(seasonYear)] || ROSTER_CONFIG[2025]
   const positions = []
@@ -247,6 +304,13 @@ function getCompactTeamName(name) {
     'pequers verde': 'PEQ',
     'rincao settlers': 'SET',
     'h-lera do mahl': 'HLE',
+    'hangover football club': 'HFC',
+    'canoas andres limas': 'CAL',
+    'santa cruz frangos': 'SCF',
+    '4winclutch': '4WC',
+    'seguidores de charlao': 'SDC',
+    'rjskipknows': 'RJS',
+    'porto alegre coelhos': 'PAC',
   }
   const normalized = normalizeTeamName(name)
   if (tapitas[normalized]) return tapitas[normalized]
@@ -527,6 +591,7 @@ function firstGameOfWeek(data, seasonVal, weekVal) {
 
 let SLEEPER_PLAYERS_PROMISE = null
 const SLEEPER_WEEKLY_PROMISES = new Map()
+const SLEEPER_PLAYER_WEEKLY_PROMISES = new Map()
 const SLEEPER_SCHEDULE_PROMISES = new Map()
 
 async function fetchSleeperRegularSchedule(season) {
@@ -570,6 +635,25 @@ async function fetchSleeperWeeklyStats(season, week, seasonType = 'regular') {
     SLEEPER_WEEKLY_PROMISES.set(key, promise)
   }
   return SLEEPER_WEEKLY_PROMISES.get(key)
+}
+
+async function fetchSleeperPlayerWeeklyStats(playerId, season, seasonType = 'regular') {
+  const key = `${playerId}:${season}:${seasonType}`
+  if (!SLEEPER_PLAYER_WEEKLY_PROMISES.has(key)) {
+    const promise = fetch(
+      `https://api.sleeper.com/stats/nfl/player/${encodeURIComponent(playerId)}?season=${encodeURIComponent(season)}&season_type=${encodeURIComponent(seasonType)}&grouping=week`
+    )
+      .then(r => {
+        if (!r.ok) throw new Error(`Sleeper player weekly stats request failed: ${r.status}`)
+        return r.json()
+      })
+      .catch(e => {
+        SLEEPER_PLAYER_WEEKLY_PROMISES.delete(key)
+        throw e
+      })
+    SLEEPER_PLAYER_WEEKLY_PROMISES.set(key, promise)
+  }
+  return SLEEPER_PLAYER_WEEKLY_PROMISES.get(key)
 }
 
 function getPlayerId(name, playerLookup) {
@@ -732,9 +816,10 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     Promise.all([
       fetchSleeperPlayers(),
       fetchSleeperRegularSchedule(profile.season).catch(() => []),
-      Promise.all(weeks.map(w => fetchSleeperWeeklyStats(profile.season, w, seasonType)))
+      Promise.all(weeks.map(w => fetchSleeperWeeklyStats(profile.season, w, seasonType))),
+      fetchSleeperPlayerWeeklyStats(id, profile.season, seasonType).catch(() => [])
     ])
-      .then(([players, schedule, weeklyList]) => {
+      .then(([players, schedule, weeklyList, playerWeeklyStats]) => {
         const mergedPlayerStats = {}
         weeklyList.forEach(row => {
           if (!row || typeof row !== 'object') return
@@ -748,9 +833,60 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
         })
         if (cancelled) return
         const info = players?.[String(id)] || getPlayerData(profile.rawName, positionForLookup, playerLookup) || null
-        const nflTeam = info?.team || mergedPlayerStats?.team || null
-        const nflOpponent = getSleeperNflOpponent(schedule, nflTeam, profile.week)
-        setSleeperInfo(info ? { ...info, matchupOpponent: nflOpponent?.abbr || null, matchupHomeAway: nflOpponent?.home || null } : null)
+
+        // The bulk weekly stats endpoint does not reliably carry historical
+        // team/opponent metadata. The per-player weekly endpoint does.
+        // Therefore resolve the NFL matchup from the selected historical
+        // week first, and only fall back to the schedule/current player record
+        // when that historical row is unavailable.
+        const historicalRows = Array.isArray(playerWeeklyStats)
+          ? playerWeeklyStats
+          : (playerWeeklyStats && typeof playerWeeklyStats === 'object'
+              ? Object.values(playerWeeklyStats)
+              : [])
+
+        const historicalWeekRows = historicalRows.filter(row => {
+          const rowWeek = Number.parseInt(String(row?.week ?? row?.Week ?? '').trim(), 10)
+          return Number.isFinite(rowWeek) && numericWeeks.includes(rowWeek)
+        })
+
+        const historicalRow = historicalWeekRows[0] || null
+        const historicalNflTeam = String(
+          historicalRow?.team ||
+          historicalRow?.Team ||
+          mergedPlayerStats?.team ||
+          ''
+        ).trim()
+
+        const historicalNflOpponent = String(
+          historicalRow?.opponent ||
+          historicalRow?.Opponent ||
+          ''
+        ).trim()
+
+        const fallbackTeam = historicalNflTeam || String(info?.team || '').trim() || null
+        const fallbackOpponent = historicalNflOpponent
+          ? { abbr: historicalNflOpponent.toLowerCase(), home: null }
+          : getSleeperNflOpponent(schedule, fallbackTeam, profile.week)
+
+        const historicalInfo = info
+          ? { ...info, team: historicalNflTeam || info.team || null }
+          : (historicalNflTeam ? { team: historicalNflTeam } : null)
+
+        setSleeperInfo(
+          historicalInfo
+            ? {
+                ...historicalInfo,
+                matchupOpponent: fallbackOpponent?.abbr || null,
+                matchupHomeAway: fallbackOpponent?.home || null
+              }
+            : (fallbackOpponent
+                ? {
+                    matchupOpponent: fallbackOpponent.abbr,
+                    matchupHomeAway: fallbackOpponent.home || null
+                  }
+                : null)
+        )
         setWeeklyStats(Object.keys(mergedPlayerStats).length ? mergedPlayerStats : null)
       })
       .catch(() => {
@@ -1048,7 +1184,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               </div>
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-auto">
+          <div className="min-h-0 flex-1 min-w-0 max-w-full overflow-auto overscroll-x-contain">
             <table className="w-full min-w-[900px] table-fixed">
               <thead className="sticky top-0 z-20 bg-[#F7F6F2]">
                 <tr className="border-b-2 border-[#0A0A0A]/10">

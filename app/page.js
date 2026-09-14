@@ -680,16 +680,41 @@ function canonicalMatchupHref(game, allGames) {
   const season = String(game?.Season ?? game?.season ?? '').trim()
   const week = String(game?.Week ?? game?.week ?? '').trim()
   const gameType = String(game?.gameType ?? game?.GameType ?? game?.game_type ?? '').trim()
+  const gameTeam = String(game?.Team ?? game?.team ?? '').trim()
+  const gameOpp = String(game?.Opponent ?? game?.opponent ?? '').trim()
+
+  const normalize = value => String(value || '').trim().toLowerCase()
+
+  // GAME_FACTS_ALL has mirrored player rows. We must first identify the
+  // actual matchup by the two teams, then use the FIRST row of that matchup
+  // as the canonical target. Looking only at season/week would incorrectly
+  // send every Game Log entry from that week to the first matchup of the week.
+  const samePair = (row) => {
+    const rowTeam = String(row?.Team ?? row?.team ?? '').trim()
+    const rowOpp = String(row?.Opponent ?? row?.opponent ?? '').trim()
+    if (!rowTeam || !rowOpp) return false
+
+    const direct =
+      normalize(rowTeam) === normalize(gameTeam) &&
+      normalize(rowOpp) === normalize(gameOpp)
+
+    const mirrored =
+      normalize(rowTeam) === normalize(gameOpp) &&
+      normalize(rowOpp) === normalize(gameTeam)
+
+    return direct || mirrored
+  }
 
   const first = (Array.isArray(allGames) ? allGames : []).find(row => {
     if (String(row?.Season ?? row?.season ?? '').trim() !== season) return false
     if (String(row?.Week ?? row?.week ?? '').trim() !== week) return false
     if (gameType && String(row?.gameType ?? row?.GameType ?? row?.game_type ?? '').trim() !== gameType) return false
-    return String(row?.Team ?? row?.team ?? '').trim() && String(row?.Opponent ?? row?.opponent ?? '').trim()
+    return samePair(row)
   }) || game
 
   const team = String(first?.Team ?? first?.team ?? '').trim()
   const opp = String(first?.Opponent ?? first?.opponent ?? '').trim()
+
   return `/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}&team=${encodeURIComponent(team)}&opp=${encodeURIComponent(opp)}`
 }
 
