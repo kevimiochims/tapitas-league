@@ -87,29 +87,27 @@ function Select({ value, onChange, options, placeholder, disabled }) {
         disabled={disabled}
         className={`flex w-full items-center justify-between gap-3 border-2 px-4 py-2.5 text-sm font-black transition-all ${
           disabled
-            ? 'cursor-not-allowed border-white/20 bg-white/5 text-white/40'
+            ? 'cursor-not-allowed border-[#0A0A0A]/20 bg-white/50 text-[#0A0A0A]/30'
             : open
-              ? 'border-[#F5C518] bg-white text-[#16274F]'
-              : 'border-white/30 bg-white/10 text-white hover:bg-white/15'
+              ? 'border-[#D01F2D] bg-white text-[#16274F] tp-shadow-red-sm'
+              : 'border-[#0A0A0A] bg-white text-[#16274F] hover:bg-[#F7F6F2]'
         }`}
       >
-        <span className={value ? 'truncate text-white' : 'text-white/50'}>
-          {value || placeholder}
-        </span>
-        <ChevronRight className={`h-4 w-4 shrink-0 text-white/60 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
+        <span className="truncate">{value || placeholder}</span>
+        <ChevronRight className={`h-4 w-4 shrink-0 text-[#6B7280] transition-transform duration-200 ${open ? 'rotate-90 text-[#D01F2D]' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[4px_4px_0_#16274F]">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
           <div className="max-h-56 overflow-y-auto">
             {options.map(opt => (
               <button
                 key={opt}
                 onClick={() => { onChange(opt); setOpen(false) }}
-                className={`flex w-full items-center gap-3 border-b border-[#E5E3DC] px-4 py-2.5 text-left text-sm font-black transition-colors last:border-0 hover:bg-[#F7F6F2] ${
-                  opt === value ? 'text-[#D01F2D]' : 'text-[#374151]'
+                className={`flex w-full items-center gap-3 border-b border-[#0A0A0A]/8 px-4 py-2.5 text-left text-sm font-black transition-colors last:border-0 hover:bg-[#F7F6F2] ${
+                  opt === value ? 'text-[#D01F2D] bg-[#FDEDEE]' : 'text-[#3F4757]'
                 }`}
               >
-                {opt === value && <span className="h-2 w-2 shrink-0 bg-[#D01F2D]" />}
+                {opt === value && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D01F2D]" />}
                 <span className={opt === value ? '' : 'ml-[14px]'}>{opt}</span>
               </button>
             ))}
@@ -147,7 +145,7 @@ function WinChart({ data, chartStats }) {
       <polyline points={points} fill="none" stroke="#16274F" strokeWidth="2" strokeLinejoin="round" />
       {data.map((d, i) => (
         <g key={i}>
-          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#4B5563">
+          <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#3F4757">
             {`'${String(d.season).slice(2)}`}
           </text>
           <text
@@ -157,12 +155,12 @@ function WinChart({ data, chartStats }) {
             fontSize={fsValue}
             fill={
               d.champion
-                ? "#f59e0b" // 🏆 Amarelo Ouro se foi Campeão
+                ? "#B8860B" // dourado se foi Campeão
                 : chartStats?.bestSeasons?.includes(d.season)
-                  ? "#17e287" // 🟢 Verde Esmeralda para as Melhores Temporadas (Recorde do time)
+                  ? "#1E8E3E" // verde para as Melhores Temporadas
                   : chartStats?.worstSeasons?.includes(d.season)
-                    ? "#ef4444" // 🔴 Vermelho Vivo para as Piores Temporadas (Fundo do poço do time)
-                    : "#22d3ee" // 🔵 Ciano padrão para as temporadas regulares
+                    ? "#D01F2D" // vermelho para as Piores Temporadas
+                    : "#16274F" // navy padrão para temporadas regulares
             }
             className={
               d.champion ||
@@ -228,7 +226,7 @@ export default function StandingsPage() {
     setLeftSlot(
       <button
         onClick={() => setDrawerOpen(true)}
-        className="inline-flex h-10 items-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 text-sm font-black text-cyan-200 transition-all hover:bg-cyan-400/20"
+        className="inline-flex h-10 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-sm font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
       >
         Summary
         <ChevronRight className="h-4 w-4" />
@@ -426,13 +424,20 @@ export default function StandingsPage() {
 
   return (
     <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
+        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
+        .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
+        .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
+        .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
+      `}</style>
 
       <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
       <section className="mx-auto max-w-[1680px] px-3 pb-16 pt-4 sm:px-5 md:px-6">
         {/* HERO */}
-        <div className="relative mb-10 min-h-[280px] overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] shadow-[6px_6px_0_#16274F]">
+        <div className="relative mb-10 min-h-[280px] overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] tp-shadow-navy">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <svg className="absolute right-0 top-0 h-full w-[62%]" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
               <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2">
@@ -474,7 +479,7 @@ export default function StandingsPage() {
                 <span className="text-[#D01F2D]" style={{ textShadow: '3px 3px 0 #0A0A0A' }}>Standings</span>
               </h1>
 
-              <p className="mt-5 max-w-xl text-base font-semibold leading-relaxed text-[#4B5563] sm:text-lg">
+              <p className="mt-5 max-w-xl text-base font-semibold leading-relaxed text-[#3F4757] sm:text-lg">
                 Every team. Every season. Every stat.
               </p>
             </div>
@@ -487,13 +492,13 @@ export default function StandingsPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.5 }}
-          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[5px_5px_0_#16274F]"
+          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
         >
           <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center border-2 border-white/30 bg-white/10">
-                  <Medal className="h-4.5 w-4.5" />
+                <div className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D]">
+                  <Medal className="h-4.5 w-4.5 text-white" />
                 </div>
                 <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Team Rankings</div>
               </div>
@@ -506,15 +511,15 @@ export default function StandingsPage() {
             </div>
           </div>
 
-          <div className="flex overflow-x-auto border-b-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 sm:px-7">
+          <div className="flex gap-2 overflow-x-auto border-b-2 border-[#0A0A0A]/10 bg-white px-5 py-4 sm:px-7">
             {TABS.map(t => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`border-r-2 border-[#0A0A0A] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] transition-colors first:border-l-2 ${
+                className={`flex-shrink-0 border-2 px-5 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all ${
                   tab === t
-                    ? 'bg-[#D01F2D] text-white'
-                    : 'bg-transparent text-[#6B7280] hover:bg-white hover:text-[#16274F]'
+                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
+                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
                 }`}
               >
                 {t}
@@ -528,12 +533,12 @@ export default function StandingsPage() {
             <div className="p-3 sm:p-5">
               {/* Desktop table heading */}
               <div
-                className="hidden border-b-2 border-[#D7D5CF] px-4 pb-3 md:grid md:items-end md:gap-3"
+                className="hidden border-b-2 border-[#0A0A0A]/15 px-4 pb-3 md:grid md:items-end md:gap-3"
                 style={{ gridTemplateColumns: `2.25rem minmax(0,1fr) ${tabCols[tab].map(() => '4.5rem').join(' ')}` }}
               >
                 <button
                   onClick={() => season !== 'All-Time' && handleSort('Pos')}
-                  className={`text-left text-[10px] font-black uppercase tracking-[0.18em] ${season !== 'All-Time' ? 'text-[#6B7280] hover:text-[#D01F2D]' : 'cursor-default text-[#B5B5AF]'}`}
+                  className={`text-left text-[10px] font-black uppercase tracking-[0.18em] ${season !== 'All-Time' ? 'text-[#6B7280] hover:text-[#D01F2D]' : 'cursor-default text-[#6B7280]'}`}
                 >
                   #
                 </button>
@@ -555,7 +560,7 @@ export default function StandingsPage() {
                 {season !== 'All-Time' && (
                   <button
                     onClick={() => handleSort('Pos')}
-                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === 'Pos' ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#D7D5CF] bg-white text-[#6B7280]'}`}
+                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === 'Pos' ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#0A0A0A]/15 bg-white text-[#6B7280]'}`}
                   >
                     #{sortCol === 'Pos' ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
                   </button>
@@ -564,7 +569,7 @@ export default function StandingsPage() {
                   <button
                     key={col}
                     onClick={() => handleSort(col)}
-                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === col ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#D7D5CF] bg-white text-[#6B7280]'}`}
+                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === col ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#0A0A0A]/15 bg-white text-[#6B7280]'}`}
                   >
                     {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
                   </button>
@@ -582,7 +587,7 @@ export default function StandingsPage() {
                     <a
                       key={row.team}
                       href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="block border-2 border-[#D7D5CF] bg-white p-3 transition-transform hover:-translate-y-0.5 hover:border-[#16274F] hover:shadow-[3px_3px_0_#D01F2D] sm:p-4"
+                      className="block border-2 border-[#0A0A0A]/15 bg-white p-3 transition-transform hover:-translate-y-0.5 hover:border-[#16274F] hover:tp-shadow-red-sm sm:p-4"
                     >
                       <div
                         className="hidden md:grid md:items-center md:gap-3"
@@ -594,7 +599,7 @@ export default function StandingsPage() {
 
                         <div className="flex min-w-0 items-center gap-3">
                           {avatar ? (
-                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full border-2 border-[#0A0A0A] object-cover" />
+                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full object-contain" />
                           ) : (
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
                               {row.team.slice(0, 2).toUpperCase()}
@@ -602,14 +607,14 @@ export default function StandingsPage() {
                           )}
                           <div className="min-w-0">
                             <div className="truncate text-sm font-black uppercase tracking-tight text-[#16274F]">{row.team}</div>
-                            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9CA3AF]">{season === 'All-Time' ? 'All-Time' : `Season ${season}`}</div>
+                            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6B7280]">{season === 'All-Time' ? 'All-Time' : `Season ${season}`}</div>
                           </div>
                           {row.champion && <span className="ml-auto text-base">🏆</span>}
                         </div>
 
                         {tabCols[tab].map(col => (
                           <div key={col} className="text-right">
-                            <span className={`text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#4B5563]'}`}>
+                            <span className={`text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#3F4757]'}`}>
                               {getCol(row, col)}
                             </span>
                           </div>
@@ -622,7 +627,7 @@ export default function StandingsPage() {
                             {pos}
                           </span>
                           {avatar ? (
-                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full border-2 border-[#0A0A0A] object-cover" />
+                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full object-contain" />
                           ) : (
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
                               {row.team.slice(0, 2).toUpperCase()}
@@ -630,7 +635,7 @@ export default function StandingsPage() {
                           )}
                           <div className="min-w-0 flex-1">
                             <div className="break-words text-sm font-black uppercase leading-snug text-[#16274F]">{row.team}</div>
-                            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9CA3AF]">
+                            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6B7280]">
                               {season === 'All-Time' ? 'All-Time ranking' : `Season ${season}`}
                             </div>
                           </div>
@@ -639,9 +644,9 @@ export default function StandingsPage() {
 
                         <div className="mt-3 grid grid-cols-2 gap-2 pl-0 sm:grid-cols-4">
                           {tabCols[tab].map(col => (
-                            <div key={col} className={`border-2 px-3 py-2 ${sortCol === col ? 'border-[#D01F2D] bg-[#FFF1F1]' : 'border-[#E4E2DB] bg-[#F7F6F2]'}`}>
-                              <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[#9CA3AF]">{col}</div>
-                              <div className={`mt-0.5 text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#374151]'}`}>{getCol(row, col)}</div>
+                            <div key={col} className={`border-2 px-3 py-2 ${sortCol === col ? 'border-[#D01F2D] bg-[#FFF1F1]' : 'border-[#0A0A0A]/10 bg-[#F7F6F2]'}`}>
+                              <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6B7280]">{col}</div>
+                              <div className={`mt-0.5 text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#3F4757]'}`}>{getCol(row, col)}</div>
                             </div>
                           ))}
                         </div>
@@ -685,12 +690,12 @@ export default function StandingsPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.5 }}
-          className="overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[5px_5px_0_#16274F]"
+          className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
         >
           <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center border-2 border-white/30 bg-white/10">
-                <Activity className="h-4.5 w-4.5" />
+              <div className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D]">
+                <Activity className="h-4.5 w-4.5 text-white" />
               </div>
               <div>
                 <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Team Evolution</div>
@@ -705,10 +710,10 @@ export default function StandingsPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 border-b-2 border-[#D7D5CF] bg-[#F7F6F2] px-4 py-4 text-xs font-black uppercase tracking-[0.1em]">
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 border-b-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-4 py-4 text-xs font-black uppercase tracking-[0.1em]">
             <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#F5C518]" /> Championships</div>
-            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#1E8E3E]" /> Best Seasons</div>
-            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#D01F2D]" /> Worst Seasons</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#1E8E3E]" /> Best Seasons</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#D01F2D]" /> Worst Seasons</div>
           </div>
 
           <div className="overflow-x-auto px-3 pb-1 pt-6 sm:px-6">
@@ -720,22 +725,22 @@ export default function StandingsPage() {
           {chartStats && (
             <div className="grid grid-cols-2 gap-0 border-t-2 border-[#0A0A0A] md:grid-cols-4">
               <div className="border-b-2 border-r-2 border-[#0A0A0A] bg-[#F7F6F2] p-5 md:border-b-0">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Best Season</div>
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Best Season</div>
                 <div className="text-3xl font-black text-[#16274F]">{chartStats.bestVal}</div>
                 <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.bestSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
               <div className="border-b-2 border-[#0A0A0A] bg-[#FFF6F6] p-5 md:border-b-0 md:border-r-2">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Worst Season</div>
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Worst Season</div>
                 <div className="text-3xl font-black text-[#D01F2D]">{chartStats.worstVal}</div>
                 <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.worstSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
               <div className="border-r-2 border-[#0A0A0A] bg-white p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Season Avg</div>
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Season Avg</div>
                 <div className="text-3xl font-black text-[#16274F]">{chartStats.avg}</div>
                 <div className="mt-1 text-xs font-bold text-[#6B7280]">per season</div>
               </div>
               <div className="bg-[#FFF9E7] p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8A8A84]">Championships</div>
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Championships</div>
                 <div className="text-3xl font-black text-[#0A0A0A]">{chartStats.titles}</div>
                 <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.championSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
               </div>
@@ -744,10 +749,10 @@ export default function StandingsPage() {
         </motion.div>
       </section>
 
-      <footer className="mx-auto max-w-[1680px] px-3 pb-6 sm:px-5 md:px-6">
-        <div className="flex items-center justify-center gap-3 border-2 border-[#D7D5CF] bg-white py-5">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} className="opacity-40" />
-          <span className="text-xs font-black uppercase tracking-[0.24em] text-[#8A8A84]">
+      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
+        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
+          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-70" />
+          <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">
             Tapitas League · Est. 2014
           </span>
         </div>
