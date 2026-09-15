@@ -1905,10 +1905,6 @@ export default function RecordsPage() {
         top5={playerRecords?.from23?.avgPts?.top5}
       />
     </RecordSection>
-
-    <div className="mt-2 text-xs font-semibold text-slate-500">
-      Player records use the same roster, starter, double-week, BEST and AVG rules as the Player Profile. BEST excludes double weeks; AVG excludes only Bench + 0.00.
-    </div>
   </>
 )}
 
