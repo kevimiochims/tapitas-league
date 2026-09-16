@@ -3,7 +3,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   TrendingUp,
   TrendingDown,
@@ -185,7 +186,11 @@ function matchupHref(row, allGames = []) {
   return `/matchups?season=${encodeURIComponent(String(canonicalRow?.Season || '').trim())}&week=${encodeURIComponent(String(canonicalRow?.Week || '').trim())}&team=${encodeURIComponent(String(canonicalRow?.Team || '').trim())}&opp=${encodeURIComponent(String(canonicalRow?.Opponent || '').trim())}`
 }
 
-export default function PowerRankingsPage() {
+function PowerRankingsPageContent() {
+
+  const searchParams = useSearchParams()
+  const urlSeason = searchParams.get('season')
+  const urlWeek = searchParams.get('week')
 
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
@@ -252,7 +257,12 @@ export default function PowerRankingsPage() {
         const latestSeason =
           allSeasonsArr[allSeasonsArr.length - 1]
 
-        setSeason(latestSeason)
+        // Se veio da página de Matchups (?season=X&week=Y), respeita a seleção
+        // em vez de sempre cair na temporada/semana mais recente.
+        const chosenSeason =
+          urlSeason && allSeasonsArr.includes(urlSeason) ? urlSeason : latestSeason
+
+        setSeason(chosenSeason)
         setAllSeasons(allSeasonsArr.map(s => Number(s)))
 
 
@@ -260,7 +270,7 @@ export default function PowerRankingsPage() {
           ...new Set(
             gameData
               .filter(g =>
-                String(g?.Season || '').trim() === latestSeason &&
+                String(g?.Season || '').trim() === chosenSeason &&
                 parseNumber(g?.['Power Ranking']) > 0
               )
               .map(g => String(g?.Week || '').trim())
@@ -269,7 +279,9 @@ export default function PowerRankingsPage() {
         ].sort((a, b) => parseFloat(a) - parseFloat(b))
 
         if (ws.length > 0) {
-          setWeek(ws[ws.length - 1])
+          const chosenWeek =
+            urlWeek && ws.includes(urlWeek) ? urlWeek : ws[ws.length - 1]
+          setWeek(chosenWeek)
         }
       }
 
@@ -1430,5 +1442,22 @@ export default function PowerRankingsPage() {
         </div>
       </footer>
     </main>
+  )
+}
+
+export default function PowerRankingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
+          <Header />
+          <section className="px-3 md:px-6 pb-20">
+            <div className="py-20 text-center text-[#6B7280] font-bold">Loading...</div>
+          </section>
+        </main>
+      }
+    >
+      <PowerRankingsPageContent />
+    </Suspense>
   )
 }

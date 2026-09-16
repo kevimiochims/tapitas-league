@@ -157,10 +157,32 @@ function getHistoryColor(rank, total) {
   return 'bg-[#16274F]'
 }
 
-function matchupHref(row) {
+function matchupHref(row, allGames = []) {
   if (!row) return '/matchups'
 
-  return `/matchups?season=${encodeURIComponent(String(row?.Season || '').trim())}&week=${encodeURIComponent(String(row?.Week || '').trim())}&team=${encodeURIComponent(String(row?.Team || '').trim())}&opp=${encodeURIComponent(String(row?.Opponent || '').trim())}`
+  const season = String(row?.Season || '').trim()
+  const week = String(row?.Week || '').trim()
+  const team = String(row?.Team || '').trim()
+  const opponent = String(row?.Opponent || '').trim()
+
+  // O matchup canônico é SEMPRE a primeira linha daquele confronto
+  // específico (mesma Season + Week + dupla de times), e não a primeira
+  // linha da semana inteira. GAME_FACTS_ALL possui as duas linhas espelhadas.
+  const canonicalRow = allGames.find(g => {
+    const gSeason = String(g?.Season || '').trim()
+    const gWeek = String(g?.Week || '').trim()
+    const gTeam = String(g?.Team || '').trim()
+    const gOpponent = String(g?.Opponent || '').trim()
+
+    if (gSeason !== season || gWeek !== week) return false
+
+    return (
+      (gTeam === team && gOpponent === opponent) ||
+      (gTeam === opponent && gOpponent === team)
+    )
+  }) || row
+
+  return `/matchups?season=${encodeURIComponent(String(canonicalRow?.Season || '').trim())}&week=${encodeURIComponent(String(canonicalRow?.Week || '').trim())}&team=${encodeURIComponent(String(canonicalRow?.Team || '').trim())}&opp=${encodeURIComponent(String(canonicalRow?.Opponent || '').trim())}`
 }
 
 export default function PowerRankingsPage() {
@@ -1150,7 +1172,7 @@ export default function PowerRankingsPage() {
                       <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 mb-5">
 
                         <Link
-                          href={matchupHref(team.matchupRow)}
+                          href={matchupHref(team.matchupRow, games)}
                           className="group block border-2 border-[#0A0A0A]/10 bg-[#F7F6F2] p-3 min-w-0 transition-colors hover:bg-white"
                         >
                           <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
