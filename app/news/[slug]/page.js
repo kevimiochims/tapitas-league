@@ -47,28 +47,15 @@ export default function NewsArticle() {
 
             try {
 
-                // Busca somente a notícia solicitada. O endpoint do Apps Script
-                // deve retornar o post correspondente quando recebe ?slug=.
-                const response = await fetch(
-                    `${SCRIPT_URL}?slug=${encodeURIComponent(slug)}`,
-                    { cache: 'no-store' }
-                )
-
-                if (!response.ok) {
-                    throw new Error(`Erro ao carregar notícia: ${response.status}`)
-                }
+                const response = await fetch(SCRIPT_URL)
 
                 const data = await response.json()
 
-                // O endpoint otimizado retorna um objeto. Mantemos suporte a
-                // array caso a implementação atual do Apps Script ainda o use.
-                const foundPost = Array.isArray(data)
-                    ? data.find(item => item.slug === slug)
-                    : data?.slug === slug
-                        ? data
-                        : data?.post || null
+                setPosts(data)
 
-                setPosts([])
+                const foundPost =
+                    data.find(post => post.slug === slug)
+
                 setPost(foundPost)
 
             } catch (err) {
