@@ -126,6 +126,32 @@ function extractPlayers(game, prefix) {
   return players
 }
 
+// Melhor escalação possível (starters + bench) pro "max points" de eficiência —
+// preenche as posições fixas com os maiores pontuadores de cada posição e o
+// que sobra de RB/WR/TE disputa as vagas de FLEX.
+function computeMaxPoints(pool, seasonYear) {
+  const config = ROSTER_CONFIG[Number(seasonYear)] || ROSTER_CONFIG[2025]
+  const buckets = { QB: [], RB: [], WR: [], TE: [], K: [], DEF: [] }
+  pool.forEach(p => {
+    if (buckets[p.pos]) buckets[p.pos].push(p)
+  })
+  Object.keys(buckets).forEach(k => buckets[k].sort((a, b) => b.pts - a.pts))
+
+  let total = 0
+  const flexPool = []
+  const need = { QB: config.qb, RB: config.rb, WR: config.wr, TE: config.te, K: config.k, DEF: config.def }
+  Object.keys(need).forEach(pos => {
+    const taken = buckets[pos].slice(0, need[pos])
+    total += taken.reduce((s, p) => s + p.pts, 0)
+    if (['RB', 'WR', 'TE'].includes(pos)) {
+      flexPool.push(...buckets[pos].slice(need[pos]))
+    }
+  })
+  flexPool.sort((a, b) => b.pts - a.pts)
+  total += flexPool.slice(0, config.flex).reduce((s, p) => s + p.pts, 0)
+  return total
+}
+
 function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
@@ -1176,6 +1202,7 @@ function MatchupsPageContent() {
   const [season, setSeason] = useState('')
   const [week, setWeek] = useState('')
   const [selected, setSelected] = useState(null)
+  const [showWeekRecap, setShowWeekRecap] = useState(false)
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
 
   const seasonsRef = useRef(null)
@@ -1362,6 +1389,104 @@ function MatchupsPageContent() {
     })
     return result
   }, [games, season, week])
+
+  // Week Recap — nos moldes do relatório semanal do Sleeper. Só considera
+  // temporada regular pros awards, já que playoffs distorceriam comparações.
+  const weekRecap = useMemo(() => {
+    if (!season || !week || matchups.length === 0 || !playerLookup) return null
+
+    const resolvePlayers = (list, fallbackPositions) => list.map((p, i) => ({
+      ...p,
+      pos: getDisplayPlayerPos(p.name, fallbackPositions ? fallbackPositions[i] : 'BN', playerLookup),
+    }))
+
+    const rosterPositions = getRosterPositions(season)
+
+    // Uma entrada por time (não por confronto) — cada matchup vira 2 entradas.
+    const entries = []
+    matchups.forEach(g => {
+      const team = String(g?.Team || '').trim()
+      const opp = String(g?.Opponent || '').trim()
+      const pf = parseNumber(g?.PF)
+      const pa = parseNumber(g?.PA)
+
+      const teamStarters = resolvePlayers(extractPlayers(g, 'S'), rosterPositions)
+      const teamBench = resolvePlayers(extractPlayers(g, 'B'))
+      const oppStartersR = resolvePlayers(extractPlayers(g, 'OS'), rosterPositions)
+      const oppBenchR = resolvePlayers(extractPlayers(g, 'OB'))
+
+      entries.push({
+        team, opponent: opp, pf, pa, win: pf > pa,
+        starters: teamStarters, bench: teamBench,
+        maxPts: computeMaxPoints([...teamStarters, ...teamBench], season),
+      })
+      entries.push({
+        team: opp, opponent: team, pf: pa, pa: pf, win: pa > pf,
+        starters: oppStartersR, bench: oppBenchR,
+        maxPts: computeMaxPoints([...oppStartersR, ...oppBenchR], season),
+      })
+    })
+
+    if (entries.length === 0) return null
+
+    const bestTeam = entries.reduce((a, b) => (b.pf > a.pf ? b : a))
+    const worstTeam = entries.reduce((a, b) => (b.pf < a.pf ? b : a))
+
+    // Players / Benchwarmers of the Week — maior pontuador por posição real
+    const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']
+    const playersOfWeek = POSITIONS.map(pos => {
+      let best = null
+      entries.forEach(e => {
+        e.starters.forEach(p => {
+          if (p.pos === pos && (!best || p.pts > best.pts)) best = { ...p, team: e.team }
+        })
+      })
+      return best ? { pos, ...best } : null
+    }).filter(Boolean)
+
+    const benchOfWeek = POSITIONS.map(pos => {
+      let best = null
+      entries.forEach(e => {
+        e.bench.forEach(p => {
+          if (p.pos === pos && (!best || p.pts > best.pts)) best = { ...p, team: e.team }
+        })
+      })
+      return best ? { pos, ...best } : null
+    }).filter(Boolean)
+
+    // League Awards
+    const withEff = entries.filter(e => e.maxPts > 0).map(e => ({ ...e, pct: e.pf / e.maxPts }))
+    const mostEfficient = withEff.length ? withEff.reduce((a, b) => (b.pct > a.pct ? b : a)) : null
+    const leastEfficient = withEff.length ? withEff.reduce((a, b) => (b.pct < a.pct ? b : a)) : null
+
+    const losers = entries.filter(e => !e.win)
+    const winners = entries.filter(e => e.win)
+    const highestInLoss = losers.length ? losers.reduce((a, b) => (b.pf > a.pf ? b : a)) : null
+    const lowestInWin = winners.length ? winners.reduce((a, b) => (b.pf < a.pf ? b : a)) : null
+
+    const withMargin = matchups.map(g => {
+      const pf = parseNumber(g?.PF)
+      const pa = parseNumber(g?.PA)
+      const won = pf > pa
+      return {
+        winner: won ? g.Team : g.Opponent,
+        winnerScore: won ? pf : pa,
+        loser: won ? g.Opponent : g.Team,
+        loserScore: won ? pa : pf,
+        margin: Math.abs(pf - pa),
+      }
+    })
+    const biggestBlowout = withMargin.length ? withMargin.reduce((a, b) => (b.margin > a.margin ? b : a)) : null
+    const narrowVictory = withMargin.length ? withMargin.reduce((a, b) => (b.margin < a.margin ? b : a)) : null
+
+    const teamPerformance = [...entries].sort((a, b) => b.pf - a.pf)
+
+    return {
+      bestTeam, worstTeam, playersOfWeek, benchOfWeek,
+      mostEfficient, leastEfficient, highestInLoss, lowestInWin,
+      biggestBlowout, narrowVictory, teamPerformance,
+    }
+  }, [season, week, matchups, playerLookup])
 
   // Mede o espaço real do frame: centraliza apenas quando todos os jogos cabem.
   useEffect(() => {
@@ -1882,12 +2007,33 @@ function MatchupsPageContent() {
                   duration: 0.8,
                   ease: [0.22, 1, 0.36, 1],
                 }} className="mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-                <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
+                <div className="flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-6 py-4">
                   <div
                     className="font-black uppercase tracking-[0.3em] text-[#16274F]"
                     style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
                   >
                     {season} — Week {week}
+                  </div>
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setShowWeekRecap(v => !v)
+                        setSelected(null)
+                      }}
+                      className={`inline-flex items-center gap-1.5 border-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-all sm:px-3.5 sm:py-2 sm:text-[10px] ${showWeekRecap
+                        ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
+                        : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                        }`}
+                    >
+                      Week Recap
+                    </button>
+                    <a
+                      href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
+                      className="inline-flex items-center gap-1 border-2 border-[#0A0A0A] bg-white px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#3F4757] transition-all hover:bg-[#F7F6F2] sm:px-3.5 sm:py-2 sm:text-[10px]"
+                    >
+                      PR
+                      <ChevronRight className="h-3 w-3" />
+                    </a>
                   </div>
                 </div>
 
@@ -1910,7 +2056,10 @@ function MatchupsPageContent() {
                         key={i}
                         // LIGAÇÃO DA REF: Identifica qual card de confronto está ativo
                         ref={isSelected ? activeGameRef : null}
-                        onClick={() => setSelected(isSelected ? null : g)}
+                        onClick={() => {
+                          setSelected(isSelected ? null : g)
+                          setShowWeekRecap(false)
+                        }}
                         className={`flex-shrink-0 w-56 border-2 p-4 text-left transition-all ${isSelected
                           ? 'border-[#D01F2D] bg-[#FDEDEE] tp-shadow-red-sm'
                           : 'border-[#0A0A0A] bg-white hover:bg-[#F7F6F2]'
@@ -1974,8 +2123,173 @@ function MatchupsPageContent() {
               </motion.div>
             )}
 
+            {/* Week Recap */}
+            {showWeekRecap && weekRecap && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy"
+              >
+                <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
+                  <div className="font-black uppercase tracking-[0.3em] text-[#16274F]" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
+                    Week Recap — {season} · Week {week}
+                  </div>
+                </div>
+
+                <div className="p-5 sm:p-7">
+
+                  {/* Best / Worst Team */}
+                  <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 tp-shadow-navy-sm">
+                      <TeamAvatar name={weekRecap.bestTeam.team} className="h-12 w-12 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">🏆 Best Team</div>
+                        <div className="truncate text-base font-black text-[#16274F]">{weekRecap.bestTeam.team}</div>
+                      </div>
+                      <div className="flex-shrink-0 text-2xl font-black text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                        {weekRecap.bestTeam.pf.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 tp-shadow-navy-sm">
+                      <TeamAvatar name={weekRecap.worstTeam.team} className="h-12 w-12 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D01F2D]">💀 Worst Team</div>
+                        <div className="truncate text-base font-black text-[#16274F]">{weekRecap.worstTeam.team}</div>
+                      </div>
+                      <div className="flex-shrink-0 text-2xl font-black text-[#D01F2D]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                        {weekRecap.worstTeam.pf.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Players of the Week */}
+                  {weekRecap.playersOfWeek.length > 0 && (
+                    <div className="mb-8">
+                      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">Players of the Week</div>
+                      <div className="scroll-hide flex gap-2.5 overflow-x-auto pb-1">
+                        {weekRecap.playersOfWeek.map(p => (
+                          <div key={p.pos} className="w-[112px] flex-shrink-0 border-2 border-[#0A0A0A] bg-white p-3 text-center tp-shadow-navy-sm">
+                            <div className="mb-2 flex justify-center">
+                              <PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={44} />
+                            </div>
+                            <div className="mx-auto mb-1 inline-block border-2 border-[#0A0A0A] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest" style={{ background: POS_RING[p.pos] || '#6B7280', color: '#fff' }}>
+                              {p.pos}
+                            </div>
+                            <div className="truncate text-[12px] font-black text-[#16274F]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</div>
+                            <div className="truncate text-[10px] font-bold text-[#6B7280]">{p.team}</div>
+                            <div className="mt-1 text-lg font-black text-[#D01F2D]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{p.pts.toFixed(2)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Benchwarmers of the Week */}
+                  {weekRecap.benchOfWeek.length > 0 && (
+                    <div className="mb-8">
+                      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">Benchwarmers of the Week</div>
+                      <div className="scroll-hide flex gap-2.5 overflow-x-auto pb-1">
+                        {weekRecap.benchOfWeek.map(p => (
+                          <div key={p.pos} className="w-[112px] flex-shrink-0 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] p-3 text-center">
+                            <div className="mb-2 flex justify-center">
+                              <PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={44} />
+                            </div>
+                            <div className="mx-auto mb-1 inline-block border-2 border-[#0A0A0A] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest" style={{ background: POS_RING[p.pos] || '#6B7280', color: '#fff' }}>
+                              {p.pos}
+                            </div>
+                            <div className="truncate text-[12px] font-black text-[#16274F]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</div>
+                            <div className="truncate text-[10px] font-bold text-[#6B7280]">{p.team}</div>
+                            <div className="mt-1 text-lg font-black text-[#3F4757]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{p.pts.toFixed(2)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* League Awards */}
+                  <div className="mb-8">
+                    <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">League Awards</div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {[
+                        weekRecap.mostEfficient && {
+                          label: 'Most Efficient Manager', icon: '🎯', team: weekRecap.mostEfficient.team,
+                          value: weekRecap.mostEfficient.pf.toFixed(2), sub: `max ${weekRecap.mostEfficient.maxPts.toFixed(2)} · ${(weekRecap.mostEfficient.pct * 100).toFixed(1)}%`,
+                          color: '#1E8E3E',
+                        },
+                        weekRecap.leastEfficient && {
+                          label: 'Least Efficient Manager', icon: '🪫', team: weekRecap.leastEfficient.team,
+                          value: weekRecap.leastEfficient.pf.toFixed(2), sub: `max ${weekRecap.leastEfficient.maxPts.toFixed(2)} · ${(weekRecap.leastEfficient.pct * 100).toFixed(1)}%`,
+                          color: '#D01F2D',
+                        },
+                        weekRecap.highestInLoss && {
+                          label: 'Highest Pts in a Loss', icon: '😤', team: weekRecap.highestInLoss.team,
+                          value: weekRecap.highestInLoss.pf.toFixed(2), sub: `lost to ${weekRecap.highestInLoss.opponent}`,
+                          color: '#16274F',
+                        },
+                        weekRecap.lowestInWin && {
+                          label: 'Lowest Pts in a Win', icon: '🍀', team: weekRecap.lowestInWin.team,
+                          value: weekRecap.lowestInWin.pf.toFixed(2), sub: `beat ${weekRecap.lowestInWin.opponent}`,
+                          color: '#1E8E3E',
+                        },
+                        weekRecap.biggestBlowout && {
+                          label: 'Biggest Blowout', icon: '💥', team: weekRecap.biggestBlowout.winner,
+                          value: weekRecap.biggestBlowout.margin.toFixed(2), sub: `vs ${weekRecap.biggestBlowout.loser} (${weekRecap.biggestBlowout.winnerScore.toFixed(2)}–${weekRecap.biggestBlowout.loserScore.toFixed(2)})`,
+                          color: '#D01F2D',
+                        },
+                        weekRecap.narrowVictory && {
+                          label: 'Narrow Victory', icon: '😅', team: weekRecap.narrowVictory.winner,
+                          value: weekRecap.narrowVictory.margin.toFixed(2), sub: `vs ${weekRecap.narrowVictory.loser} (${weekRecap.narrowVictory.winnerScore.toFixed(2)}–${weekRecap.narrowVictory.loserScore.toFixed(2)})`,
+                          color: '#16274F',
+                        },
+                      ].filter(Boolean).map(award => (
+                        <div key={award.label} className="flex items-center gap-3 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] p-3.5">
+                          <span className="flex-shrink-0 text-xl">{award.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[9px] font-black uppercase tracking-[0.15em] text-[#6B7280]">{award.label}</div>
+                            <div className="truncate text-sm font-black text-[#16274F]">{award.team}</div>
+                            <div className="truncate text-[10px] font-bold text-[#6B7280]">{award.sub}</div>
+                          </div>
+                          <div className="flex-shrink-0 text-xl font-black" style={{ fontFamily: '"Bebas Neue", sans-serif', color: award.color }}>{award.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Team Performance */}
+                  <div>
+                    <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">Team Performance</div>
+                    <div className="space-y-2.5">
+                      {weekRecap.teamPerformance.map((e, i) => {
+                        const pct = e.maxPts > 0 ? Math.min(100, (e.pf / e.maxPts) * 100) : 0
+                        return (
+                          <div key={e.team} className="flex items-center gap-3">
+                            <div className="w-4 flex-shrink-0 text-right text-xs font-black text-[#6B7280]">{i + 1}</div>
+                            <TeamAvatar name={e.team} className="h-7 w-7 flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1 flex items-center justify-between gap-2">
+                                <span className="truncate text-[13px] font-black text-[#16274F]">{e.team}</span>
+                                <span className="flex-shrink-0 text-[11px] font-bold text-[#6B7280]">
+                                  {e.pf.toFixed(2)} of {e.maxPts.toFixed(2)} MAX
+                                </span>
+                              </div>
+                              <div className="h-2 w-full bg-[#F7F6F2]">
+                                <div className="h-full bg-[#16274F]" style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                            <div className="w-10 flex-shrink-0 text-right text-[11px] font-bold text-[#6B7280]">{pct.toFixed(0)}%</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                </div>
+              </motion.div>
+            )}
+
             {/* Detalhe do matchup selecionado */}
-            {selected && (
+            {selected && !showWeekRecap && (
               <motion.div
                 initial={{
                   opacity: 0,

@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft, Swords, Activity } from 'lucide-react'
+import { ChevronRight, ChevronLeft, ChevronDown, Swords, Activity } from 'lucide-react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import { motion } from 'framer-motion'
@@ -39,7 +39,51 @@ const ROSTER_CONFIG = {
   2025: { qb: 2, rb: 2, wr: 2, te: 1, flex: 3, k: 1, def: 1 },
 }
 
-function getRosterPositions(seasonYear) {
+function HeaderFilter({ value, onChange, options, label }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handler = e => {
+      if (!ref.current?.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <span ref={ref} className="relative inline-flex min-w-0 max-w-full align-middle">
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className={`inline-flex min-w-0 max-w-full items-center gap-1 truncate uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}
+      >
+        <span className="min-w-0 truncate">{value === 'All' ? label : value}</span>
+        <span className="shrink-0 text-[9px] text-[#D01F2D]">⌄</span>
+      </button>
+
+      {open && (
+        <span className="absolute left-0 top-[calc(100%+6px)] z-[200] block w-[176px] max-w-[calc(100vw-32px)] border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+          <span className="block max-h-[150px] overflow-y-auto overscroll-contain pb-4">
+            {options.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => {
+                  onChange(opt)
+                  setOpen(false)
+                }}
+                className={`block h-[28px] w-full truncate px-3 text-left text-[9px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}
+              >
+                {opt === 'All' ? label : opt}
+              </button>
+            ))}
+          </span>
+        </span>
+      )}
+    </span>
+  )
+}function getRosterPositions(seasonYear) {
   const config = ROSTER_CONFIG[Number(seasonYear)] || ROSTER_CONFIG[2025]
   const positions = []
   const add = (pos, count) => { for (let i = 0; i < count; i++) positions.push(pos) }
@@ -117,7 +161,7 @@ function getInitials(name) {
 function TeamAvatar({ name, className = '', textClassName = '' }) {
   const avatarSrc = getTeamAvatar(name)
   if (avatarSrc) {
-    return <img src={avatarSrc} alt={name} className={`${className} object-cover`} />
+    return <img src={avatarSrc} alt={name} className={`${className} object-contain block max-w-full max-h-full`} />
   }
   return (
     <div className={`${className} bg-[#16274F] flex items-center justify-center flex-shrink-0`}>
@@ -185,6 +229,50 @@ function getNFLTeamLogo(nameOrAbbr) {
   // Already an abbr (e.g. "kc", "sf") — remap wsh
   const abbr = raw === 'was' ? 'wsh' : raw
   return `https://a.espncdn.com/i/teamlogos/nfl/500/${abbr}.png`
+}
+
+const NFL_TEAM_SHORT = { ari:'Cardinals', atl:'Falcons', bal:'Ravens', buf:'Bills', car:'Panthers', chi:'Bears', cin:'Bengals', cle:'Browns', dal:'Cowboys', den:'Broncos', det:'Lions', gb:'Packers', hou:'Texans', ind:'Colts', jax:'Jaguars', kc:'Chiefs', lac:'Chargers', lar:'Rams', lv:'Raiders', mia:'Dolphins', min:'Vikings', ne:'Patriots', no:'Saints', nyg:'Giants', nyj:'Jets', phi:'Eagles', pit:'Steelers', sea:'Seahawks', sf:'49ers', tb:'Buccaneers', ten:'Titans', wsh:'Commanders' }
+function getNFLTeamShortName(nameOrAbbr) {
+  if (!nameOrAbbr) return ''
+  const raw = String(nameOrAbbr).toLowerCase().trim()
+  const mapped = NFL_TEAM_NAME_MAP[raw] || (raw === 'was' ? 'wsh' : raw)
+  return NFL_TEAM_SHORT[mapped] || String(nameOrAbbr)
+}
+
+function getCompactTeamName(name) {
+  const tapitas = {
+    'i am megatron': 'MEG',
+    'peytao da massa': 'PEY',
+    'moneyball': 'MON',
+    'oldbrady': 'OLD',
+    'ocupa e resiste': 'O&R',
+    'patrolao squad': 'PAT',
+    'howmuch': 'HOW',
+    'pequers verde': 'PEQ',
+    'rincao settlers': 'SET',
+    'h-lera do mahl': 'HLE',
+    'hangover football club': 'HFC',
+    'canoas andres limas': 'CAL',
+    'santa cruz frangos': 'SCF',
+    '4winclutch': '4WC',
+    'seguidores de charlao': 'SDC',
+    'rjskipknows': 'RJS',
+    'porto alegre coelhos': 'PAC',
+  }
+  const normalized = normalizeTeamName(name)
+  if (tapitas[normalized]) return tapitas[normalized]
+
+  const nfl = {
+    ari:'ARI', atl:'ATL', bal:'BAL', buf:'BUF', car:'CAR', chi:'CHI',
+    cin:'CIN', cle:'CLE', dal:'DAL', den:'DEN', det:'DET', gb:'GB',
+    hou:'HOU', ind:'IND', jax:'JAX', kc:'KC', lac:'LAC', lar:'LAR',
+    lv:'LV', mia:'MIA', min:'MIN', ne:'NE', no:'NO', nyg:'NYG',
+    nyj:'NYJ', phi:'PHI', pit:'PIT', sea:'SEA', sf:'SF', tb:'TB',
+    ten:'TEN', wsh:'WSH'
+  }
+  const raw = String(name || '').toLowerCase().trim()
+  const mapped = NFL_TEAM_NAME_MAP[raw] || (raw === 'was' ? 'wsh' : raw)
+  return nfl[mapped] || String(name || '')
 }
 
 // Lookup: name|pos first, then name alone — NO sorting by id, first occurrence wins
@@ -447,6 +535,640 @@ function firstGameOfWeek(data, seasonVal, weekVal) {
   return null
 }
 
+
+let SLEEPER_PLAYERS_PROMISE = null
+const SLEEPER_WEEKLY_PROMISES = new Map()
+const SLEEPER_PLAYER_WEEKLY_PROMISES = new Map()
+const SLEEPER_SCHEDULE_PROMISES = new Map()
+
+async function fetchSleeperRegularSchedule(season) {
+  const key = String(season)
+  if (!SLEEPER_SCHEDULE_PROMISES.has(key)) {
+    const promise = fetch(`https://api.sleeper.app/schedule/nfl/regular/${encodeURIComponent(season)}`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+      .then(r => { if (!r.ok) throw new Error(`Sleeper schedule request failed: ${r.status}`); return r.json() })
+      .catch(e => { SLEEPER_SCHEDULE_PROMISES.delete(key); throw e })
+    SLEEPER_SCHEDULE_PROMISES.set(key, promise)
+  }
+  return SLEEPER_SCHEDULE_PROMISES.get(key)
+}
+
+function getSleeperNflOpponent(schedule, team, week) {
+  const t = String(team || '').toUpperCase()
+  const w = Number.parseInt(String(week || '').split(/[-–]/)[0], 10)
+  if (!t || !Number.isFinite(w) || !Array.isArray(schedule)) return null
+  const game = schedule.find(g => Number(g?.week) === w && (String(g?.home || '').toUpperCase() === t || String(g?.away || '').toUpperCase() === t))
+  if (!game) return null
+  const opponent = String(game.home || '').toUpperCase() === t ? game.away : game.home
+  if (!opponent) return null
+  return { abbr: String(opponent).toLowerCase(), home: String(game.home || '').toUpperCase() === t ? 'home' : 'away' }
+}
+
+async function fetchSleeperPlayers() {
+  if (!SLEEPER_PLAYERS_PROMISE) {
+    SLEEPER_PLAYERS_PROMISE = fetch('https://api.sleeper.app/v1/players/nfl').then(r => {
+      if (!r.ok) throw new Error(`Sleeper players request failed: ${r.status}`)
+      return r.json()
+    }).catch(e => { SLEEPER_PLAYERS_PROMISE = null; throw e })
+  }
+  return SLEEPER_PLAYERS_PROMISE
+}
+
+async function fetchSleeperWeeklyStats(season, week, seasonType = 'regular') {
+  const key = `${season}:${seasonType}:${week}`
+  if (!SLEEPER_WEEKLY_PROMISES.has(key)) {
+    const promise = fetch(`https://api.sleeper.app/v1/stats/nfl/${seasonType}/${encodeURIComponent(season)}/${encodeURIComponent(week)}`)
+      .then(r => { if (!r.ok) throw new Error(`Sleeper weekly stats request failed: ${r.status}`); return r.json() })
+      .catch(e => { SLEEPER_WEEKLY_PROMISES.delete(key); throw e })
+    SLEEPER_WEEKLY_PROMISES.set(key, promise)
+  }
+  return SLEEPER_WEEKLY_PROMISES.get(key)
+}
+
+async function fetchSleeperPlayerWeeklyStats(playerId, season, seasonType = 'regular') {
+  const key = `${playerId}:${season}:${seasonType}`
+  if (!SLEEPER_PLAYER_WEEKLY_PROMISES.has(key)) {
+    const promise = fetch(
+      `https://api.sleeper.com/stats/nfl/player/${encodeURIComponent(playerId)}?season=${encodeURIComponent(season)}&season_type=${encodeURIComponent(seasonType)}&grouping=week`
+    )
+      .then(r => {
+        if (!r.ok) throw new Error(`Sleeper player weekly stats request failed: ${r.status}`)
+        return r.json()
+      })
+      .catch(e => {
+        SLEEPER_PLAYER_WEEKLY_PROMISES.delete(key)
+        throw e
+      })
+    SLEEPER_PLAYER_WEEKLY_PROMISES.set(key, promise)
+  }
+  return SLEEPER_PLAYER_WEEKLY_PROMISES.get(key)
+}
+
+function getPlayerId(name, playerLookup) {
+  return playerLookup?.get(normalizePlayerKey(name))?.playerId || null
+}
+
+function getPositionBadgeClasses(position) {
+  const colors = {
+    QB: 'border-[#0A0A0A] bg-[#D01F2D] text-white',
+    RB: 'border-[#0A0A0A] bg-[#1E8E3E] text-white',
+    WR: 'border-[#0A0A0A] bg-[#5B2CA0] text-white',
+    TE: 'border-[#0A0A0A] bg-[#B8860B] text-white',
+    FLEX: 'border-[#0A0A0A] bg-[#3F4757] text-white',
+    K: 'border-[#0A0A0A] bg-[#6B7280] text-white',
+    DEF: 'border-[#0A0A0A] bg-[#3F4757] text-white',
+  }
+  return colors[String(position || '').toUpperCase()] || 'border-white/20 bg-white/10 text-white'
+}
+
+function formatPlayerStatLine(stats, pos) {
+  if (!stats) return []
+  const n = key => Number(stats?.[key] ?? 0)
+  const items = []
+  const p = String(pos || '').toUpperCase()
+  if (p === 'QB') {
+    if (n('pass_cmp') || n('pass_att')) items.push(`${n('pass_cmp')}/${n('pass_att')}`)
+    if (n('pass_yd')) items.push(`${n('pass_yd')} YDS`)
+    const totalTd = n('pass_td') + n('rush_td')
+    if (totalTd) items.push(`${totalTd} TD`)
+    if (n('pass_int')) items.push(`${n('pass_int')} INT`)
+    if (n('rush_att')) items.push(`${n('rush_att')} CAR`)
+    if (n('rush_yd')) items.push(`${n('rush_yd')} RUSH YDS`)
+  } else if (p === 'RB') {
+    if (n('rush_att')) items.push(`${n('rush_att')} CAR`)
+    if (n('rush_yd')) items.push(`${n('rush_yd')} RUSH YDS`)
+    if (n('rec_tgt')) items.push(`${n('rec_tgt')} TAR`)
+    if (n('rec')) items.push(`${n('rec')} REC`)
+    if (n('rec_yd')) items.push(`${n('rec_yd')} REC YDS`)
+    if (n('rush_td') || n('rec_td')) items.push(`${n('rush_td') + n('rec_td')} TD`)
+  } else if (p === 'WR' || p === 'TE' || p === 'FLEX') {
+    if (n('rec_tgt')) items.push(`${n('rec_tgt')} TAR`)
+    if (n('rec')) items.push(`${n('rec')} REC`)
+    if (n('rec_yd')) items.push(`${n('rec_yd')} YDS`)
+    if (n('rec_td')) items.push(`${n('rec_td')} TD`)
+  } else if (p === 'K') {
+    if (n('fgm') || n('fga')) items.push(`${n('fgm')}/${n('fga')} FG`)
+    if (n('xpm') || n('xpa')) items.push(`${n('xpm')}/${n('xpa')} XP`)
+  } else if (p === 'DEF') {
+    if (n('def_tkl')) items.push(`${n('def_tkl')} TKL`)
+    if (n('def_sack')) items.push(`${n('def_sack')} SACK`)
+    if (n('def_int')) items.push(`${n('def_int')} INT`)
+    if (n('def_td')) items.push(`${n('def_td')} TD`)
+  }
+  return items.filter(Boolean)
+}
+
+function extractPlayerAppearances(game, max = 13) {
+  const appearances = []
+  for (let i = 1; i <= max; i++) {
+    const starterName = game?.[`S${i}_Name`]
+    const starterPts = game?.[`S${i}_Pts`]
+    if (starterName && starterName !== '--empty--' && String(starterName).trim()) appearances.push({ name: String(starterName).trim(), status: 'Starter', pts: parseNumber(starterPts) })
+    const benchName = game?.[`B${i}_Name`]
+    const benchPts = game?.[`B${i}_Pts`]
+    if (benchName && benchName !== '--empty--' && String(benchName).trim()) appearances.push({ name: String(benchName).trim(), status: 'Bench', pts: parseNumber(benchPts) })
+  }
+  return appearances
+}
+
+function normalizeTeamName(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
+
+function getTeamShortName(name) {
+  const map = {
+    'peytao da massa': 'Peytao', 'moneyball': 'Moneyball', 'ocupa e resiste': 'Ocupa',
+    'i am megatron': 'Megatron', 'oldbrady': 'OldBrady', 'patrolao squad': 'Patrolao',
+    'howmuch': 'Howmuch', 'pequers verde': 'Pequers', 'h-lera do mahl': 'H-Lera', 'rincao settlers': 'Rincao'
+  }
+  return map[normalizeTeamName(name)] || String(name || '')
+}
+
+function getTeamSeasonHistory(playerName, games) {
+  const seen = new Map()
+  for (const g of games || []) {
+    const appears = extractPlayerAppearances(g).some(a => String(a.name).trim() === String(playerName).trim())
+    if (!appears) continue
+    const team = String(g?.Team || '').trim()
+    if (!team) continue
+    if (!seen.has(normalizeTeamName(team))) seen.set(normalizeTeamName(team), { team, seasons: new Set() })
+    const season = String(g?.Season || '').trim()
+    if (season) seen.get(normalizeTeamName(team)).seasons.add(season)
+  }
+  return Array.from(seen.values()).map(x => ({ ...x, seasons: Array.from(x.seasons).sort((a,b) => Number(a)-Number(b)) }))
+}
+
+function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
+  const [sleeperInfo, setSleeperInfo] = useState(null)
+  const [weeklyStats, setWeeklyStats] = useState(null)
+  const [selectedTeams, setSelectedTeams] = useState([profile.team])
+  const [loadingStats, setLoadingStats] = useState(false)
+  const [logSeasonFilter, setLogSeasonFilter] = useState('All')
+  const [logOpponentFilter, setLogOpponentFilter] = useState('All')
+  const [logStatusFilter, setLogStatusFilter] = useState('All')
+  const [logResultFilter, setLogResultFilter] = useState('All')
+  const [logStageFilter, setLogStageFilter] = useState('All')
+  const [logSort, setLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
+  const selectedTeamRef = useRef(null)
+  const selectedGameRef = useRef(null)
+
+  useEffect(() => {
+    setSelectedTeams([profile.team])
+    setLogSeasonFilter('All')
+    setLogOpponentFilter('All')
+    setLogStatusFilter('All')
+    setLogResultFilter('All')
+    setLogStageFilter('All')
+    setLogSort({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
+  }, [profile.team, profile.rawName])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      selectedTeamRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      })
+    }, 120)
+    return () => clearTimeout(timer)
+  }, [profile.team, profile.rawName])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      selectedGameRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      })
+    }, 180)
+    return () => clearTimeout(timer)
+  }, [profile.season, profile.week, profile.team, profile.opponent])
+
+  useEffect(() => {
+    let cancelled = false
+    const positionForLookup = String(profile.position || '').toUpperCase()
+    const id = getPlayerData(profile.rawName, positionForLookup, playerLookup)?.playerId || getPlayerId(profile.rawName, playerLookup)
+    if (!id) {
+      setSleeperInfo(null)
+      setWeeklyStats(null)
+      setLoadingStats(false)
+      return undefined
+    }
+    setLoadingStats(true)
+    const weeks = String(profile.week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
+    // Tapitas playoff/consolation weeks 15–17 are still NFL regular-season weeks.
+    // Sleeper's season_type refers to the NFL season, not our fantasy stage.
+    // Use post only when the actual NFL week is 18+ (or explicitly outside numeric week data).
+    const numericWeeks = weeks.map(w => Number.parseInt(w, 10)).filter(Number.isFinite)
+    const seasonType = numericWeeks.some(w => w >= 18) ? 'post' : 'regular'
+    Promise.all([
+      fetchSleeperPlayers(),
+      fetchSleeperRegularSchedule(profile.season).catch(() => []),
+      Promise.all(weeks.map(w => fetchSleeperWeeklyStats(profile.season, w, seasonType))),
+      fetchSleeperPlayerWeeklyStats(id, profile.season, seasonType).catch(() => [])
+    ])
+      .then(([players, schedule, weeklyList, playerWeeklyStats]) => {
+        const mergedPlayerStats = {}
+        weeklyList.forEach(row => {
+          if (!row || typeof row !== 'object') return
+          const playerWeek = row?.[String(id)]
+          if (!playerWeek || typeof playerWeek !== 'object') return
+          Object.entries(playerWeek).forEach(([key, value]) => {
+            const numeric = Number(value)
+            if (Number.isFinite(numeric)) mergedPlayerStats[key] = (mergedPlayerStats[key] || 0) + numeric
+            else if (mergedPlayerStats[key] == null) mergedPlayerStats[key] = value
+          })
+        })
+        if (cancelled) return
+        const info = players?.[String(id)] || getPlayerData(profile.rawName, positionForLookup, playerLookup) || null
+
+        // The bulk weekly stats endpoint does not reliably carry historical
+        // team/opponent metadata. The per-player weekly endpoint does.
+        // Therefore resolve the NFL matchup from the selected historical
+        // week first, and only fall back to the schedule/current player record
+        // when that historical row is unavailable.
+        const historicalRows = Array.isArray(playerWeeklyStats)
+          ? playerWeeklyStats
+          : (playerWeeklyStats && typeof playerWeeklyStats === 'object'
+              ? Object.values(playerWeeklyStats)
+              : [])
+
+        const historicalWeekRows = historicalRows.filter(row => {
+          const rowWeek = Number.parseInt(String(row?.week ?? row?.Week ?? '').trim(), 10)
+          return Number.isFinite(rowWeek) && numericWeeks.includes(rowWeek)
+        })
+
+        const historicalRow = historicalWeekRows[0] || null
+        const historicalNflTeam = String(
+          historicalRow?.team ||
+          historicalRow?.Team ||
+          mergedPlayerStats?.team ||
+          ''
+        ).trim()
+
+        const historicalNflOpponent = String(
+          historicalRow?.opponent ||
+          historicalRow?.Opponent ||
+          ''
+        ).trim()
+
+        const fallbackTeam = historicalNflTeam || String(info?.team || '').trim() || null
+        const fallbackOpponent = historicalNflOpponent
+          ? { abbr: historicalNflOpponent.toLowerCase(), home: null }
+          : getSleeperNflOpponent(schedule, fallbackTeam, profile.week)
+
+        const historicalInfo = info
+          ? { ...info, team: historicalNflTeam || info.team || null }
+          : (historicalNflTeam ? { team: historicalNflTeam } : null)
+
+        setSleeperInfo(
+          historicalInfo
+            ? {
+                ...historicalInfo,
+                matchupOpponent: fallbackOpponent?.abbr || null,
+                matchupHomeAway: fallbackOpponent?.home || null
+              }
+            : (fallbackOpponent
+                ? {
+                    matchupOpponent: fallbackOpponent.abbr,
+                    matchupHomeAway: fallbackOpponent.home || null
+                  }
+                : null)
+        )
+        setWeeklyStats(Object.keys(mergedPlayerStats).length ? mergedPlayerStats : null)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setSleeperInfo(getPlayerData(profile.rawName, positionForLookup, playerLookup) || null)
+        setWeeklyStats(null)
+      })
+      .finally(() => { if (!cancelled) setLoadingStats(false) })
+    return () => { cancelled = true }
+  }, [profile.rawName, profile.position, profile.season, profile.week, profile.gameStage, playerLookup])
+
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [onClose])
+
+  const selectedGames = useMemo(() => (games || []).flatMap(g => {
+    const appearance = extractPlayerAppearances(g).find(a => String(a.name).trim() === profile.rawName)
+    if (!appearance) return []
+    const team = String(g?.Team || '').trim()
+    if (!selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(team))) return []
+    const season = String(g?.Season || '').trim()
+    const week = String(g?.Week || '').trim()
+    const opponent = String(g?.Opponent || '').trim()
+    const profileWeeks = String(profile.week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
+    const gameWeeks = String(week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
+    const sameWeek = profileWeeks.length > 0 && gameWeeks.length > 0 && profileWeeks.some(w => gameWeeks.includes(w))
+    const isCurrentGame = season === String(profile.season || '').trim() && sameWeek && normalizeTeamName(team) === normalizeTeamName(profile.team) && normalizeTeamName(opponent) === normalizeTeamName(profile.opponent)
+    const isDoubleWeek = week.includes('-') || week.includes('&')
+    const adjustedPts = isDoubleWeek ? appearance.pts / 2 : appearance.pts
+    return [{ g, appearance, team, season, week, opponent, isCurrentGame, result: String(g?.Result || '').trim().toUpperCase(), isDoubleWeek, adjustedPts }]
+  }), [games, profile.rawName, profile.week, profile.season, profile.team, profile.opponent, selectedTeams])
+
+  const currentGameRow = useMemo(() => selectedGames.find(x => x.isCurrentGame) || null, [selectedGames])
+
+  const stats = useMemo(() => {
+    const validForAverage = selectedGames.filter(x => !(x.appearance.status === 'Bench' && x.adjustedPts === 0))
+    const total = validForAverage.reduce((a, x) => a + x.adjustedPts, 0)
+    const starts = selectedGames.filter(x => x.appearance.status === 'Starter').length
+    const best = selectedGames.filter(x => !x.isDoubleWeek).reduce((m, x) => Math.max(m, x.adjustedPts), 0)
+    return { apps: selectedGames.length, starts, bench: selectedGames.length - starts, avg: validForAverage.length ? total / validForAverage.length : 0, best, seasons: new Set(selectedGames.map(x => x.season)) }
+  }, [selectedGames])
+
+  const versus = useMemo(() => {
+    const rows = (games || []).flatMap(g => {
+      if (normalizeTeamName(g?.Team) !== normalizeTeamName(profile.team)) return []
+      if (normalizeTeamName(g?.Opponent) !== normalizeTeamName(profile.opponent)) return []
+      const a = extractPlayerAppearances(g).find(x => String(x.name).trim() === profile.rawName)
+      if (!a) return []
+      const doubleWeekValue = String(g?.Week || '')
+      const isDoubleWeek = doubleWeekValue.includes('-') || doubleWeekValue.includes('&')
+      return [{ pts: isDoubleWeek ? a.pts / 2 : a.pts, status: a.status, isDoubleWeek }]
+    })
+    const validForAverage = rows.filter(x => !(x.status === 'Bench' && x.pts === 0))
+    const total = validForAverage.reduce((a, x) => a + x.pts, 0)
+    return { games: rows.length, avg: validForAverage.length ? total / validForAverage.length : 0, best: rows.filter(x => !x.isDoubleWeek).reduce((m,x) => Math.max(m,x.pts),0), starts: rows.filter(x => x.status === 'Starter').length }
+  }, [games, profile.rawName, profile.team, profile.opponent])
+
+  const position = String(profile.position || '').toUpperCase()
+  const statLine = formatPlayerStatLine(weeklyStats, position)
+  const statItemCount = statLine.length + (currentGameRow ? 1 : 0)
+  const statsNeedMobileWrap = statItemCount > 4
+  const history = useMemo(() => getTeamSeasonHistory(profile.rawName, games), [profile.rawName, games])
+
+  const logSeasonOptions = useMemo(() => ['All', ...Array.from(new Set(selectedGames.map(x => x.season))).sort((a,b) => Number(b)-Number(a))], [selectedGames])
+  const logOpponentOptions = useMemo(() => ['All', ...Array.from(new Set(selectedGames.map(x => x.opponent).filter(Boolean))).sort()], [selectedGames])
+  const logStatusOptions = useMemo(() => ['All', ...Array.from(new Set(selectedGames.map(x => x.appearance.status).filter(Boolean))).sort()], [selectedGames])
+  const logResultOptions = ['All', 'W', 'L']
+  const logStageOptions = useMemo(() => ['All', ...Array.from(new Set(selectedGames.map(x => String(x.g?.GameStage || '').trim()).filter(Boolean))).sort()], [selectedGames])
+
+  const filteredGames = useMemo(() => selectedGames
+    .filter(x => logSeasonFilter === 'All' || x.season === logSeasonFilter)
+    .filter(x => logOpponentFilter === 'All' || x.opponent === logOpponentFilter)
+    .filter(x => logStatusFilter === 'All' || x.appearance.status === logStatusFilter)
+    .filter(x => logResultFilter === 'All' || x.result === logResultFilter)
+    .filter(x => logStageFilter === 'All' || String(x.g?.GameStage || '').trim() === logStageFilter), [selectedGames, logSeasonFilter, logOpponentFilter, logStatusFilter, logResultFilter, logStageFilter])
+
+  const sortedGames = useMemo(() => [...filteredGames].sort((a, b) => {
+    const seasonA = Number(a.season) || 0
+    const seasonB = Number(b.season) || 0
+    const weekA = parseFloat(String(a.week || '').replace(/[^0-9.]/g, '')) || 0
+    const weekB = parseFloat(String(b.week || '').replace(/[^0-9.]/g, '')) || 0
+    const seasonDirection = logSort.seasonDir === 'asc' ? 1 : -1
+    const weekDirection = logSort.weekDir === 'asc' ? 1 : -1
+    const direction = logSort.dir === 'asc' ? 1 : -1
+
+    // Match the Teams Player Profile ordering: seasons stay grouped,
+    // with week as the chronological secondary key inside each season.
+    if (seasonA !== seasonB) return (seasonA - seasonB) * seasonDirection
+
+    if (logSort.key === 'week') {
+      if (weekA !== weekB) return (weekA - weekB) * weekDirection
+    } else if (logSort.key === 'pts') {
+      const av = a.appearance?.pts || 0
+      const bv = b.appearance?.pts || 0
+      if (av !== bv) return (av - bv) * direction
+      if (weekA !== weekB) return (weekA - weekB) * weekDirection
+    } else if (logSort.key === 'opponent') {
+      const cmp = getTeamShortName(a.opponent).localeCompare(getTeamShortName(b.opponent))
+      if (cmp !== 0) return cmp * direction
+      if (weekA !== weekB) return (weekA - weekB) * weekDirection
+    } else {
+      if (weekA !== weekB) return (weekA - weekB) * weekDirection
+    }
+
+    return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
+  }), [filteredGames, logSort])
+
+  const toggleTeam = team => setSelectedTeams(cur => {
+    const exists = cur.some(t => normalizeTeamName(t) === normalizeTeamName(team))
+    if (exists) return cur.length === 1 ? cur : cur.filter(t => normalizeTeamName(t) !== normalizeTeamName(team))
+    return [...cur, team]
+  })
+
+  const toggleSort = key => setLogSort(current => {
+    if (key === 'season') {
+      const nextDir = current.key === 'season' && current.seasonDir === 'desc' ? 'asc' : 'desc'
+      return { ...current, key, dir: nextDir, seasonDir: nextDir }
+    }
+    if (key === 'week') {
+      const nextDir = current.key === 'week' && current.weekDir === 'desc' ? 'asc' : 'desc'
+      return { ...current, key, dir: nextDir, weekDir: nextDir }
+    }
+    const nextDir = current.key === key && current.dir === 'desc' ? 'asc' : 'desc'
+    return { ...current, key, dir: nextDir }
+  })
+
+  const MinimalMenu = ({ label, value, options, onChange }) => (
+    <details className="relative min-w-0">
+      <summary className="flex min-h-7 cursor-pointer list-none items-center gap-1 border border-[#D6D6D6] bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.08em] text-[#16274F] [&::-webkit-details-marker]:hidden">
+        <span className="truncate">{label}: {value === 'All' ? 'All' : value}</span><ChevronDown className="h-3 w-3 flex-shrink-0 text-[#6B7280]" />
+      </summary>
+      <div className="absolute left-0 top-full z-30 mt-1 max-h-56 min-w-[150px] overflow-auto border-2 border-[#0A0A0A] bg-white p-1.5 shadow-[3px_3px_0_#16274F]">
+        {options.map(opt => (
+          <label key={opt} className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-[8px] font-black uppercase text-[#16274F] hover:bg-[#F3F6FC]">
+            <input type="checkbox" checked={value === opt} onChange={() => onChange(opt)} className="h-3.5 w-3.5 accent-[#16274F]" />
+            <span>{opt === 'All' ? 'All' : opt === label ? opt : getTeamShortName(opt)}</span>
+          </label>
+        ))}
+      </div>
+    </details>
+  )
+
+  const sortLabel = { season: 'Season', week: 'Week', opponent: 'Opponent', pts: 'Pts' }[logSort.key]
+  const sortDirLabel = logSort.dir === 'desc' ? '↓' : '↑'
+
+  const openGameFromLog = (row) => {
+    if (!row?.g) return
+    const rowSeason = String(row.g?.Season || row.season || '').trim()
+    const rowWeek = String(row.g?.Week || row.week || '').trim()
+    const rowTeam = String(row.g?.Team || row.team || '').trim()
+    const rowOpponent = String(row.g?.Opponent || row.opponent || '').trim()
+    if (!rowSeason || !rowWeek || !rowTeam || !rowOpponent) return
+
+    // GAME_FACTS_ALL stores each matchup mirrored. Always navigate using the
+    // first occurrence of that matchup, because that is the canonical pair
+    // consumed by the Matchups page URL selection logic.
+    const canonical = (games || []).find(g =>
+      String(g?.Season || '').trim() === rowSeason &&
+      String(g?.Week || '').trim() === rowWeek &&
+      ((String(g?.Team || '').trim() === rowTeam && String(g?.Opponent || '').trim() === rowOpponent) ||
+       (String(g?.Team || '').trim() === rowOpponent && String(g?.Opponent || '').trim() === rowTeam))
+    )
+    if (!canonical) return
+
+    const params = new URLSearchParams({
+      season: String(canonical.Season || '').trim(),
+      week: String(canonical.Week || '').trim(),
+      team: String(canonical.Team || '').trim(),
+      opp: String(canonical.Opponent || '').trim(),
+    })
+    window.location.href = `/matchups?${params.toString()}`
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/60 p-2 pt-3 sm:items-center sm:p-5" onClick={onClose}>
+      <div className="flex h-[calc(100dvh-24px)] max-h-[960px] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F] sm:h-auto sm:max-h-[94vh]" onClick={e => e.stopPropagation()}>
+        <div className="relative flex-shrink-0 overflow-hidden border-b-2 border-[#0A0A0A] bg-[#16274F] text-white">
+          <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(135deg, transparent 0 58%, rgba(255,255,255,.13) 58% 59%, transparent 59% 68%, rgba(255,255,255,.08) 68% 69%, transparent 69%)' }} />
+          <div className="relative border-b border-white/15 px-4 py-2.5 sm:px-6 sm:py-3 flex items-center justify-between">
+            <div className="text-[11px] font-black uppercase tracking-[0.25em]">Player Profile</div>
+            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center border-2 border-white/70 bg-white/10 text-lg font-black hover:bg-white/20">×</button>
+          </div>
+          <div className="relative px-3 py-3 sm:px-6 sm:py-4">
+            <div className="flex items-center gap-3 sm:gap-5">
+              <PlayerRowAvatar name={profile.rawName} pos={position} playerLookup={playerLookup} size={76} />
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-2"><h2 className="truncate text-[22px] font-black leading-none tracking-tight sm:text-3xl">{profile.displayName}</h2><span className={`inline-flex flex-shrink-0 px-2 py-1 text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(position)}`}>{position}</span></div>
+                <div className="mt-2 flex items-center gap-2 text-[10px] font-black sm:text-xs">
+                  {sleeperInfo?.team && <span className="flex items-center gap-1.5">{getNFLTeamLogo(sleeperInfo.team) && <img src={getNFLTeamLogo(sleeperInfo.team)} alt="" className="h-5 w-5 object-contain" />}{String(sleeperInfo.team).toUpperCase()}</span>}
+                  <span className="text-white/35">·</span><span className={String(sleeperInfo?.status || '').toLowerCase() === 'active' ? 'text-[#69C174]' : 'text-[#FFB84D]'}>{sleeperInfo?.status ? (String(sleeperInfo.status).toLowerCase() === 'active' ? 'Active' : 'Inactive') : (loadingStats ? 'Loading…' : 'Status —')}</span>
+                </div>
+                <div className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-[9px] font-bold text-white/75 sm:text-[11px]"><span><b className="text-white">Jersey</b> {sleeperInfo?.number != null ? `#${sleeperInfo.number}` : '—'}</span><span className="text-white/30">·</span><span><b className="text-white">Age</b> {sleeperInfo?.age != null ? `${sleeperInfo.age} yrs` : '—'}</span><span className="text-white/30">·</span><span><b className="text-white">Experience</b> {sleeperInfo?.years_exp != null ? `${sleeperInfo.years_exp} yrs` : '—'}</span></div>
+              </div>
+              <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" alt="NFL" className="h-10 w-10 flex-shrink-0 object-contain sm:h-14 sm:w-14" />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2 sm:px-6">
+          <div className="flex items-center justify-between gap-2"><div className="whitespace-nowrap"><span className="text-[11px] font-black uppercase tracking-[0.1em] text-[#16274F]">Tapitas League Teams</span><span className="ml-1 text-[8px] font-bold text-[#6B7280]">— Select franchises to include</span></div><span className="text-[8px] font-black uppercase text-[#D01F2D]">{selectedTeams.length} selected</span></div>
+          <div className="mt-1 flex max-w-full flex-nowrap gap-1 overflow-x-auto overflow-y-hidden pb-0.5">
+            {history.map(h => {
+              const checked = selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(h.team))
+              const isProfileTeam = normalizeTeamName(h.team) === normalizeTeamName(profile.team)
+              return <label
+                key={h.team}
+                ref={isProfileTeam ? selectedTeamRef : null}
+                className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 ${checked ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white'}`}
+              >
+                <input type="checkbox" checked={checked} onChange={() => toggleTeam(h.team)} className="h-3.5 w-3.5 accent-[#16274F]"/>
+                <span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center overflow-hidden">
+                  <TeamAvatar name={h.team} className="h-[22px] w-[22px]" textClassName="text-[7px]"/>
+                </span>
+                <span className="text-[9px] font-black text-[#16274F]">{getTeamShortName(h.team)}</span>
+                <span className="text-[8px] font-bold text-[#6B7280]">{h.seasons.map(y=>`'${String(y).slice(-2)}`).join(', ')}</span>
+              </label>
+            })}
+          </div>
+        </div>
+
+        <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-1">
+          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',Array.from(stats.seasons).sort((a,b)=>Number(a)-Number(b)).map(y=>`'${String(y).slice(-2)}`).join(', ')||'—']].map(([l,v],i)=><div key={l} className={`border-2 px-2 py-2 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]','border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]','border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]','border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]','border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]','border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F]">{v}</div></div>)}</div>
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-2.5 sm:px-3 sm:pt-3 sm:pb-3">
+            <div className="grid grid-cols-2 items-stretch gap-3">
+              <div className="min-w-0 h-full">
+                <div className={`flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:px-4 sm:py-3`}>
+                  <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap">
+                    <div className="min-w-0 truncate text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#16274F]">
+                      {profile.season} Week {profile.week}<span className="hidden sm:inline"> Stats</span>
+                    </div>
+                    {sleeperInfo?.matchupOpponent ? (
+                      <div className="flex min-w-0 shrink-0 items-center gap-1.5 text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.08em] text-[#16274F]/80">
+                        <span className="truncate">vs {getCompactTeamName(sleeperInfo.matchupOpponent)}</span>
+                        <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '24px', height: '24px', flexShrink: 0, objectFit: 'contain', display: 'block' }} />
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="mt-auto flex min-w-0 w-full flex-wrap items-baseline justify-between gap-x-4 gap-y-2 pt-3">
+                    {statLine.length ? statLine.map((x,i) => {
+                      const parts = String(x).match(/^(.+?)\s+(YDS|REC YDS|RUSH YDS|TD|TAR|REC|CAR|INT|FG|XP|TKL|SACK)$/)
+                      return (
+                        <div key={i} className="flex min-w-0 flex-[0_1_auto] items-baseline gap-1 whitespace-nowrap">
+                          <strong className="text-xl font-black leading-none tracking-tight text-[#16274F]">{parts ? parts[1] : x}</strong>
+                          {parts && <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.04em] text-[#6B7280]">{parts[2]}</span>}
+                        </div>
+                      )
+                    }) : null}
+                    {currentGameRow && (
+                      <div className="flex min-w-0 flex-[0_1_auto] items-baseline gap-1 whitespace-nowrap">
+                        <strong className="text-xl font-black leading-none tracking-tight text-[#16274F]">{currentGameRow.adjustedPts.toFixed(2)}</strong>
+                        <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.04em] text-[#6B7280]">PTS</span>
+                      </div>
+                    )}
+                    {!statLine.length && !currentGameRow && (
+                      <span className="text-[10px] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="min-w-0 h-full">
+                <div className={`flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#5B2CA0]/25 bg-[#F6F1FC] px-3 py-2.5 shadow-[3px_3px_0_#5B2CA0] sm:px-4 sm:py-3`}>
+                  <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#5B2CA0]">
+                    <span className="min-w-0 truncate">Historic</span>
+                    <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+                      <span className="truncate">vs {getCompactTeamName(profile.opponent)}</span>
+                      <div style={{ width: '24px', height: '24px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[6px]" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-auto flex min-w-0 w-full flex-wrap items-baseline justify-between gap-x-4 gap-y-2 pt-3">
+                    <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
+                      <strong className="text-xl font-black leading-none tracking-tight text-[#5B2CA0]">{versus.avg.toFixed(2)}</strong>
+                      <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280]">AVG</span>
+                    </div>
+                    <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
+                      <strong className="text-xl font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
+                      <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280]">BEST</span>
+                    </div>
+                    <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
+                      <strong className="text-xl font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
+                      <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280]">GAMES</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto overscroll-x-contain max-w-full min-w-0 min-h-0 flex-1 overflow-auto">
+            <table className="min-w-[680px] min-w-[700px] w-full table-fixed">
+              <thead className="sticky top-0 z-20 bg-[#F7F6F2]">
+                <tr className="border-b-2 border-[#0A0A0A]/10">
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('season')} className="hover:text-[#D01F2D]">Season <span className="text-[#D01F2D]">{logSort.key === 'season' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[7%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('week')} className="hover:text-[#D01F2D]">Week <span className="text-[#D01F2D]">{logSort.key === 'week' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team</th>
+                  <th className="w-[18%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Opponent" value={logOpponentFilter} options={logOpponentOptions} onChange={setLogOpponentFilter} /></th>
+                  <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Status" value={logStatusFilter} options={logStatusOptions} onChange={setLogStatusFilter} /></th>
+                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('pts')} className="hover:text-[#D01F2D]">Player Pts <span className="text-[#D01F2D]">{logSort.key === 'pts' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team PF</th>
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Result" value={logResultFilter} options={logResultOptions} onChange={setLogResultFilter} /></th>
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Stage" value={logStageFilter} options={logStageOptions} onChange={setLogStageFilter} /></th>
+                </tr>
+              </thead>
+              <tbody>
+                    {sortedGames.map((x,i) => (
+                      <tr key={i} ref={x.isCurrentGame ? selectedGameRef : null} onClick={() => openGameFromLog(x)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') openGameFromLog(x) }} tabIndex={0} role="button" className={`cursor-pointer border-b border-[#0A0A0A]/8 transition-colors hover:bg-[#F3F6FC] ${x.isCurrentGame ? 'bg-[#FFF3F4]' : 'bg-white'}`}>
+                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{x.season}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-bold text-[#3F4757]">{x.week}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.team)}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.opponent)}</td>
+                        <td className="px-2 py-2.5"><span className={`inline-block border px-2 py-1 text-[8px] font-black uppercase tracking-wide ${x.appearance.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]'}`}>{x.appearance.status}</span></td>
+                        <td className="px-3 py-2.5 text-right text-[11px] font-black text-[#16274F]">{x.adjustedPts.toFixed(2)}</td>
+                        <td className="px-3 py-2.5 text-right text-[10px] font-bold text-[#3F4757]">{parseNumber(x.g?.PF).toFixed(2)}</td>
+                        <td className={`px-2 py-2.5 text-[10px] font-black ${x.result === 'W' ? 'text-[#1E8E3E]' : x.result === 'L' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>{x.result || '—'}</td>
+                        <td className="px-2 py-2.5 text-[9px] font-bold text-[#6B7280]">{x.g?.GameStage || '—'}</td>
+                      </tr>
+                    ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MatchupsPageContent() {
   const [games, setGames] = useState([])
   const [playerLookup, setPlayerLookup] = useState(new Map())
@@ -454,6 +1176,7 @@ function MatchupsPageContent() {
   const [season, setSeason] = useState('')
   const [week, setWeek] = useState('')
   const [selected, setSelected] = useState(null)
+  const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
 
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
@@ -773,6 +1496,24 @@ function MatchupsPageContent() {
   const bench = selected ? extractPlayers(selected, 'B') : []
   const oppStarters = selected ? extractPlayers(selected, 'OS') : []
   const oppBench = selected ? extractPlayers(selected, 'OB') : []
+
+  const openPlayerProfile = (player, pos, teamSide) => {
+    if (!player?.name || !selected) return
+    const team = teamSide === 'away' ? String(selected?.Opponent || '').trim() : String(selected?.Team || '').trim()
+    const opponent = teamSide === 'away' ? String(selected?.Team || '').trim() : String(selected?.Opponent || '').trim()
+    setSelectedPlayerProfile({
+      rawName: String(player.name).trim(),
+      displayName: getDisplayPlayerName(player.name, pos, playerLookup),
+      position: getDisplayPlayerPos(player.name, pos, playerLookup),
+      pts: player.pts,
+      status: teamSide === 'away' ? 'Starter' : 'Starter',
+      team,
+      opponent,
+      season: String(selected?.Season || '').trim(),
+      week: String(selected?.Week || '').trim(),
+      gameStage: String(selected?.GameStage || '').trim(),
+    })
+  }
 
   const recap = selected
     ? String(selected?.['Recap da Partida'] || '').trim()
@@ -1423,7 +2164,7 @@ function MatchupsPageContent() {
                           <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-2 items-center">
 
                             {/* Time A — Nome → Pts */}
-                            <div className={`px-2 md:px-3 py-2 min-w-0 ${
+                            <div onClick={() => home && openPlayerProfile(home, pos, 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
@@ -1461,7 +2202,7 @@ function MatchupsPageContent() {
                             <div className="self-stretch w-px bg-[#0A0A0A]/8" />
 
                             {/* Time B — Pts → Nome (espelhado) */}
-                            <div className={`px-2 md:px-3 py-2 min-w-0 ${
+                            <div onClick={() => away && openPlayerProfile(away, pos, 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
@@ -1524,7 +2265,7 @@ function MatchupsPageContent() {
                         <React.Fragment key={i}>
                           <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-2 items-center">
 
-                            <div className={`px-2 md:px-3 py-2 min-w-0 ${
+                            <div onClick={() => home && openPlayerProfile(home, getDisplayPlayerPos(home?.name, 'BN', playerLookup), 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
@@ -1561,7 +2302,7 @@ function MatchupsPageContent() {
                             {/* Divisória central */}
                             <div className="self-stretch w-px bg-[#0A0A0A]/8" />
 
-                            <div className={`px-2 md:px-3 py-2 min-w-0 ${
+                            <div onClick={() => away && openPlayerProfile(away, getDisplayPlayerPos(away?.name, 'BN', playerLookup), 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
@@ -1632,6 +2373,15 @@ function MatchupsPageContent() {
               </motion.div>
             )}
           </>
+        )}
+
+        {selectedPlayerProfile && (
+          <PlayerProfileModal
+            profile={selectedPlayerProfile}
+            games={games}
+            playerLookup={playerLookup}
+            onClose={() => setSelectedPlayerProfile(null)}
+          />
         )}
 
       </section>

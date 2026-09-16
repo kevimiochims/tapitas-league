@@ -297,8 +297,7 @@ export default function StandingsPage() {
     const s = new Set()
     historyData.forEach(r => {
       const v = String(r?.Season || r?.season || '').trim()
-      // Only include seasons that have Standing data (completed)
-      if (v && parseNumber(r?.Standing) > 0) s.add(v)
+      if (v) s.add(v)
     })
     return ['All-Time', ...Array.from(s).sort((a, b) => Number(b) - Number(a))]
   }, [historyData])

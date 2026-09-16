@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useState, useMemo, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Medal, Activity, ChevronRight, ChevronLeft,
 } from 'lucide-react'
@@ -187,8 +188,10 @@ const CHART_STATS = [
 ]
 
 export default function StandingsPage() {
+  const router = useRouter()
   const [allTimeData, setAllTimeData] = useState([])
   const [historyData, setHistoryData] = useState([])
+  const [gamesData, setGamesData] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('Overall')
   const [season, setSeason] = useState('All-Time')
@@ -207,12 +210,14 @@ export default function StandingsPage() {
 
   useEffect(() => {
     async function load() {
-      const [allTime, history] = await Promise.all([
+      const [allTime, history, games] = await Promise.all([
         safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
         safeFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
+        safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
       ])
       setAllTimeData(allTime)
       setHistoryData(history)
+      setGamesData(games)
       if (allTime.length > 0) {
         setChartTeam(String(allTime[0]?.Team || allTime[0]?.team || '').trim())
       }
@@ -241,6 +246,52 @@ export default function StandingsPage() {
       setSortDir('desc')
     }
   }, [season])
+
+  // Semanas em que o time foi #1 no Power Ranking e semanas em que foi o maior pontuador —
+  // apenas temporada regular e apenas semanas únicas (exclui semanas duplas tipo "14-15")
+  const { prFirstAllTime, prFirstBySeason, highScorerAllTime, highScorerBySeason } = useMemo(() => {
+    const isSingleWeek = (w) => /^\d+$/.test(String(w || '').trim())
+    const isRegSeason = (g) => {
+      const stage = normalizeString(g?.GameType || g?.GameStage || '')
+      return !stage || stage === 'reg season' || stage === 'regular season'
+    }
+
+    const regGames = gamesData.filter(g => isRegSeason(g) && isSingleWeek(g?.Week))
+
+    const prFirstAllTime = {}
+    const prFirstBySeason = {}
+    regGames.forEach(g => {
+      const team = String(g?.Team || '').trim()
+      const season = String(g?.Season || '').trim()
+      if (!team || !season) return
+      if (parseNumber(g?.['Power Ranking']) === 1) {
+        prFirstAllTime[team] = (prFirstAllTime[team] || 0) + 1
+        const key = `${team}|${season}`
+        prFirstBySeason[key] = (prFirstBySeason[key] || 0) + 1
+      }
+    })
+
+    // Maior pontuador da semana: agrupa por Season+Week e acha o maior PF
+    const byWeek = {}
+    regGames.forEach(g => {
+      const key = `${g?.Season}|${g?.Week}`
+      const pf = parseNumber(g?.PF)
+      if (!byWeek[key] || pf > byWeek[key].pf) {
+        byWeek[key] = { pf, team: String(g?.Team || '').trim(), season: String(g?.Season || '').trim() }
+      }
+    })
+
+    const highScorerAllTime = {}
+    const highScorerBySeason = {}
+    Object.values(byWeek).forEach(({ team, season }) => {
+      if (!team) return
+      highScorerAllTime[team] = (highScorerAllTime[team] || 0) + 1
+      const key = `${team}|${season}`
+      highScorerBySeason[key] = (highScorerBySeason[key] || 0) + 1
+    })
+
+    return { prFirstAllTime, prFirstBySeason, highScorerAllTime, highScorerBySeason }
+  }, [gamesData])
 
   const seasons = useMemo(() => {
     const s = new Set()
@@ -282,6 +333,8 @@ export default function StandingsPage() {
         titles: parseNumber(r?.Titles || 0),
         finals: parseNumber(r?.Finals || 0),
         poApps: parseNumber(r?.['Playoff Apps'] || 0),
+        prFirst: prFirstAllTime[String(r?.Team || r?.team || '').trim()] || 0,
+        highScorer: highScorerAllTime[String(r?.Team || r?.team || '').trim()] || 0,
         champion: false,
       }))
     } else {
@@ -305,6 +358,8 @@ export default function StandingsPage() {
             titles: String(r?.Champion || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
             finals: String(r?.Reached_Final || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
             poApps: String(r?.Made_Playoffs || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
+            prFirst: prFirstBySeason[`${team}|${season}`] || 0,
+            highScorer: highScorerBySeason[`${team}|${season}`] || 0,
             champion: String(r?.Champion || '').trim().toUpperCase() === 'TRUE',
           }
         })
@@ -321,6 +376,8 @@ export default function StandingsPage() {
           if (sortCol === 'Titles') return row.titles
           if (sortCol === 'Finals') return row.finals
           if (sortCol === 'PO Apps') return row.poApps
+          if (sortCol === 'PR #1') return row.prFirst
+          if (sortCol === 'High Score') return row.highScorer
           return row.w
         }
         const diff = sortDir === 'desc' ? getVal(b) - getVal(a) : getVal(a) - getVal(b)
@@ -329,7 +386,7 @@ export default function StandingsPage() {
         if (a.l !== b.l) return a.l - b.l
         return b.pf - a.pf
       })
-  }, [allTimeData, historyData, tab, season, sortCol, sortDir])
+  }, [allTimeData, historyData, tab, season, sortCol, sortDir, prFirstAllTime, prFirstBySeason, highScorerAllTime, highScorerBySeason])
 
   const chartData = useMemo(() => {
     if (!chartTeam) return []
@@ -395,7 +452,7 @@ export default function StandingsPage() {
   useEffect(() => { setPage(0) }, [tab, season, sortCol, sortDir])
 
   const tabCols = {
-    'Overall': ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles'],
+    'Overall': ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles', 'PR #1', 'High Score'],
     'Reg Season': ['W', 'L', 'W%', 'PF'],
     'Playoffs': ['W', 'L', 'PF'],
   }
@@ -418,6 +475,8 @@ export default function StandingsPage() {
     if (col === 'Titles') return row.titles
     if (col === 'Finals') return row.finals
     if (col === 'PO Apps') return row.poApps
+    if (col === 'PR #1') return row.prFirst
+    if (col === 'High Score') return row.highScorer
     return '—'
   }
 
@@ -530,131 +589,79 @@ export default function StandingsPage() {
           {loading ? (
             <div className="flex items-center justify-center py-20 text-sm font-black uppercase tracking-[0.2em] text-[#6B7280]">Loading...</div>
           ) : (
-            <div className="p-3 sm:p-5">
-              {/* Desktop table heading */}
-              <div
-                className="hidden border-b-2 border-[#0A0A0A]/15 px-4 pb-3 md:grid md:items-end md:gap-3"
-                style={{ gridTemplateColumns: `2.25rem minmax(0,1fr) ${tabCols[tab].map(() => '4.5rem').join(' ')}` }}
-              >
-                <button
-                  onClick={() => season !== 'All-Time' && handleSort('Pos')}
-                  className={`text-left text-[10px] font-black uppercase tracking-[0.18em] ${season !== 'All-Time' ? 'text-[#6B7280] hover:text-[#D01F2D]' : 'cursor-default text-[#6B7280]'}`}
-                >
-                  #
-                </button>
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Franchise</div>
-                {tabCols[tab].map(col => (
-                  <button
-                    key={col}
-                    onClick={() => handleSort(col)}
-                    className="text-right text-[10px] font-black uppercase tracking-[0.14em] transition-colors"
-                    style={{ color: sortCol === col ? '#D01F2D' : '#6B7280' }}
-                  >
-                    {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                  </button>
-                ))}
-              </div>
-
-              {/* Mobile sort controls */}
-              <div className="flex gap-2 overflow-x-auto px-1 pb-3 pt-1 md:hidden">
-                {season !== 'All-Time' && (
-                  <button
-                    onClick={() => handleSort('Pos')}
-                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === 'Pos' ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#0A0A0A]/15 bg-white text-[#6B7280]'}`}
-                  >
-                    #{sortCol === 'Pos' ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                  </button>
-                )}
-                {tabCols[tab].map(col => (
-                  <button
-                    key={col}
-                    onClick={() => handleSort(col)}
-                    className={`shrink-0 border-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] ${sortCol === col ? 'border-[#D01F2D] bg-[#D01F2D] text-white' : 'border-[#0A0A0A]/15 bg-white text-[#6B7280]'}`}
-                  >
-                    {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                {paged.map((row, i) => {
-                  const rank = page * PER_PAGE + i + 1
-                  const pos = season !== 'All-Time' && row.standing ? row.standing : rank
-                  const avatar = getTeamAvatar(row.team)
-                  const rankClass = pos === 1 ? 'bg-[#F5C518] text-[#0A0A0A]' : pos === 2 ? 'bg-[#E8E8E8] text-[#0A0A0A]' : pos === 3 ? 'bg-[#E6D0B4] text-[#0A0A0A]' : 'bg-[#F7F6F2] text-[#6B7280]'
-
-                  return (
-                    <a
-                      key={row.team}
-                      href={`/teams?team=${encodeURIComponent(row.team)}`}
-                      className="block border-2 border-[#0A0A0A]/15 bg-white p-3 transition-transform hover:-translate-y-0.5 hover:border-[#16274F] hover:tp-shadow-red-sm sm:p-4"
-                    >
-                      <div
-                        className="hidden md:grid md:items-center md:gap-3"
-                        style={{ gridTemplateColumns: `2.25rem minmax(0,1fr) ${tabCols[tab].map(() => '4.5rem').join(' ')}` }}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-[#0A0A0A]/15 bg-[#F7F6F2]">
+                    <th className="sticky left-0 z-10 bg-[#F7F6F2] px-3 py-3 text-left">
+                      <button
+                        onClick={() => season !== 'All-Time' && handleSort('Pos')}
+                        className={`text-[10px] font-black uppercase tracking-[0.18em] ${season !== 'All-Time' ? 'text-[#6B7280] hover:text-[#D01F2D]' : 'cursor-default text-[#6B7280]'}`}
                       >
-                        <span className={`flex h-8 w-8 items-center justify-center text-sm font-black ${rankClass}`} style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
-                          {pos}
-                        </span>
+                        #
+                      </button>
+                    </th>
+                    <th className="sticky left-9 z-10 bg-[#F7F6F2] px-3 py-3 text-left">
+                      <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Franchise</span>
+                    </th>
+                    {tabCols[tab].map(col => (
+                      <th key={col} className="px-3 py-3 text-right">
+                        <button
+                          onClick={() => handleSort(col)}
+                          className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.14em] transition-colors"
+                          style={{ color: sortCol === col ? '#D01F2D' : '#6B7280' }}
+                        >
+                          {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                        </button>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((row, i) => {
+                    const rank = page * PER_PAGE + i + 1
+                    const pos = season !== 'All-Time' && row.standing ? row.standing : rank
+                    const avatar = getTeamAvatar(row.team)
+                    const rankClass = pos === 1 ? 'bg-[#F5C518] text-[#0A0A0A]' : pos === 2 ? 'bg-[#E8E8E8] text-[#0A0A0A]' : pos === 3 ? 'bg-[#E6D0B4] text-[#0A0A0A]' : 'bg-white text-[#6B7280]'
 
-                        <div className="flex min-w-0 items-center gap-3">
-                          {avatar ? (
-                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full object-contain" />
-                          ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
-                              {row.team.slice(0, 2).toUpperCase()}
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-black uppercase tracking-tight text-[#16274F]">{row.team}</div>
-                            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6B7280]">{season === 'All-Time' ? 'All-Time' : `Season ${season}`}</div>
+                    return (
+                      <tr
+                        key={row.team}
+                        onClick={() => router.push(`/teams?team=${encodeURIComponent(row.team)}`)}
+                        className="cursor-pointer border-b border-[#0A0A0A]/8 bg-white transition-colors hover:bg-[#F7F6F2]"
+                      >
+                        <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5">
+                          <span className={`flex h-8 w-8 items-center justify-center text-sm font-black ${rankClass}`} style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                            {pos}
+                          </span>
+                        </td>
+                        <td className="sticky left-9 z-10 bg-inherit px-3 py-2.5">
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            {avatar ? (
+                              <img src={avatar} alt={row.team} className="h-8 w-8 shrink-0 rounded-full object-contain" />
+                            ) : (
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
+                                {row.team.slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="max-w-[92px] truncate text-[13px] font-black uppercase tracking-tight text-[#16274F] sm:max-w-[170px] sm:text-sm">
+                              {row.team}
+                            </span>
+                            {row.champion && <span className="shrink-0 text-sm">🏆</span>}
                           </div>
-                          {row.champion && <span className="ml-auto text-base">🏆</span>}
-                        </div>
-
+                        </td>
                         {tabCols[tab].map(col => (
-                          <div key={col} className="text-right">
+                          <td key={col} className="whitespace-nowrap px-3 py-2.5 text-right">
                             <span className={`text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#3F4757]'}`}>
                               {getCol(row, col)}
                             </span>
-                          </div>
+                          </td>
                         ))}
-                      </div>
-
-                      <div className="md:hidden">
-                        <div className="flex items-center gap-3">
-                          <span className={`flex h-8 w-8 shrink-0 items-center justify-center text-sm font-black ${rankClass}`} style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
-                            {pos}
-                          </span>
-                          {avatar ? (
-                            <img src={avatar} alt={row.team} className="h-10 w-10 shrink-0 rounded-full object-contain" />
-                          ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[10px] font-black text-[#16274F]">
-                              {row.team.slice(0, 2).toUpperCase()}
-                            </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <div className="break-words text-sm font-black uppercase leading-snug text-[#16274F]">{row.team}</div>
-                            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6B7280]">
-                              {season === 'All-Time' ? 'All-Time ranking' : `Season ${season}`}
-                            </div>
-                          </div>
-                          {row.champion && <span className="text-base">🏆</span>}
-                        </div>
-
-                        <div className="mt-3 grid grid-cols-2 gap-2 pl-0 sm:grid-cols-4">
-                          {tabCols[tab].map(col => (
-                            <div key={col} className={`border-2 px-3 py-2 ${sortCol === col ? 'border-[#D01F2D] bg-[#FFF1F1]' : 'border-[#0A0A0A]/10 bg-[#F7F6F2]'}`}>
-                              <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6B7280]">{col}</div>
-                              <div className={`mt-0.5 text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#3F4757]'}`}>{getCol(row, col)}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </a>
-                  )
-                })}
-              </div>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
 
