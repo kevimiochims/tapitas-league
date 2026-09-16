@@ -92,6 +92,18 @@ export default function NewsArticle() {
 
     const images = post?.imageUrl?.split('|') || []
 
+    const formatNewsDate = (value) => {
+        if (!value) return ''
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) return value
+        return new Intl.DateTimeFormat('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            timeZone: 'UTC',
+        }).format(date)
+    }
+
     return (
         <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
             <style>{`
@@ -163,7 +175,7 @@ export default function NewsArticle() {
                         text-[#6B7280]
                         ">
                         {post.author}
-                        {post.date && ` • ${post.date}`}
+                        {post.date && ` • ${formatNewsDate(post.date)}`}
                     </div>
 
                 </div>
