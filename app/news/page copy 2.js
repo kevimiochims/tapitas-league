@@ -3,83 +3,6 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { Newspaper, Laugh, FileText, ChevronRight, X } from 'lucide-react'
-
-function renderInlineMarkdown(text) {
-  const parts = String(text || '').split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
-  return parts.map((part, i) => {
-    if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={i}>{part.slice(2, -2)}</strong>
-    if (/^\*[^*]+\*$/.test(part)) return <em key={i}>{part.slice(1, -1)}</em>
-    if (/^`[^`]+`$/.test(part)) return <code key={i} className="rounded bg-[#F0F1F4] px-1 py-0.5 font-mono text-[0.9em]">{part.slice(1, -1)}</code>
-    return <span key={i}>{part}</span>
-  })
-}
-
-function MarkdownPreview({ content }) {
-  const lines = String(content || '')
-    .replace(/<[^>]*>/g, '')
-    .split(/\r?\n/)
-
-  const blocks = []
-  let listItems = []
-
-  const flushList = () => {
-    if (!listItems.length) return
-    blocks.push(
-      <ul key={`list-${blocks.length}`} className="my-1 list-disc pl-5">
-        {listItems.map((item, i) => <li key={i}>{renderInlineMarkdown(item)}</li>)}
-      </ul>
-    )
-    listItems = []
-  }
-
-  lines.forEach((line, i) => {
-    const trimmed = line.trim()
-
-    if (!trimmed) {
-      flushList()
-      return
-    }
-
-    const listMatch = trimmed.match(/^[-*+]\s+(.+)$/)
-    if (listMatch) {
-      listItems.push(listMatch[1])
-      return
-    }
-
-    flushList()
-
-    if (/^---+$/.test(trimmed)) {
-      blocks.push(<hr key={`hr-${i}`} className="my-2 border-[#D1D5DB]" />)
-      return
-    }
-
-    if (/^###\s+/.test(trimmed)) {
-      blocks.push(<h4 key={i} className="mt-2 font-black text-[#16274F]">{renderInlineMarkdown(trimmed.replace(/^###\s+/, ''))}</h4>)
-      return
-    }
-
-    if (/^##\s+/.test(trimmed)) {
-      blocks.push(<h4 key={i} className="mt-2 font-black text-[#16274F]">{renderInlineMarkdown(trimmed.replace(/^##\s+/, ''))}</h4>)
-      return
-    }
-
-    if (/^#\s+/.test(trimmed)) {
-      blocks.push(<h4 key={i} className="mt-2 font-black text-[#16274F]">{renderInlineMarkdown(trimmed.replace(/^#\s+/, ''))}</h4>)
-      return
-    }
-
-    if (/^>\s?/.test(trimmed)) {
-      blocks.push(<blockquote key={i} className="my-1 border-l-2 border-[#16274F] pl-3 font-semibold italic text-[#4B5563]">{renderInlineMarkdown(trimmed.replace(/^>\s?/, ''))}</blockquote>)
-      return
-    }
-
-    blocks.push(<p key={i} className="my-1">{renderInlineMarkdown(trimmed)}</p>)
-  })
-
-  flushList()
-
-  return <div className="max-h-[6rem] overflow-hidden text-[#3F4757] text-sm leading-relaxed">{blocks}</div>
-}
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
 
@@ -323,7 +246,7 @@ export default function NewsPage() {
                       {featured.title}
                     </h2>
                     <p className="text-[#3F4757] text-sm leading-relaxed line-clamp-3 mb-4">
-                      <MarkdownPreview content={featured.content} />
+                      {featured.content?.replace(/<[^>]*>/g, '')}
                     </p>
                     <div className="flex items-center gap-3 text-xs text-[#6B7280] font-bold">
                       <span>{formatDate(featured.date)}</span>
@@ -359,7 +282,7 @@ export default function NewsPage() {
                           {post.title}
                         </h3>
                         <p className="text-[#6B7280] text-xs leading-relaxed line-clamp-2 mb-3">
-                          <MarkdownPreview content={post.content} />
+                          {post.content?.replace(/<[^>]*>/g, '')}
                         </p>
                         <div className="text-[10px] text-[#6B7280] font-bold">{formatDate(post.date)}</div>
                       </div>
