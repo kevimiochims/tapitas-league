@@ -1328,6 +1328,7 @@ function MatchupsPageContent() {
   const [week, setWeek] = useState('')
   const [selected, setSelected] = useState(null)
   const [showWeekRecap, setShowWeekRecap] = useState(false)
+  const [showPowerRankingPreview, setShowPowerRankingPreview] = useState(false)
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
 
   const seasonsRef = useRef(null)
@@ -1517,6 +1518,40 @@ function MatchupsPageContent() {
 
   // Week Recap — nos moldes do relatório semanal do Sleeper. Só considera
   // temporada regular pros awards, já que playoffs distorceriam comparações.
+  // Power Ranking resumido da semana selecionada. Usa diretamente os campos
+  // já calculados no GAME_FACTS_ALL, mantendo o mesmo resultado da página completa.
+  const powerRankingPreview = useMemo(() => {
+    if (!season || !week) return []
+
+    const filtered = games.filter(g =>
+      String(g?.Season || '').trim() === season &&
+      String(g?.Week || '').trim() === String(week) &&
+      parseNumber(g?.['Power Ranking']) > 0
+    )
+
+    const rows = filtered.map(g => ({
+      team: String(g?.Team || '').trim(),
+      rank: parseNumber(g?.['Power Ranking']),
+      wins: parseNumber(g?.Wins),
+      losses: parseNumber(g?.Losses),
+      avgPF: parseNumber(g?.AVG_PF),
+      ovw: parseNumber(g?.OVW),
+      streak: String(g?.Streak_Total || g?.Streak || '').trim(),
+      result: String(g?.Result || '').trim().toUpperCase(),
+    }))
+
+    const metricRank = (value, key) =>
+      1 + rows.reduce((count, row) => count + (row[key] > value ? 1 : 0), 0)
+
+    return rows
+      .map(row => ({
+        ...row,
+        avgRank: metricRank(row.avgPF, 'avgPF'),
+        ovwRank: metricRank(row.ovw, 'ovw'),
+      }))
+      .sort((a, b) => a.rank - b.rank || a.team.localeCompare(b.team))
+  }, [games, season, week])
+
   const weekRecap = useMemo(() => {
     if (!season || !week || matchups.length === 0 || !playerLookup) return null
 
@@ -2143,6 +2178,7 @@ function MatchupsPageContent() {
                     <button
                       onClick={() => {
                         setShowWeekRecap(v => !v)
+                        setShowPowerRankingPreview(false)
                         setSelected(null)
                       }}
                       className={`inline-flex items-center gap-1.5 border-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-all sm:px-3.5 sm:py-2 sm:text-[10px] ${showWeekRecap
@@ -2152,13 +2188,21 @@ function MatchupsPageContent() {
                     >
                       Week Recap
                     </button>
-                    <a
-                      href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
-                      className="inline-flex items-center gap-1 border-2 border-[#0A0A0A] bg-white px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#3F4757] transition-all hover:bg-[#F7F6F2] sm:px-3.5 sm:py-2 sm:text-[10px]"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPowerRankingPreview(v => !v)
+                        setShowWeekRecap(false)
+                        setSelected(null)
+                      }}
+                      className={`inline-flex items-center gap-1 border-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-all sm:px-3.5 sm:py-2 sm:text-[10px] ${showPowerRankingPreview
+                        ? 'border-[#0A0A0A] bg-[#16274F] text-white'
+                        : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                        }`}
                     >
                       PR
-                      <ChevronRight className="h-3 w-3" />
-                    </a>
+                      <ChevronRight className={`h-3 w-3 transition-transform ${showPowerRankingPreview ? 'rotate-90' : ''}`} />
+                    </button>
                   </div>
                 </div>
 
@@ -2184,6 +2228,7 @@ function MatchupsPageContent() {
                         onClick={() => {
                           setSelected(isSelected ? null : g)
                           setShowWeekRecap(false)
+                          setShowPowerRankingPreview(false)
                         }}
                         className={`flex-shrink-0 w-56 border-2 p-4 text-left transition-all ${isSelected
                           ? 'border-[#D01F2D] bg-[#FDEDEE] tp-shadow-red-sm'
@@ -2244,6 +2289,95 @@ function MatchupsPageContent() {
                       </button>
                     )
                   })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Power Ranking Preview */}
+            {showPowerRankingPreview && powerRankingPreview.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy"
+              >
+                <div className="flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-6 py-4">
+                  <div className="flex min-w-0 items-center gap-2 font-black uppercase tracking-[0.3em] text-[#2F6FB0]" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
+                    <Activity className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} />
+                    <span className="truncate">Power Rankings — {season} · Week {week}</span>
+                  </div>
+                  <a
+                    href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
+                    className="inline-flex flex-shrink-0 items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#16274F] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:bg-[#223866] sm:px-3.5 sm:py-2 sm:text-[10px]"
+                  >
+                    Full PR
+                    <ChevronRight className="h-3 w-3" />
+                  </a>
+                </div>
+
+                <div className="divide-y-2 divide-[#0A0A0A]/8">
+                  {powerRankingPreview.map((team, i) => {
+                    const rankColor =
+                      team.rank === 1 ? '#B8860B' :
+                      team.rank === 2 ? '#16274F' :
+                      team.rank === 3 ? '#1E8E3E' : '#3F4757'
+                    const streakIsWin = team.streak.startsWith('W')
+                    const streakIsLoss = team.streak.startsWith('L')
+                    return (
+                      <div key={team.team || i} className="flex items-center gap-3 px-5 py-4 sm:gap-4 sm:px-6">
+                        <div className="flex w-10 flex-shrink-0 flex-col items-center sm:w-12">
+                          <div
+                            className="leading-none font-black"
+                            style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px, 3.5vw, 50px)', color: rankColor }}
+                          >
+                            {team.rank}
+                          </div>
+                          {team.result && (
+                            <div className={`mt-2 flex h-5 w-5 items-center justify-center border-2 border-[#0A0A0A] text-[8px] font-black text-white ${team.result === 'W' ? 'bg-[#1E8E3E]' : 'bg-[#D01F2D]'}`}>
+                              {team.result}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <TeamAvatar name={team.team} className="h-9 w-9 flex-shrink-0 sm:h-10 sm:w-10" textClassName="text-[8px]" />
+                            <span className="truncate text-[clamp(13px,1.7vw,20px)] font-black uppercase tracking-tight text-[#16274F]">
+                              {team.team}
+                            </span>
+                            {team.rank === 1 && <span className="flex-shrink-0 text-lg">⭐</span>}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-black sm:gap-x-4 sm:text-[11px]">
+                            <span className="text-[#6B7280]">
+                              REC: <strong className="text-[#16274F]">{team.wins}-{team.losses}</strong>
+                            </span>
+                            <span className="text-[#6B7280]">
+                              STRK: <strong className={streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#16274F]'}>{team.streak || '—'}</strong>
+                            </span>
+                            <span className="text-[#6B7280]">
+                              AVG: <strong className="text-[#16274F]">{team.avgPF.toFixed(1)}</strong> <span className="text-[#6B7280]">(#{team.avgRank})</span>
+                            </span>
+                            <span className="text-[#6B7280]">
+                              OVW: <strong className="text-[#16274F]">{team.ovw.toFixed(0)}</strong> <span className="text-[#6B7280]">(#{team.ovwRank})</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="border-t-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-6 py-3">
+                  <a
+                    href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
+                    className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F] transition-colors hover:text-[#D01F2D] sm:text-[10px]"
+                  >
+                    Open full Power Rankings for {season} Week {week}
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </a>
                 </div>
               </motion.div>
             )}
