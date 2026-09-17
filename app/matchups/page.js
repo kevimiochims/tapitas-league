@@ -1242,7 +1242,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                     </div>
 
                     <div className="flex w-[72px] shrink-0 flex-col items-center justify-center border-l-2 border-[#16274F]/10 pl-2 sm:w-[96px] sm:pl-3 lg:w-[112px]">
-                      <strong className="text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
+                      <strong className="text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
                         {currentGameRow ? currentGameRow.adjustedPts.toFixed(2) : '—'}
                       </strong>
                       <span className="mt-1 text-[5px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[7px]">Fantasy Pts</span>
@@ -1266,15 +1266,15 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 
                   <div className="mt-2 grid flex-1 grid-cols-3 items-center divide-x divide-[#5B2CA0]/15">
                     <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
+                      <strong className="block truncate text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
                       <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">GAMES</span>
                     </div>
                     <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
+                      <strong className="block truncate text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
                       <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
                     </div>
                     <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
+                      <strong className="block truncate text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
                       <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
                     </div>
                   </div>
