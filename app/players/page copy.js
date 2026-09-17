@@ -718,86 +718,15 @@ function PlayerProfile({ player, games, playerLookup, onClose }) {
           <div className="mt-1 flex max-w-full gap-1 overflow-x-auto pb-0.5 scrollbar-none">{clubs.map(c=><label key={c.team} className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 ${selectedTeams.some(t=>normalizeTeamName(t)===normalizeTeamName(c.team))?'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]':'border-[#D6D6D6] bg-white'}`}><input type="checkbox" checked={selectedTeams.some(t=>normalizeTeamName(t)===normalizeTeamName(c.team))} onChange={()=>toggleTeam(c.team)} className="h-3.5 w-3.5 accent-[#16274F]"/><TeamAvatar name={c.team} size="xs"/><span className="text-[9px] font-black text-[#16274F]">{shortName(c.team)}</span><span className="text-[8px] font-bold text-[#6B7280]">{formatSeasonList(c.seasons)}</span></label>)}</div>
         </div>
         <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-[#F7F8FB] p-2.5 sm:p-3"><div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',formatSeasonList(Array.from(stats.seasons))]].map(([l,v],i)=><div key={l} className={`border-2 px-2 py-2 sm:px-2.5 sm:py-2.5 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]','border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]','border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]','border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]','border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]','border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F] sm:text-2xl" style={{fontFamily:'"Bebas Neue",sans-serif'}}>{v}</div></div>)}</div></div>
-        <div className="min-h-0 flex-1 overflow-auto">
-          <table className="min-w-[900px] w-full">
-            <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
-              <tr>
-                {[
-                  { label: 'Season', key: 'season' },
-                  { label: 'Week', key: 'week' },
-                  { label: 'Team', key: null },
-                  { label: 'Opponent', key: null, filter: { value: opponentFilter, onChange: setOpponentFilter, options: filterOpts.opponent } },
-                  { label: 'Status', key: null, filter: { value: statusFilter, onChange: setStatusFilter, options: filterOpts.status } },
-                  { label: 'Player Pts', key: 'pts' },
-                  { label: 'Team PF', key: 'teamPF' },
-                  { label: 'Result', key: null, filter: { value: resultFilter, onChange: setResultFilter, options: filterOpts.result } },
-                  { label: 'Stage', key: null, filter: { value: stageFilter, onChange: setStageFilter, options: filterOpts.stage } },
-                ].map(col => {
-                  const dir = col.key === 'season' ? sort.seasonDir : col.key === 'week' ? sort.weekDir : sort.dir
-                  const active = col.key && sort.key === col.key
-                  return (
-                    <th key={col.label} className="whitespace-nowrap px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
-                      {col.filter ? (
-                        <HeaderFilter value={col.filter.value} onChange={col.filter.onChange} options={col.filter.options} label={col.label} />
-                      ) : col.key ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleSort(col.key)}
-                          className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${active ? 'text-[#D01F2D]' : ''}`}
-                        >
-                          {col.label}
-                          <span className="text-[9px]">{active ? (dir === 'desc' ? '↓' : '↑') : ''}</span>
-                        </button>
-                      ) : (
-                        col.label
-                      )}
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((g, i) => (
-                <tr
-                  key={`${g.season}-${g.week}-${g.team}-${g.opponent}-${i}`}
-                  onClick={() => window.location.href = g.href}
-                  className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-[#F7F6F2]"
-                >
-                  <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td>
-                  <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td>
-                  <td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.team)}</td>
-                  <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.opponent}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="inline-block border-2 border-[#0A0A0A] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white"
-                      style={{ background: g.status === 'Starter' ? '#1E8E3E' : '#6B7280' }}
-                    >
-                      {g.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-black text-[#16274F]">{g.pts.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.teamPF.toFixed(2)}</td>
-                  <td className={`px-4 py-3 text-xs font-black ${g.result === 'W' ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{g.result || '—'}</td>
-                  <td className="px-4 py-3 text-[10px] font-bold text-[#6B7280]">{g.stage || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <div className="min-h-0 flex-1 overflow-auto"><table className="min-w-[900px] w-full"><thead className="sticky top-0 z-10 bg-[#F7F6F2]"><tr>{['Season','Week','Team','Opponent','Status','Player Pts','Team PF','Result','Stage'].map((h,i)=><th key={h} className="whitespace-nowrap px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{h==='Opponent'?<HeaderFilter value={opponentFilter} onChange={setOpponentFilter} options={filterOpts.opponent} label="Opponent"/>:h==='Status'?<HeaderFilter value={statusFilter} onChange={setStatusFilter} options={filterOpts.status} label="Status"/>:h==='Result'?<HeaderFilter value={resultFilter} onChange={setResultFilter} options={filterOpts.result} label="Result"/>:h==='Stage'?<HeaderFilter value={stageFilter} onChange={setStageFilter} options={filterOpts.stage} label="Stage"/>:<button type="button" onClick={()=>toggleSort(['season','week','','','', 'pts','teamPF'][i])}>{h}</button>}</th>)}</tr></thead><tbody>{sorted.map((g,i)=><tr key={`${g.season}-${g.week}-${g.team}-${g.opponent}-${i}`} onClick={()=>window.location.href=g.href} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-[#F7F6F2]"><td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td><td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td><td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.team)}</td><td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.opponent}</td><td className="px-4 py-3 text-xs font-bold">{g.status}</td><td className="px-4 py-3 text-sm font-black text-[#16274F]">{g.pts.toFixed(2)}</td><td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.teamPF.toFixed(2)}</td><td className={`px-4 py-3 text-xs font-black ${g.result==='W'?'text-[#1E8E3E]':'text-[#D01F2D]'}`}>{g.result||'—'}</td><td className="px-4 py-3 text-[10px] font-bold text-[#6B7280]">{g.stage||'—'}</td></tr>)}</tbody></table></div>
       </div>
     </div>
   )
 }
 
 export default function PlayersPage() {
-  const [games, setGames] = useState([]), [playerLookup, setPlayerLookup] = useState(new Map()), [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [position, setPosition] = useState(['All'])
-  const [teamFilter, setTeamFilter] = useState(['All'])
-  const [season, setSeason] = useState(['All'])
-  const [minApps, setMinApps] = useState('')
-  const [sort, setSort] = useState({ key: 'appearances', dir: 'desc' })
-  const [selected, setSelected] = useState(null)
+  const [games,setGames]=useState([]), [playerLookup,setPlayerLookup]=useState(new Map()), [loading,setLoading]=useState(true)
+  const [search,setSearch]=useState(''), [position,setPosition]=useState('All'), [teamFilter,setTeamFilter]=useState('All'), [season,setSeason]=useState('All'), [minApps,setMinApps]=useState('All'), [sort,setSort]=useState('Appearances'), [selected,setSelected]=useState(null)
 
   useEffect(() => {
     let alive = true
@@ -874,131 +803,14 @@ export default function PlayersPage() {
       .sort((a,b) => b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))
   }, [games, gameAppearances, playerLookup])
 
-  const positions = useMemo(() => ['All', ...Array.from(new Set(players.map(p => p.position).filter(Boolean))).sort()], [players])
-  const seasons = useMemo(() => ['All', ...Array.from(new Set(players.flatMap(p => Array.from(p.seasons)))).sort((a, b) => Number(b) - Number(a))], [players])
-  const teams = useMemo(() => ['All', ...Array.from(new Set(players.flatMap(p => p.teams))).sort()], [players])
-
-  const toggleSortCol = (key) => setSort(cur => cur.key === key ? { key, dir: cur.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: 'desc' })
-
-  const filtered = useMemo(() => {
-    const posSel = position.includes('All') ? null : position
-    const seasonSel = season.includes('All') ? null : season
-    const teamSel = teamFilter.includes('All') ? null : teamFilter.map(normalizeTeamName)
-    const minAppsNum = minApps.trim() === '' ? null : Number(minApps)
-
-    return players
-      .filter(p => normalizePlayerKey(p.name).includes(normalizePlayerKey(search)))
-      .filter(p => !posSel || posSel.includes(p.position))
-      .filter(p => !teamSel || p.teams.some(t => teamSel.includes(normalizeTeamName(t))))
-      .filter(p => !seasonSel || seasonSel.some(s => p.seasons.has(s)))
-      .filter(p => minAppsNum === null || p.appearances >= minAppsNum)
-      .sort((a, b) => {
-        const dirMul = sort.dir === 'desc' ? 1 : -1
-        const byKey = {
-          appearances: b.appearances - a.appearances,
-          starts: b.starts - a.starts,
-          bench: b.bench - a.bench,
-          avg: b.avg - a.avg,
-          best: b.best - a.best,
-        }[sort.key] ?? (b.appearances - a.appearances)
-        return byKey * dirMul || b.appearances - a.appearances || a.name.localeCompare(b.name)
-      })
-  }, [players, search, position, teamFilter, season, minApps, sort])
+  const positions=useMemo(()=>['All',...Array.from(new Set(players.map(p=>p.position).filter(Boolean))).sort()],[players])
+  const seasons=useMemo(()=>['All',...Array.from(new Set(players.flatMap(p=>Array.from(p.seasons)))).sort((a,b)=>Number(b)-Number(a))],[players])
+  const teams=useMemo(()=>['All',...Array.from(new Set(players.flatMap(p=>p.teams))).sort()],[players])
+  const filtered=useMemo(()=>players.filter(p=>normalizePlayerKey(p.name).includes(normalizePlayerKey(search))).filter(p=>position==='All'||p.position===position).filter(p=>teamFilter==='All'||p.teams.some(t=>normalizeTeamName(t)===normalizeTeamName(teamFilter))).filter(p=>season==='All'||p.seasons.has(season)).filter(p=>minApps==='All'||p.appearances>Number(String(minApps).replace(/[^0-9]/g,''))).sort((a,b)=>sort==='Starts'?b.starts-a.starts||b.appearances-a.appearances||a.name.localeCompare(b.name):sort==='Bench'?b.bench-a.bench||b.appearances-a.appearances||a.name.localeCompare(b.name):sort==='Average Points'?b.avg-a.avg||b.appearances-a.appearances||a.name.localeCompare(b.name):sort==='Best Score'?b.best-a.best||b.appearances-a.appearances||a.name.localeCompare(b.name):b.appearances-a.appearances||b.starts-a.starts||a.name.localeCompare(b.name)),[players,search,position,teamFilter,season,minApps,sort])
 
   return <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]"><style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');.tp-shadow-navy{box-shadow:6px 6px 0 #16274F}.tp-shadow-navy-sm{box-shadow:4px 4px 0 #16274F}`}</style><Header/>
     <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
       <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy" style={{minHeight:'240px'}}><div className="absolute inset-0 overflow-hidden"><svg width="100%" height="100%" viewBox="0 0 900 240" preserveAspectRatio="xMidYMid slice"><g opacity=".06">{[280,355,400,475,520,595,640,715,760,835].map((x,i)=><rect key={i} x={x} y="-60" width={i%2===0?55:22} height="380" fill="#16274F" transform={`rotate(-18 ${x+(i%2===0?27:11)} 120)`}/>)}</g><g opacity=".1" fill="none" stroke="#16274F" strokeWidth="1">{['M380 -20 L460 80 L380 180 L300 80 Z','M540 -20 L620 80 L540 180 L460 80 Z','M700 -20 L780 80 L700 180 L620 80 Z','M860 -20 L940 80 L860 180 L780 80 Z'].map((d,i)=><path key={i} d={d}/>)}</g><g opacity=".08" fill="#D01F2D"><polygon points="900,0 900,110 790,0"/><polygon points="900,240 900,130 790,240"/></g><text x="820" y="230" fontFamily="'Bebas Neue',sans-serif" fontSize="240" fill="#16274F" opacity=".04" textAnchor="middle">PLY</text></svg><div className="absolute inset-0" style={{background:'linear-gradient(105deg,#F7F6F2 28%,rgba(247,246,242,.9) 48%,rgba(247,246,242,.15) 100%)'}}/></div><div className="relative z-10 p-10 md:p-14"><div className="mb-4 inline-flex items-center gap-2 bg-[#D01F2D] px-4 py-2" style={{clipPath:'polygon(0 0,100% 0,96% 100%,0% 100%)'}}><Users className="h-4 w-4 text-white"/><span className="text-xs font-black uppercase tracking-[0.25em] text-white">All Players</span></div><h1 className="leading-[.88] text-[#16274F]" style={{fontFamily:'"Bebas Neue",sans-serif',fontSize:'clamp(48px,7vw,88px)'}}><span className="block">THE</span><span className="block text-[#D01F2D]">PLAYERS</span></h1><p className="mt-4 max-w-xl text-sm font-semibold text-[#6B7280] sm:text-base">Every player who has left a mark on Tapitas League — across every franchise and every season.</p></div></div>
-      {loading ? (
-        <div className="py-20 text-center font-bold text-[#6B7280]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="border-b-2 border-[#0A0A0A]/10 px-5 py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]"><Users className="h-4 w-4 text-white" /></div>
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
-                <div className="text-sm text-[#6B7280]">{players.length} players across all Tapitas League franchises</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Toolbar — Position mora só no cabeçalho da coluna, sort mora só nas colunas */}
-          <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
-            <div className="grid grid-cols-2 gap-1.5 lg:flex lg:items-center lg:gap-2">
-              <div className="w-full lg:w-36"><CompactCheckFilter value={season} onChange={setSeason} options={seasons} label="Season" multiple /></div>
-              <div className="w-full lg:w-40"><CompactCheckFilter value={teamFilter} onChange={setTeamFilter} options={teams} label="Franchise" multiple /></div>
-              <input
-                value={minApps}
-                onChange={e => setMinApps(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="Min apps"
-                inputMode="numeric"
-                className="w-full border-2 border-[#0A0A0A] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#16274F] outline-none placeholder:text-[#6B7280] placeholder:normal-case placeholder:tracking-normal focus:border-[#D01F2D] lg:w-24"
-              />
-              <div className="col-span-2 w-full lg:w-64 lg:col-span-1 lg:ml-auto">
-                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search player..." className="w-full border-2 border-[#0A0A0A] bg-white px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]" />
-              </div>
-            </div>
-          </div>
-
-          <div className="max-h-[720px] overflow-auto">
-            <table className="min-w-[920px] w-full">
-              <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
-                <tr>
-                  {[
-                    { label: 'Player', key: null },
-                    { label: 'Pos', key: null, filter: true },
-                    { label: 'Franchises', key: null },
-                    { label: 'Apps', key: 'appearances' },
-                    { label: 'Starts', key: 'starts' },
-                    { label: 'Avg Pts', key: 'avg' },
-                    { label: 'Best', key: 'best' },
-                    { label: 'Seasons', key: null },
-                  ].map(col => {
-                    const active = col.key && sort.key === col.key
-                    return (
-                      <th key={col.label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
-                        {col.filter ? (
-                          <CompactCheckFilter value={position} onChange={setPosition} options={positions} label="Pos" multiple />
-                        ) : col.key ? (
-                          <button
-                            type="button"
-                            onClick={() => toggleSortCol(col.key)}
-                            className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${active ? 'text-[#D01F2D]' : ''}`}
-                          >
-                            {col.label}
-                            <span className="text-[9px]">{active ? (sort.dir === 'desc' ? '↓' : '↑') : ''}</span>
-                          </button>
-                        ) : (
-                          col.label
-                        )}
-                      </th>
-                    )
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(p => (
-                  <tr key={p.identityKey} onClick={() => setSelected(p)} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-white">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={40} />
-                        <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{p.name}</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">{p.position && <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-black ${getPositionBadgeClasses(p.position)}`}>{p.position}</span>}</td>
-                    <td className="max-w-[260px] px-4 py-3 text-xs font-bold text-[#3F4757]">{p.teams.map(shortName).join(', ')}</td>
-                    <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.appearances}</td>
-                    <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.starts}</td>
-                    <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.avg.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.best.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{formatSeasonList(Array.from(p.seasons))}</td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-sm font-bold text-[#6B7280]">No players found</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {loading?<div className="py-20 text-center font-bold text-[#6B7280]">Loading...</div>:<div className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"><div className="border-b-2 border-[#0A0A0A]/10 px-5 py-5"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]"><Users className="h-4 w-4 text-white"/></div><div><div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div><div className="text-sm text-[#6B7280]">{players.length} players across all Tapitas League franchises</div></div></div></div><div className="border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2.5 sm:px-6 sm:py-3"><div className="grid grid-cols-2 gap-1.5 lg:flex lg:items-center lg:gap-2"><div className="w-full lg:w-32"><CompactCheckFilter value={position} onChange={setPosition} options={positions} label="Position"/></div><div className="w-full lg:w-40"><CompactCheckFilter value={sort} onChange={setSort} options={['Appearances','Starts','Bench','Average Points','Best Score']} label="Sort by"/></div><div className="w-full lg:w-32"><CompactCheckFilter value={season} onChange={setSeason} options={seasons} label="Season"/></div><div className="w-full lg:w-36"><CompactCheckFilter value={teamFilter} onChange={setTeamFilter} options={teams} label="Franchise"/></div><div className="w-full lg:w-32"><CompactCheckFilter value={minApps} onChange={setMinApps} options={['All','>10 appearances','>20 appearances','>30 appearances']} label="Appearances"/></div><div className="col-span-2 w-full lg:w-64 lg:col-span-1"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search player..." className="w-full border-2 border-[#0A0A0A] bg-white px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"/></div></div></div><div className="max-h-[720px] overflow-auto"><table className="min-w-[920px] w-full"><thead className="sticky top-0 z-10 bg-[#F7F6F2]"><tr>{['Player','Pos','Franchises','Apps','Starts','Avg Pts','Best','Seasons'].map(h=><th key={h} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{h}</th>)}</tr></thead><tbody>{filtered.map(p=><tr key={p.identityKey} onClick={()=>setSelected(p)} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-white"><td className="px-4 py-3"><div className="flex items-center gap-3"><PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={40}/><div className="min-w-0"><div className="truncate text-sm font-black text-[#16274F]">{p.name}</div><div className="text-[9px] font-bold text-[#6B7280]">{p.teams.map(shortName).join(' · ')}</div></div></div></td><td className="px-4 py-3">{p.position&&<span className={`inline-flex px-1.5 py-0.5 text-[8px] font-black ${getPositionBadgeClasses(p.position)}`}>{p.position}</span>}</td><td className="max-w-[260px] px-4 py-3 text-xs font-bold text-[#3F4757]">{p.teams.map(shortName).join(', ')}</td><td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.appearances}</td><td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.starts}</td><td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.avg.toFixed(2)}</td><td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.best.toFixed(2)}</td><td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{formatSeasonList(Array.from(p.seasons))}</td></tr>)}{filtered.length===0&&<tr><td colSpan="8" className="py-12 text-center text-sm font-bold text-[#6B7280]">No players found</td></tr>}</tbody></table></div></div>}
     </section><footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]"><div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6"><img src="/images/LogoFinalBlack.png" alt="" width="24" height="24" style={{filter:'invert(1)',opacity:.7}}/><span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Tapitas League · Est. 2014</span></div></footer>{selected&&<PlayerProfile player={selected} games={games} playerLookup={playerLookup} onClose={()=>setSelected(null)}/>}</main>
 }

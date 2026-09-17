@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft, ChevronDown, Swords, Activity } from 'lucide-react'
+import { ChevronRight, ChevronLeft, ChevronDown, Swords, BarChart3, Activity, Send, Radio } from 'lucide-react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import { motion } from 'framer-motion'
@@ -129,6 +129,35 @@ function extractPlayers(game, prefix) {
 // Melhor escalação possível (starters + bench) pro "max points" de eficiência —
 // preenche as posições fixas com os maiores pontuadores de cada posição e o
 // que sobra de RB/WR/TE disputa as vagas de FLEX.
+function formatSeasonList(seasons) {
+  const years = Array.from(new Set((seasons || []).map(Number).filter(Number.isFinite))).sort((a, b) => a - b)
+  if (!years.length) return '—'
+
+  const parts = []
+  let start = years[0]
+  let end = years[0]
+
+  const pushRange = (from, to) => {
+    const fromLabel = `'${String(from).slice(-2)}`
+    const toLabel = `'${String(to).slice(-2)}`
+    if (to - from >= 2) parts.push(`${fromLabel} - ${toLabel}`)
+    else if (to - from === 1) parts.push(fromLabel, toLabel)
+    else parts.push(fromLabel)
+  }
+
+  for (let i = 1; i < years.length; i += 1) {
+    if (years[i] === end + 1) {
+      end = years[i]
+    } else {
+      pushRange(start, end)
+      start = end = years[i]
+    }
+  }
+  pushRange(start, end)
+
+  return parts.join(', ')
+}
+
 function computeMaxPoints(pool, seasonYear) {
   const config = ROSTER_CONFIG[Number(seasonYear)] || ROSTER_CONFIG[2025]
   const buckets = { QB: [], RB: [], WR: [], TE: [], K: [], DEF: [] }
@@ -675,12 +704,93 @@ function formatPlayerStatLine(stats, pos) {
     if (n('fgm') || n('fga')) items.push(`${n('fgm')}/${n('fga')} FG`)
     if (n('xpm') || n('xpa')) items.push(`${n('xpm')}/${n('xpa')} XP`)
   } else if (p === 'DEF') {
-    if (n('def_tkl')) items.push(`${n('def_tkl')} TKL`)
-    if (n('def_sack')) items.push(`${n('def_sack')} SACK`)
-    if (n('def_int')) items.push(`${n('def_int')} INT`)
+    // Sleeper team-defense (DEF/DST) stats use the short raw stat keys.
+    if (n('sack')) items.push(`${n('sack')} SACK`)
+    if (n('int')) items.push(`${n('int')} INT`)
+    if (n('safe')) items.push(`${n('safe')} SAFETY`)
     if (n('def_td')) items.push(`${n('def_td')} TD`)
+    if (n('ff')) items.push(`${n('ff')} FF`)
+    else if (n('fum_force')) items.push(`${n('fum_force')} FF`)
   }
   return items.filter(Boolean)
+}
+
+
+function formatCompactPlayerStatGroups(stats, pos) {
+  if (!stats) return []
+  const n = key => Number(stats?.[key] ?? 0)
+  const groups = []
+  const add = (label, items) => {
+    const valid = items.filter(Boolean)
+    if (valid.length) groups.push({ label, items: valid })
+  }
+  const p = String(pos || '').toUpperCase()
+
+  if (p === 'QB') {
+    add('PASS', [
+      (n('pass_cmp') || n('pass_att')) ? { value: `${n('pass_cmp')}/${n('pass_att')}`, label: 'CMP/ATT' } : null,
+      n('pass_yd') ? { value: n('pass_yd'), label: 'YDS' } : null,
+      n('pass_td') ? { value: n('pass_td'), label: 'TD' } : null,
+      n('pass_int') ? { value: n('pass_int'), label: 'INT' } : null,
+    ])
+    add('RUSH', [
+      n('rush_att') ? { value: n('rush_att'), label: 'CAR' } : null,
+      n('rush_yd') ? { value: n('rush_yd'), label: 'YDS' } : null,
+      n('rush_td') ? { value: n('rush_td'), label: 'TD' } : null,
+    ])
+  } else if (p === 'RB') {
+    add('RUSH', [
+      n('rush_att') ? { value: n('rush_att'), label: 'CAR' } : null,
+      n('rush_yd') ? { value: n('rush_yd'), label: 'YDS' } : null,
+      n('rush_td') ? { value: n('rush_td'), label: 'TD' } : null,
+    ])
+    add('REC', [
+      n('rec_tgt') ? { value: n('rec_tgt'), label: 'TAR' } : null,
+      n('rec') ? { value: n('rec'), label: 'REC' } : null,
+      n('rec_yd') ? { value: n('rec_yd'), label: 'YDS' } : null,
+      n('rec_td') ? { value: n('rec_td'), label: 'TD' } : null,
+    ])
+  } else if (p === 'WR' || p === 'TE' || p === 'FLEX') {
+    add('REC', [
+      n('rec_tgt') ? { value: n('rec_tgt'), label: 'TAR' } : null,
+      n('rec') ? { value: n('rec'), label: 'REC' } : null,
+      n('rec_yd') ? { value: n('rec_yd'), label: 'YDS' } : null,
+      n('rec_td') ? { value: n('rec_td'), label: 'TD' } : null,
+    ])
+    add('RUSH', [
+      n('rush_att') ? { value: n('rush_att'), label: 'CAR' } : null,
+      n('rush_yd') ? { value: n('rush_yd'), label: 'YDS' } : null,
+      n('rush_td') ? { value: n('rush_td'), label: 'TD' } : null,
+    ])
+  } else if (p === 'K') {
+    add('KICK', [
+      (n('fgm') || n('fga')) ? { value: `${n('fgm')}/${n('fga')}`, label: 'FG' } : null,
+      (n('xpm') || n('xpa')) ? { value: `${n('xpm')}/${n('xpa')}`, label: 'XP' } : null,
+      n('fg_long') ? { value: n('fg_long'), label: 'LONG' } : null,
+    ])
+  } else if (p === 'DEF') {
+    // DEF is the NFL team defense/DST row in Sleeper.
+    // IMPORTANT: these are NOT the IDP keys. Sleeper's team-defense
+    // weekly stats use sack / int / safe / def_td.
+    // FF is accepted from the raw team-defense field when present, with
+    // alternate names kept as fallbacks for older payloads.
+    const stat = (...keys) => {
+      for (const key of keys) {
+        const value = Number(stats?.[key] ?? 0)
+        if (Number.isFinite(value) && value !== 0) return value
+      }
+      return 0
+    }
+    add('DEF', [
+      stat('sack', 'dst_sacks', 'def_sack', 'idp_sack') ? { value: stat('sack', 'dst_sacks', 'def_sack', 'idp_sack'), label: 'SACK' } : null,
+      stat('int', 'dst_int', 'def_int', 'idp_int') ? { value: stat('int', 'dst_int', 'def_int', 'idp_int'), label: 'INT' } : null,
+      stat('ff', 'fum_force', 'dst_fum_force', 'idp_ff', 'idp_fum_force', 'def_ff') ? { value: stat('ff', 'fum_force', 'dst_fum_force', 'idp_ff', 'idp_fum_force', 'def_ff'), label: 'FF' } : null,
+      stat('safe', 'dst_safety', 'def_safety', 'idp_safety', 'idp_safe') ? { value: stat('safe', 'dst_safety', 'def_safety', 'idp_safety', 'idp_safe'), label: 'SAFETY' } : null,
+      stat('def_td', 'dst_td', 'def_td', 'idp_td') ? { value: stat('def_td', 'dst_td', 'idp_td'), label: 'TD' } : null,
+    ])
+  }
+
+  return groups
 }
 
 function extractPlayerAppearances(game, max = 13) {
@@ -923,6 +1033,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 
   const position = String(profile.position || '').toUpperCase()
   const statLine = formatPlayerStatLine(weeklyStats, position)
+  const compactStatGroups = formatCompactPlayerStatGroups(weeklyStats, position)
   const statItemCount = statLine.length + (currentGameRow ? 1 : 0)
   const statsNeedMobileWrap = statItemCount > 4
   const history = useMemo(() => getTeamSeasonHistory(profile.rawName, games), [profile.rawName, games])
@@ -1086,71 +1197,85 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
         </div>
 
         <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-1">
-          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',Array.from(stats.seasons).sort((a,b)=>Number(a)-Number(b)).map(y=>`'${String(y).slice(-2)}`).join(', ')||'—']].map(([l,v],i)=><div key={l} className={`border-2 px-2 py-2 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]','border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]','border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]','border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]','border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]','border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F]">{v}</div></div>)}</div>
+          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',formatSeasonList(Array.from(stats.seasons))]].map(([l,v],i)=><div key={l} className={`border-2 px-2 py-2 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]','border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]','border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]','border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]','border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]','border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F]">{v}</div></div>)}</div>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-2.5 sm:px-3 sm:pt-3 sm:pb-3">
             <div className="grid grid-cols-2 items-stretch gap-3">
+              {/* WEEKLY STATS — Option A: stats on the left, fantasy points highlighted on the right */}
               <div className="min-w-0 h-full">
-                <div className={`flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:px-4 sm:py-3`}>
+                <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:px-4 sm:py-3">
                   <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap">
-                    <div className="min-w-0 truncate text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#16274F]">
-                      {profile.season} Week {profile.week}<span className="hidden sm:inline"> Stats</span>
+                    <div className="flex min-w-0 items-center gap-1.5 truncate text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.16em] text-[#2F6FB0]">
+                      <BarChart3 size={12} strokeWidth={2.5} />
+                      <span className="truncate">{profile.season} Week {profile.week}<span className="hidden sm:inline"> Stats</span></span>
                     </div>
                     {sleeperInfo?.matchupOpponent ? (
-                      <div className="flex min-w-0 shrink-0 items-center gap-1.5 text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.08em] text-[#16274F]/80">
+                      <div className="flex min-w-0 shrink-0 items-center gap-1.5 text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.08em] text-[#16274F]/80">
                         <span className="truncate">vs {getCompactTeamName(sleeperInfo.matchupOpponent)}</span>
-                        <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '24px', height: '24px', flexShrink: 0, objectFit: 'contain', display: 'block' }} />
+                        <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '22px', height: '22px', flexShrink: 0, objectFit: 'contain', display: 'block' }} />
                       </div>
                     ) : null}
                   </div>
-                  <div className="mt-auto flex min-w-0 w-full flex-wrap items-baseline justify-between gap-x-4 gap-y-2 pt-3">
-                    {statLine.length ? statLine.map((x,i) => {
-                      const parts = String(x).match(/^(.+?)\s+(YDS|REC YDS|RUSH YDS|TD|TAR|REC|CAR|INT|FG|XP|TKL|SACK)$/)
-                      return (
-                        <div key={i} className="flex min-w-0 flex-[0_1_auto] items-baseline gap-1 whitespace-nowrap">
-                          <strong className="text-xl font-black leading-none tracking-tight text-[#16274F]">{parts ? parts[1] : x}</strong>
-                          {parts && <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.04em] text-[#6B7280]">{parts[2]}</span>}
+
+                  <div className="mt-2 flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      {compactStatGroups.length ? compactStatGroups.map(group => (
+                        <div key={group.label} className="flex min-w-0 items-center gap-2">
+                          <span className="flex w-[34px] shrink-0 items-center gap-1 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:w-[42px] sm:text-[8px]">
+                            {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
+                            <span>{group.label}</span>
+                          </span>
+                          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:gap-4">
+                            {group.items.map((item, i) => (
+                              <div key={i} className="flex min-w-0 items-baseline gap-0.5 whitespace-nowrap">
+                                <strong className="text-[clamp(10px,1.65vw,28px)] font-black leading-none tracking-tight text-[#16274F]">{item.value}</strong>
+                                <span className="shrink-0 text-[5px] font-black uppercase tracking-[0.03em] text-[#6B7280] sm:text-[6px]">{item.label}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      )
-                    }) : null}
-                    {currentGameRow && (
-                      <div className="flex min-w-0 flex-[0_1_auto] items-baseline gap-1 whitespace-nowrap">
-                        <strong className="text-xl font-black leading-none tracking-tight text-[#16274F]">{currentGameRow.adjustedPts.toFixed(2)}</strong>
-                        <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.04em] text-[#6B7280]">PTS</span>
-                      </div>
-                    )}
-                    {!statLine.length && !currentGameRow && (
-                      <span className="text-[10px] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
-                    )}
+                      )) : (
+                        <span className="text-[9px] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
+                      )}
+                    </div>
+
+                    <div className="flex w-[72px] shrink-0 flex-col items-center justify-center border-l-2 border-[#16274F]/10 pl-2 sm:w-[96px] sm:pl-3 lg:w-[112px]">
+                      <strong className="text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
+                        {currentGameRow ? currentGameRow.adjustedPts.toFixed(2) : '—'}
+                      </strong>
+                      <span className="mt-1 text-[5px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[7px]">Fantasy Pts</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* HISTORIC — three equal metrics, same visual weight */}
               <div className="min-w-0 h-full">
-                <div className={`flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#5B2CA0]/25 bg-[#F6F1FC] px-3 py-2.5 shadow-[3px_3px_0_#5B2CA0] sm:px-4 sm:py-3`}>
-                  <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap text-[clamp(9px,0.58vw,10px)] font-black uppercase tracking-[0.16em] text-[#5B2CA0]">
-                    <span className="min-w-0 truncate">Historic</span>
+                <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#5B2CA0]/25 bg-[#F6F1FC] px-3 py-2.5 shadow-[3px_3px_0_#5B2CA0] sm:px-4 sm:py-3">
+                  <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.16em] text-[#5B2CA0]">
+                    <span className="flex min-w-0 items-center gap-1.5 truncate"><Swords size={12} strokeWidth={2.5} /><span>Historic</span></span>
                     <div className="flex min-w-0 shrink-0 items-center gap-1.5">
                       <span className="truncate">vs {getCompactTeamName(profile.opponent)}</span>
-                      <div style={{ width: '24px', height: '24px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <div style={{ width: '22px', height: '22px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                         <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[6px]" />
                       </div>
                     </div>
                   </div>
-                  <div className="mt-auto flex min-w-0 w-full flex-wrap items-baseline justify-between gap-x-4 gap-y-2 pt-3">
-                    <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
-                      <strong className="text-xl font-black leading-none tracking-tight text-[#5B2CA0]">{versus.avg.toFixed(2)}</strong>
-                      <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280]">AVG</span>
+
+                  <div className="mt-2 grid flex-1 grid-cols-3 items-center divide-x divide-[#5B2CA0]/15">
+                    <div className="min-w-0 px-1 text-center">
+                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
+                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">GAMES</span>
                     </div>
-                    <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
-                      <strong className="text-xl font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
-                      <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280]">BEST</span>
+                    <div className="min-w-0 px-1 text-center">
+                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
+                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
                     </div>
-                    <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
-                      <strong className="text-xl font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
-                      <span className="shrink-0 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280]">GAMES</span>
+                    <div className="min-w-0 px-1 text-center">
+                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
+                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
                     </div>
                   </div>
                 </div>
@@ -1203,6 +1328,7 @@ function MatchupsPageContent() {
   const [week, setWeek] = useState('')
   const [selected, setSelected] = useState(null)
   const [showWeekRecap, setShowWeekRecap] = useState(false)
+  const [showPowerRankingPreview, setShowPowerRankingPreview] = useState(false)
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
 
   const seasonsRef = useRef(null)
@@ -1392,6 +1518,40 @@ function MatchupsPageContent() {
 
   // Week Recap — nos moldes do relatório semanal do Sleeper. Só considera
   // temporada regular pros awards, já que playoffs distorceriam comparações.
+  // Power Ranking resumido da semana selecionada. Usa diretamente os campos
+  // já calculados no GAME_FACTS_ALL, mantendo o mesmo resultado da página completa.
+  const powerRankingPreview = useMemo(() => {
+    if (!season || !week) return []
+
+    const filtered = games.filter(g =>
+      String(g?.Season || '').trim() === season &&
+      String(g?.Week || '').trim() === String(week) &&
+      parseNumber(g?.['Power Ranking']) > 0
+    )
+
+    const rows = filtered.map(g => ({
+      team: String(g?.Team || '').trim(),
+      rank: parseNumber(g?.['Power Ranking']),
+      wins: parseNumber(g?.Wins),
+      losses: parseNumber(g?.Losses),
+      avgPF: parseNumber(g?.AVG_PF),
+      ovw: parseNumber(g?.OVW),
+      streak: String(g?.Streak_Total || g?.Streak || '').trim(),
+      result: String(g?.Result || '').trim().toUpperCase(),
+    }))
+
+    const metricRank = (value, key) =>
+      1 + rows.reduce((count, row) => count + (row[key] > value ? 1 : 0), 0)
+
+    return rows
+      .map(row => ({
+        ...row,
+        avgRank: metricRank(row.avgPF, 'avgPF'),
+        ovwRank: metricRank(row.ovw, 'ovw'),
+      }))
+      .sort((a, b) => a.rank - b.rank || a.team.localeCompare(b.team))
+  }, [games, season, week])
+
   const weekRecap = useMemo(() => {
     if (!season || !week || matchups.length === 0 || !playerLookup) return null
 
@@ -2018,6 +2178,7 @@ function MatchupsPageContent() {
                     <button
                       onClick={() => {
                         setShowWeekRecap(v => !v)
+                        setShowPowerRankingPreview(false)
                         setSelected(null)
                       }}
                       className={`inline-flex items-center gap-1.5 border-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-all sm:px-3.5 sm:py-2 sm:text-[10px] ${showWeekRecap
@@ -2027,13 +2188,21 @@ function MatchupsPageContent() {
                     >
                       Week Recap
                     </button>
-                    <a
-                      href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
-                      className="inline-flex items-center gap-1 border-2 border-[#0A0A0A] bg-white px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#3F4757] transition-all hover:bg-[#F7F6F2] sm:px-3.5 sm:py-2 sm:text-[10px]"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPowerRankingPreview(v => !v)
+                        setShowWeekRecap(false)
+                        setSelected(null)
+                      }}
+                      className={`inline-flex items-center gap-1 border-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-all sm:px-3.5 sm:py-2 sm:text-[10px] ${showPowerRankingPreview
+                        ? 'border-[#0A0A0A] bg-[#16274F] text-white'
+                        : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                        }`}
                     >
                       PR
-                      <ChevronRight className="h-3 w-3" />
-                    </a>
+                      <ChevronRight className={`h-3 w-3 transition-transform ${showPowerRankingPreview ? 'rotate-90' : ''}`} />
+                    </button>
                   </div>
                 </div>
 
@@ -2059,6 +2228,7 @@ function MatchupsPageContent() {
                         onClick={() => {
                           setSelected(isSelected ? null : g)
                           setShowWeekRecap(false)
+                          setShowPowerRankingPreview(false)
                         }}
                         className={`flex-shrink-0 w-56 border-2 p-4 text-left transition-all ${isSelected
                           ? 'border-[#D01F2D] bg-[#FDEDEE] tp-shadow-red-sm'
@@ -2119,6 +2289,95 @@ function MatchupsPageContent() {
                       </button>
                     )
                   })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Power Ranking Preview */}
+            {showPowerRankingPreview && powerRankingPreview.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy"
+              >
+                <div className="flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-6 py-4">
+                  <div className="flex min-w-0 items-center gap-2 font-black uppercase tracking-[0.3em] text-[#2F6FB0]" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
+                    <Activity className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} />
+                    <span className="truncate">Power Rankings — {season} · Week {week}</span>
+                  </div>
+                  <a
+                    href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
+                    className="inline-flex flex-shrink-0 items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#16274F] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:bg-[#223866] sm:px-3.5 sm:py-2 sm:text-[10px]"
+                  >
+                    Full PR
+                    <ChevronRight className="h-3 w-3" />
+                  </a>
+                </div>
+
+                <div className="divide-y-2 divide-[#0A0A0A]/8">
+                  {powerRankingPreview.map((team, i) => {
+                    const rankColor =
+                      team.rank === 1 ? '#B8860B' :
+                      team.rank === 2 ? '#16274F' :
+                      team.rank === 3 ? '#1E8E3E' : '#3F4757'
+                    const streakIsWin = team.streak.startsWith('W')
+                    const streakIsLoss = team.streak.startsWith('L')
+                    return (
+                      <div key={team.team || i} className="flex items-center gap-3 px-5 py-4 sm:gap-4 sm:px-6">
+                        <div className="flex w-10 flex-shrink-0 flex-col items-center sm:w-12">
+                          <div
+                            className="leading-none font-black"
+                            style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px, 3.5vw, 50px)', color: rankColor }}
+                          >
+                            {team.rank}
+                          </div>
+                          {team.result && (
+                            <div className={`mt-2 flex h-5 w-5 items-center justify-center border-2 border-[#0A0A0A] text-[8px] font-black text-white ${team.result === 'W' ? 'bg-[#1E8E3E]' : 'bg-[#D01F2D]'}`}>
+                              {team.result}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <TeamAvatar name={team.team} className="h-9 w-9 flex-shrink-0 sm:h-10 sm:w-10" textClassName="text-[8px]" />
+                            <span className="truncate text-[clamp(13px,1.7vw,20px)] font-black uppercase tracking-tight text-[#16274F]">
+                              {team.team}
+                            </span>
+                            {team.rank === 1 && <span className="flex-shrink-0 text-lg">⭐</span>}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-black sm:gap-x-4 sm:text-[11px]">
+                            <span className="text-[#6B7280]">
+                              REC: <strong className="text-[#16274F]">{team.wins}-{team.losses}</strong>
+                            </span>
+                            <span className="text-[#6B7280]">
+                              STRK: <strong className={streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#16274F]'}>{team.streak || '—'}</strong>
+                            </span>
+                            <span className="text-[#6B7280]">
+                              AVG: <strong className="text-[#16274F]">{team.avgPF.toFixed(1)}</strong> <span className="text-[#6B7280]">(#{team.avgRank})</span>
+                            </span>
+                            <span className="text-[#6B7280]">
+                              OVW: <strong className="text-[#16274F]">{team.ovw.toFixed(0)}</strong> <span className="text-[#6B7280]">(#{team.ovwRank})</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="border-t-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-6 py-3">
+                  <a
+                    href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
+                    className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F] transition-colors hover:text-[#D01F2D] sm:text-[10px]"
+                  >
+                    Open full Power Rankings for {season} Week {week}
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </a>
                 </div>
               </motion.div>
             )}

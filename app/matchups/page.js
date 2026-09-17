@@ -1206,15 +1206,15 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               {/* WEEKLY STATS — Option A: stats on the left, fantasy points highlighted on the right */}
               <div className="min-w-0 h-full">
                 <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:px-4 sm:py-3">
-                  <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap">
-                    <div className="flex min-w-0 items-center gap-1.5 truncate text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.16em] text-[#2F6FB0]">
-                      <BarChart3 size={12} strokeWidth={2.5} />
+                  <div className="flex min-w-0 items-center justify-between gap-1.5 whitespace-nowrap sm:gap-2">
+                    <div className="flex min-w-0 items-center gap-1 truncate text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.11em] text-[#2F6FB0] sm:gap-1.5 sm:tracking-[0.16em]">
+                      <BarChart3 size={11} strokeWidth={2.5} className="flex-shrink-0 sm:h-3 sm:w-3" />
                       <span className="truncate">{profile.season} Week {profile.week}<span className="hidden sm:inline"> Stats</span></span>
                     </div>
                     {sleeperInfo?.matchupOpponent ? (
-                      <div className="flex min-w-0 shrink-0 items-center gap-1.5 text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.08em] text-[#16274F]/80">
+                      <div className="flex min-w-0 shrink-0 items-center gap-1 text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.06em] text-[#16274F]/80 sm:gap-1.5 sm:tracking-[0.08em]">
                         <span className="truncate">vs {getCompactTeamName(sleeperInfo.matchupOpponent)}</span>
-                        <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '22px', height: '22px', flexShrink: 0, objectFit: 'contain', display: 'block' }} />
+                        <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '18px', height: '18px', flexShrink: 0, objectFit: 'contain', display: 'block' }} className="sm:!h-[22px] sm:!w-[22px]" />
                       </div>
                     ) : null}
                   </div>
@@ -1223,7 +1223,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                     <div className="min-w-0 flex-1 space-y-1.5">
                       {compactStatGroups.length ? compactStatGroups.map(group => (
                         <div key={group.label} className="flex min-w-0 items-center gap-2">
-                          <span className="flex w-[34px] shrink-0 items-center gap-1 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:w-[42px] sm:text-[8px]">
+                          <span className="hidden w-[34px] shrink-0 items-center gap-1 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
                             {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
                             <span>{group.label}</span>
                           </span>
@@ -1254,12 +1254,12 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               {/* HISTORIC — three equal metrics, same visual weight */}
               <div className="min-w-0 h-full">
                 <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#5B2CA0]/25 bg-[#F6F1FC] px-3 py-2.5 shadow-[3px_3px_0_#5B2CA0] sm:px-4 sm:py-3">
-                  <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.16em] text-[#5B2CA0]">
-                    <span className="flex min-w-0 items-center gap-1.5 truncate"><Swords size={12} strokeWidth={2.5} /><span>Historic</span></span>
-                    <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+                  <div className="flex min-w-0 items-center justify-between gap-1.5 whitespace-nowrap text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.11em] text-[#5B2CA0] sm:gap-2 sm:tracking-[0.16em]">
+                    <span className="flex min-w-0 items-center gap-1 truncate sm:gap-1.5"><Swords size={11} strokeWidth={2.5} className="flex-shrink-0 sm:h-3 sm:w-3" /><span>Historic</span></span>
+                    <div className="flex min-w-0 shrink-0 items-center gap-1 tracking-[0.06em] sm:gap-1.5 sm:tracking-normal">
                       <span className="truncate">vs {getCompactTeamName(profile.opponent)}</span>
-                      <div style={{ width: '22px', height: '22px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                        <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[6px]" />
+                      <div className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center overflow-hidden sm:h-[22px] sm:w-[22px]">
+                        <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[5px] sm:text-[6px]" />
                       </div>
                     </div>
                   </div>
