@@ -730,11 +730,17 @@ function ResponsiveStatGroup({ group }) {
     const fit = () => {
       const mobile = mq.matches
       const allowWrap = mobile && (group.label === 'PASS' || group.label === 'REC')
-      const maxSize = 20
-      const minSize = 12
+      const minSize = 11
 
-      // Start at the same 20px used by the Apps / Starts / Bench cards and
-      // only reduce when the actual rendered content cannot fit.
+      // Fantasy Pts is the visual highlight. Never allow PASS/RUSH/REC numbers
+      // to be larger than the Fantasy Pts number at the current viewport.
+      // Keep their normal ceiling at 20px on larger screens, while inheriting
+      // the smaller mobile size automatically.
+      const fantasySize = Math.min(20, Math.max(18, window.innerWidth * 0.022))
+      const maxSize = Math.floor(fantasySize)
+
+      // Start at the largest size allowed by Fantasy Pts and only reduce when
+      // the actual rendered content cannot fit.
       let fitted = minSize
       for (let size = maxSize; size >= minSize; size -= 1) {
         groupEl.style.setProperty('--stat-size', `${size}px`)
@@ -783,7 +789,7 @@ function ResponsiveStatGroup({ group }) {
   const allowMobileWrap = group.label === 'PASS' || group.label === 'REC'
 
   return (
-    <div ref={groupRef} className="flex min-w-0 items-start gap-0 sm:gap-2" style={{ '--stat-size': '20px' }}>
+    <div ref={groupRef} className="flex min-w-0 items-start gap-0 sm:gap-2" style={{ '--stat-size': '18px' }}>
       <span className="hidden w-[34px] shrink-0 items-center gap-1 pt-0.5 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
         {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
         <span>{group.label}</span>
