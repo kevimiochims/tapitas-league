@@ -716,6 +716,100 @@ function formatPlayerStatLine(stats, pos) {
 }
 
 
+function ResponsiveStatGroup({ group }) {
+  const groupRef = useRef(null)
+  const itemsRef = useRef(null)
+
+  useEffect(() => {
+    const groupEl = groupRef.current
+    const itemsEl = itemsRef.current
+    if (!groupEl || !itemsEl) return
+
+    const mq = window.matchMedia('(max-width: 639px)')
+
+    const fit = () => {
+      const mobile = mq.matches
+      const allowWrap = mobile && (group.label === 'PASS' || group.label === 'REC')
+      const maxSize = 20
+      const minSize = 12
+
+      // Start at the same 20px used by the Apps / Starts / Bench cards and
+      // only reduce when the actual rendered content cannot fit.
+      let fitted = minSize
+      for (let size = maxSize; size >= minSize; size -= 1) {
+        groupEl.style.setProperty('--stat-size', `${size}px`)
+        itemsEl.style.flexWrap = allowWrap ? 'wrap' : 'nowrap'
+
+        const children = Array.from(itemsEl.children)
+        const childOverflow = children.some(child => child.scrollWidth > child.clientWidth + 1)
+
+        if (!allowWrap) {
+          if (!childOverflow && itemsEl.scrollWidth <= itemsEl.clientWidth + 1) {
+            fitted = size
+            break
+          }
+          continue
+        }
+
+        const lineTops = [...new Set(children.map(child => Math.round(child.getBoundingClientRect().top)))]
+        if (!childOverflow && lineTops.length <= 2) {
+          fitted = size
+          break
+        }
+      }
+
+      groupEl.style.setProperty('--stat-size', `${fitted}px`)
+    }
+
+    fit()
+
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null
+    ro?.observe(groupEl)
+    ro?.observe(itemsEl)
+
+    const onMediaChange = () => fit()
+    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onMediaChange)
+    else mq.addListener(onMediaChange)
+    window.addEventListener('resize', fit)
+
+    return () => {
+      ro?.disconnect()
+      if (typeof mq.removeEventListener === 'function') mq.removeEventListener('change', onMediaChange)
+      else mq.removeListener(onMediaChange)
+      window.removeEventListener('resize', fit)
+    }
+  }, [group.label, group.items])
+
+  const allowMobileWrap = group.label === 'PASS' || group.label === 'REC'
+
+  return (
+    <div ref={groupRef} className="flex min-w-0 items-start gap-0 sm:gap-2" style={{ '--stat-size': '20px' }}>
+      <span className="hidden w-[34px] shrink-0 items-center gap-1 pt-0.5 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
+        {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
+        <span>{group.label}</span>
+      </span>
+      <div
+        ref={itemsRef}
+        className={`min-w-0 w-full items-baseline ${allowMobileWrap ? 'flex flex-wrap gap-x-3 gap-y-3 sm:flex-nowrap sm:gap-x-4 sm:gap-y-0' : 'flex flex-nowrap gap-x-3 sm:gap-x-4'}`}
+      >
+        {group.items.map((item, i) => (
+          <div key={i} className="flex min-w-0 max-w-full shrink-0 items-baseline gap-1 whitespace-nowrap">
+            <strong
+              className="font-black leading-none tracking-tight text-[#16274F]"
+              style={{ fontSize: 'var(--stat-size)' }}
+            >
+              {item.value}
+            </strong>
+            <span className="shrink-0 text-[5px] font-black uppercase tracking-[0.03em] text-[#6B7280] sm:text-[6px]">
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function formatCompactPlayerStatGroups(stats, pos) {
   if (!stats) return []
   const n = key => Number(stats?.[key] ?? 0)
@@ -1220,34 +1314,14 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                   </div>
 
                   <div className="mt-2 flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3">
-                    <div className="w-fit min-w-0 max-w-[calc(100%_-_82px)] shrink sm:max-w-[calc(100%_-_108px)]">
-                      {compactStatGroups.length ? compactStatGroups.map(group => {
-                        const flexibleRows = group.label === 'PASS' || group.label === 'REC'
-                        const itemCount = group.items.length
-                        const statValueClass =
-                          itemCount <= 3
-                            ? 'text-[20px]'
-                            : itemCount === 4
-                              ? 'text-[19px]'
-                              : 'text-[18px]'
-
-                        return (
-                          <div key={group.label} className="flex min-w-0 items-start gap-0 sm:gap-2">
-                            <span className="hidden w-[34px] shrink-0 items-center gap-1 pt-0.5 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
-                              {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
-                              <span>{group.label}</span>
-                            </span>
-                            <div className={`min-w-0 ${flexibleRows ? 'flex max-h-[48px] max-w-full flex-wrap items-baseline gap-x-2.5 gap-y-2 overflow-hidden sm:max-h-none sm:flex-nowrap sm:gap-x-3 sm:overflow-visible lg:gap-x-4' : 'flex max-w-full flex-nowrap items-baseline gap-x-2.5 overflow-hidden sm:gap-x-3 lg:gap-x-4'}`}>
-                              {group.items.map((item, i) => (
-                                <div key={i} className="flex min-w-0 max-w-full items-baseline gap-0.5">
-                                  <strong className={`${statValueClass} shrink-0 whitespace-nowrap font-black leading-none tracking-tight text-[#16274F] sm:text-[20px]`}>{item.value}</strong>
-                                  <span className="shrink-0 whitespace-nowrap text-[5px] font-black uppercase tracking-[0.03em] text-[#6B7280] sm:text-[6px]">{item.label}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )
-                      }) : (
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      {compactStatGroups.length ? (
+                        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:gap-1">
+                          {compactStatGroups.map(group => (
+                            <ResponsiveStatGroup key={group.label} group={group} />
+                          ))}
+                        </div>
+                                            ) : (
                         <span className="text-[9px] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
                       )}
                     </div>
@@ -1276,7 +1350,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                   </div>
 
                   <div className="mt-2 flex flex-1 items-center justify-center">
-                    <div className="grid w-full grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)_1px_minmax(0,1fr)] items-center gap-x-3 sm:gap-x-5 lg:gap-x-7">
+                    <div className="grid w-full grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)_1px_minmax(0,1fr)] items-center gap-x-5 sm:gap-x-8 lg:gap-x-12">
                       <div className="min-w-0 text-center">
                         <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
                         <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">GAMES</span>
