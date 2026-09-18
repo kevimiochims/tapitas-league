@@ -717,7 +717,7 @@ function formatPlayerStatLine(stats, pos) {
 
 
 function ResponsiveStatGroup({ group }) {
-  const allowMobileWrap = group.label === 'PASS' || group.label === 'REC'
+  const allowMobileWrap = group.label === 'PASS' || group.label === 'REC' || group.label === 'RUSH'
 
   return (
     <div
@@ -1072,7 +1072,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 
   // All weekly stat rows share ONE font size. We fit the whole stats block as
   // a unit so PASS/RUSH/REC never end up visually mismatched. On mobile,
-  // PASS and REC may use up to two lines; RUSH always stays on one line.
+  // PASS, REC and RUSH may use up to two lines on mobile; desktop stays on one line.
   useEffect(() => {
     const root = weeklyStatsRef.current
     if (!root) return
@@ -1102,7 +1102,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
           const itemsEl = groupEl.querySelector('[data-stat-items]')
           if (!itemsEl) continue
 
-          const allowWrap = mq.matches && (label === 'PASS' || label === 'REC')
+          const allowWrap = mq.matches && (label === 'PASS' || label === 'REC' || label === 'RUSH')
           const children = Array.from(itemsEl.children)
           const childOverflow = children.some(child => child.scrollWidth > child.clientWidth + 1)
 
@@ -1350,7 +1350,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                     </div>
 
                     <div className="flex w-[72px] shrink-0 flex-col items-center justify-center border-l-2 border-[#16274F]/10 pl-2 sm:w-[96px] sm:pl-3 lg:w-[112px]">
-                      <strong className="text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
+                      <strong className="text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
                         {currentGameRow ? currentGameRow.adjustedPts.toFixed(2) : '—'}
                       </strong>
                       <span className="mt-1 text-[5px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[7px]">Fantasy Pts</span>
@@ -1375,17 +1375,17 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                   <div className="mt-2 flex flex-1 items-center justify-center">
                     <div className="grid w-full grid-cols-[0.8fr_auto_1.1fr_auto_1.1fr] items-stretch">
                       <div className="min-w-0 px-1 text-center sm:px-2">
-                        <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
+                        <strong className="block whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
                         <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">GAMES</span>
                       </div>
                       <div className="border-l border-[#5B2CA0]/15" aria-hidden="true" />
                       <div className="min-w-0 px-2 text-center sm:px-4">
-                        <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
+                        <strong className="block whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
                         <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
                       </div>
                       <div className="border-l border-[#5B2CA0]/15" aria-hidden="true" />
                       <div className="min-w-0 px-2 text-center sm:px-4">
-                        <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
+                        <strong className="block whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
                         <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
                       </div>
                     </div>
