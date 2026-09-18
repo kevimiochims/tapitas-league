@@ -717,92 +717,26 @@ function formatPlayerStatLine(stats, pos) {
 
 
 function ResponsiveStatGroup({ group }) {
-  const groupRef = useRef(null)
-  const itemsRef = useRef(null)
-
-  useEffect(() => {
-    const groupEl = groupRef.current
-    const itemsEl = itemsRef.current
-    if (!groupEl || !itemsEl) return
-
-    const mq = window.matchMedia('(max-width: 639px)')
-
-    const fit = () => {
-      const mobile = mq.matches
-      const allowWrap = mobile && (group.label === 'PASS' || group.label === 'REC')
-      const minSize = 11
-
-      // Fantasy Pts is the visual highlight. Never allow PASS/RUSH/REC numbers
-      // to be larger than the Fantasy Pts number at the current viewport.
-      // Keep their normal ceiling at 20px on larger screens, while inheriting
-      // the smaller mobile size automatically.
-      const fantasySize = Math.min(20, Math.max(18, window.innerWidth * 0.022))
-      const maxSize = Math.floor(fantasySize)
-
-      // Start at the largest size allowed by Fantasy Pts and only reduce when
-      // the actual rendered content cannot fit.
-      let fitted = minSize
-      for (let size = maxSize; size >= minSize; size -= 1) {
-        groupEl.style.setProperty('--stat-size', `${size}px`)
-        itemsEl.style.flexWrap = allowWrap ? 'wrap' : 'nowrap'
-
-        const children = Array.from(itemsEl.children)
-        const childOverflow = children.some(child => child.scrollWidth > child.clientWidth + 1)
-
-        if (!allowWrap) {
-          if (!childOverflow && itemsEl.scrollWidth <= itemsEl.clientWidth + 1) {
-            fitted = size
-            break
-          }
-          continue
-        }
-
-        const lineTops = [...new Set(children.map(child => Math.round(child.getBoundingClientRect().top)))]
-        if (!childOverflow && lineTops.length <= 2) {
-          fitted = size
-          break
-        }
-      }
-
-      groupEl.style.setProperty('--stat-size', `${fitted}px`)
-    }
-
-    fit()
-
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null
-    ro?.observe(groupEl)
-    ro?.observe(itemsEl)
-
-    const onMediaChange = () => fit()
-    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onMediaChange)
-    else mq.addListener(onMediaChange)
-    window.addEventListener('resize', fit)
-
-    return () => {
-      ro?.disconnect()
-      if (typeof mq.removeEventListener === 'function') mq.removeEventListener('change', onMediaChange)
-      else mq.removeListener(onMediaChange)
-      window.removeEventListener('resize', fit)
-    }
-  }, [group.label, group.items])
-
   const allowMobileWrap = group.label === 'PASS' || group.label === 'REC'
 
   return (
-    <div ref={groupRef} className="flex min-w-0 items-start gap-0 sm:gap-2" style={{ '--stat-size': '18px' }}>
+    <div
+      data-stat-group={group.label}
+      className="flex min-w-0 items-start gap-0 sm:gap-2"
+    >
       <span className="hidden w-[34px] shrink-0 items-center gap-1 pt-0.5 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
         {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
         <span>{group.label}</span>
       </span>
       <div
-        ref={itemsRef}
+        data-stat-items
         className={`min-w-0 w-full items-baseline ${allowMobileWrap ? 'flex flex-wrap gap-x-3 gap-y-3 sm:flex-nowrap sm:gap-x-4 sm:gap-y-0' : 'flex flex-nowrap gap-x-3 sm:gap-x-4'}`}
       >
         {group.items.map((item, i) => (
           <div key={i} className="flex min-w-0 max-w-full shrink-0 items-baseline gap-1 whitespace-nowrap">
             <strong
               className="font-black leading-none tracking-tight text-[#16274F]"
-              style={{ fontSize: 'var(--stat-size)' }}
+              style={{ fontSize: 'var(--weekly-stat-size, 18px)' }}
             >
               {item.value}
             </strong>
@@ -946,6 +880,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   const [logSort, setLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
   const selectedTeamRef = useRef(null)
   const selectedGameRef = useRef(null)
+  const weeklyStatsRef = useRef(null)
 
   useEffect(() => {
     setSelectedTeams([profile.team])
@@ -1134,6 +1069,88 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   const position = String(profile.position || '').toUpperCase()
   const statLine = formatPlayerStatLine(weeklyStats, position)
   const compactStatGroups = formatCompactPlayerStatGroups(weeklyStats, position)
+
+  // All weekly stat rows share ONE font size. We fit the whole stats block as
+  // a unit so PASS/RUSH/REC never end up visually mismatched. On mobile,
+  // PASS and REC may use up to two lines; RUSH always stays on one line.
+  useEffect(() => {
+    const root = weeklyStatsRef.current
+    if (!root) return
+
+    const mq = window.matchMedia('(max-width: 639px)')
+
+    const fit = () => {
+      const groups = Array.from(root.querySelectorAll('[data-stat-group]'))
+      if (!groups.length) {
+        root.style.setProperty('--weekly-stat-size', '18px')
+        return
+      }
+
+      // Never let these secondary stats exceed the visual size of Fantasy Pts.
+      // On desktop the practical ceiling stays at the same 20px used elsewhere
+      // in the profile cards; on smaller screens the ceiling scales down gently.
+      const maxSize = Math.floor(Math.min(20, Math.max(14, window.innerWidth * 0.022)))
+      const minSize = 11
+      let fitted = minSize
+
+      for (let size = maxSize; size >= minSize; size -= 1) {
+        root.style.setProperty('--weekly-stat-size', `${size}px`)
+        let fits = true
+
+        for (const groupEl of groups) {
+          const label = String(groupEl.dataset.statGroup || '')
+          const itemsEl = groupEl.querySelector('[data-stat-items]')
+          if (!itemsEl) continue
+
+          const allowWrap = mq.matches && (label === 'PASS' || label === 'REC')
+          const children = Array.from(itemsEl.children)
+          const childOverflow = children.some(child => child.scrollWidth > child.clientWidth + 1)
+
+          if (childOverflow) {
+            fits = false
+            break
+          }
+
+          if (!allowWrap && itemsEl.scrollWidth > itemsEl.clientWidth + 1) {
+            fits = false
+            break
+          }
+
+          if (allowWrap) {
+            const lineTops = [...new Set(children.map(child => Math.round(child.getBoundingClientRect().top)))]
+            if (lineTops.length > 2) {
+              fits = false
+              break
+            }
+          }
+        }
+
+        if (fits) {
+          fitted = size
+          break
+        }
+      }
+
+      root.style.setProperty('--weekly-stat-size', `${fitted}px`)
+    }
+
+    fit()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null
+    ro?.observe(root)
+
+    const onMediaChange = () => fit()
+    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onMediaChange)
+    else mq.addListener(onMediaChange)
+    window.addEventListener('resize', fit)
+
+    return () => {
+      ro?.disconnect()
+      if (typeof mq.removeEventListener === 'function') mq.removeEventListener('change', onMediaChange)
+      else mq.removeListener(onMediaChange)
+      window.removeEventListener('resize', fit)
+    }
+  }, [compactStatGroups])
+
   const statItemCount = statLine.length + (currentGameRow ? 1 : 0)
   const statsNeedMobileWrap = statItemCount > 4
   const history = useMemo(() => getTeamSeasonHistory(profile.rawName, games), [profile.rawName, games])
@@ -1320,7 +1337,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                   </div>
 
                   <div className="mt-2 flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3">
-                    <div className="min-w-0 flex-1 overflow-hidden">
+                    <div ref={weeklyStatsRef} className="min-w-0 flex-1 overflow-hidden" style={{ '--weekly-stat-size': '18px' }}>
                       {compactStatGroups.length ? (
                         <div className="flex min-w-0 flex-1 flex-col gap-2 sm:gap-1">
                           {compactStatGroups.map(group => (
@@ -1356,16 +1373,18 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                   </div>
 
                   <div className="mt-2 flex flex-1 items-center justify-center">
-                    <div className="grid w-full grid-cols-3 items-stretch">
-                      <div className="min-w-0 px-1 text-center sm:px-3">
+                    <div className="grid w-full grid-cols-[0.8fr_auto_1.1fr_auto_1.1fr] items-stretch">
+                      <div className="min-w-0 px-1 text-center sm:px-2">
                         <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
                         <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">GAMES</span>
                       </div>
-                      <div className="min-w-0 border-l border-[#5B2CA0]/15 px-1 text-center sm:px-4">
+                      <div className="border-l border-[#5B2CA0]/15" aria-hidden="true" />
+                      <div className="min-w-0 px-2 text-center sm:px-4">
                         <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
                         <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
                       </div>
-                      <div className="min-w-0 border-l border-[#5B2CA0]/15 px-1 text-center sm:px-4">
+                      <div className="border-l border-[#5B2CA0]/15" aria-hidden="true" />
+                      <div className="min-w-0 px-2 text-center sm:px-4">
                         <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
                         <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
                       </div>
@@ -1380,7 +1399,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               <thead className="sticky top-0 z-20 bg-[#F7F6F2]">
                 <tr className="border-b-2 border-[#0A0A0A]/10">
                   <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('season')} className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Season <span className="text-[#D01F2D]">{logSort.key === 'season' ? sortDirLabel : '↕'}</span></button></th>
-                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('week')} className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Week <span className="text-[#D01F2D]">{logSort.key === 'week' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[9%] min-w-[68px] px-2 py-2.5 text-left align-middle text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button type="button" onClick={() => toggleSort('week')} className="inline-flex w-max items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Week <span className="inline-block whitespace-nowrap text-[#D01F2D]">{logSort.key === 'week' ? sortDirLabel : '↕'}</span></button></th>
                   <th className="w-[11%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team</th>
                   <th className="w-[18%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Opponent" value={logOpponentFilter} options={logOpponentOptions} onChange={setLogOpponentFilter} /></th>
                   <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Status" value={logStatusFilter} options={logStatusOptions} onChange={setLogStatusFilter} /></th>
