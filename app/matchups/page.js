@@ -1319,7 +1319,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-2.5 sm:px-3 sm:pt-3 sm:pb-3">
-            <div className="grid grid-cols-2 items-stretch gap-3">
+            <div className="grid grid-cols-[2fr_1fr] items-stretch gap-3">
               {/* WEEKLY STATS — Option A: stats on the left, fantasy points highlighted on the right */}
               <div className="min-w-0 h-full">
                 <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:px-4 sm:py-3">
