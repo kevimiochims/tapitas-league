@@ -1219,24 +1219,35 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                     ) : null}
                   </div>
 
-                  <div className="mt-2 flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      {compactStatGroups.length ? compactStatGroups.map(group => (
-                        <div key={group.label} className="flex min-w-0 items-center gap-2">
-                          <span className="hidden w-[34px] shrink-0 items-center gap-1 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
-                            {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
-                            <span>{group.label}</span>
-                          </span>
-                          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:gap-4">
-                            {group.items.map((item, i) => (
-                              <div key={i} className="flex min-w-0 items-baseline gap-0.5 whitespace-nowrap">
-                                <strong className="text-[clamp(10px,1.65vw,28px)] font-black leading-none tracking-tight text-[#16274F]">{item.value}</strong>
-                                <span className="shrink-0 text-[5px] font-black uppercase tracking-[0.03em] text-[#6B7280] sm:text-[6px]">{item.label}</span>
-                              </div>
-                            ))}
+                  <div className="mt-2 flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3">
+                    <div className="w-fit min-w-0 max-w-[calc(100%_-_82px)] shrink sm:max-w-[calc(100%_-_108px)]">
+                      {compactStatGroups.length ? compactStatGroups.map(group => {
+                        const flexibleRows = group.label === 'PASS' || group.label === 'REC'
+                        const itemCount = group.items.length
+                        const statValueClass =
+                          itemCount <= 3
+                            ? 'text-[20px]'
+                            : itemCount === 4
+                              ? 'text-[19px]'
+                              : 'text-[18px]'
+
+                        return (
+                          <div key={group.label} className="flex min-w-0 items-start gap-0 sm:gap-2">
+                            <span className="hidden w-[34px] shrink-0 items-center gap-1 pt-0.5 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
+                              {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
+                              <span>{group.label}</span>
+                            </span>
+                            <div className={`min-w-0 ${flexibleRows ? 'flex max-h-[48px] max-w-full flex-wrap items-baseline gap-x-2.5 gap-y-2 overflow-hidden sm:max-h-none sm:flex-nowrap sm:gap-x-3 sm:overflow-visible lg:gap-x-4' : 'flex max-w-full flex-nowrap items-baseline gap-x-2.5 overflow-hidden sm:gap-x-3 lg:gap-x-4'}`}>
+                              {group.items.map((item, i) => (
+                                <div key={i} className="flex min-w-0 max-w-full items-baseline gap-0.5">
+                                  <strong className={`${statValueClass} shrink-0 whitespace-nowrap font-black leading-none tracking-tight text-[#16274F] sm:text-[20px]`}>{item.value}</strong>
+                                  <span className="shrink-0 whitespace-nowrap text-[5px] font-black uppercase tracking-[0.03em] text-[#6B7280] sm:text-[6px]">{item.label}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )) : (
+                        )
+                      }) : (
                         <span className="text-[9px] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
                       )}
                     </div>
@@ -1264,18 +1275,22 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                     </div>
                   </div>
 
-                  <div className="mt-2 grid flex-1 grid-cols-3 items-center divide-x divide-[#5B2CA0]/15">
-                    <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
-                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">GAMES</span>
-                    </div>
-                    <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
-                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
-                    </div>
-                    <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
-                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
+                  <div className="mt-2 flex flex-1 items-center justify-center">
+                    <div className="grid w-full grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)_1px_minmax(0,1fr)] items-center gap-x-3 sm:gap-x-5 lg:gap-x-7">
+                      <div className="min-w-0 text-center">
+                        <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
+                        <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">GAMES</span>
+                      </div>
+                      <div className="h-12 w-px bg-[#5B2CA0]/15" />
+                      <div className="min-w-0 text-center">
+                        <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
+                        <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
+                      </div>
+                      <div className="h-12 w-px bg-[#5B2CA0]/15" />
+                      <div className="min-w-0 text-center">
+                        <strong className="block whitespace-nowrap text-[clamp(18px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
+                        <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
+                      </div>
                     </div>
                   </div>
                 </div>
