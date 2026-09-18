@@ -1318,7 +1318,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-2.5 sm:px-3 sm:pt-3 sm:pb-3">
+          <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-1.5 pb-2 sm:px-3 sm:pt-2 sm:pb-2">
             <div className="grid grid-cols-[2fr_1fr] items-stretch gap-3">
               {/* WEEKLY STATS — Option A: stats on the left, fantasy points highlighted on the right */}
               <div className="min-w-0 h-full">
@@ -1376,14 +1376,14 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                     </div>
                   </div>
 
-                  <div className="mt-2 grid flex-1 grid-cols-2 items-center">
-                    <div className="min-w-0 border-r border-[#5B2CA0]/15 px-2 text-center sm:px-4">
-                      <strong className="block whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
-                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
+                  <div className="mt-2 grid w-full flex-1 grid-cols-2 items-center">
+                    <div className="flex min-w-0 flex-col items-center justify-center border-r border-[#5B2CA0]/15 px-1 text-center sm:px-3">
+                      <strong className="whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
+                      <span className="mt-1 text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
                     </div>
-                    <div className="min-w-0 px-2 text-center sm:px-4">
-                      <strong className="block whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
-                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
+                    <div className="flex min-w-0 flex-col items-center justify-center px-1 text-center sm:px-3">
+                      <strong className="whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
+                      <span className="mt-1 text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
                     </div>
                   </div>
                 </div>
