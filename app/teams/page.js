@@ -2387,7 +2387,7 @@ export default function TeamsPage() {
       <section className="px-3 pb-20 md:px-6">
 
         {/* Hero */}
-        <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy" style={{ minHeight: '240px' }}>
+        <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
           <div className="absolute inset-0 overflow-hidden">
             <svg width="100%" height="100%" viewBox="0 0 900 240" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <g opacity="0.06">
