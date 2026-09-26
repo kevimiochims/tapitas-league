@@ -449,7 +449,7 @@ function CompactCheckFilter({ value, onChange, options, label, multiple = false,
   const display = value === 'All' || (multiple && selectedValues.length === 0)
     ? label
     : multiple
-      ? `${activeCount} selected`
+      ? selectedValues.filter(v => v !== 'All').map(formatOption).join(', ')
       : formatOption(value)
 
   return (
@@ -612,7 +612,8 @@ function PlayerProfile({ player, games, playerLookup, onClose }) {
   const [statusFilter, setStatusFilter] = useState('All')
   const [resultFilter, setResultFilter] = useState('All')
   const [stageFilter, setStageFilter] = useState('All')
-  const [sort, setSort] = useState({ key: 'season', seasonDir: 'desc', weekDir: 'desc', dir: 'desc' })
+  const [weekFilter, setWeekFilter] = useState('All')
+  const [sort, setSort] = useState({ key: 'season', dir: 'desc' })
   const [sleeperInfo, setSleeperInfo] = useState(null)
   const [sleeperLoading, setSleeperLoading] = useState(false)
 
@@ -685,20 +686,26 @@ function PlayerProfile({ player, games, playerLookup, onClose }) {
     status:['All',...Array.from(new Set(profileGames.map(g=>g.status).filter(Boolean))).sort()],
     result:['All',...Array.from(new Set(profileGames.map(g=>g.result).filter(Boolean))).sort()],
     stage:['All',...Array.from(new Set(profileGames.map(g=>g.stage).filter(Boolean))).sort()],
+    week:['All',...Array.from(new Set(profileGames.map(g=>g.week).filter(Boolean))).sort((a,b)=>(parseFloat(a)||0)-(parseFloat(b)||0))],
   }
-  const filtered=profileGames.filter(g=>(opponentFilter==='All'||g.opponent===opponentFilter)&&(statusFilter==='All'||g.status===statusFilter)&&(resultFilter==='All'||g.result===resultFilter)&&(stageFilter==='All'||g.stage===stageFilter))
+  const filtered=profileGames.filter(g=>(opponentFilter==='All'||g.opponent===opponentFilter)&&(statusFilter==='All'||g.status===statusFilter)&&(resultFilter==='All'||g.result===resultFilter)&&(stageFilter==='All'||g.stage===stageFilter)&&(weekFilter==='All'||g.week===weekFilter))
+  // Cada coluna ordena de forma totalmente independente — quem clicar em "Player Pts"
+  // vê o maior placar de TODA a tabela primeiro, não só dentro de cada temporada.
+  const sortValue = (row, key) => key === 'season' ? (Number(row.season) || 0)
+    : key === 'week' ? (parseFloat(row.week) || 0)
+    : key === 'pts' ? row.pts
+    : key === 'teamPF' ? row.teamPF
+    : 0
   const sorted=[...filtered].sort((a,b)=>{
-    const sa=Number(a.season)||0,sb=Number(b.season)||0
-    if(sa!==sb)return(sb-sa)*(sort.seasonDir==='desc'?1:-1)
-    const wa=parseFloat(a.week)||0,wb=parseFloat(b.week)||0
-    if(sort.key==='week'&&wa!==wb)return(wb-wa)*(sort.weekDir==='desc'?1:-1)
-    if(sort.key==='pts'&&a.pts!==b.pts)return(b.pts-a.pts)*(sort.dir==='desc'?1:-1)
-    if(sort.key==='teamPF'&&a.teamPF!==b.teamPF)return(b.teamPF-a.teamPF)*(sort.dir==='desc'?1:-1)
-    return wb-wa
+    const dirMul = sort.dir === 'desc' ? 1 : -1
+    const diff = (sortValue(b, sort.key) - sortValue(a, sort.key)) * dirMul
+    if (diff !== 0) return diff
+    // desempate estável: temporada mais recente primeiro, depois semana
+    return (Number(b.season)-Number(a.season)) || ((parseFloat(b.week)||0)-(parseFloat(a.week)||0))
   })
 
   const toggleTeam=team=>setSelectedTeams(cur=>cur.length===1&&cur.includes(team)?cur:cur.some(t=>normalizeTeamName(t)===normalizeTeamName(team))?cur.filter(t=>normalizeTeamName(t)!==normalizeTeamName(team)):[...cur,team])
-  const toggleSort=key=>setSort(cur=>key==='season'?{...cur,key,seasonDir:cur.key===key&&cur.seasonDir==='desc'?'asc':'desc'}:key==='week'?{...cur,key,weekDir:cur.key===key&&cur.weekDir==='desc'?'asc':'desc'}:{...cur,key,dir:cur.key===key&&cur.dir==='desc'?'asc':'desc'})
+  const toggleSort=key=>setSort(cur=>cur.key===key?{key,dir:cur.dir==='desc'?'asc':'desc'}:{key,dir:'desc'})
 
   return (
     <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/60 p-2 pt-3 sm:items-center sm:p-5" onClick={onClose}>
@@ -724,7 +731,7 @@ function PlayerProfile({ player, games, playerLookup, onClose }) {
               <tr>
                 {[
                   { label: 'Season', key: 'season' },
-                  { label: 'Week', key: 'week' },
+                  { label: 'Week', key: null, filter: { value: weekFilter, onChange: setWeekFilter, options: filterOpts.week } },
                   { label: 'Team', key: null },
                   { label: 'Opponent', key: null, filter: { value: opponentFilter, onChange: setOpponentFilter, options: filterOpts.opponent } },
                   { label: 'Status', key: null, filter: { value: statusFilter, onChange: setStatusFilter, options: filterOpts.status } },
@@ -733,7 +740,6 @@ function PlayerProfile({ player, games, playerLookup, onClose }) {
                   { label: 'Result', key: null, filter: { value: resultFilter, onChange: setResultFilter, options: filterOpts.result } },
                   { label: 'Stage', key: null, filter: { value: stageFilter, onChange: setStageFilter, options: filterOpts.stage } },
                 ].map(col => {
-                  const dir = col.key === 'season' ? sort.seasonDir : col.key === 'week' ? sort.weekDir : sort.dir
                   const active = col.key && sort.key === col.key
                   return (
                     <th key={col.label} className="whitespace-nowrap px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
@@ -746,7 +752,7 @@ function PlayerProfile({ player, games, playerLookup, onClose }) {
                           className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${active ? 'text-[#D01F2D]' : ''}`}
                         >
                           {col.label}
-                          <span className="text-[9px]">{active ? (dir === 'desc' ? '↓' : '↑') : ''}</span>
+                          <span className="text-[9px]">{active ? (sort.dir === 'desc' ? '↓' : '↑') : ''}</span>
                         </button>
                       ) : (
                         col.label
@@ -822,12 +828,20 @@ export default function PlayersPage() {
   const identityMap = useMemo(() => buildCanonicalIdentityMap(allAppearances, playerLookup), [allAppearances, playerLookup])
 
   const players = useMemo(() => {
+    const seasonSel = season.includes('All') ? null : season
+    const teamSel = teamFilter.includes('All') ? null : teamFilter.map(normalizeTeamName)
+
     const map = new Map()
     gameAppearances.forEach((apps, gameIndex) => {
       const g = games[gameIndex]
       const doubleWeek = isDoubleWeek(g)
-      const season = String(g?.Season || '').trim()
-      const team = String(g?.Team || '').trim()
+      const gSeason = String(g?.Season || '').trim()
+      const gTeam = String(g?.Team || '').trim()
+      // Season e Franchise escopam quais jogos entram na agregação — assim
+      // Best/Avg/Apps/etc. refletem só o recorte filtrado, não a carreira toda.
+      if (seasonSel && !seasonSel.includes(gSeason)) return
+      if (teamSel && !teamSel.includes(normalizeTeamName(gTeam))) return
+
       const seen = new Set()
       apps.forEach(app => {
         const raw = String(app.name || '').trim()
@@ -859,8 +873,8 @@ export default function PlayersPage() {
         else p.bench++
         const points = doubleWeek ? app.pts / 2 : app.pts
         p.total += points
-        if (season) p.seasons.add(season)
-        if (team) p.teams.add(team)
+        if (gSeason) p.seasons.add(gSeason)
+        if (gTeam) p.teams.add(gTeam)
         if (!(app.status === 'Bench' && app.pts === 0)) {
           p.avgTotal += points
           p.avgCount++
@@ -872,25 +886,32 @@ export default function PlayersPage() {
       .filter(p => p.position !== 'DEF')
       .map(p => ({ ...p, aliases: Array.from(p.aliases), teams: Array.from(p.teams), avg: p.avgCount ? p.avgTotal / p.avgCount : 0 }))
       .sort((a,b) => b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))
-  }, [games, gameAppearances, playerLookup])
+  }, [games, gameAppearances, playerLookup, season, teamFilter])
 
-  const positions = useMemo(() => ['All', ...Array.from(new Set(players.map(p => p.position).filter(Boolean))).sort()], [players])
-  const seasons = useMemo(() => ['All', ...Array.from(new Set(players.flatMap(p => Array.from(p.seasons)))).sort((a, b) => Number(b) - Number(a))], [players])
-  const teams = useMemo(() => ['All', ...Array.from(new Set(players.flatMap(p => p.teams))).sort()], [players])
+  // Listas de opções sempre derivadas de TODOS os jogos (não do recorte atual),
+  // senão os próprios filtros ficariam presos ao que já está selecionado.
+  const allPlayerNames = useMemo(() => {
+    const names = new Set()
+    gameAppearances.forEach(apps => apps.forEach(app => {
+      const raw = String(app.name || '').trim()
+      if (raw && !getNFLTeamLogo(raw)) names.add(raw)
+    }))
+    return Array.from(names)
+  }, [gameAppearances])
+
+  const positions = useMemo(() => ['All', ...Array.from(new Set(allPlayerNames.map(n => getPlayerPosition(n, playerLookup)).filter(p => p && p !== 'DEF'))).sort()], [allPlayerNames, playerLookup])
+  const seasons = useMemo(() => ['All', ...Array.from(new Set(games.map(g => String(g?.Season || '').trim()).filter(Boolean))).sort((a, b) => Number(b) - Number(a))], [games])
+  const teams = useMemo(() => ['All', ...Array.from(new Set(games.map(g => String(g?.Team || '').trim()).filter(Boolean))).sort()], [games])
 
   const toggleSortCol = (key) => setSort(cur => cur.key === key ? { key, dir: cur.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: 'desc' })
 
   const filtered = useMemo(() => {
     const posSel = position.includes('All') ? null : position
-    const seasonSel = season.includes('All') ? null : season
-    const teamSel = teamFilter.includes('All') ? null : teamFilter.map(normalizeTeamName)
     const minAppsNum = minApps.trim() === '' ? null : Number(minApps)
 
     return players
       .filter(p => normalizePlayerKey(p.name).includes(normalizePlayerKey(search)))
       .filter(p => !posSel || posSel.includes(p.position))
-      .filter(p => !teamSel || p.teams.some(t => teamSel.includes(normalizeTeamName(t))))
-      .filter(p => !seasonSel || seasonSel.some(s => p.seasons.has(s)))
       .filter(p => minAppsNum === null || p.appearances >= minAppsNum)
       .sort((a, b) => {
         const dirMul = sort.dir === 'desc' ? 1 : -1
@@ -917,15 +938,21 @@ export default function PlayersPage() {
               <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]"><Users className="h-4 w-4 text-white" /></div>
               <div>
                 <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
-                <div className="text-sm text-[#6B7280]">{players.length} players across all Tapitas League franchises</div>
+                <div className="text-sm text-[#6B7280]">
+                  {players.length} players
+                  {season.includes('All') && teamFilter.includes('All')
+                    ? ' across all Tapitas League franchises'
+                    : <> — stats scoped to {!season.includes('All') && <span className="font-bold text-[#16274F]"> {season.join(', ')}</span>}{!season.includes('All') && !teamFilter.includes('All') && ' · '}{!teamFilter.includes('All') && <span className="font-bold text-[#16274F]"> {teamFilter.map(shortName).join(', ')}</span>}</>}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Toolbar — Position mora só no cabeçalho da coluna, sort mora só nas colunas */}
+          {/* Toolbar — Season, Position e Franchise todos multi-seleção, lado a lado */}
           <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
             <div className="grid grid-cols-2 gap-1.5 lg:flex lg:items-center lg:gap-2">
               <div className="w-full lg:w-36"><CompactCheckFilter value={season} onChange={setSeason} options={seasons} label="Season" multiple /></div>
+              <div className="w-full lg:w-32"><CompactCheckFilter value={position} onChange={setPosition} options={positions} label="Position" multiple /></div>
               <div className="w-full lg:w-40"><CompactCheckFilter value={teamFilter} onChange={setTeamFilter} options={teams} label="Franchise" multiple /></div>
               <input
                 value={minApps}
@@ -946,7 +973,7 @@ export default function PlayersPage() {
                 <tr>
                   {[
                     { label: 'Player', key: null },
-                    { label: 'Pos', key: null, filter: true },
+                    { label: 'Pos', key: null },
                     { label: 'Franchises', key: null },
                     { label: 'Apps', key: 'appearances' },
                     { label: 'Starts', key: 'starts' },
@@ -957,9 +984,7 @@ export default function PlayersPage() {
                     const active = col.key && sort.key === col.key
                     return (
                       <th key={col.label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
-                        {col.filter ? (
-                          <CompactCheckFilter value={position} onChange={setPosition} options={positions} label="Pos" multiple />
-                        ) : col.key ? (
+                        {col.key ? (
                           <button
                             type="button"
                             onClick={() => toggleSortCol(col.key)}
