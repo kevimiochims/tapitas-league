@@ -444,12 +444,13 @@ function CompactCheckFilter({ value, onChange, options, label, multiple = false,
   }, [])
 
   const selectedValues = multiple ? (Array.isArray(value) ? value : []) : [value]
-  const activeCount = multiple ? selectedValues.filter(v => v !== 'All').length : (value !== 'All' ? 1 : 0)
+  const activeSelections = selectedValues.filter(v => v !== 'All')
+  const activeCount = activeSelections.length
   const formatOption = displayOption || (opt => opt)
-  const display = value === 'All' || (multiple && selectedValues.length === 0)
+  const display = activeCount === 0
     ? label
     : multiple
-      ? selectedValues.filter(v => v !== 'All').map(formatOption).join(', ')
+      ? activeSelections.map(formatOption).join(', ')
       : formatOption(value)
 
   return (
@@ -901,7 +902,16 @@ export default function PlayersPage() {
 
   const positions = useMemo(() => ['All', ...Array.from(new Set(allPlayerNames.map(n => getPlayerPosition(n, playerLookup)).filter(p => p && p !== 'DEF'))).sort()], [allPlayerNames, playerLookup])
   const seasons = useMemo(() => ['All', ...Array.from(new Set(games.map(g => String(g?.Season || '').trim()).filter(Boolean))).sort((a, b) => Number(b) - Number(a))], [games])
-  const teams = useMemo(() => ['All', ...Array.from(new Set(games.map(g => String(g?.Team || '').trim()).filter(Boolean))).sort()], [games])
+  const teams = useMemo(() => {
+    const set = new Set()
+    games.forEach((g, i) => {
+      if (gameAppearances[i] && gameAppearances[i].length > 0) {
+        const t = String(g?.Team || '').trim()
+        if (t) set.add(t)
+      }
+    })
+    return ['All', ...Array.from(set).sort()]
+  }, [games, gameAppearances])
 
   const toggleSortCol = (key) => setSort(cur => cur.key === key ? { key, dir: cur.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: 'desc' })
 
