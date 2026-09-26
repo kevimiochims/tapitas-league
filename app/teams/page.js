@@ -1630,7 +1630,7 @@ export default function TeamsPage() {
           </button>
 
           {/* Team Hero */}
-          <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy" style={{ minHeight: '260px' }}>
+          <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
             <div className="absolute inset-0 overflow-hidden">
               <svg width="100%" height="100%" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <g opacity="0.06">
@@ -1725,7 +1725,7 @@ export default function TeamsPage() {
                   <div
                     className={`mb-1 text-[9px] font-black uppercase tracking-[0.2em] ${c.text}`}
                   >
-                    {label === 'Best Streak' ? <>Best<br />Streak</> : label === 'Worst Streak' ? <>Worst<br />Streak</> : label}
+                    {label === 'Best Streak' ? <>Best Streak</> : label === 'Worst Streak' ? <>Worst Streak</> : label}
                   </div>
 
                   <div>
@@ -1741,7 +1741,7 @@ export default function TeamsPage() {
             {/* Player record cards — same visual logic as the standard stat cards */}
             {[
               mostRostered.length > 0 ? {
-                key: 'Most Rostered',
+                key: 'Most Apps',
                 href: () => openPlayerProfile(`raw:${mostRostered[0].rawName}`),
                 Icon: Users,
                 accent: 'navy',
@@ -1749,7 +1749,7 @@ export default function TeamsPage() {
                 player: mostRostered[0],
               } : null,
               mostStarted.length > 0 ? {
-                key: 'Most Started',
+                key: 'Most Starts',
                 href: () => openPlayerProfile(`raw:${mostStarted[0].rawName}`),
                 Icon: Star,
                 accent: 'green',

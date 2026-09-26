@@ -893,76 +893,36 @@ export default function HistoryPage() {
                                     <span className="shrink-0 bg-[#F5C518] px-2 py-1 text-[8px] font-black uppercase tracking-[0.1em] text-[#0A0A0A]">Final</span>
                                   </div>
 
-                                  {/* MOBILE */}
-                                  <div className="grid grid-cols-1 items-center gap-5 min-[560px]:hidden">
-                                    <div className="min-w-0 text-center">
-                                      {championLogo ? (
-                                        <img src={championLogo} alt={s.champion || 'Champion'} className="mx-auto h-14 w-14 rounded-full object-cover" />
-                                      ) : (
-                                        <div className="mx-auto h-14 w-14 rounded-full bg-[#16274F]" />
-                                      )}
-                                      <div className="mt-2">
-                                        <div className="break-words text-[10px] font-black uppercase leading-tight text-[#16274F]">{s.champion || '—'}</div>
-                                        <div className="mt-1.5 text-[19px] font-black leading-none tracking-[-0.04em] text-[#D01F2D]">
-                                          {s.championshipScore?.toFixed(2) ?? '—'}
-                                        </div>
-                                        <div className="mt-1.5 inline-flex bg-[#F5C518] px-2 py-1 text-[7px] font-black uppercase tracking-[0.08em] text-[#0A0A0A]">Champion</div>
-                                      </div>
-                                    </div>
-                                    <div className="min-w-0 border-y border-[#B8860B]/20 px-3 py-3 text-center">
-                                      <div className="text-[7px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Final Score</div>
-                                      <div className="mt-1 whitespace-nowrap text-[20px] font-black tracking-[-0.05em] text-[#16274F]">
-                                        {s.championshipScore?.toFixed(2) ?? '—'}
-                                        <span className="mx-1.5 text-[#B8860B]">–</span>
-                                        {s.championshipOpponentScore?.toFixed(2) ?? '—'}
-                                      </div>
-                                    </div>
-                                    <div className="min-w-0 text-center">
-                                      {getTeamLogo(s.championshipOpponent) ? (
-                                        <img src={getTeamLogo(s.championshipOpponent)} alt={s.championshipOpponent || 'Runner-up'} className="mx-auto h-14 w-14 rounded-full object-cover" />
-                                      ) : (
-                                        <div className="mx-auto h-14 w-14 rounded-full bg-[#16274F]" />
-                                      )}
-                                      <div className="mt-2">
-                                        <div className="break-words text-[10px] font-black uppercase leading-tight text-[#16274F]">{s.championshipOpponent || '—'}</div>
-                                        <div className="mt-1.5 text-[19px] font-black leading-none tracking-[-0.04em] text-[#6B7280]">
-                                          {s.championshipOpponentScore?.toFixed(2) ?? '—'}
-                                        </div>
-                                        <div className="mt-1.5 text-[7px] font-black uppercase tracking-[0.08em] text-[#6B7280]">Runner-up</div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* TABLET / DESKTOP: matchup layout */}
-                                  <div className="hidden min-[520px]:grid grid-cols-[minmax(0,1fr)_58px_minmax(0,1fr)] items-start gap-2 min-[700px]:grid-cols-[minmax(0,1fr)_70px_minmax(0,1fr)] min-[700px]:gap-3">
+                                  {/* MATCHUP — horizontal at all screen sizes */}
+                                  <div className="grid grid-cols-[minmax(0,1fr)_44px_minmax(0,1fr)] items-center gap-1 min-[520px]:grid-cols-[minmax(0,1fr)_58px_minmax(0,1fr)] min-[700px]:grid-cols-[minmax(0,1fr)_70px_minmax(0,1fr)] min-[520px]:gap-2 min-[700px]:gap-3">
                                     <div className="min-w-0 text-center">
                                       {championLogo ? (
                                         <img
                                           src={championLogo}
                                           alt={s.champion || 'Champion'}
-                                          className="mx-auto h-12 w-12 rounded-full object-cover min-[700px]:h-14 min-[700px]:w-14"
+                                          className="mx-auto h-11 w-11 rounded-full object-cover min-[520px]:h-12 min-[520px]:w-12 min-[700px]:h-14 min-[700px]:w-14"
                                         />
                                       ) : (
-                                        <div className="mx-auto h-12 w-12 rounded-full bg-[#16274F] min-[700px]:h-14 min-[700px]:w-14" />
+                                        <div className="mx-auto h-11 w-11 rounded-full bg-[#16274F] min-[520px]:h-12 min-[520px]:w-12 min-[700px]:h-14 min-[700px]:w-14" />
                                       )}
                                       <div className="mt-1.5 min-w-0 px-0.5">
-                                        <div className="break-words text-[10px] font-black leading-[1.04] text-[#16274F] min-[700px]:text-[11px]">{s.champion || '—'}</div>
-                                        <div className="mt-1.5 whitespace-nowrap text-[19px] font-black leading-none tracking-[-0.04em] text-[#D01F2D] min-[700px]:text-[24px]">
+                                        <div className="break-words text-[8px] font-black leading-[1.04] text-[#16274F] min-[520px]:text-[10px] min-[700px]:text-[11px]">{s.champion || '—'}</div>
+                                        <div className="mt-1.5 whitespace-nowrap text-[18px] font-black leading-none tracking-[-0.04em] text-[#D01F2D] min-[520px]:text-[19px] min-[700px]:text-[24px]">
                                           {s.championshipScore?.toFixed(2) ?? '—'}
                                         </div>
-                                        <div className="mt-1.5 text-[6px] font-black uppercase tracking-[0.07em] text-[#B8860B] min-[700px]:text-[7px]">Champion</div>
+                                        <div className="mt-1.5 text-[6px] font-black uppercase tracking-[0.07em] text-[#B8860B] min-[520px]:text-[6px] min-[700px]:text-[7px]">Champion</div>
                                       </div>
                                     </div>
 
-                                    <div className="flex min-w-0 flex-col items-center justify-start pt-6 text-center min-[700px]:pt-7">
-                                      <span className="text-[22px] font-black leading-none uppercase tracking-[-0.04em] text-[#6B7280] min-[700px]:text-[26px]">vs</span>
-                                      <span className="mt-2 whitespace-nowrap text-[11px] font-black leading-none text-[#6B7280] min-[700px]:text-[12px]">
+                                    <div className="flex min-w-0 flex-col items-center justify-center text-center">
+                                      <span className="text-[18px] font-black leading-none uppercase tracking-[-0.04em] text-[#6B7280] min-[520px]:text-[22px] min-[700px]:text-[26px]">vs</span>
+                                      <span className="mt-1.5 whitespace-nowrap text-[9px] font-black leading-none text-[#6B7280] min-[520px]:text-[11px] min-[700px]:text-[12px]">
                                         {Number.isFinite(s.championshipScore) && Number.isFinite(s.championshipOpponentScore)
                                           ? Math.abs(s.championshipScore - s.championshipOpponentScore).toFixed(2)
                                           : '—'}
                                       </span>
-                                      <span className="mt-0.5 text-[6px] font-black uppercase tracking-[0.14em] text-[#6B7280] min-[700px]:text-[7px]">Margin</span>
-                                      <span className="mt-2 whitespace-nowrap text-[8px] font-black uppercase tracking-[0.07em] text-[#D01F2D] min-[700px]:text-[9px]">← Win</span>
+                                      <span className="mt-0.5 text-[5px] font-black uppercase tracking-[0.14em] text-[#6B7280] min-[520px]:text-[6px] min-[700px]:text-[7px]">Margin</span>
+                                      <span className="mt-1.5 whitespace-nowrap text-[7px] font-black uppercase tracking-[0.07em] text-[#D01F2D] min-[520px]:text-[8px] min-[700px]:text-[9px]">← Win</span>
                                     </div>
 
                                     <div className="min-w-0 text-center">
@@ -970,17 +930,17 @@ export default function HistoryPage() {
                                         <img
                                           src={getTeamLogo(s.championshipOpponent)}
                                           alt={s.championshipOpponent || 'Runner-up'}
-                                          className="mx-auto h-12 w-12 rounded-full object-cover min-[700px]:h-14 min-[700px]:w-14"
+                                          className="mx-auto h-11 w-11 rounded-full object-cover min-[520px]:h-12 min-[520px]:w-12 min-[700px]:h-14 min-[700px]:w-14"
                                         />
                                       ) : (
-                                        <div className="mx-auto h-12 w-12 rounded-full bg-[#16274F] min-[700px]:h-14 min-[700px]:w-14" />
+                                        <div className="mx-auto h-11 w-11 rounded-full bg-[#16274F] min-[520px]:h-12 min-[520px]:w-12 min-[700px]:h-14 min-[700px]:w-14" />
                                       )}
                                       <div className="mt-1.5 min-w-0 px-0.5">
-                                        <div className="break-words text-[10px] font-black leading-[1.04] text-[#6B7280] min-[700px]:text-[11px]">{s.championshipOpponent || '—'}</div>
-                                        <div className="mt-1.5 whitespace-nowrap text-[19px] font-black leading-none tracking-[-0.04em] text-[#6B7280] min-[700px]:text-[24px]">
+                                        <div className="break-words text-[8px] font-black leading-[1.04] text-[#6B7280] min-[520px]:text-[10px] min-[700px]:text-[11px]">{s.championshipOpponent || '—'}</div>
+                                        <div className="mt-1.5 whitespace-nowrap text-[18px] font-black leading-none tracking-[-0.04em] text-[#6B7280] min-[520px]:text-[19px] min-[700px]:text-[24px]">
                                           {s.championshipOpponentScore?.toFixed(2) ?? '—'}
                                         </div>
-                                        <div className="mt-1.5 text-[6px] font-black uppercase tracking-[0.07em] text-[#6B7280] min-[700px]:text-[7px]">Runner-up</div>
+                                        <div className="mt-1.5 text-[6px] font-black uppercase tracking-[0.07em] text-[#6B7280] min-[520px]:text-[6px] min-[700px]:text-[7px]">Runner-up</div>
                                       </div>
                                     </div>
                                   </div>
