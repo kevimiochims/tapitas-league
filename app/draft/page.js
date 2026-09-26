@@ -675,7 +675,7 @@ export default function DraftPage() {
         .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
         .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
         .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-        .tp-stack-title { color: #D01F2D; text-shadow: 4px 4px 0 #0A0A0A; }
+        .tp-stack-title { color: #D01F2D; }
       `}</style>
 
             <Header onSummaryOpen={() => setDrawerOpen(true)} />

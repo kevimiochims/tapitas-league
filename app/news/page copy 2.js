@@ -5,10 +5,30 @@ import { useEffect, useState } from 'react'
 import { Newspaper, Laugh, FileText, ChevronRight, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
+import ReactMarkdown from 'react-markdown'
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
 
 const CATEGORIES = ['Todos', 'Meme', 'Recap', 'Notícia']
+
+function MarkdownPreview({ content }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="m-0">{children}</p>,
+        hr: () => <hr className="my-2 border-[#D1D5DB]" />,
+        h1: ({ children }) => <span className="font-black">{children}</span>,
+        h2: ({ children }) => <span className="font-black">{children}</span>,
+        h3: ({ children }) => <span className="font-black">{children}</span>,
+        blockquote: ({ children }) => <blockquote className="border-l-2 border-[#D01F2D] pl-2 italic">{children}</blockquote>,
+        ul: ({ children }) => <ul className="list-disc pl-4">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal pl-4">{children}</ol>,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  )
+}
 
 const CATEGORY_STYLE = {
   'Meme': { color: 'text-[#0A0A0A]', border: 'border-[#0A0A0A]', bg: 'bg-[#F5C518]', icon: Laugh },
@@ -245,9 +265,9 @@ export default function NewsPage() {
                     <h2 className="mb-3 font-black text-[#16274F] leading-tight" style={{ fontSize: 'clamp(20px, 3vw, 32px)' }}>
                       {featured.title}
                     </h2>
-                    <p className="text-[#3F4757] text-sm leading-relaxed line-clamp-3 mb-4">
-                      {featured.content?.replace(/<[^>]*>/g, '')}
-                    </p>
+                    <div className="text-[#3F4757] text-sm leading-relaxed line-clamp-3 mb-4 [&_p]:m-0 [&_hr]:my-2 [&_h1]:text-base [&_h2]:text-base [&_h3]:text-sm [&_ul]:my-1 [&_ol]:my-1 [&_blockquote]:my-1">
+                      <MarkdownPreview content={featured.content || ''} />
+                    </div>
                     <div className="flex items-center gap-3 text-xs text-[#6B7280] font-bold">
                       <span>{formatDate(featured.date)}</span>
                       {featured.author && <><span>·</span><span>{featured.author}</span></>}
@@ -281,9 +301,9 @@ export default function NewsPage() {
                         <h3 className="mb-2 font-black text-[#16274F] leading-tight line-clamp-2" style={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }}>
                           {post.title}
                         </h3>
-                        <p className="text-[#6B7280] text-xs leading-relaxed line-clamp-2 mb-3">
-                          {post.content?.replace(/<[^>]*>/g, '')}
-                        </p>
+                        <div className="text-[#6B7280] text-xs leading-relaxed line-clamp-2 mb-3 [&_p]:m-0 [&_hr]:my-1 [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-xs [&_ul]:my-1 [&_ol]:my-1 [&_blockquote]:my-1">
+                          <MarkdownPreview content={post.content || ''} />
+                        </div>
                         <div className="text-[10px] text-[#6B7280] font-bold">{formatDate(post.date)}</div>
                       </div>
                     </button>

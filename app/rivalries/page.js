@@ -916,7 +916,7 @@ RENDER
               <span className="text-[#D01F2D]">{' '}Rivalries</span>
             </h1>
             <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-[#3F4757] leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
-              Explore every head-to-head in Tapitas League history.
+             Every H2H in Tapitas League history.
             </p>
           </div>
         </div>
