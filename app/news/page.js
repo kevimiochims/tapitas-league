@@ -214,7 +214,7 @@ export default function NewsPage() {
               className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-[#3F4757]"
               style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
             >
-              Every headline. Every recap. Every joke from around the league.
+              Every headline. Every recap. Every joke.
             </p>
           </div>
         </div>

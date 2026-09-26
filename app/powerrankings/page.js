@@ -888,11 +888,10 @@ function PowerRankingsPageContent() {
               }}
             >
               Power
-              <span className="tp-stack-title">{' '}Rankings</span>
+              <span className="text-[#D01F2D]">{' '}Rankings</span>
             </h1>
             <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-[#3F4757] leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
-              Who's hot, who's not. The definitive weekly power rankings
-              of the Tapitas League — based on performance, not just record.
+              Who's hot, who's not. The definitive weekly power rankings of the Tapitas League.
             </p>
           </div>
         </div>

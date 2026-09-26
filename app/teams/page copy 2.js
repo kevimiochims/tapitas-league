@@ -122,6 +122,30 @@ function parseNumber(value) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
+// GAME_FACTS_ALL weekly fantasy scores may use a decimal point (e.g. 215.7).
+// Keep that decimal instead of treating the dot as a thousands separator.
+function parseWeeklyPoints(value) {
+  if (value === null || value === undefined || value === '') return 0
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  const raw = String(value).trim().replace(/[^0-9,.-]/g, '')
+  if (!raw) return 0
+  if (raw.includes(',') && raw.includes('.')) {
+    const lastComma = raw.lastIndexOf(',')
+    const lastDot = raw.lastIndexOf('.')
+    const normalized = lastComma > lastDot
+      ? raw.replace(/\./g, '').replace(',', '.')
+      : raw.replace(/,/g, '')
+    const parsed = Number(normalized)
+    return Number.isNaN(parsed) ? 0 : parsed
+  }
+  if (raw.includes(',')) {
+    const parsed = Number(raw.replace(/\./g, '').replace(',', '.'))
+    return Number.isNaN(parsed) ? 0 : parsed
+  }
+  const parsed = Number(raw)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
 async function safeFetch(url) {
   try {
     const res = await fetch(url)
@@ -849,11 +873,58 @@ export default function TeamsPage() {
     games.forEach(g => {
       if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-      const pf = parseNumber(g?.PF)
+      const pf = parseWeeklyPoints(g?.PF)
       if (map[key] === undefined || pf > map[key]) map[key] = pf
     })
     return map
   }, [games])
+
+  // Highest single-week regular-season score for each franchise.
+  // Double weeks are excluded from both the record and the ranking.
+  const getTeamWeeklyMax = (teamName) => {
+    let max = 0
+    const seen = new Set()
+    games.forEach(g => {
+      if (normalizeTeamName(g?.Team) !== normalizeTeamName(teamName)) return
+      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
+      if (isDoubleWeek(g)) return
+      const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
+      if (seen.has(key)) return
+      seen.add(key)
+      max = Math.max(max, parseWeeklyPoints(g?.PF))
+    })
+    return max
+  }
+
+  // Number of regular-season single weeks in which the franchise was the
+  // league's highest scorer. Ties for highest PF count for each tied team.
+  const getTeamTopScoringWeeks = (teamName) => {
+    const seen = new Set()
+    let count = 0
+    games.forEach(g => {
+      if (normalizeTeamName(g?.Team) !== normalizeTeamName(teamName)) return
+      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
+      if (isDoubleWeek(g)) return
+
+      const season = String(g?.Season || '').trim()
+      const week = String(g?.Week || '').trim()
+      const key = `${season}|${week}`
+      if (seen.has(key)) return
+
+      const weekRows = games.filter(x =>
+        String(x?.Season || '').trim() === season &&
+        String(x?.Week || '').trim() === week &&
+        String(x?.GameStage || '').trim() === 'Reg Season' &&
+        !isDoubleWeek(x)
+      )
+      const maxPF = Math.max(...weekRows.map(x => parseNumber(x?.PF)))
+      if (parseNumber(g?.PF) === maxPF) {
+        seen.add(key)
+        count++
+      }
+    })
+    return count
+  }
 
   // Most rostered (started or benched) and most started player for a team, from GAME_FACTS_ALL
   const getMostRosteredPlayers = (teamName) => {
@@ -890,10 +961,34 @@ export default function TeamsPage() {
       })
     })
 
-    const topRosteredCount = Math.max(0, ...Array.from(rosterCounts.values()))
-    const topStarterCount = Math.max(0, ...Array.from(starterCounts.values()))
-    const topRostered = Array.from(rosterCounts.entries()).filter(([, count]) => count === topRosteredCount)
-    const topStarter = Array.from(starterCounts.entries()).filter(([, count]) => count === topStarterCount)
+    // Most Rostered: one player only. Tie-breakers:
+// 1) most starts, 2) alphabetical player name.
+    const topRostered = Array.from(rosterCounts.entries())
+      .sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1]
+        const startsA = starterCounts.get(a[0]) || 0
+        const startsB = starterCounts.get(b[0]) || 0
+        if (startsB !== startsA) return startsB - startsA
+        const nameA = metadata.get(a[0])?.name || a[0]
+        const nameB = metadata.get(b[0])?.name || b[0]
+        return String(nameA).localeCompare(String(nameB))
+      })
+      .slice(0, 1)
+
+    // Most Started: one player only. Tie-breakers:
+    // 1) most rostered, 2) alphabetical player name.
+    const topStarter = Array.from(starterCounts.entries())
+      .sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1]
+        const rosterA = rosterCounts.get(a[0]) || 0
+        const rosterB = rosterCounts.get(b[0]) || 0
+        if (rosterB !== rosterA) return rosterB - rosterA
+        const nameA = metadata.get(a[0])?.name || a[0]
+        const nameB = metadata.get(b[0])?.name || b[0]
+        return String(nameA).localeCompare(String(nameB))
+      })
+      .slice(0, 1)
+
     const build = entries => entries.map(([identity, count]) => {
       const meta = metadata.get(identity)
       return meta ? {
@@ -964,6 +1059,8 @@ export default function TeamsPage() {
         unicorns: unicornArr.length,
         games200: getTeam200Games(t.team),
         pr1Weeks: getTeamPR1Weeks(t.team),
+        weeklyMax: getTeamWeeklyMax(t.team),
+        topScoringWeeks: getTeamTopScoringWeeks(t.team),
       }
     })
     return byTeam
@@ -994,30 +1091,43 @@ export default function TeamsPage() {
     const poWinPct = String(selected?.['PO_W%'] || '').trim()
     const games200 = getTeam200Games(selected.team)
     const pr1Weeks = getTeamPR1Weeks(selected.team)
+    const weeklyMax = getTeamWeeklyMax(selected.team)
+    const topScoringWeeks = getTeamTopScoringWeeks(selected.team)
 
     // ── Build rank-aware subtitles ──────────────────────────────────
     const fmtYears = (rows) => rows.map(r => `'${String(r.Season).slice(-2)}`).join(', ')
 
     const titlesRank = leagueStats ? getOrdinalRankLabel(titles.length, allValuesFor('titles')) : null
-    const titlesSub = titles.length
-      ? `${fmtYears(titles)}${titlesRank === 'most all-time' ? ' (most all-time)' : ''}`
-      : 'never'
+    const titlesSub = titles.length ? (titlesRank || 'most all-time') : 'never'
 
     const finalsTeamH = teamH.filter(r => isTrueFlag(r?.Reached_Final))
     const finalsRank = leagueStats ? getOrdinalRankLabel(finalsTeamH.length, allValuesFor('finals')) : null
-    const finalsSub = finalsTeamH.length
-      ? `${fmtYears(finalsTeamH)}${finalsRank === 'most all-time' ? ' (most all-time)' : ''}`
-      : 'never'
+    const finalsSub = finalsTeamH.length ? (finalsRank || 'most all-time') : 'never'
 
     const poApps = parseNumber(selected['Playoff Apps']) || teamH.filter(r => isTrueFlag(r?.Made_Playoffs) || parseNumber(r?.PO_W) > 0 || parseNumber(r?.PO_L) > 0).length
     const completedSeasonsCount = teamH.filter(r => parseNumber(r?.Standing) > 0).length
     const poAppsRank = leagueStats ? getOrdinalRankLabel(poApps, allValuesFor('playoffApps')) : null
-    const poAppsSub = `in ${completedSeasonsCount} season${completedSeasonsCount === 1 ? '' : 's'}${poAppsRank ? ` (${poAppsRank})` : ''}`
+    const poAppsSub = poAppsRank || 'most all-time'
 
     const poWins = parseNumber(selected.PO_W)
     const poGames = poWins + parseNumber(selected.PO_L)
     const poWinsRank = leagueStats ? getOrdinalRankLabel(poWins, allValuesFor('playoffWins')) : null
-    const poWinsSub = `in ${poGames} game${poGames === 1 ? '' : 's'} · ${poWinPct}${poWinsRank ? ` (${poWinsRank})` : ''}`
+    const poWinsSub = poWinsRank || 'most all-time'
+
+    const compactOrdinal = (rank) => {
+      if (!rank) return 'all-time'
+      if (rank === 'most all-time') return '1st all-time'
+      const m = String(rank).match(/^(\d+)(?:st|nd|rd|th)?\s+all-time$/i)
+      if (!m) return rank
+      const n = Number(m[1])
+      const suffix = n % 100 >= 11 && n % 100 <= 13
+        ? 'th'
+        : n % 10 === 1 ? 'st'
+        : n % 10 === 2 ? 'nd'
+        : n % 10 === 3 ? 'rd'
+        : 'th'
+      return `${n}${suffix} all-time`
+    }
 
     const rsWinsRank = leagueStats ? getOrdinalRankLabel(parseNumber(selected.RS_W), allValuesFor('rsWins')) : null
     const rsLossesRank = leagueStats ? getOrdinalRankLabel(parseNumber(selected.RS_L), allValuesFor('rsLosses')) : null
@@ -1030,6 +1140,8 @@ export default function TeamsPage() {
 
     const games200Rank = leagueStats ? getOrdinalRankLabel(games200, allValuesFor('games200')) : null
     const pr1Rank = leagueStats ? getOrdinalRankLabel(pr1Weeks, allValuesFor('pr1Weeks')) : null
+    const weeklyMaxRank = leagueStats ? getOrdinalRankLabel(weeklyMax, allValuesFor('weeklyMax')) : null
+    const topScoringWeeksRank = leagueStats ? getOrdinalRankLabel(topScoringWeeks, allValuesFor('topScoringWeeks')) : null
 
     // ── Most Rostered / Most Started player ─────────────────────────
     const { mostRostered, mostStarted } = getMostRosteredPlayers(selected.team)
@@ -1384,18 +1496,20 @@ export default function TeamsPage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
             {[
-              [Trophy, 'Titles', titles.length, titlesSub, 'gold'],
-              [Star, 'Finals Apps', finalsTeamH.length, finalsSub, 'navy'],
-              [Activity, 'Playoff Apps', poApps, poAppsSub, 'navy'],
-              [TrendingUp, 'Playoff Wins', poWins, poWinsSub, 'green'],
+              [Trophy, 'Titles', titles.length, compactOrdinal(titlesSub), 'gold'],
+              [Star, 'Finals Apps', finalsTeamH.length, compactOrdinal(finalsSub), 'navy'],
+              [Activity, 'Playoff Apps', poApps, compactOrdinal(poAppsSub), 'navy'],
+              [TrendingUp, 'Playoff Wins', poWins, compactOrdinal(poWinsSub), 'green'],
               [Target, 'RS Wins', parseNumber(selected.RS_W), rsWinsRank || 'regular season', 'green'],
               [TrendingDown, 'RS Losses', parseNumber(selected.RS_L), rsLossesRank || 'regular season', 'red'],
               [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), totalPointsRank || 'all-time', 'navy'],
-              [Skull, 'Unicorns', unicorns.length, unicornsSub, 'red'],
+              [Target, 'Weekly Points Record', Number(weeklyMax).toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(Number(weeklyMax)) ? 0 : 1, maximumFractionDigits: 1 }), weeklyMaxRank || 'single weeks only', 'navy'],
               [Zap, '200+ Pt Games', games200, games200Rank || 'single weeks only', 'gold'],
               [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
+              [Star, 'Weeks as #1 Scorer', topScoringWeeks, topScoringWeeksRank || 'regular season', 'gold'],
+              [Skull, 'Unicorns', unicorns.length, unicornsSub, 'red'],
             ].map(([Icon, label, value, sub, accent]) => {
               const colors = {
                 gold: { text: 'text-[#B8860B]', iconBg: 'bg-[#F5C518] text-[#0A0A0A]' },
@@ -1405,22 +1519,27 @@ export default function TeamsPage() {
               }
               const c = colors[accent]
               return (
-                <div key={label} className="border-2 border-[#0A0A0A] bg-white p-4 tp-shadow-navy-sm">
+                <Link
+                  key={label}
+                  href="/records"
+                  className="block border-2 border-[#0A0A0A] bg-white p-3.5 lg:p-3 tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]"
+                  aria-label={`Open ${label} records`}
+                >
                   <div className={`mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] ${c.iconBg}`}>
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className={`mb-1 text-[9px] font-black uppercase tracking-[0.2em] ${c.text}`}>{label}</div>
-                  <div className={`font-black leading-none ${c.text}`} style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(24px, 3vw, 40px)' }}>
+                  <div className={`font-black leading-none ${c.text}`} style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(22px, 2.6vw, 36px)' }}>
                     {value}
                   </div>
                   <div className="mt-1 text-[11px] font-bold text-[#6B7280]">{sub}</div>
-                </div>
+                </Link>
               )
             })}
 
             {/* Player record cards stay in the same stats sequence */}
             {mostRostered.length > 0 && (
-              <button type="button" onClick={() => { openPlayerProfile(`raw:${mostRostered[0].rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
+              <button type="button" onClick={() => { openPlayerProfile(`raw:${mostRostered[0].rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 xl:p-2.5 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
                 <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_104px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
@@ -1456,7 +1575,7 @@ export default function TeamsPage() {
             )}
 
             {mostStarted.length > 0 && (
-              <button type="button" onClick={() => { openPlayerProfile(`raw:${mostStarted[0].rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
+              <button type="button" onClick={() => { openPlayerProfile(`raw:${mostStarted[0].rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 xl:p-2.5 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
                 <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_104px]">
                   <div className="min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
