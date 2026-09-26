@@ -800,7 +800,7 @@ export default function DraftPage() {
                             className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-[#3F4757] leading-relaxed"
                             style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}
                         >
-                            Every pick. Every gamble. The complete draft history of the Tapitas League.
+                            Every pick. Every gamble.
                         </p>
                     </div>
                 </div>

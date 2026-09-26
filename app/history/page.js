@@ -542,7 +542,7 @@ export default function HistoryPage() {
       <section className="px-3 md:px-6 pb-20">
         <div>
           {/* HERO */}
-          <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] shadow-[6px_6px_0_#16274F]" style={{ minHeight: '240px' }}>
+          <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] shadow-[6px_6px_0_#16274F]">
                     <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                         <svg
                             className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"

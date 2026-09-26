@@ -76,7 +76,7 @@ export default function NewsPage() {
         .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
         .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
         .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-        .tp-stack-title { color: #D01F2D; text-shadow: 4px 4px 0 #0A0A0A; }
+        .tp-stack-title { color: #D01F2D; }
       `}</style>
 
       {/* Header */}
@@ -207,8 +207,7 @@ export default function NewsPage() {
                 fontSize: 'clamp(48px, 7vw, 96px)',
               }}
             >
-              <span style={{ display: 'block' }}>News &</span>
-              <span className="tp-stack-title" style={{ display: 'block' }}>Memes</span>
+              <span>News &amp; </span><span className="tp-stack-title">Memes</span>
             </h1>
 
             <p
