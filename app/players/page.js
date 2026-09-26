@@ -937,7 +937,7 @@ export default function PlayersPage() {
   }, [players, search, position, teamFilter, season, minApps, sort])
 
   return <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]"><style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');.tp-shadow-navy{box-shadow:6px 6px 0 #16274F}.tp-shadow-navy-sm{box-shadow:4px 4px 0 #16274F}`}</style><Header/>
-    <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+    <section className="px-3 pb-20 md:px-6">
       <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy" style={{minHeight:'240px'}}><div className="absolute inset-0 overflow-hidden"><svg width="100%" height="100%" viewBox="0 0 900 240" preserveAspectRatio="xMidYMid slice"><g opacity=".06">{[280,355,400,475,520,595,640,715,760,835].map((x,i)=><rect key={i} x={x} y="-60" width={i%2===0?55:22} height="380" fill="#16274F" transform={`rotate(-18 ${x+(i%2===0?27:11)} 120)`}/>)}</g><g opacity=".1" fill="none" stroke="#16274F" strokeWidth="1">{['M380 -20 L460 80 L380 180 L300 80 Z','M540 -20 L620 80 L540 180 L460 80 Z','M700 -20 L780 80 L700 180 L620 80 Z','M860 -20 L940 80 L860 180 L780 80 Z'].map((d,i)=><path key={i} d={d}/>)}</g><g opacity=".08" fill="#D01F2D"><polygon points="900,0 900,110 790,0"/><polygon points="900,240 900,130 790,240"/></g><text x="820" y="230" fontFamily="'Bebas Neue',sans-serif" fontSize="240" fill="#16274F" opacity=".04" textAnchor="middle">PLY</text></svg><div className="absolute inset-0" style={{background:'linear-gradient(105deg,#F7F6F2 28%,rgba(247,246,242,.9) 48%,rgba(247,246,242,.15) 100%)'}}/></div><div className="relative z-10 p-10 md:p-14"><div className="mb-4 inline-flex items-center gap-2 bg-[#D01F2D] px-4 py-2" style={{clipPath:'polygon(0 0,100% 0,96% 100%,0% 100%)'}}><Users className="h-4 w-4 text-white"/><span className="text-xs font-black uppercase tracking-[0.25em] text-white">All Players</span></div><h1 className="leading-[.88] text-[#16274F]" style={{fontFamily:'"Bebas Neue",sans-serif',fontSize:'clamp(48px,7vw,88px)'}}><span className="block">THE</span><span className="block text-[#D01F2D]">PLAYERS</span></h1><p className="mt-4 max-w-xl text-sm font-semibold text-[#6B7280] sm:text-base">Every player who has left a mark on Tapitas League — across every franchise and every season.</p></div></div>
       {loading ? (
         <div className="py-20 text-center font-bold text-[#6B7280]">Loading...</div>
@@ -949,10 +949,18 @@ export default function PlayersPage() {
               <div>
                 <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
                 <div className="text-sm text-[#6B7280]">
-                  {players.length} players
-                  {season.includes('All') && teamFilter.includes('All')
+                  {filtered.length} players
+                  {season.includes('All') && teamFilter.includes('All') && position.includes('All') && !minApps.trim() && !search.trim()
                     ? ' across all Tapitas League franchises'
-                    : <> — stats scoped to {!season.includes('All') && <span className="font-bold text-[#16274F]"> {season.join(', ')}</span>}{!season.includes('All') && !teamFilter.includes('All') && ' · '}{!teamFilter.includes('All') && <span className="font-bold text-[#16274F]"> {teamFilter.map(shortName).join(', ')}</span>}</>}
+                    : (() => {
+                        const parts = []
+                        if (!season.includes('All')) parts.push(`Season: ${season.join(', ')}`)
+                        if (!teamFilter.includes('All')) parts.push(`Franchise: ${teamFilter.map(shortName).join(', ')}`)
+                        if (!position.includes('All')) parts.push(`Position: ${position.join(', ')}`)
+                        if (minApps.trim()) parts.push(`Min apps: ${minApps.trim()}`)
+                        if (search.trim()) parts.push(`Search: "${search.trim()}"`)
+                        return <> — stats scoped to <span className="font-bold text-[#16274F]">{parts.join(' · ')}</span></>
+                      })()}
                 </div>
               </div>
             </div>

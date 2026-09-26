@@ -1878,8 +1878,12 @@ export default function RecordsPage() {
           </div>
 
           <div className="relative z-10 p-6 sm:p-8 md:p-10">
-            <div className="mb-5 inline-flex items-center border-2 border-[#D01F2D] bg-[#D01F2D] px-4 py-2 text-white shadow-[3px_3px_0_#16274F]">
-              <span className="text-xs font-black uppercase tracking-[0.25em]">League</span>
+            <div
+              className="mb-5 inline-flex items-center gap-2 border-2 border-[#D01F2D] bg-[#D01F2D] px-4 py-2 text-white shadow-[3px_3px_0_#16274F]"
+              style={{ clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0 100%)' }}
+            >
+              <Trophy className="h-4 w-4 shrink-0" />
+              <span className="text-xs font-black uppercase tracking-[0.25em]">The Record Book</span>
             </div>
 
             <h1
