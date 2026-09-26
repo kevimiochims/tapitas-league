@@ -716,6 +716,40 @@ function formatPlayerStatLine(stats, pos) {
 }
 
 
+function ResponsiveStatGroup({ group }) {
+  const allowMobileWrap = group.label === 'PASS' || group.label === 'REC' || group.label === 'RUSH'
+
+  return (
+    <div
+      data-stat-group={group.label}
+      className="flex min-w-0 items-start gap-0 sm:gap-2"
+    >
+      <span className="hidden w-[34px] shrink-0 items-center gap-1 pt-0.5 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
+        {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
+        <span>{group.label}</span>
+      </span>
+      <div
+        data-stat-items
+        className={`min-w-0 w-full items-baseline ${allowMobileWrap ? 'flex flex-wrap gap-x-3 gap-y-3 sm:flex-nowrap sm:gap-x-4 sm:gap-y-0' : 'flex flex-nowrap gap-x-3 sm:gap-x-4'}`}
+      >
+        {group.items.map((item, i) => (
+          <div key={i} className="flex min-w-0 max-w-full shrink-0 items-baseline gap-1 whitespace-nowrap">
+            <strong
+              className="font-black leading-none tracking-tight text-[#16274F]"
+              style={{ fontSize: 'var(--weekly-stat-size, 18px)' }}
+            >
+              {item.value}
+            </strong>
+            <span className="shrink-0 text-[5px] font-black uppercase tracking-[0.03em] text-[#6B7280] sm:text-[6px]">
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function formatCompactPlayerStatGroups(stats, pos) {
   if (!stats) return []
   const n = key => Number(stats?.[key] ?? 0)
@@ -846,6 +880,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   const [logSort, setLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
   const selectedTeamRef = useRef(null)
   const selectedGameRef = useRef(null)
+  const weeklyStatsRef = useRef(null)
 
   useEffect(() => {
     setSelectedTeams([profile.team])
@@ -1034,6 +1069,88 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   const position = String(profile.position || '').toUpperCase()
   const statLine = formatPlayerStatLine(weeklyStats, position)
   const compactStatGroups = formatCompactPlayerStatGroups(weeklyStats, position)
+
+  // All weekly stat rows share ONE font size. We fit the whole stats block as
+  // a unit so PASS/RUSH/REC never end up visually mismatched. On mobile,
+  // PASS, REC and RUSH may use up to two lines on mobile; desktop stays on one line.
+  useEffect(() => {
+    const root = weeklyStatsRef.current
+    if (!root) return
+
+    const mq = window.matchMedia('(max-width: 639px)')
+
+    const fit = () => {
+      const groups = Array.from(root.querySelectorAll('[data-stat-group]'))
+      if (!groups.length) {
+        root.style.setProperty('--weekly-stat-size', '18px')
+        return
+      }
+
+      // Never let these secondary stats exceed the visual size of Fantasy Pts.
+      // On desktop the practical ceiling stays at the same 20px used elsewhere
+      // in the profile cards; on smaller screens the ceiling scales down gently.
+      const maxSize = Math.floor(Math.min(20, Math.max(14, window.innerWidth * 0.022)))
+      const minSize = 11
+      let fitted = minSize
+
+      for (let size = maxSize; size >= minSize; size -= 1) {
+        root.style.setProperty('--weekly-stat-size', `${size}px`)
+        let fits = true
+
+        for (const groupEl of groups) {
+          const label = String(groupEl.dataset.statGroup || '')
+          const itemsEl = groupEl.querySelector('[data-stat-items]')
+          if (!itemsEl) continue
+
+          const allowWrap = mq.matches && (label === 'PASS' || label === 'REC' || label === 'RUSH')
+          const children = Array.from(itemsEl.children)
+          const childOverflow = children.some(child => child.scrollWidth > child.clientWidth + 1)
+
+          if (childOverflow) {
+            fits = false
+            break
+          }
+
+          if (!allowWrap && itemsEl.scrollWidth > itemsEl.clientWidth + 1) {
+            fits = false
+            break
+          }
+
+          if (allowWrap) {
+            const lineTops = [...new Set(children.map(child => Math.round(child.getBoundingClientRect().top)))]
+            if (lineTops.length > 2) {
+              fits = false
+              break
+            }
+          }
+        }
+
+        if (fits) {
+          fitted = size
+          break
+        }
+      }
+
+      root.style.setProperty('--weekly-stat-size', `${fitted}px`)
+    }
+
+    fit()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null
+    ro?.observe(root)
+
+    const onMediaChange = () => fit()
+    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onMediaChange)
+    else mq.addListener(onMediaChange)
+    window.addEventListener('resize', fit)
+
+    return () => {
+      ro?.disconnect()
+      if (typeof mq.removeEventListener === 'function') mq.removeEventListener('change', onMediaChange)
+      else mq.removeListener(onMediaChange)
+      window.removeEventListener('resize', fit)
+    }
+  }, [compactStatGroups])
+
   const statItemCount = statLine.length + (currentGameRow ? 1 : 0)
   const statsNeedMobileWrap = statItemCount > 4
   const history = useMemo(() => getTeamSeasonHistory(profile.rawName, games), [profile.rawName, games])
@@ -1201,48 +1318,39 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-2.5 sm:px-3 sm:pt-3 sm:pb-3">
-            <div className="grid grid-cols-2 items-stretch gap-3">
+          <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-1.5 pb-2 sm:px-3 sm:pt-2 sm:pb-2">
+            <div className="grid grid-cols-[2fr_1fr] items-stretch gap-3">
               {/* WEEKLY STATS — Option A: stats on the left, fantasy points highlighted on the right */}
               <div className="min-w-0 h-full">
                 <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:px-4 sm:py-3">
-                  <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap">
-                    <div className="flex min-w-0 items-center gap-1.5 truncate text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.16em] text-[#2F6FB0]">
-                      <BarChart3 size={12} strokeWidth={2.5} />
+                  <div className="flex min-w-0 items-center justify-between gap-1.5 whitespace-nowrap sm:gap-2">
+                    <div className="flex min-w-0 items-center gap-1 truncate text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.11em] text-[#2F6FB0] sm:gap-1.5 sm:tracking-[0.16em]">
+                      <BarChart3 size={11} strokeWidth={2.5} className="flex-shrink-0 sm:h-3 sm:w-3" />
                       <span className="truncate">{profile.season} Week {profile.week}<span className="hidden sm:inline"> Stats</span></span>
                     </div>
                     {sleeperInfo?.matchupOpponent ? (
-                      <div className="flex min-w-0 shrink-0 items-center gap-1.5 text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.08em] text-[#16274F]/80">
+                      <div className="flex min-w-0 shrink-0 items-center gap-1 text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.06em] text-[#16274F]/80 sm:gap-1.5 sm:tracking-[0.08em]">
                         <span className="truncate">vs {getCompactTeamName(sleeperInfo.matchupOpponent)}</span>
-                        <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '22px', height: '22px', flexShrink: 0, objectFit: 'contain', display: 'block' }} />
+                        <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '18px', height: '18px', flexShrink: 0, objectFit: 'contain', display: 'block' }} className="sm:!h-[22px] sm:!w-[22px]" />
                       </div>
                     ) : null}
                   </div>
 
-                  <div className="mt-2 flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      {compactStatGroups.length ? compactStatGroups.map(group => (
-                        <div key={group.label} className="flex min-w-0 items-center gap-2">
-                          <span className="flex w-[34px] shrink-0 items-center gap-1 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:w-[42px] sm:text-[8px]">
-                            {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
-                            <span>{group.label}</span>
-                          </span>
-                          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:gap-4">
-                            {group.items.map((item, i) => (
-                              <div key={i} className="flex min-w-0 items-baseline gap-0.5 whitespace-nowrap">
-                                <strong className="text-[clamp(10px,1.65vw,28px)] font-black leading-none tracking-tight text-[#16274F]">{item.value}</strong>
-                                <span className="shrink-0 text-[5px] font-black uppercase tracking-[0.03em] text-[#6B7280] sm:text-[6px]">{item.label}</span>
-                              </div>
-                            ))}
-                          </div>
+                  <div className="mt-2 flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3">
+                    <div ref={weeklyStatsRef} className="min-w-0 flex-1 overflow-hidden" style={{ '--weekly-stat-size': '18px' }}>
+                      {compactStatGroups.length ? (
+                        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:gap-1">
+                          {compactStatGroups.map(group => (
+                            <ResponsiveStatGroup key={group.label} group={group} />
+                          ))}
                         </div>
-                      )) : (
+                                            ) : (
                         <span className="text-[9px] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
                       )}
                     </div>
 
                     <div className="flex w-[72px] shrink-0 flex-col items-center justify-center border-l-2 border-[#16274F]/10 pl-2 sm:w-[96px] sm:pl-3 lg:w-[112px]">
-                      <strong className="text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
+                      <strong className="text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
                         {currentGameRow ? currentGameRow.adjustedPts.toFixed(2) : '—'}
                       </strong>
                       <span className="mt-1 text-[5px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[7px]">Fantasy Pts</span>
@@ -1251,31 +1359,31 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                 </div>
               </div>
 
-              {/* HISTORIC — three equal metrics, same visual weight */}
+              {/* HISTORIC — two equal metrics: Best + Avg */}
               <div className="min-w-0 h-full">
                 <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#5B2CA0]/25 bg-[#F6F1FC] px-3 py-2.5 shadow-[3px_3px_0_#5B2CA0] sm:px-4 sm:py-3">
-                  <div className="flex min-w-0 items-center justify-between gap-2 whitespace-nowrap text-[clamp(9px,0.72vw,12px)] font-black uppercase tracking-[0.16em] text-[#5B2CA0]">
-                    <span className="flex min-w-0 items-center gap-1.5 truncate"><Swords size={12} strokeWidth={2.5} /><span>Historic</span></span>
-                    <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+                  <div className="flex min-w-0 items-center justify-between gap-1.5 whitespace-nowrap text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.11em] text-[#5B2CA0] sm:gap-2 sm:tracking-[0.16em]">
+                    <span className="flex min-w-0 items-center gap-1 truncate sm:gap-1.5">
+                      <Swords size={11} strokeWidth={2.5} className="flex-shrink-0 sm:h-3 sm:w-3" />
+                      <span className="sm:hidden">H2H</span>
+                      <span className="hidden sm:inline">Historic</span>
+                    </span>
+                    <div className="flex min-w-0 shrink-0 items-center gap-1 tracking-[0.06em] sm:gap-1.5 sm:tracking-normal">
                       <span className="truncate">vs {getCompactTeamName(profile.opponent)}</span>
-                      <div style={{ width: '22px', height: '22px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                        <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[6px]" />
+                      <div className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center overflow-hidden sm:h-[22px] sm:w-[22px]">
+                        <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[5px] sm:text-[6px]" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-2 grid flex-1 grid-cols-3 items-center divide-x divide-[#5B2CA0]/15">
-                    <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.games}</strong>
-                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">GAMES</span>
+                  <div className="mt-2 grid w-full flex-1 grid-cols-2 items-center">
+                    <div className="flex min-w-0 flex-col items-center justify-center border-r border-[#5B2CA0]/15 px-1 text-center sm:px-3">
+                      <strong className="whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
+                      <span className="mt-1 text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
                     </div>
-                    <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
-                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
-                    </div>
-                    <div className="min-w-0 px-1 text-center">
-                      <strong className="block truncate text-[clamp(20px,2.35vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
-                      <span className="mt-1 block text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
+                    <div className="flex min-w-0 flex-col items-center justify-center px-1 text-center sm:px-3">
+                      <strong className="whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
+                      <span className="mt-1 text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
                     </div>
                   </div>
                 </div>
@@ -1286,12 +1394,12 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
             <table className="min-w-[680px] min-w-[700px] w-full table-fixed">
               <thead className="sticky top-0 z-20 bg-[#F7F6F2]">
                 <tr className="border-b-2 border-[#0A0A0A]/10">
-                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('season')} className="hover:text-[#D01F2D]">Season <span className="text-[#D01F2D]">{logSort.key === 'season' ? sortDirLabel : '↕'}</span></button></th>
-                  <th className="w-[7%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('week')} className="hover:text-[#D01F2D]">Week <span className="text-[#D01F2D]">{logSort.key === 'week' ? sortDirLabel : '↕'}</span></button></th>
-                  <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team</th>
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('season')} className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Season <span className="text-[#D01F2D]">{logSort.key === 'season' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[9%] min-w-[68px] px-2 py-2.5 text-left align-middle text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button type="button" onClick={() => toggleSort('week')} className="inline-flex w-max items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Week <span className="inline-block whitespace-nowrap text-[#D01F2D]">{logSort.key === 'week' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[11%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team</th>
                   <th className="w-[18%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Opponent" value={logOpponentFilter} options={logOpponentOptions} onChange={setLogOpponentFilter} /></th>
                   <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Status" value={logStatusFilter} options={logStatusOptions} onChange={setLogStatusFilter} /></th>
-                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('pts')} className="hover:text-[#D01F2D]">Player Pts <span className="text-[#D01F2D]">{logSort.key === 'pts' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('pts')} className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Player Pts <span className="text-[#D01F2D]">{logSort.key === 'pts' ? sortDirLabel : '↕'}</span></button></th>
                   <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team PF</th>
                   <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Result" value={logResultFilter} options={logResultOptions} onChange={setLogResultFilter} /></th>
                   <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Stage" value={logStageFilter} options={logStageOptions} onChange={setLogStageFilter} /></th>

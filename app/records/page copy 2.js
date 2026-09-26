@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Header from '../components/Header'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Flame, Swords, Activity, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
+import { Trophy, Flame, Swords, Activity, Users, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -16,6 +16,76 @@ function parseNumber(value) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
+function normalizePlayerKey(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
+
+const NFL_TEAM_NAME_MAP = {
+  'cardinals':'ari','arizona':'ari','arizona cardinals':'ari',
+  'falcons':'atl','atlanta':'atl','atlanta falcons':'atl',
+  'ravens':'bal','baltimore':'bal','baltimore ravens':'bal',
+  'bills':'buf','buffalo':'buf','buffalo bills':'buf',
+  'panthers':'car','carolina':'car','carolina panthers':'car',
+  'bears':'chi','chicago':'chi','chicago bears':'chi',
+  'bengals':'cin','cincinnati':'cin','cincinnati bengals':'cin',
+  'browns':'cle','cleveland':'cle','cleveland browns':'cle',
+  'cowboys':'dal','dallas':'dal','dallas cowboys':'dal',
+  'broncos':'den','denver':'den','denver broncos':'den',
+  'lions':'det','detroit':'det','detroit lions':'det',
+  'packers':'gb','green bay':'gb','green bay packers':'gb',
+  'texans':'hou','houston':'hou','houston texans':'hou',
+  'colts':'ind','indianapolis':'ind','indianapolis colts':'ind',
+  'jaguars':'jax','jacksonville':'jax','jacksonville jaguars':'jax',
+  'chiefs':'kc','kansas city':'kc','kansas city chiefs':'kc',
+  'chargers':'lac','los angeles chargers':'lac','la chargers':'lac',
+  'rams':'lar','los angeles rams':'lar','la rams':'lar',
+  'raiders':'lv','las vegas':'lv','las vegas raiders':'lv','oakland':'lv','oakland raiders':'lv',
+  'dolphins':'mia','miami':'mia','miami dolphins':'mia',
+  'vikings':'min','minnesota':'min','minnesota vikings':'min',
+  'patriots':'ne','new england':'ne','new england patriots':'ne',
+  'saints':'no','new orleans':'no','new orleans saints':'no',
+  'giants':'nyg','new york giants':'nyg','ny giants':'nyg',
+  'jets':'nyj','new york jets':'nyj','ny jets':'nyj',
+  'eagles':'phi','philadelphia':'phi','philadelphia eagles':'phi',
+  'steelers':'pit','pittsburgh':'pit','pittsburgh steelers':'pit',
+  'seahawks':'sea','seattle':'sea','seattle seahawks':'sea',
+  '49ers':'sf','san francisco':'sf','san francisco 49ers':'sf',
+  'buccaneers':'tb','tampa bay':'tb','tampa bay buccaneers':'tb',
+  'titans':'ten','tennessee':'ten','tennessee titans':'ten',
+  'commanders':'wsh','washington':'wsh','washington commanders':'wsh',
+  'redskins':'wsh','washington redskins':'wsh','football team':'wsh',
+  'ari':'ari','atl':'atl','bal':'bal','buf':'buf','car':'car','chi':'chi','cin':'cin','cle':'cle',
+  'dal':'dal','den':'den','det':'det','gb':'gb','hou':'hou','ind':'ind','jax':'jax','kc':'kc',
+  'lac':'lac','lar':'lar','lv':'lv','mia':'mia','min':'min','ne':'ne','no':'no','nyg':'nyg',
+  'nyj':'nyj','phi':'phi','pit':'pit','sea':'sea','sf':'sf','tb':'tb','ten':'ten','wsh':'wsh'
+}
+
+function getNFLTeamLogo(name) {
+  const raw = normalizePlayerKey(name)
+    .replace(/\b(d\/st|dst|def|defense|special teams)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+  const mapped = NFL_TEAM_NAME_MAP[raw]
+  return mapped ? `https://a.espncdn.com/i/teamlogos/nfl/500/${mapped}.png` : null
+}
+
+function extractPlayerAppearances(game, max = 13) {
+  const appearances = []
+  for (let i = 1; i <= max; i++) {
+    const starterName = game?.[`S${i}_Name`]
+    const starterPts = game?.[`S${i}_Pts`]
+    if (starterName && starterName !== '--empty--' && String(starterName).trim() !== '') {
+      appearances.push({ name: String(starterName).trim(), status: 'Starter', pts: parseNumber(starterPts) })
+    }
+    const benchName = game?.[`B${i}_Name`]
+    const benchPts = game?.[`B${i}_Pts`]
+    if (benchName && benchName !== '--empty--' && String(benchName).trim() !== '') {
+      appearances.push({ name: String(benchName).trim(), status: 'Bench', pts: parseNumber(benchPts) })
+    }
+  }
+  return appearances
+}
+
 function parseMarginVal(val) {
   const cleaned = String(val || '0').replace(',', '.').replace(/[^0-9.]/g, '')
   return parseFloat(cleaned) || 0
@@ -23,6 +93,16 @@ function parseMarginVal(val) {
 
 function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
+
+// Shared team/week helpers used by all record groups.
+function normalizeTeamName(value) {
+  return normalizeString(value)
+}
+
+function isDoubleWeek(game) {
+  const week = String(game?.Week || '')
+  return week.includes('-') || week.includes('&')
 }
 
 function teamHref(name) {
@@ -87,6 +167,58 @@ function getTeamAvatar(name) {
   return TEAM_AVATARS[normalizeString(clean)] || null
 }
 
+
+function getPlayerAvatar(playerId) {
+  const id = String(playerId || '').trim()
+  return id ? `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(id)}.jpg` : null
+}
+
+function PlayerAvatar({ playerId, name, size = 'md' }) {
+  const avatar = getPlayerAvatar(playerId)
+  const sizeClass = size === 'sm'
+    ? 'h-8 w-8 rounded-full border-2 border-[#16274F]'
+    : 'h-10 w-10 rounded-full border-2 border-[#16274F]'
+
+  return (
+    <span
+      className={`${sizeClass} flex flex-shrink-0 items-center justify-center overflow-hidden bg-white text-[9px] font-black uppercase text-[#16274F]`}
+      title={name || ''}
+    >
+      {avatar ? (
+        <img
+          src={avatar}
+          alt={name || ''}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        String(name || '?').split(/\s+/).map(part => part[0]).join('').slice(0, 2)
+      )}
+    </span>
+  )
+}
+
+function PositionBadge({ position }) {
+  const pos = String(position || '').trim().toUpperCase()
+  if (!pos) return null
+
+  const styles = {
+    QB: 'bg-[#D91F2D] text-white',
+    RB: 'bg-[#1E8E3E] text-white',
+    WR: 'bg-[#16274F] text-white',
+    TE: 'bg-[#7C3AED] text-white',
+    K: 'bg-[#D97706] text-white',
+    DEF: 'bg-[#4B5563] text-white',
+    DST: 'bg-[#4B5563] text-white',
+  }
+
+  return (
+    <span className={`inline-flex min-w-[42px] items-center justify-center border-2 border-[#0A0A0A] px-2 py-1 text-[11px] font-black leading-none ${styles[pos] || 'bg-[#F7F6F2] text-[#16274F]'}`}>
+      {pos}
+    </span>
+  )
+}
+
 function TeamAvatar({ team, size = 'md' }) {
   const avatar = getTeamAvatar(team)
 
@@ -128,7 +260,7 @@ async function safeFetch(url) {
   } catch { return [] }
 }
 
-function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: Icon, top5, wide, team }) {
+function RecordCard({ label, value, sub, sub2, sub2Href, subHref, subItems, accent, icon: Icon, top5, wide, team, player }) {
   const [expanded, setExpanded] = useState(false)
 
   const accents = {
@@ -197,7 +329,15 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: 
             </div>
           ) : <div />}
 
-          {teamArr.length > 0 && (
+          {Array.isArray(player) && player.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-end">
+              {player.map((item, i) => (
+                <span key={`${item.playerId || item.name}-${i}`} className={i > 0 ? '-ml-2' : ''}>
+                  <PlayerAvatar playerId={item.playerId} name={item.name} size="md" />
+                </span>
+              ))}
+            </div>
+          ) : teamArr.length > 0 && (
             <div className="flex flex-wrap items-center justify-end">
               {teamArr.map((teamName, i) => (
                 <Link key={`${teamName}-${i}`} href={teamHref(teamName)} className={i > 0 ? '-ml-2' : ''} aria-label={`Open ${teamName}`}>
@@ -217,27 +357,54 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: 
           {value}
         </div>
 
-        {subArr.length > 0 && (
-          <div className="mt-3 flex min-h-[2.75rem] flex-col justify-end gap-0.5">
-            {subArr.map((s, i) => (
-              subHref ? (
-                <Link key={i} href={subHref} className="text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
-                  {s}
-                </Link>
-              ) : (
-                <div key={i} className="text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
-                  {s}
-                </div>
-              )
+        {(subArr.length > 0 || (Array.isArray(subItems) && subItems.length > 0) || sub2) && (
+          <div className="mt-auto flex min-h-[3.5rem] flex-col justify-end pt-3">
+            {(subArr.length > 0 || (Array.isArray(subItems) && subItems.length > 0)) && (
+              <div className="flex flex-col justify-end gap-0.5">
+            {Array.isArray(subItems) && subItems.length > 0
+              ? subItems.map((item, i) => (
+                  item?.href ? (
+                    <Link key={i} href={item.href} className="flex items-center gap-2 text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
+                      <span className="min-w-0 flex-1">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="min-w-0 truncate">{item.text}</span>
+                          {item?.position && <PositionBadge position={item.position} />}
+                        </span>
+                        {item?.meta && (
+                          <span className="mt-0.5 block truncate text-xs font-semibold leading-tight text-slate-500">
+                            {item.meta}
+                          </span>
+                        )}
+                      </span>
+                    </Link>
+                  ) : (
+                    <div key={i} className="flex items-center gap-2 text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
+                      <span className="min-w-0 truncate">{item?.text || ''}</span>
+                      {item?.position && <PositionBadge position={item.position} />}
+                    </div>
+                  )
+                ))
+              : subArr.map((s, i) => (
+                  subHref ? (
+                    <Link key={i} href={subHref} className="text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
+                      {s}
+                    </Link>
+                  ) : (
+                    <div key={i} className="text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
+                      {s}
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+
+            {sub2 && !(label === 'Most Rostered' || label === 'Most Started') && (sub2Href ? (
+              <Link href={sub2Href} className="mt-1 text-xs font-semibold text-slate-500 hover:text-[#D01F2D]">{sub2}</Link>
+            ) : (
+              <div className="mt-1 text-xs font-semibold text-slate-500">{sub2}</div>
             ))}
           </div>
         )}
-
-        {sub2 && (sub2Href ? (
-          <Link href={sub2Href} className="mt-1 text-xs font-semibold text-slate-500 hover:text-[#D01F2D]">{sub2}</Link>
-        ) : (
-          <div className="mt-1 text-xs font-semibold text-slate-500">{sub2}</div>
-        ))}
       </div>
 
       {top5 && top5.length > 1 && (
@@ -256,6 +423,7 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: 
             <div className="border-t-2 border-[#16274F]/10 px-4 pb-3">
               {top5.slice(0, 5).map((item, i) => {
                 const labelText = Array.isArray(item.label) ? item.label.join(', ') : item.label
+                const isPlayer = Boolean(item.playerId || item.position)
                 const showAvatar = !Array.isArray(item.label) && !String(labelText).includes(' vs ')
 
                 return (
@@ -266,15 +434,21 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, accent, icon: 
                           <span className={`w-5 flex-shrink-0 text-sm font-black ${i === 0 ? a.text : 'text-slate-500'}`}>
                             {i + 1}
                           </span>
-                          {showAvatar && (item.href ? (
-                            <span className="flex-shrink-0"><TeamAvatar team={labelText} size="sm" /></span>
+                          {showAvatar && (isPlayer ? (
+                            <span className="flex-shrink-0" aria-hidden="true">
+                              <PlayerAvatar playerId={item.playerId} name={labelText} size="sm" />
+                            </span>
                           ) : (
-                            <Link href={teamHref(labelText)} className="flex-shrink-0" aria-label={`Open ${labelText}`}>
-                              <TeamAvatar team={labelText} size="sm" />
-                            </Link>
+                            <span className="flex-shrink-0" aria-hidden="true">
+                              <TeamAvatar team={item.team || labelText} size="sm" />
+                            </span>
                           ))}
                           <div className="min-w-0 flex-1">
-                            <div className={`truncate text-sm font-bold leading-tight ${item.href || showAvatar ? 'text-[#0A0A0A]' : 'text-[#0A0A0A]'}`}>{labelText}</div>
+                            <div className="flex min-w-0 items-center gap-2">
+                              <div className="min-w-0 truncate text-sm font-bold leading-tight text-[#0A0A0A]">{labelText}</div>
+                              {isPlayer && <PositionBadge position={item.position} />}
+                            </div>
+                            {item.meta && <div className="mt-0.5 text-xs font-semibold leading-tight text-slate-500">{item.meta}</div>}
                             {item.sub && <div className="mt-0.5 text-xs font-semibold leading-tight text-slate-500">{item.sub}</div>}
                           </div>
                         </div>
@@ -321,6 +495,7 @@ const TABS = [
   { key: 'franchise', label: 'Franchise', Icon: Shield },
   { key: 'streaks', label: 'Streaks', Icon: Flame },
   { key: 'games', label: 'Games', Icon: Activity },
+  { key: 'players', label: 'Players', Icon: Users },
   { key: 'seasons', label: 'Seasons', Icon: Star },
   { key: 'rivalry', label: 'Rivalries', Icon: Swords },
   { key: 'glory', label: 'Glory', Icon: Trophy },
@@ -332,6 +507,7 @@ export default function RecordsPage() {
   const [history, setHistory] = useState([])
   const [games, setGames] = useState([])
   const [h2h, setH2h] = useState([])
+  const [playerCache, setPlayerCache] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('franchise')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -339,11 +515,12 @@ export default function RecordsPage() {
 
   useEffect(() => {
     async function load() {
-      const [at, hi, ga, h2hData] = await Promise.all([
+      const [at, hi, ga, h2hData, pc] = await Promise.all([
         safeFetch(`${BASE_URL}/TEAM_ALL_TIME`),
         safeFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
         safeFetch(`${BASE_URL}/HEAD_TO_HEAD_SORTED`),
+        safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
       ])
       setAllTime(at)
       setHistory(hi)
@@ -358,6 +535,7 @@ export default function RecordsPage() {
       setAllSeasons(seasons)
       setGames(ga)
       setH2h(h2hData)
+      setPlayerCache(pc)
       setLoading(false)
     }
     load()
@@ -723,8 +901,6 @@ export default function RecordsPage() {
   const gameRecords = useMemo(() => {
     if (!games.length) return {}
 
-    const isDoubleWeek = g => { const w = String(g?.Week || ''); return w.includes('-') || w.includes('&') }
-
     // Each game in GAME_FACTS_ALL has two rows (one per team's perspective),
     // both sharing the same Season/Week/Team-Opponent pair once sorted.
     // For matchup-level stats (margin, closest/biggest game) we want exactly
@@ -839,8 +1015,12 @@ export default function RecordsPage() {
       highPONoDb: mkHighest(poNoDb),
       // Lowest score is a TEAM score, not a matchup score. Keep both mirrored rows
       // so the losing side's lower PF can also qualify as the record.
-      lowAll: mkLowest(games),
-      lowNoDouble: mkLowest(games.filter(g => !isDoubleWeek(g))),
+      // Lowest score: single weeks only. Double weeks are excluded from all
+      // three versions because a double-week total is not comparable to a
+      // normal weekly score.
+      lowSingle: mkLowest(games.filter(g => !isDoubleWeek(g))),
+      lowSingleSince21: mkLowest(games.filter(g => !isDoubleWeek(g) && (parseInt(g?.Season, 10) || 0) >= 2021)),
+      lowSingleSince23: mkLowest(games.filter(g => !isDoubleWeek(g) && (parseInt(g?.Season, 10) || 0) >= 2023)),
       closestAll: mkClosest(allDedup),
       closestNoDouble: mkClosest(noDouble),
       biggestAll: mkBiggest(allDedup),
@@ -848,6 +1028,234 @@ export default function RecordsPage() {
       most200,
     }
   }, [games])
+
+  // ── PLAYERS ────────────────────────────────────────────────────────
+  // Player records are derived from the same GAME_FACTS_ALL roster/points
+  // logic used by the Teams Player Profile. A player-franchise pair is the
+  // unit of record, so the same player can hold different records for
+  // different franchises.
+  const playerRecords = useMemo(() => {
+    if (!games.length) return {}
+
+    const lookup = new Map()
+    playerCache.forEach(row => {
+      const playerId = String(row?.player_id || '').trim()
+      const abbreviated = String(row?.name || '').trim()
+      const fullName = String(row?.full_name || '').trim()
+      const position = String(row?.pos || row?.position || row?.Position || '').trim().toUpperCase()
+      if (!playerId) return
+      const entry = { playerId, abbreviated, fullName, position }
+      ;[abbreviated, fullName].filter(Boolean).forEach(value => {
+        const key = normalizePlayerKey(value)
+        if (key && !lookup.has(key)) lookup.set(key, entry)
+      })
+    })
+
+    const displayName = raw => {
+      const value = String(raw || '').trim()
+      const data = lookup.get(normalizePlayerKey(value))
+      return data?.abbreviated || data?.fullName || value
+    }
+
+    const positionOf = raw => {
+      const value = String(raw || '').trim()
+      const data = lookup.get(normalizePlayerKey(value))
+      if (data?.position) return data.position
+      return getNFLTeamLogo(value) ? 'DEF' : ''
+    }
+
+    const identityOf = raw => {
+      const value = String(raw || '').trim()
+      const data = lookup.get(normalizePlayerKey(value))
+      return data?.playerId ? `id:${data.playerId}` : `name:${normalizePlayerKey(value)}`
+    }
+
+    const buildEra = minSeason => {
+      const map = new Map()
+
+      games.forEach(game => {
+        const season = Number(game?.Season) || 0
+        if (minSeason && season < minSeason) return
+
+        const team = String(game?.Team || '').trim()
+        if (!team) return
+
+        // One GAME_FACTS_ALL row is one franchise's game. Therefore a double
+        // week is already one roster/start appearance and must not be counted
+        // twice. This matches the Player Profile logic.
+        const appearances = extractPlayerAppearances(game)
+        const seen = new Set()
+
+        appearances.forEach(app => {
+          const rawName = String(app?.name || '').trim()
+          if (!rawName || getNFLTeamLogo(rawName)) return
+
+          const identity = identityOf(rawName)
+          const key = `${normalizeTeamName(team)}|${identity}`
+          if (seen.has(identity)) return
+          seen.add(identity)
+
+          if (!map.has(key)) {
+            map.set(key, {
+              identity,
+              playerId: lookup.get(normalizePlayerKey(rawName))?.playerId || '',
+              team,
+              name: displayName(rawName),
+              position: positionOf(rawName),
+              rostered: 0,
+              started: 0,
+              totalPts: 0,
+              avgCount: 0,
+              bestPts: 0,
+              bestGame: null,
+              lastGame: null,
+              appearances: 0,
+            })
+          }
+
+          const entry = map.get(key)
+          entry.rostered += 1
+          entry.appearances += 1
+          entry.lastGame = game
+          if (app.status === 'Starter') entry.started += 1
+
+          const doubleWeek = isDoubleWeek(game)
+          const adjustedPts = doubleWeek ? app.pts / 2 : app.pts
+
+          // Exact AVG rule:
+          // Bench + 0 is excluded; everything else counts.
+          if (!(app.status === 'Bench' && adjustedPts === 0)) {
+            entry.totalPts += adjustedPts
+            entry.avgCount += 1
+          }
+
+          // BEST excludes double weeks entirely.
+          if (!doubleWeek && app.pts > entry.bestPts) {
+            entry.bestPts = app.pts
+            entry.bestGame = game
+          }
+        })
+      })
+
+      return Array.from(map.values())
+        .map(row => ({
+          ...row,
+          avgPts: row.avgCount ? row.totalPts / row.avgCount : 0,
+        }))
+        .filter(row => row.position !== 'DEF')
+    }
+
+    const makeMetric = (rows, metric, higher = true) => {
+      const eligible = rows.filter(r => Number(r?.[metric]) > 0)
+      const sorted = [...eligible].sort((a, b) => {
+        const av = Number(a?.[metric]) || 0
+        const bv = Number(b?.[metric]) || 0
+        if (bv !== av) return higher ? bv - av : av - bv
+        return String(a.name || '').localeCompare(String(b.name || ''))
+      })
+
+      const topValue = Number(sorted[0]?.[metric] || 0)
+      const tiedWinners = sorted.filter(r => Math.abs(Number(r[metric]) - topValue) < 0.0001)
+
+      // The highlighted player is intentionally a single player for aesthetics.
+      // Tie-breakers:
+      // - Most Started -> more Rostered
+      // - Most Rostered -> more Starts
+      // - Still tied -> alphabetical
+      const winners = (metric === 'started' || metric === 'rostered')
+        ? [ [...tiedWinners].sort((a, b) => {
+            if (metric === 'started') {
+              const rosteredDiff = (Number(b.rostered) || 0) - (Number(a.rostered) || 0)
+              if (rosteredDiff !== 0) return rosteredDiff
+            } else {
+              const startedDiff = (Number(b.started) || 0) - (Number(a.started) || 0)
+              if (startedDiff !== 0) return startedDiff
+            }
+            return String(a.name || '').localeCompare(String(b.name || ''))
+          })[0] ]
+        : tiedWinners
+
+      const gameInfo = game => {
+        if (!game) return ''
+        const season = String(game?.Season || '').trim()
+        const week = String(game?.Week || '').trim()
+        const opp = String(game?.Opponent || '').trim()
+        if (!season && !week && !opp) return ''
+        return `${season}${week ? ` Week ${week}` : ''}${opp ? ` · vs ${opp}` : ''}`
+      }
+
+      return {
+        value: metric === 'avgPts' || metric === 'bestPts'
+          ? topValue.toFixed(2)
+          : topValue,
+        sub: winners.map(r => `${r.name}${r.position ? ` [${r.position}]` : ''}`),
+        subItems: winners.map(r => ({
+          text: r.name,
+          position: r.position,
+          playerId: r.playerId,
+          meta: (metric === 'rostered' || metric === 'started') ? r.team : '',
+          href: metric === 'bestPts' && r.bestGame
+            ? matchupHref(r.bestGame, games)
+            : teamHref(r.team),
+        })),
+        // Show the season/week/opponent context directly on the main card.
+        // BEST uses the actual record game; cumulative/average records use
+        // the latest appearance represented by the row.
+        sub2: winners.map(r => {
+          if (metric === 'rostered' || metric === 'started') return r.team
+          if (metric === 'avgPts') return r.team
+          return gameInfo(metric === 'bestPts' && r.bestGame ? r.bestGame : r.lastGame)
+        }),
+        sub2Href: metric === 'bestPts' && winners[0]?.bestGame
+          ? matchupHref(winners[0].bestGame, games)
+          : undefined,
+        teams: winners.map(r => r.team),
+        players: winners.map(r => ({ playerId: r.playerId, name: r.name, position: r.position })),
+        top5: sorted.slice(0, 5).map(r => ({
+          label: r.name,
+          position: r.position,
+          playerId: r.playerId,
+          value: metric === 'avgPts' || metric === 'bestPts' ? Number(r[metric]).toFixed(2) : Number(r[metric]),
+          sub: (metric === 'rostered' || metric === 'started')
+            ? ''
+            : metric === 'bestPts'
+              ? (() => {
+                  const g = r.bestGame
+                  if (!g) return r.team
+                  const team = String(g?.Team || r.team || '').trim()
+                  const opponent = String(g?.Opponent || '').trim()
+                  const week = String(g?.Week || '').trim()
+                  const season = String(g?.Season || '').trim()
+                  return `${team}${opponent ? ` vs ${opponent}` : ''}${week ? ` - Week ${week}` : ''}${season ? ` - ${season}` : ''}`
+                })()
+              : metric === 'avgPts'
+                ? r.team
+                : r.team,
+          meta: (metric === 'rostered' || metric === 'started') ? r.team : '',
+          team: r.team,
+          href: metric === 'bestPts' && r.bestGame
+            ? matchupHref(r.bestGame, games)
+            : teamHref(r.team),
+        })),
+      }
+    }
+
+    const buildEraRecords = minSeason => {
+      const rows = buildEra(minSeason)
+      return {
+        mostRostered: makeMetric(rows, 'rostered'),
+        mostStarted: makeMetric(rows, 'started'),
+        bestPts: makeMetric(rows, 'bestPts'),
+        avgPts: makeMetric(rows, 'avgPts'),
+      }
+    }
+
+    return {
+      all: buildEraRecords(null),
+      from21: buildEraRecords(2021),
+      from23: buildEraRecords(2023),
+    }
+  }, [games, playerCache])
 
   // ── SEASONS ────────────────────────────────────────────────────────
   const seasonRecords = useMemo(() => {
@@ -1340,8 +1748,9 @@ export default function RecordsPage() {
     </RecordSection>
 
     <RecordSection title="Lowest Scores">
-      <RecordCard label="Lowest Score (inc. doubles)" value={gameRecords.lowAll?.value} sub={gameRecords.lowAll?.teams} team={gameRecords.lowAll?.teams} sub2={gameRecords.lowAll?.sub2} sub2Href={gameRecords.lowAll?.sub2Href} accent="red" icon={TrendingDown} top5={gameRecords.lowAll?.top5} />
-      <RecordCard label="Lowest Score (single weeks only)" value={gameRecords.lowNoDouble?.value} sub={gameRecords.lowNoDouble?.teams} team={gameRecords.lowNoDouble?.teams} sub2={gameRecords.lowNoDouble?.sub2} sub2Href={gameRecords.lowNoDouble?.sub2Href} accent="orange" icon={TrendingDown} top5={gameRecords.lowNoDouble?.top5} />
+      <RecordCard label="Lowest Score" value={gameRecords.lowSingle?.value} sub={gameRecords.lowSingle?.teams} team={gameRecords.lowSingle?.teams} sub2={gameRecords.lowSingle?.sub2} sub2Href={gameRecords.lowSingle?.sub2Href} accent="red" icon={TrendingDown} top5={gameRecords.lowSingle?.top5} />
+      <RecordCard label="Lowest Score Since 2021" value={gameRecords.lowSingleSince21?.value} sub={gameRecords.lowSingleSince21?.teams} team={gameRecords.lowSingleSince21?.teams} sub2={gameRecords.lowSingleSince21?.sub2} sub2Href={gameRecords.lowSingleSince21?.sub2Href} accent="orange" icon={TrendingDown} top5={gameRecords.lowSingleSince21?.top5} />
+      <RecordCard label="Lowest Score Since 2023" value={gameRecords.lowSingleSince23?.value} sub={gameRecords.lowSingleSince23?.teams} team={gameRecords.lowSingleSince23?.teams} sub2={gameRecords.lowSingleSince23?.sub2} sub2Href={gameRecords.lowSingleSince23?.sub2Href} accent="cyan" icon={TrendingDown} top5={gameRecords.lowSingleSince23?.top5} />
     </RecordSection>
 
     <RecordSection title="Notable Games">
@@ -1349,6 +1758,152 @@ export default function RecordsPage() {
       <RecordCard label="Closest Game (single weeks only)" value={gameRecords.closestNoDouble?.value} sub={gameRecords.closestNoDouble?.teams} sub2={gameRecords.closestNoDouble?.sub2} sub2Href={gameRecords.closestNoDouble?.sub2Href} accent="cyan" icon={Target} top5={gameRecords.closestNoDouble?.top5} />
       <RecordCard label="Biggest Win (inc. doubles)" value={gameRecords.biggestAll?.value} sub={gameRecords.biggestAll?.teams} sub2={gameRecords.biggestAll?.sub2} sub2Href={gameRecords.biggestAll?.sub2Href} accent="gold" icon={Zap} top5={gameRecords.biggestAll?.top5} />
       <RecordCard label="Biggest Win (single weeks only)" value={gameRecords.biggestNoDouble?.value} sub={gameRecords.biggestNoDouble?.teams} sub2={gameRecords.biggestNoDouble?.sub2} sub2Href={gameRecords.biggestNoDouble?.sub2Href} accent="orange" icon={Zap} top5={gameRecords.biggestNoDouble?.top5} />
+    </RecordSection>
+  </>
+)}
+
+{/* PLAYERS */}
+{tab === 'players' && (
+  <>
+    <RecordSection title="All-Time">
+      <RecordCard
+        label="Most Rostered"
+        value={playerRecords?.all?.mostRostered?.value}
+        subItems={playerRecords?.all?.mostRostered?.subItems}
+        sub2={(playerRecords?.all?.mostRostered?.metric === "rostered" || playerRecords?.all?.mostRostered?.metric === "started") ? undefined : playerRecords?.all?.mostRostered?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.all?.mostRostered?.sub2Href}
+        team={playerRecords?.all?.mostRostered?.teams}
+        player={playerRecords?.all?.mostRostered?.players}
+        accent="gold" icon={Users}
+        top5={playerRecords?.all?.mostRostered?.top5}
+      />
+      <RecordCard
+        label="Most Started"
+        value={playerRecords?.all?.mostStarted?.value}
+        subItems={playerRecords?.all?.mostStarted?.subItems}
+        sub2={(playerRecords?.all?.mostStarted?.metric === "rostered" || playerRecords?.all?.mostStarted?.metric === "started") ? undefined : playerRecords?.all?.mostStarted?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.all?.mostStarted?.sub2Href}
+        team={playerRecords?.all?.mostStarted?.teams}
+        player={playerRecords?.all?.mostStarted?.players}
+        accent="cyan" icon={Star}
+        top5={playerRecords?.all?.mostStarted?.top5}
+      />
+      <RecordCard
+        label="Most Points Scored"
+        value={playerRecords?.all?.bestPts?.value}
+        subItems={playerRecords?.all?.bestPts?.subItems}
+        sub2={(playerRecords?.all?.bestPts?.metric === "rostered" || playerRecords?.all?.bestPts?.metric === "started") ? undefined : playerRecords?.all?.bestPts?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.all?.bestPts?.sub2Href}
+        team={playerRecords?.all?.bestPts?.teams}
+        player={playerRecords?.all?.bestPts?.players}
+        accent="red" icon={Flame}
+        top5={playerRecords?.all?.bestPts?.top5}
+      />
+      <RecordCard
+        label="Best Average Points"
+        value={playerRecords?.all?.avgPts?.value}
+        subItems={playerRecords?.all?.avgPts?.subItems}
+        sub2={(playerRecords?.all?.avgPts?.metric === "rostered" || playerRecords?.all?.avgPts?.metric === "started") ? undefined : playerRecords?.all?.avgPts?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.all?.avgPts?.sub2Href}
+        team={playerRecords?.all?.avgPts?.teams}
+        player={playerRecords?.all?.avgPts?.players}
+        accent="emerald" icon={Activity}
+        top5={playerRecords?.all?.avgPts?.top5}
+      />
+    </RecordSection>
+
+    <RecordSection title="Since 2021">
+      <RecordCard
+        label="Most Rostered"
+        value={playerRecords?.from21?.mostRostered?.value}
+        subItems={playerRecords?.from21?.mostRostered?.subItems}
+        sub2={(playerRecords?.from21?.mostRostered?.metric === "rostered" || playerRecords?.from21?.mostRostered?.metric === "started") ? undefined : playerRecords?.from21?.mostRostered?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.from21?.mostRostered?.sub2Href}
+        team={playerRecords?.from21?.mostRostered?.teams}
+        player={playerRecords?.from21?.mostRostered?.players}
+        accent="gold" icon={Users}
+        top5={playerRecords?.from21?.mostRostered?.top5}
+      />
+      <RecordCard
+        label="Most Started"
+        value={playerRecords?.from21?.mostStarted?.value}
+        subItems={playerRecords?.from21?.mostStarted?.subItems}
+        sub2={(playerRecords?.from21?.mostStarted?.metric === "rostered" || playerRecords?.from21?.mostStarted?.metric === "started") ? undefined : playerRecords?.from21?.mostStarted?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.from21?.mostStarted?.sub2Href}
+        team={playerRecords?.from21?.mostStarted?.teams}
+        player={playerRecords?.from21?.mostStarted?.players}
+        accent="cyan" icon={Star}
+        top5={playerRecords?.from21?.mostStarted?.top5}
+      />
+      <RecordCard
+        label="Most Points Scored"
+        value={playerRecords?.from21?.bestPts?.value}
+        subItems={playerRecords?.from21?.bestPts?.subItems}
+        sub2={(playerRecords?.from21?.bestPts?.metric === "rostered" || playerRecords?.from21?.bestPts?.metric === "started") ? undefined : playerRecords?.from21?.bestPts?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.from21?.bestPts?.sub2Href}
+        team={playerRecords?.from21?.bestPts?.teams}
+        player={playerRecords?.from21?.bestPts?.players}
+        accent="red" icon={Flame}
+        top5={playerRecords?.from21?.bestPts?.top5}
+      />
+      <RecordCard
+        label="Best Average Points"
+        value={playerRecords?.from21?.avgPts?.value}
+        subItems={playerRecords?.from21?.avgPts?.subItems}
+        sub2={(playerRecords?.from21?.avgPts?.metric === "rostered" || playerRecords?.from21?.avgPts?.metric === "started") ? undefined : playerRecords?.from21?.avgPts?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.from21?.avgPts?.sub2Href}
+        team={playerRecords?.from21?.avgPts?.teams}
+        player={playerRecords?.from21?.avgPts?.players}
+        accent="emerald" icon={Activity}
+        top5={playerRecords?.from21?.avgPts?.top5}
+      />
+    </RecordSection>
+
+    <RecordSection title="Since 2023">
+      <RecordCard
+        label="Most Rostered"
+        value={playerRecords?.from23?.mostRostered?.value}
+        subItems={playerRecords?.from23?.mostRostered?.subItems}
+        sub2={(playerRecords?.from23?.mostRostered?.metric === "rostered" || playerRecords?.from23?.mostRostered?.metric === "started") ? undefined : playerRecords?.from23?.mostRostered?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.from23?.mostRostered?.sub2Href}
+        team={playerRecords?.from23?.mostRostered?.teams}
+        player={playerRecords?.from23?.mostRostered?.players}
+        accent="gold" icon={Users}
+        top5={playerRecords?.from23?.mostRostered?.top5}
+      />
+      <RecordCard
+        label="Most Started"
+        value={playerRecords?.from23?.mostStarted?.value}
+        subItems={playerRecords?.from23?.mostStarted?.subItems}
+        sub2={(playerRecords?.from23?.mostStarted?.metric === "rostered" || playerRecords?.from23?.mostStarted?.metric === "started") ? undefined : playerRecords?.from23?.mostStarted?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.from23?.mostStarted?.sub2Href}
+        team={playerRecords?.from23?.mostStarted?.teams}
+        player={playerRecords?.from23?.mostStarted?.players}
+        accent="cyan" icon={Star}
+        top5={playerRecords?.from23?.mostStarted?.top5}
+      />
+      <RecordCard
+        label="Most Points Scored"
+        value={playerRecords?.from23?.bestPts?.value}
+        subItems={playerRecords?.from23?.bestPts?.subItems}
+        sub2={(playerRecords?.from23?.bestPts?.metric === "rostered" || playerRecords?.from23?.bestPts?.metric === "started") ? undefined : playerRecords?.from23?.bestPts?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.from23?.bestPts?.sub2Href}
+        team={playerRecords?.from23?.bestPts?.teams}
+        player={playerRecords?.from23?.bestPts?.players}
+        accent="red" icon={Flame}
+        top5={playerRecords?.from23?.bestPts?.top5}
+      />
+      <RecordCard
+        label="Best Average Points"
+        value={playerRecords?.from23?.avgPts?.value}
+        subItems={playerRecords?.from23?.avgPts?.subItems}
+        sub2={(playerRecords?.from23?.avgPts?.metric === "rostered" || playerRecords?.from23?.avgPts?.metric === "started") ? undefined : playerRecords?.from23?.avgPts?.sub2?.filter(Boolean).join(" · ")}
+        sub2Href={playerRecords?.from23?.avgPts?.sub2Href}
+        team={playerRecords?.from23?.avgPts?.teams}
+        player={playerRecords?.from23?.avgPts?.players}
+        accent="emerald" icon={Activity}
+        top5={playerRecords?.from23?.avgPts?.top5}
+      />
     </RecordSection>
   </>
 )}

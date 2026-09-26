@@ -545,6 +545,16 @@ export default function RecordsPage() {
   const franchiseRecords = useMemo(() => {
     if (!allTime.length) return {}
 
+    // Only franchises currently present in TEAM_ALL_TIME may be record holders.
+    // Historical opponents can still participate in matchup-based records elsewhere,
+    // but they cannot be shown as the franchise that owns a franchise record.
+    const currentTeams = new Set(
+      allTime
+        .map(r => String(r?.Team || '').trim())
+        .filter(Boolean)
+        .map(normalizeTeamName)
+    )
+
     const topN = (arr, key, n = 5, asc = false, fmt = v => v) => {
       const sorted = [...arr].sort((a, b) =>
         asc ? parseNumber(a[key]) - parseNumber(b[key]) : parseNumber(b[key]) - parseNumber(a[key])
@@ -572,6 +582,7 @@ export default function RecordsPage() {
     const tenWSeasonsYears = {}, tenWTotalYears = {}
     history.forEach(r => {
       const team = String(r?.Team || '').trim()
+      if (!currentTeams.has(normalizeTeamName(team))) return
       const season = String(r?.Season || '').trim()
       if (parseNumber(r?.RS_W) >= 10) {
         tenWSeasons[team] = (tenWSeasons[team] || 0) + 1
@@ -612,6 +623,7 @@ export default function RecordsPage() {
       if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       if (parseNumber(g?.['Power Ranking']) !== 1) return
       const team = String(g?.Team || '').trim()
+      if (!currentTeams.has(normalizeTeamName(team))) return
       const season = Number(String(g?.Season || '0').trim())
       pr1All[team] = (pr1All[team] || 0) + 1
       if (season >= 2021) pr1from21[team] = (pr1from21[team] || 0) + 1
@@ -622,6 +634,7 @@ export default function RecordsPage() {
     const finalsYearsMap = {}
     history.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE').forEach(r => {
       const t = String(r?.Team || '').trim()
+      if (!currentTeams.has(normalizeTeamName(t))) return
       const s = String(r?.Season || '').trim()
       if (!finalsYearsMap[t]) finalsYearsMap[t] = []
       finalsYearsMap[t].push(s)
@@ -643,6 +656,7 @@ export default function RecordsPage() {
     const poAppsYearsMap = {}
     history.filter(r => parseNumber(r?.PO_W) + parseNumber(r?.PO_L) > 0).forEach(r => {
       const t = String(r?.Team || '').trim()
+      if (!currentTeams.has(normalizeTeamName(t))) return
       const s = String(r?.Season || '').trim()
       if (!poAppsYearsMap[t]) poAppsYearsMap[t] = []
       poAppsYearsMap[t].push(s)
@@ -660,6 +674,7 @@ export default function RecordsPage() {
     const winSeasonsTot = {}, winSeasonsTotYears = {}
     history.forEach(r => {
       const team = String(r?.Team || '').trim()
+      if (!currentTeams.has(normalizeTeamName(team))) return
       const season = String(r?.Season || '').trim()
       if (parseNumber(r?.RS_W) > parseNumber(r?.RS_L)) {
         winSeasonsRS[team] = (winSeasonsRS[team] || 0) + 1
@@ -684,6 +699,7 @@ export default function RecordsPage() {
       const season = String(g?.Season || '').trim()
       const week = String(g?.Week || '').trim()
       const team = String(g?.Team || '').trim()
+      if (!currentTeams.has(normalizeTeamName(team))) return
       const pf = parseNumber(g?.PF)
       if (!season || !week || !team || pf <= 0) return
       const key = `${season}|${week}`
@@ -754,152 +770,340 @@ export default function RecordsPage() {
   const streakRecords = useMemo(() => {
     if (!allTime.length || !games.length) return {}
 
-    const parseStrVal = val => parseNumber(String(val || '0').replace(/[WL]/i, ''))
-
-    // Find the most recent season in the dataset for active detection
-    const maxSeason = Math.max(...games.map(g => parseNumber(g?.Season || 0)).filter(Boolean))
-
-    // Build chronological game list per team (all stages)
-    const byTeam = {}
-    games.forEach(g => {
-      const team = String(g?.Team || '').trim()
-      if (!team) return
-      const season = parseNumber(g?.Season || 0)
-      const rawWeek = String(g?.Week || '').trim()
-      const weekNum = parseFloat(rawWeek.replace(/[^0-9.]/g, '')) || 0
-      // Streak_Total = across all games; Streak / Streak_RS = reg season only
-      const streakTotal = parseNumber(g?.Streak_Total || g?.Streak_total || 0)
-      const streakRS = parseNumber(g?.Streak_RS || g?.Streak || 0)
-      if (!byTeam[team]) byTeam[team] = []
-      byTeam[team].push({ season, weekNum, rawWeek, streak: streakTotal, streakRS })
+    // TEAM_ALL_TIME defines the current Tapitas League franchises. It is used
+    // only as the eligibility list; streak values themselves are calculated
+    // from GAME_FACTS_ALL so Total and Single Season use the same source of truth.
+    const currentTeams = new Map()
+    allTime.forEach(row => {
+      const team = String(row?.Team || '').trim()
+      if (team) currentTeams.set(normalizeTeamName(team), team)
     })
 
-    // For a given team + streak column, find when the best streak started and ended
-    const findStreakRange = (teamGames, getStreak, bestVal) => {
-      const sorted = [...teamGames].sort((a, b) =>
-        a.season !== b.season ? a.season - b.season : a.weekNum - b.weekNum
-      )
-      // Find peak index (last time value reaches bestVal — most recent streak)
-      // Using findLastIndex equivalent: if we used findIndex we'd get the oldest
-      // occurrence, which could point to a different season (e.g. 2016 instead of 2025)
-      // when the team matched the same streak length more than once.
-      let peakIdx = -1
-      for (let i = sorted.length - 1; i >= 0; i--) {
-        if (Math.abs(getStreak(sorted[i])) === bestVal) { peakIdx = i; break }
-      }
-      if (peakIdx === -1) return null
-      // Walk back to find start (where streak becomes 1 or -1)
-      const sign = getStreak(sorted[peakIdx]) > 0 ? 1 : -1
-      let startIdx = peakIdx
-      for (let i = peakIdx; i >= 0; i--) {
-        if (getStreak(sorted[i]) === sign) { startIdx = i; break }
-      }
-      const start = sorted[startIdx]
-      const end = sorted[peakIdx]
-      // Active: last game of team is in maxSeason and streak is still going
-      const last = sorted[sorted.length - 1]
-      const isActive = last.season === maxSeason && Math.abs(getStreak(last)) >= bestVal
-      const fmtWeek = (g) => `Week ${g.rawWeek}, ${g.season}`
-      return { start: fmtWeek(start), end: fmtWeek(end), active: isActive }
+    const parseWeek = value => {
+      const match = String(value ?? '').match(/\d+(?:\.\d+)?/)
+      return match ? Number(match[0]) : 0
     }
 
-    const mkStreakTop = (key, useRS = false) => {
-      const sorted = [...allTime].sort((a, b) => parseStrVal(b[key]) - parseStrVal(a[key]))
-      const topVal = parseStrVal(sorted[0]?.[key])
+    const parseResult = game => {
+      const result = String(game?.Result || '').trim().toUpperCase()
+      if (result === 'W' || result === 'L' || result === 'T') return result
 
-      const enriched = sorted.slice(0, 5).map(r => {
-        const team = String(r.Team || '').trim()
-        const val = String(r[key] || '')
-        const teamGames = byTeam[team] || []
-        const getStreak = useRS ? (g => g.streakRS) : (g => g.streak)
-        const range = findStreakRange(teamGames, getStreak, parseStrVal(r[key]))
-        const rangeSub = range
-          ? `${range.start} → ${range.end}${range.active ? ' · Active' : ''}`
-          : ''
-        return { label: team, value: val, sub: rangeSub, active: range?.active }
-      })
+      const pf = parseNumber(game?.PF)
+      const pa = parseNumber(game?.PA)
+      if (pf > pa) return 'W'
+      if (pf < pa) return 'L'
+      return 'T'
+    }
 
-      // Hero sub: for RS, just team names. For Total, include range.
-      const topTeams = sorted.filter(r => parseStrVal(r[key]) === topVal)
-      const topSubs = topTeams.map(r => {
-        const team = String(r.Team || '').trim()
-        if (useRS) return team  // RS: no range in hero sub
-        // Total: include range in hero sub
-        const teamGames = byTeam[team] || []
-        const range = findStreakRange(teamGames, g => g.streak, topVal)
-        return range
-          ? `${team}${range.active ? ' 🔥' : ''}`
-          : team
+    // Build chronological game rows only for the 10 current franchises.
+    // Opponents are deliberately NOT filtered: a current team can keep a
+    // streak through games against historical/former franchises.
+    const byTeam = new Map()
+    games.forEach(game => {
+      const rawTeam = String(game?.Team || '').trim()
+      const canonicalTeam = currentTeams.get(normalizeTeamName(rawTeam))
+      if (!canonicalTeam) return
+
+      const row = {
+        team: canonicalTeam,
+        season: parseNumber(game?.Season || 0),
+        weekNum: parseWeek(game?.Week),
+        rawWeek: String(game?.Week || '').trim(),
+        result: parseResult(game),
+      }
+
+      const key = normalizeTeamName(canonicalTeam)
+      if (!byTeam.has(key)) byTeam.set(key, [])
+      byTeam.get(key).push(row)
+    })
+
+    const sortChronologically = arr => [...arr].sort((a, b) => {
+      if (a.season !== b.season) return a.season - b.season
+      if (a.weekNum !== b.weekNum) return a.weekNum - b.weekNum
+      return String(a.rawWeek).localeCompare(String(b.rawWeek), undefined, { numeric: true })
+    })
+
+    const formatRange = (start, end, active = false) => {
+      if (!start || !end) return ''
+      return `Week ${start.rawWeek}, ${start.season} → Week ${end.rawWeek}, ${end.season}${active ? ' · Active' : ''}`
+    }
+
+    // Finds the best streak(s) in a chronological sequence. For Total we keep
+    // one record per team and retain the most recent occurrence of that team's
+    // maximum. For Single Season, the caller creates one sequence per season.
+    const calculateSequence = rows => {
+      if (!rows.length) return null
+
+      let bestW = 0
+      let bestL = 0
+      let curW = 0
+      let curL = 0
+      let bestWEnd = null
+      let bestLEnd = null
+      let bestWStart = null
+      let bestLStart = null
+      let curWStart = null
+      let curLStart = null
+
+      rows.forEach(row => {
+        if (row.result === 'W') {
+          curW += 1
+          curL = 0
+          curWStart = curW === 1 ? row : curWStart
+          curLStart = null
+
+          if (curW >= bestW) {
+            bestW = curW
+            bestWStart = curWStart
+            bestWEnd = row
+          }
+        } else if (row.result === 'L') {
+          curL += 1
+          curW = 0
+          curLStart = curL === 1 ? row : curLStart
+          curWStart = null
+
+          if (curL >= bestL) {
+            bestL = curL
+            bestLStart = curLStart
+            bestLEnd = row
+          }
+        } else {
+          curW = 0
+          curL = 0
+          curWStart = null
+          curLStart = null
+        }
       })
 
       return {
-        value: String(sorted[0]?.[key] || '—'),
-        teams: topSubs,
-        top5: enriched,
+        bestW,
+        bestL,
+        bestWStart,
+        bestWEnd,
+        bestLStart,
+        bestLEnd,
       }
     }
 
-    // Single season — calcula pela coluna Result
-    const byTeamSeason = {}
-    games.forEach(g => {
-      const team = String(g?.Team || '').trim()
-      const season = String(g?.Season || '').trim()
-      const key = `${team}|${season}`
-      if (!byTeamSeason[key]) byTeamSeason[key] = []
-      byTeamSeason[key].push({
-        week: parseFloat(String(g?.Week || '0').replace(/[^0-9.]/g, '')) || 0,
-        rawWeek: String(g?.Week || '').trim(),
-        result: String(g?.Result || '').trim().toUpperCase(),
-        team, season,
-      })
+    // Total streaks: calculated from actual W/L results across all seasons and
+    // all stages. A former franchise as the opponent does not interrupt a run.
+    const totalRows = []
+    byTeam.forEach((teamGames) => {
+      const sorted = sortChronologically(teamGames)
+      if (!sorted.length) return
+
+      const calc = calculateSequence(sorted)
+      const team = sorted[0].team
+      const last = sorted[sorted.length - 1]
+
+      if (calc?.bestW > 0) {
+        const active = last.result === 'W' && calc.bestWEnd?.season === last.season && calc.bestWEnd?.weekNum === last.weekNum
+        totalRows.push({
+          team,
+          type: 'W',
+          val: calc.bestW,
+          display: `W${calc.bestW}`,
+          start: calc.bestWStart,
+          end: calc.bestWEnd,
+          active,
+        })
+      }
+      if (calc?.bestL > 0) {
+        const active = last.result === 'L' && calc.bestLEnd?.season === last.season && calc.bestLEnd?.weekNum === last.weekNum
+        totalRows.push({
+          team,
+          type: 'L',
+          val: calc.bestL,
+          display: `L${calc.bestL}`,
+          start: calc.bestLStart,
+          end: calc.bestLEnd,
+          active,
+        })
+      }
     })
 
-    const seasonWList = [], seasonLList = []
+    const buildTotalRecord = type => {
+      const rows = totalRows
+        .filter(r => r.type === type)
+        .sort((a, b) => {
+          if (b.val !== a.val) return b.val - a.val
+          const bySeason = (b.end?.season || 0) - (a.end?.season || 0)
+          if (bySeason !== 0) return bySeason
+          return normalizeTeamName(a.team).localeCompare(normalizeTeamName(b.team))
+        })
 
-    Object.entries(byTeamSeason).forEach(([, gamesArr]) => {
-      const sorted = gamesArr.sort((a, b) => a.week - b.week)
-      const { team, season } = sorted[0]
-
-      let curW = 0, maxW = 0, curL = 0, maxL = 0
-      sorted.forEach(g => {
-        if (g.result === 'W') { curW++; curL = 0; if (curW > maxW) maxW = curW }
-        else if (g.result === 'L') { curL++; curW = 0; if (curL > maxL) maxL = curL }
-      })
-
-      if (maxW > 0) seasonWList.push({ team, season, val: maxW, display: `W${maxW}` })
-      if (maxL > 0) seasonLList.push({ team, season, val: maxL, display: `L${maxL}` })
-    })
-
-    seasonWList.sort((a, b) => b.val - a.val)
-    seasonLList.sort((a, b) => b.val - a.val)
-
-    const topWVal = seasonWList[0]?.val || 0
-    const topLVal = seasonLList[0]?.val || 0
-
-    const bestSeasonW = {
-      value: seasonWList[0]?.display || '—',
-      teams: seasonWList.filter(r => r.val === topWVal).map(r => `${r.team} (${r.season})`),
-      top5: seasonWList.slice(0, 5).map(r => ({ label: r.team, sub: String(r.season), value: r.display }))
+      const topVal = rows[0]?.val || 0
+      const top = rows.filter(r => r.val === topVal)
+      return {
+        value: rows[0]?.display || '—',
+        teams: top.map(r => r.team),
+        top5: rows.slice(0, 5).map(r => ({
+          label: r.team,
+          sub: formatRange(r.start, r.end, r.active),
+          value: r.display,
+        })),
+      }
     }
-    const bestSeasonL = {
-      value: seasonLList[0]?.display || '—',
-      teams: seasonLList.filter(r => r.val === topLVal).map(r => `${r.team} (${r.season})`),
-      top5: seasonLList.slice(0, 5).map(r => ({ label: r.team, sub: String(r.season), value: r.display }))
+
+    // Single-season streaks: one independent record per current team + season.
+    // Therefore, if OldBrady has L7 in two different seasons, BOTH rows remain
+    // eligible for the Top 5 and can appear simultaneously.
+    const byTeamSeason = new Map()
+    byTeam.forEach(teamGames => {
+      teamGames.forEach(row => {
+        const key = `${normalizeTeamName(row.team)}|${row.season}`
+        if (!byTeamSeason.has(key)) byTeamSeason.set(key, [])
+        byTeamSeason.get(key).push(row)
+      })
+    })
+
+    const seasonRows = []
+    byTeamSeason.forEach(seasonGames => {
+      const sorted = sortChronologically(seasonGames)
+      if (!sorted.length) return
+
+      const calc = calculateSequence(sorted)
+      const { team, season } = sorted[0]
+      const last = sorted[sorted.length - 1]
+
+      if (calc?.bestW > 0) {
+        seasonRows.push({
+          team,
+          season,
+          type: 'W',
+          val: calc.bestW,
+          display: `W${calc.bestW}`,
+          start: calc.bestWStart,
+          end: calc.bestWEnd,
+          active: last.result === 'W' && calc.bestWEnd?.weekNum === last.weekNum,
+        })
+      }
+      if (calc?.bestL > 0) {
+        seasonRows.push({
+          team,
+          season,
+          type: 'L',
+          val: calc.bestL,
+          display: `L${calc.bestL}`,
+          start: calc.bestLStart,
+          end: calc.bestLEnd,
+          active: last.result === 'L' && calc.bestLEnd?.weekNum === last.weekNum,
+        })
+      }
+    })
+
+    const buildSeasonRecord = type => {
+      const rows = seasonRows
+        .filter(r => r.type === type)
+        .sort((a, b) => {
+          if (b.val !== a.val) return b.val - a.val
+          if (b.season !== a.season) return b.season - a.season
+          return normalizeTeamName(a.team).localeCompare(normalizeTeamName(b.team))
+        })
+
+      const topVal = rows[0]?.val || 0
+      const top = rows.filter(r => r.val === topVal)
+      return {
+        value: rows[0]?.display || '—',
+        teams: top.map(r => `${r.team} (${r.season})`),
+        top5: rows.slice(0, 5).map(r => ({
+          label: r.team,
+          sub: `${r.season}`,
+          value: r.display,
+        })),
+      }
+    }
+
+    // Regular-season streaks use the exact same Result-based engine, but only
+    // consume rows whose GameStage is Reg Season. This avoids relying on the
+    // precomputed TEAM_ALL_TIME streak columns while keeping the meaning of the
+    // existing RS cards unchanged.
+    const regRowsByTeam = new Map()
+    games.forEach(game => {
+      if (String(game?.GameStage || '').trim() !== 'Reg Season') return
+      const rawTeam = String(game?.Team || '').trim()
+      const canonicalTeam = currentTeams.get(normalizeTeamName(rawTeam))
+      if (!canonicalTeam) return
+
+      const key = normalizeTeamName(canonicalTeam)
+      if (!regRowsByTeam.has(key)) regRowsByTeam.set(key, [])
+      regRowsByTeam.get(key).push({
+        team: canonicalTeam,
+        season: parseNumber(game?.Season || 0),
+        weekNum: parseWeek(game?.Week),
+        rawWeek: String(game?.Week || '').trim(),
+        result: parseResult(game),
+      })
+    })
+
+    const regTotalRows = []
+    regRowsByTeam.forEach(teamGames => {
+      const sorted = sortChronologically(teamGames)
+      if (!sorted.length) return
+      const calc = calculateSequence(sorted)
+      const last = sorted[sorted.length - 1]
+      const team = sorted[0].team
+
+      if (calc?.bestW > 0) {
+        regTotalRows.push({
+          team, type: 'W', val: calc.bestW, display: `W${calc.bestW}`,
+          start: calc.bestWStart, end: calc.bestWEnd,
+          active: last.result === 'W' && calc.bestWEnd?.season === last.season && calc.bestWEnd?.weekNum === last.weekNum,
+        })
+      }
+      if (calc?.bestL > 0) {
+        regTotalRows.push({
+          team, type: 'L', val: calc.bestL, display: `L${calc.bestL}`,
+          start: calc.bestLStart, end: calc.bestLEnd,
+          active: last.result === 'L' && calc.bestLEnd?.season === last.season && calc.bestLEnd?.weekNum === last.weekNum,
+        })
+      }
+    })
+
+    const buildRegRecord = type => {
+      const rows = regTotalRows
+        .filter(r => r.type === type)
+        .sort((a, b) => {
+          if (b.val !== a.val) return b.val - a.val
+          const bySeason = (b.end?.season || 0) - (a.end?.season || 0)
+          if (bySeason !== 0) return bySeason
+          return normalizeTeamName(a.team).localeCompare(normalizeTeamName(b.team))
+        })
+
+      const topVal = rows[0]?.val || 0
+      const top = rows.filter(r => r.val === topVal)
+      return {
+        value: rows[0]?.display || '—',
+        teams: top.map(r => r.team),
+        top5: rows.slice(0, 5).map(r => ({
+          label: r.team,
+          sub: formatRange(r.start, r.end, r.active),
+          value: r.display,
+        })),
+      }
     }
 
     return {
-      bestWTotal: mkStreakTop('W Streak Total', false),
-      bestWRS: mkStreakTop('W Streak RS', true),
-      bestLTotal: mkStreakTop('L Streak Total', false),
-      bestLRS: mkStreakTop('L Streak RS', true),
-      bestSeasonW,
-      bestSeasonL,
+      bestWTotal: buildTotalRecord('W'),
+      bestWRS: buildRegRecord('W'),
+      bestLTotal: buildTotalRecord('L'),
+      bestLRS: buildRegRecord('L'),
+      bestSeasonW: buildSeasonRecord('W'),
+      bestSeasonL: buildSeasonRecord('L'),
     }
   }, [allTime, games])
 
   // ── GAMES ──────────────────────────────────────────────────────────
   const gameRecords = useMemo(() => {
-    if (!games.length) return {}
+    if (!games.length || !allTime.length) return {}
+
+    const currentTeams = new Set(
+      allTime
+        .map(r => String(r?.Team || '').trim())
+        .filter(Boolean)
+        .map(normalizeTeamName)
+    )
 
     // Each game in GAME_FACTS_ALL has two rows (one per team's perspective),
     // both sharing the same Season/Week/Team-Opponent pair once sorted.
@@ -932,7 +1136,10 @@ export default function RecordsPage() {
     const poNoDb = poDedup.filter(g => !isDoubleWeek(g))
 
     const mkHighest = arr => {
-      const sorted = [...arr].filter(g => parseNumber(g?.PF) > 0).sort((a, b) => parseNumber(b.PF) - parseNumber(a.PF))
+      const sorted = [...arr]
+        .filter(g => currentTeams.has(normalizeTeamName(String(g?.Team || '').trim())))
+        .filter(g => parseNumber(g?.PF) > 0)
+        .sort((a, b) => parseNumber(b.PF) - parseNumber(a.PF))
       const topVal = parseNumber(sorted[0]?.PF)
       return {
         value: topVal.toFixed(2),
@@ -944,7 +1151,10 @@ export default function RecordsPage() {
     }
 
     const mkLowest = arr => {
-      const sorted = [...arr].filter(g => parseNumber(g?.PF) > 0).sort((a, b) => parseNumber(a.PF) - parseNumber(b.PF))
+      const sorted = [...arr]
+        .filter(g => currentTeams.has(normalizeTeamName(String(g?.Team || '').trim())))
+        .filter(g => parseNumber(g?.PF) > 0)
+        .sort((a, b) => parseNumber(a.PF) - parseNumber(b.PF))
       const topVal = parseNumber(sorted[0]?.PF)
       return {
         value: topVal.toFixed(2),
@@ -957,6 +1167,7 @@ export default function RecordsPage() {
 
     const mkClosest = arr => {
       const sorted = [...arr]
+        .filter(g => currentTeams.has(normalizeTeamName(String(g?.Team || '').trim())) || currentTeams.has(normalizeTeamName(String(g?.Opponent || '').trim())))
         .filter(g => parseNumber(g?.PF) > 0 && parseNumber(g?.PA) > 0)
         .map(g => ({ ...g, margin: Math.abs(parseNumber(g.PF) - parseNumber(g.PA)) }))
         .sort((a, b) => a.margin - b.margin)
@@ -972,6 +1183,7 @@ export default function RecordsPage() {
 
     const mkBiggest = arr => {
       const sorted = [...arr]
+        .filter(g => currentTeams.has(normalizeTeamName(String(g?.Team || '').trim())))
         .filter(g => parseNumber(g?.PF) > parseNumber(g?.PA))
         .map(g => ({ ...g, margin: parseNumber(g.PF) - parseNumber(g.PA) }))
         .sort((a, b) => b.margin - a.margin)
@@ -991,6 +1203,7 @@ export default function RecordsPage() {
     const over200Seen = new Set()
     games.filter(g => !isDoubleWeek(g)).forEach(g => {
       const team = String(g?.Team || '').trim()
+      if (!currentTeams.has(normalizeTeamName(team))) return
       const key = `${team}|${String(g?.Season || '')}|${String(g?.Week || '')}`
       if (over200Seen.has(key)) return
       over200Seen.add(key)
@@ -1007,12 +1220,14 @@ export default function RecordsPage() {
     }
 
     return {
-      highAll: mkHighest(allDedup),
-      highNoDouble: mkHighest(noDouble),
-      highReg: mkHighest(regDedup),
-      highRegNoDb: mkHighest(regNoDb),
-      highPO: mkHighest(poDedup),
-      highPONoDb: mkHighest(poNoDb),
+      // Score records use the original team rows, not matchup deduplication,
+      // because a current team can own a high/low score even when it lost the game.
+      highAll: mkHighest(games),
+      highNoDouble: mkHighest(games.filter(g => !isDoubleWeek(g))),
+      highReg: mkHighest(games.filter(g => String(g?.GameStage || '').trim() === 'Reg Season')),
+      highRegNoDb: mkHighest(games.filter(g => String(g?.GameStage || '').trim() === 'Reg Season' && !isDoubleWeek(g))),
+      highPO: mkHighest(games.filter(g => String(g?.GameStage || '').trim() === 'Playoffs')),
+      highPONoDb: mkHighest(games.filter(g => String(g?.GameStage || '').trim() === 'Playoffs' && !isDoubleWeek(g))),
       // Lowest score is a TEAM score, not a matchup score. Keep both mirrored rows
       // so the losing side's lower PF can also qualify as the record.
       // Lowest score: single weeks only. Double weeks are excluded from all
@@ -1027,7 +1242,7 @@ export default function RecordsPage() {
       biggestNoDouble: mkBiggest(noDouble),
       most200,
     }
-  }, [games])
+  }, [games, allTime])
 
   // ── PLAYERS ────────────────────────────────────────────────────────
   // Player records are derived from the same GAME_FACTS_ALL roster/points
@@ -1035,7 +1250,14 @@ export default function RecordsPage() {
   // unit of record, so the same player can hold different records for
   // different franchises.
   const playerRecords = useMemo(() => {
-    if (!games.length) return {}
+    if (!games.length || !allTime.length) return {}
+
+    const currentTeams = new Set(
+      allTime
+        .map(r => String(r?.Team || '').trim())
+        .filter(Boolean)
+        .map(normalizeTeamName)
+    )
 
     const lookup = new Map()
     playerCache.forEach(row => {
@@ -1078,7 +1300,7 @@ export default function RecordsPage() {
         if (minSeason && season < minSeason) return
 
         const team = String(game?.Team || '').trim()
-        if (!team) return
+        if (!team || !currentTeams.has(normalizeTeamName(team))) return
 
         // One GAME_FACTS_ALL row is one franchise's game. Therefore a double
         // week is already one roster/start appearance and must not be counted
@@ -1255,11 +1477,19 @@ export default function RecordsPage() {
       from21: buildEraRecords(2021),
       from23: buildEraRecords(2023),
     }
-  }, [games, playerCache])
+  }, [games, playerCache, allTime])
 
   // ── SEASONS ────────────────────────────────────────────────────────
   const seasonRecords = useMemo(() => {
-    if (!history.length) return {}
+    if (!history.length || !allTime.length) return {}
+
+    const currentTeams = new Set(
+      allTime
+        .map(r => String(r?.Team || '').trim())
+        .filter(Boolean)
+        .map(normalizeTeamName)
+    )
+    const eligibleHistory = history.filter(r => currentTeams.has(normalizeTeamName(String(r?.Team || '').trim())))
 
     // Aggregate total-season (RS + Playoffs + Consolation) PF and game count
     // directly from GAME_FACTS_ALL so we don't need extra sheet columns.
@@ -1268,7 +1498,7 @@ export default function RecordsPage() {
       const team = String(g?.Team || '').trim()
       const season = String(g?.Season || '').trim()
       const pf = parseNumber(g?.PF)
-      if (!team || !season || pf <= 0) return
+      if (!team || !season || pf <= 0 || !currentTeams.has(normalizeTeamName(team))) return
       const key = `${team}|${season}`
       if (!totByTeamSeason[key]) totByTeamSeason[key] = { team, season, totalPF: 0, gp: 0 }
       totByTeamSeason[key].totalPF += pf
@@ -1300,18 +1530,18 @@ export default function RecordsPage() {
         .filter(r => parseNumber(r?.Standing) > 0)
         .map(r => String(r?.Season || '').trim())
     )
-    const completedHistory = history.filter(r =>
+    const completedHistory = eligibleHistory.filter(r =>
       completedSeasons.has(String(r?.Season || '').trim())
     )
 
-    const from21 = history.filter(r => Number(String(r?.Season || '0')) >= 2021)
-    const from23 = history.filter(r => Number(String(r?.Season || '0')) >= 2023)
+    const from21 = eligibleHistory.filter(r => Number(String(r?.Season || '0')) >= 2021)
+    const from23 = eligibleHistory.filter(r => Number(String(r?.Season || '0')) >= 2023)
     // completed variants — only for fewest points
     const from21c = completedHistory.filter(r => Number(String(r?.Season || '0')) >= 2021)
     const from23c = completedHistory.filter(r => Number(String(r?.Season || '0')) >= 2023)
 
     // Avg pts/week — all seasons (useful to see in-progress averages)
-    const withAvg = history.map(r => ({
+    const withAvg = eligibleHistory.map(r => ({
       ...r,
       avgPF: parseNumber(r?.RS_GP) > 0 ? parseNumber(r?.RS_PF) / parseNumber(r?.RS_GP) : 0
     })).filter(r => r.avgPF > 0)
@@ -1364,11 +1594,11 @@ export default function RecordsPage() {
     }
 
     return {
-      byWin: mkTop(history, 'RS_W'),
-      byLoss: mkTop(history, 'RS_L'),
-      byTotW: mkTop(history, 'W'),
-      byTotL: mkTop(history, 'L'),
-      byPF: mkTop(history, 'RS_PF', 5, false, v => Math.round(v).toLocaleString()),
+      byWin: mkTop(eligibleHistory, 'RS_W'),
+      byLoss: mkTop(eligibleHistory, 'RS_L'),
+      byTotW: mkTop(eligibleHistory, 'W'),
+      byTotL: mkTop(eligibleHistory, 'L'),
+      byPF: mkTop(eligibleHistory, 'RS_PF', 5, false, v => Math.round(v).toLocaleString()),
       byPF21: mkTop(from21, 'RS_PF', 5, false, v => Math.round(v).toLocaleString()),
       byPF23: mkTop(from23, 'RS_PF', 5, false, v => Math.round(v).toLocaleString()),
       byLowPF: mkTop(completedHistory, 'RS_PF', 5, true, v => Math.round(v).toLocaleString()),
@@ -1387,13 +1617,24 @@ export default function RecordsPage() {
       avgLowTot21: mkAvgTotLow(withAvgTot21),
       avgLowTot23: mkAvgTotLow(withAvgTot23),
     }
-  }, [history, games])
+  }, [history, games, allTime])
 
   // ── RIVALRY ────────────────────────────────────────────────────────
   const rivalryRecords = useMemo(() => {
-    if (!h2h.length) return {}
+    if (!h2h.length || !allTime.length) return {}
+
+    const currentTeams = new Set(
+      allTime
+        .map(r => String(r?.Team || '').trim())
+        .filter(Boolean)
+        .map(normalizeTeamName)
+    )
+
     const seen = new Set()
     const dedup = h2h.filter(r => {
+      const teamA = String(r?.['Team A'] || '').trim()
+      const teamB = String(r?.['Team B'] || '').trim()
+      if (!currentTeams.has(normalizeTeamName(teamA)) && !currentTeams.has(normalizeTeamName(teamB))) return false
       const key = [normalizeString(r?.['Team A'] || ''), normalizeString(r?.['Team B'] || '')].sort().join('|')
       if (seen.has(key)) return false
       seen.add(key)
@@ -1427,8 +1668,8 @@ export default function RecordsPage() {
       const vA = parseStreakVal(sA)
       const vB = parseStreakVal(sB)
       console.log('Row:', a, 'vs', b, '| sA:', sA, 'vA:', vA, '| sB:', sB, 'vB:', vB)
-      if (sA && vA > 0) allStreaks.push({ team: a, opponent: b, streak: sA, val: vA })
-      if (sB && vB > 0) allStreaks.push({ team: b, opponent: a, streak: sB, val: vB })
+      if (sA && vA > 0 && currentTeams.has(normalizeTeamName(a))) allStreaks.push({ team: a, opponent: b, streak: sA, val: vA })
+      if (sB && vB > 0 && currentTeams.has(normalizeTeamName(b))) allStreaks.push({ team: b, opponent: a, streak: sB, val: vB })
     })
     const extractStreakParts = (streakStr) => {
       // "Ocupa e Resiste W7 (2014 W16-17 → 2022 W6)"
@@ -1528,12 +1769,20 @@ export default function RecordsPage() {
     }
 
     return { mostGames, bestH2HStreak, mostBalanced, highestMargin, lowestMargin }
-  }, [h2h])
+  }, [h2h, allTime])
 
   // ── GLORY ──────────────────────────────────────────────────────────
   const gloryRecords = useMemo(() => {
-    if (!history.length) return {}
+    if (!history.length || !allTime.length) return {}
 
+    const currentTeams = new Set(
+      allTime
+        .map(r => String(r?.Team || '').trim())
+        .filter(Boolean)
+        .map(normalizeTeamName)
+    )
+
+    const currentHistory = history.filter(r => currentTeams.has(normalizeTeamName(String(r?.Team || '').trim())))
     const champions = history
       .filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE')
       .sort((a, b) => Number(String(b?.Season || '0')) - Number(String(a?.Season || '0')))
@@ -1560,18 +1809,20 @@ export default function RecordsPage() {
 
     // Counts + anos
     const titleYears = {}, finalsYears = {}, unicornYears = {}
-    champions.forEach(r => {
+    currentHistory.filter(r => String(r?.Champion || '').toUpperCase() === 'TRUE').forEach(r => {
       const t = String(r?.Team || '').trim(); const s = String(r?.Season || '').trim()
       if (!titleYears[t]) titleYears[t] = []
       titleYears[t].push(s)
     })
-    history.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE').forEach(r => {
+    currentHistory.filter(r => String(r?.Reached_Final || '').toUpperCase() === 'TRUE').forEach(r => {
       const t = String(r?.Team || '').trim(); const s = String(r?.Season || '').trim()
       if (!finalsYears[t]) finalsYears[t] = []
       finalsYears[t].push(s)
     })
     unicorns.forEach(r => {
-      const t = String(r?.Team || '').trim(); const s = String(r?.Season || '').trim()
+      const t = String(r?.Team || '').trim()
+      if (!currentTeams.has(normalizeTeamName(t))) return
+      const s = String(r?.Season || '').trim()
       if (!unicornYears[t]) unicornYears[t] = []
       unicornYears[t].push(s)
     })
@@ -1597,7 +1848,7 @@ export default function RecordsPage() {
       mostFinals: mkGlory(finalsYears),
       mostUnicorn: mkGlory(unicornYears),
     }
-  }, [history])
+  }, [history, allTime])
 
   return (
     <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">

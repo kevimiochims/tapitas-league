@@ -877,7 +877,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   const [logStatusFilter, setLogStatusFilter] = useState('All')
   const [logResultFilter, setLogResultFilter] = useState('All')
   const [logStageFilter, setLogStageFilter] = useState('All')
-  const [logSort, setLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
+  const [logSort, setLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc', weekMode: 'within-season' })
   const selectedTeamRef = useRef(null)
   const selectedGameRef = useRef(null)
   const weeklyStatsRef = useRef(null)
@@ -889,7 +889,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     setLogStatusFilter('All')
     setLogResultFilter('All')
     setLogStageFilter('All')
-    setLogSort({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
+    setLogSort({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc', weekMode: 'within-season' })
   }, [profile.team, profile.rawName])
 
   useEffect(() => {
@@ -1038,10 +1038,53 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     const isCurrentGame = season === String(profile.season || '').trim() && sameWeek && normalizeTeamName(team) === normalizeTeamName(profile.team) && normalizeTeamName(opponent) === normalizeTeamName(profile.opponent)
     const isDoubleWeek = week.includes('-') || week.includes('&')
     const adjustedPts = isDoubleWeek ? appearance.pts / 2 : appearance.pts
-    return [{ g, appearance, team, season, week, opponent, isCurrentGame, result: String(g?.Result || '').trim().toUpperCase(), isDoubleWeek, adjustedPts }]
+    return [{
+      g,
+      appearance,
+      team,
+      season,
+      week,
+      opponent,
+      isCurrentGame,
+      result: String(g?.Result || '').trim().toUpperCase(),
+      isDoubleWeek,
+      // adjustedPts is ONLY for AVG/BEST calculations. The visual score must
+      // always use the real GAME_FACTS_ALL fantasy points, including double weeks.
+      displayPts: appearance.pts,
+      adjustedPts,
+    }]
   }), [games, profile.rawName, profile.week, profile.season, profile.team, profile.opponent, selectedTeams])
 
-  const currentGameRow = useMemo(() => selectedGames.find(x => x.isCurrentGame) || null, [selectedGames])
+  // The weekly card is tied to the matchup that opened the profile. It must
+  // not disappear when the user selects additional Tapitas franchises below.
+  // selectedTeams controls the archive/game-log scope, not the matchup card.
+  const currentGameRow = useMemo(() => {
+    const profileWeeks = String(profile.week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean)
+    const profileSeason = String(profile.season || '').trim()
+    const profileTeam = normalizeTeamName(profile.team)
+    const profileOpponent = normalizeTeamName(profile.opponent)
+
+    return (games || []).map(g => {
+      const appearance = extractPlayerAppearances(g).find(a => String(a.name).trim() === profile.rawName)
+      if (!appearance) return null
+
+      const season = String(g?.Season || '').trim()
+      const week = String(g?.Week || '').trim()
+      const gameTeam = normalizeTeamName(g?.Team)
+      const gameOpponent = normalizeTeamName(g?.Opponent)
+      const gameWeeks = week.split(/[-–]/).map(w => w.trim()).filter(Boolean)
+      const sameWeek = profileWeeks.length > 0 && gameWeeks.length > 0 && profileWeeks.some(w => gameWeeks.includes(w))
+
+      if (season !== profileSeason || !sameWeek || gameTeam !== profileTeam || gameOpponent !== profileOpponent) return null
+
+      return {
+        g,
+        appearance,
+        isDoubleWeek: week.includes('-') || week.includes('&'),
+        displayPts: appearance.pts,
+      }
+    }).find(Boolean) || null
+  }, [games, profile.rawName, profile.week, profile.season, profile.team, profile.opponent])
 
   const stats = useMemo(() => {
     const validForAverage = selectedGames.filter(x => !(x.appearance.status === 'Bench' && x.adjustedPts === 0))
@@ -1052,9 +1095,15 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   }, [selectedGames])
 
   const versus = useMemo(() => {
+    // H2H must follow the franchises currently selected in the profile.
+    // With multiple Tapitas teams selected, aggregate every appearance of the
+    // player for those teams against the same opponent franchise.
+    const selectedTeamKeys = new Set(selectedTeams.map(t => normalizeTeamName(t)))
+    const opponentKey = normalizeTeamName(profile.opponent)
+
     const rows = (games || []).flatMap(g => {
-      if (normalizeTeamName(g?.Team) !== normalizeTeamName(profile.team)) return []
-      if (normalizeTeamName(g?.Opponent) !== normalizeTeamName(profile.opponent)) return []
+      if (!selectedTeamKeys.has(normalizeTeamName(g?.Team))) return []
+      if (normalizeTeamName(g?.Opponent) !== opponentKey) return []
       const a = extractPlayerAppearances(g).find(x => String(x.name).trim() === profile.rawName)
       if (!a) return []
       const doubleWeekValue = String(g?.Week || '')
@@ -1064,7 +1113,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     const validForAverage = rows.filter(x => !(x.status === 'Bench' && x.pts === 0))
     const total = validForAverage.reduce((a, x) => a + x.pts, 0)
     return { games: rows.length, avg: validForAverage.length ? total / validForAverage.length : 0, best: rows.filter(x => !x.isDoubleWeek).reduce((m,x) => Math.max(m,x.pts),0), starts: rows.filter(x => x.status === 'Starter').length }
-  }, [games, profile.rawName, profile.team, profile.opponent])
+  }, [games, profile.rawName, profile.opponent, selectedTeams])
 
   const position = String(profile.position || '').toUpperCase()
   const statLine = formatPlayerStatLine(weeklyStats, position)
@@ -1176,24 +1225,59 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
     const seasonDirection = logSort.seasonDir === 'asc' ? 1 : -1
     const weekDirection = logSort.weekDir === 'asc' ? 1 : -1
     const direction = logSort.dir === 'asc' ? 1 : -1
+    const weekMode = logSort.weekMode || 'within-season'
 
-    // Match the Teams Player Profile ordering: seasons stay grouped,
-    // with week as the chronological secondary key inside each season.
-    if (seasonA !== seasonB) return (seasonA - seasonB) * seasonDirection
+    const compareSeason = () => {
+      if (seasonA !== seasonB) return (seasonA - seasonB) * seasonDirection
+      return 0
+    }
 
-    if (logSort.key === 'week') {
+    const compareWeek = () => {
       if (weekA !== weekB) return (weekA - weekB) * weekDirection
-    } else if (logSort.key === 'pts') {
+      return 0
+    }
+
+    if (logSort.key === 'pts') {
+      // Points are always ranked across the COMPLETE selected dataset.
+      // Season is a tie-breaker, not a grouping constraint. Week then breaks
+      // any remaining tie. This prevents a lower score from an older season
+      // from appearing below every higher score in that season.
       const av = a.appearance?.pts || 0
       const bv = b.appearance?.pts || 0
       if (av !== bv) return (av - bv) * direction
-      if (weekA !== weekB) return (weekA - weekB) * weekDirection
+      const seasonCmp = compareSeason()
+      if (seasonCmp !== 0) return seasonCmp
+      const weekCmp = compareWeek()
+      if (weekCmp !== 0) return weekCmp
+    } else if (logSort.key === 'week') {
+      if (weekMode === 'global') {
+        // Global week mode: week is the primary criterion, while Season keeps
+        // the existing Season-column direction as the tie-breaker.
+        const weekCmp = compareWeek()
+        if (weekCmp !== 0) return weekCmp
+        const seasonCmp = compareSeason()
+        if (seasonCmp !== 0) return seasonCmp
+      } else {
+        // Scoped week mode: keep seasons grouped and sort weeks inside each
+        // season.
+        const seasonCmp = compareSeason()
+        if (seasonCmp !== 0) return seasonCmp
+        const weekCmp = compareWeek()
+        if (weekCmp !== 0) return weekCmp
+      }
     } else if (logSort.key === 'opponent') {
+      const seasonCmp = compareSeason()
+      if (seasonCmp !== 0) return seasonCmp
       const cmp = getTeamShortName(a.opponent).localeCompare(getTeamShortName(b.opponent))
       if (cmp !== 0) return cmp * direction
-      if (weekA !== weekB) return (weekA - weekB) * weekDirection
+      const weekCmp = compareWeek()
+      if (weekCmp !== 0) return weekCmp
     } else {
-      if (weekA !== weekB) return (weekA - weekB) * weekDirection
+      // Default / Season ordering.
+      const seasonCmp = compareSeason()
+      if (seasonCmp !== 0) return seasonCmp
+      const weekCmp = compareWeek()
+      if (weekCmp !== 0) return weekCmp
     }
 
     return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
@@ -1210,10 +1294,41 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
       const nextDir = current.key === 'season' && current.seasonDir === 'desc' ? 'asc' : 'desc'
       return { ...current, key, dir: nextDir, seasonDir: nextDir }
     }
+
     if (key === 'week') {
-      const nextDir = current.key === 'week' && current.weekDir === 'desc' ? 'asc' : 'desc'
-      return { ...current, key, dir: nextDir, weekDir: nextDir }
+      if (current.key !== 'week') {
+        return { ...current, key, dir: 'desc', weekDir: 'desc', weekMode: 'within-season' }
+      }
+
+      if ((current.weekMode || 'within-season') === 'within-season' && current.dir === 'desc') {
+        // 2nd click: lowest -> highest within each season.
+        return { ...current, key, dir: 'asc', weekDir: 'asc', weekMode: 'within-season' }
+      }
+
+      if ((current.weekMode || 'within-season') === 'within-season' && current.dir === 'asc') {
+        // 3rd click: global highest week -> lowest week. Season becomes
+        // the tie-breaker using whatever direction is currently selected.
+        return { ...current, key, dir: 'desc', weekDir: 'desc', weekMode: 'global' }
+      }
+
+      // 4th click: global lowest week -> highest week.
+      if ((current.weekMode || 'within-season') === 'global' && current.dir === 'asc') {
+        // 5th click: return to the initial/default ordering state.
+        return {
+          ...current,
+          key: 'season',
+          dir: 'desc',
+          seasonDir: 'desc',
+          weekDir: 'desc',
+          weekMode: 'within-season',
+        }
+      }
+
+      return { ...current, key, dir: 'asc', weekDir: 'asc', weekMode: 'global' }
     }
+
+    // Points and opponent sorting simply toggle direction. Points are global
+    // by definition; Season is used only as a tie-breaker.
     const nextDir = current.key === key && current.dir === 'desc' ? 'asc' : 'desc'
     return { ...current, key, dir: nextDir }
   })
@@ -1351,7 +1466,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 
                     <div className="flex w-[72px] shrink-0 flex-col items-center justify-center border-l-2 border-[#16274F]/10 pl-2 sm:w-[96px] sm:pl-3 lg:w-[112px]">
                       <strong className="text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
-                        {currentGameRow ? currentGameRow.adjustedPts.toFixed(2) : '—'}
+                        {currentGameRow ? currentGameRow.displayPts.toFixed(2) : '—'}
                       </strong>
                       <span className="mt-1 text-[5px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[7px]">Fantasy Pts</span>
                     </div>
@@ -1413,7 +1528,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                         <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.team)}</td>
                         <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.opponent)}</td>
                         <td className="px-2 py-2.5"><span className={`inline-block border px-2 py-1 text-[8px] font-black uppercase tracking-wide ${x.appearance.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]'}`}>{x.appearance.status}</span></td>
-                        <td className="px-3 py-2.5 text-right text-[11px] font-black text-[#16274F]">{x.adjustedPts.toFixed(2)}</td>
+                        <td className="px-3 py-2.5 text-right text-[11px] font-black text-[#16274F]">{x.displayPts.toFixed(2)}</td>
                         <td className="px-3 py-2.5 text-right text-[10px] font-bold text-[#3F4757]">{parseNumber(x.g?.PF).toFixed(2)}</td>
                         <td className={`px-2 py-2.5 text-[10px] font-black ${x.result === 'W' ? 'text-[#1E8E3E]' : x.result === 'L' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>{x.result || '—'}</td>
                         <td className="px-2 py-2.5 text-[9px] font-bold text-[#6B7280]">{x.g?.GameStage || '—'}</td>
