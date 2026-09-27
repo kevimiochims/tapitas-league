@@ -1517,7 +1517,7 @@ function topNTeams(arr, getter, n = 3) {
 }
 
 const QUICK_NAV = [
-  { label: 'Standings', href: '/standings', icon: BarChart2, accent: '#16274F' },
+  { label: 'Stats', href: '/stats', icon: BarChart2, accent: '#16274F' },
   { label: 'Matchups', href: '/matchups', icon: Swords, accent: '#D01F2D' },
   { label: 'Power Rankings', href: '/powerrankings', icon: TrendingUp, accent: '#1E8E3E' },
   { label: 'Records', href: '/records', icon: Zap, accent: '#B8860B' },
@@ -4005,7 +4005,7 @@ export default function TapitasLeagueHomepage() {
 
               <div className="flex flex-shrink-0 flex-col items-stretch justify-center gap-1.5 self-center sm:gap-2">
                 <a
-                  href="/standings"
+                  href="/stats"
                   className="inline-flex flex-shrink-0 items-center justify-center gap-1 border-2 border-[#0A0A0A] bg-[#D01F2D] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
                 >
                   Ver tudo
@@ -4473,7 +4473,7 @@ export default function TapitasLeagueHomepage() {
 
                 <div className="flex flex-shrink-0 flex-col items-stretch justify-center gap-1.5 self-center sm:gap-2">
                   <a
-                    href="/standings"
+                    href="/stats"
                     className="inline-flex flex-shrink-0 items-center justify-center gap-1 border-2 border-[#0A0A0A] bg-[#D01F2D] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:-translate-y-[1px] sm:gap-1.5 sm:px-3.5 sm:py-2 sm:text-[10px]"
                   >
                     Ver tudo

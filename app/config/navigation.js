@@ -8,7 +8,7 @@ export const NAV_LINKS = [
   { label: 'Power Rankings', href: '/powerrankings' },
   { label: 'Records',        href: '/records' },
   { label: 'Rivalries',      href: '/rivalries'     },
-  { label: 'Standings',      href: '/standings'     },
+  { label: 'Stats',          href: '/stats'     },
   { label: 'Teams',          href: '/teams'     },
   
   

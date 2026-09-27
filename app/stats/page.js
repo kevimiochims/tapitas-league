@@ -22,6 +22,23 @@ function parseNumber(value) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
+function parseStreak(value) {
+  if (value === null || value === undefined || value === '') return 0
+  const raw = String(value).trim()
+  if (!raw) return 0
+
+  // GAME_FACTS_ALL stores Streak_Total as a signed number. Keep the sign
+  // intact; a negative value is a loss streak (L5), never a win streak.
+  const numeric = Number(raw.replace(',', '.'))
+  if (!Number.isNaN(numeric)) return numeric
+
+  // Be tolerant of presentation-style values such as W5 / L5 as well.
+  const magnitude = Math.abs(parseNumber(raw))
+  if (/^L/i.test(raw)) return -magnitude
+  if (/^W/i.test(raw)) return magnitude
+  return parseNumber(raw)
+}
+
 function normalizeString(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
@@ -82,7 +99,7 @@ function Select({ value, onChange, options, placeholder, disabled }) {
   }, [])
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative min-w-0">
       <button
         onClick={() => !disabled && setOpen(p => !p)}
         disabled={disabled}
@@ -112,6 +129,88 @@ function Select({ value, onChange, options, placeholder, disabled }) {
                 <span className={opt === value ? '' : 'ml-[14px]'}>{opt}</span>
               </button>
             ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MultiSelect({ values, onChange, options, label }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const selected = Array.isArray(values) ? values : []
+  const display = selected.length === 0
+    ? label
+    : selected.length === 1
+      ? `${label}: ${selected[0]}`
+      : `${label}: ${selected.length} selected`
+
+  function toggle(option) {
+    if (selected.includes(option)) onChange(selected.filter(v => v !== option))
+    else onChange([...selected, option])
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className={`flex h-10 min-w-0 w-full items-center justify-between gap-3 border-2 px-3 text-left text-xs font-black transition-all ${
+          open
+            ? 'border-[#D01F2D] bg-white text-[#16274F] tp-shadow-red-sm'
+            : 'border-[#0A0A0A] bg-white text-[#16274F] hover:bg-[#F7F6F2]'
+        }`}
+      >
+        <span className="truncate">{display}</span>
+        <ChevronRight className={`h-4 w-4 shrink-0 text-[#6B7280] transition-transform duration-200 ${open ? 'rotate-90 text-[#D01F2D]' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+          <div className="flex items-center justify-between border-b border-[#0A0A0A]/10 px-3 py-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6B7280]">
+              {selected.length === 0 ? 'All' : `${selected.length} selected`}
+            </span>
+            {selected.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-[10px] font-black uppercase tracking-[0.12em] text-[#D01F2D]"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="max-h-56 overflow-y-auto">
+            {options.map(option => {
+              const checked = selected.includes(option)
+              return (
+                <label
+                  key={option}
+                  className="flex cursor-pointer items-center gap-3 border-b border-[#0A0A0A]/8 px-3 py-2.5 transition-colors last:border-0 hover:bg-[#F7F6F2]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle(option)}
+                    className="h-4 w-4 shrink-0 accent-[#16274F]"
+                  />
+                  <span className={`min-w-0 truncate text-xs font-black ${checked ? 'text-[#16274F]' : 'text-[#3F4757]'}`}>
+                    {option}
+                  </span>
+                </label>
+              )
+            })}
           </div>
         </div>
       )}
@@ -187,7 +286,7 @@ const CHART_STATS = [
   { label: 'Win %', keys: { 'Reg Season': 'RS_W%', 'Playoffs': 'PO_W%', 'Total': 'W%' } },
 ]
 
-export default function StandingsPage() {
+export default function StatsPage() {
   const router = useRouter()
   const [allTimeData, setAllTimeData] = useState([])
   const [historyData, setHistoryData] = useState([])
@@ -195,7 +294,7 @@ export default function StandingsPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('Overall')
   const [season, setSeason] = useState('All-Time')
-  const [chartTeam, setChartTeam] = useState('')
+  const [chartTeam, setChartTeam] = useState('Moneyball')
   const [page, setPage] = useState(0)
   const [sortCol, setSortCol] = useState('W')
   const [sortDir, setSortDir] = useState('desc')
@@ -203,6 +302,22 @@ export default function StandingsPage() {
   const [chartScope, setChartScope] = useState('Reg Season')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [allSeasons, setAllSeasons] = useState([])
+
+  // Game Log database controls
+  const [gfSeason, setGfSeason] = useState([])
+  const [gfTeam, setGfTeam] = useState([])
+  const [gfOpponent, setGfOpponent] = useState([])
+  const [gfStage, setGfStage] = useState([])
+  const [gfResult, setGfResult] = useState([])
+  const [gfPowerRanking, setGfPowerRanking] = useState([])
+  const [gfHS, setGfHS] = useState([])
+  const [gfSearch, setGfSearch] = useState('')
+  const [gfMinPF, setGfMinPF] = useState('')
+  const [gfIncludeDoubleWeeks, setGfIncludeDoubleWeeks] = useState(true)
+  const [gfSortCol, setGfSortCol] = useState('Season')
+  const [gfSortDir, setGfSortDir] = useState('desc')
+  const [gfPage, setGfPage] = useState(0)
+
   const { setLeftSlot } = useDrawer()
 
   const TABS = ['Overall', 'Reg Season', 'Playoffs']
@@ -219,7 +334,9 @@ export default function StandingsPage() {
       setHistoryData(history)
       setGamesData(games)
       if (allTime.length > 0) {
-        setChartTeam(String(allTime[0]?.Team || allTime[0]?.team || '').trim())
+        const availableTeams = allTime.map(r => String(r?.Team || r?.team || '').trim()).filter(Boolean)
+        const preferredTeam = availableTeams.find(t => normalizeString(t) === normalizeString('Moneyball'))
+        setChartTeam(preferredTeam || String(allTime[0]?.Team || allTime[0]?.team || '').trim())
       }
       setLoading(false)
     }
@@ -297,8 +414,7 @@ export default function StandingsPage() {
     const s = new Set()
     historyData.forEach(r => {
       const v = String(r?.Season || r?.season || '').trim()
-      // Only include seasons that have Standing data (completed)
-      if (v && parseNumber(r?.Standing) > 0) s.add(v)
+      if (v) s.add(v)
     })
     return ['All-Time', ...Array.from(s).sort((a, b) => Number(b) - Number(a))]
   }, [historyData])
@@ -388,6 +504,229 @@ export default function StandingsPage() {
       })
   }, [allTimeData, historyData, tab, season, sortCol, sortDir, prFirstAllTime, prFirstBySeason, highScorerAllTime, highScorerBySeason])
 
+
+  // GAME LOG: GAME_FACTS_ALL stores mirrored matchup rows. Keep BOTH
+  // performances. This page is intentionally a row-level view of the source
+  // table so every team's Streak / Power Ranking / Max PF stays immediately
+  // visible. Matchup grouping is used only to keep a selected side on the
+  // left; it never deduplicates the two source rows.
+  const gameFactTeams = useMemo(() => {
+    return gamesData
+      .map((g, sourceIndex) => {
+        const season = String(g?.Season || '').trim()
+        const week = String(g?.Week || '').trim()
+        const team = String(g?.Team || '').trim()
+        const opponent = String(g?.Opponent || '').trim()
+        if (!season || !week || !team || !opponent) return null
+
+        const pf = parseNumber(g?.PF)
+        const pa = parseNumber(g?.PA)
+        const stageRaw = String(g?.GameType || g?.GameStage || '').trim()
+        const stageNorm = normalizeString(stageRaw)
+        const stage =
+          stageNorm === 'reg season' || stageNorm === 'regular season'
+            ? 'Reg Season'
+            : stageNorm === 'playoffs' || stageNorm === 'playoff'
+              ? 'Playoffs'
+              : stageRaw || 'Other'
+
+        const computedResult = pf > pa ? 'W' : pf < pa ? 'L' : 'T'
+        const rawResult = normalizeString(g?.Result || '')
+        const result = rawResult === 'w' || rawResult === 'win' || rawResult === 'yes'
+          ? 'W'
+          : rawResult === 'l' || rawResult === 'loss' || rawResult === 'no'
+            ? 'L'
+            : rawResult === 't' || rawResult === 'tie' || rawResult === 'draw'
+              ? 'T'
+              : computedResult
+
+        const maxPF = parseNumber(g?.MaxPF)
+        return {
+          id: `${season}|${week}|${normalizeString(team)}|${sourceIndex}`,
+          season,
+          week,
+          team,
+          opponent,
+          pf,
+          pa,
+          margin: pf - pa,
+          result,
+          stage,
+          streak: parseStreak(g?.['Streak_Total']),
+          powerRanking: parseNumber(g?.['Power Ranking']),
+          weeklyHighScorer: String(g?.['Weekly_High_Scorer'] || '').trim(),
+          maxPF,
+          startersAccuracy: maxPF > 0 ? (pf / maxPF) * 100 : 0,
+          sourceIndex,
+        }
+      })
+      .filter(Boolean)
+  }, [gamesData])
+
+  const gameFactMatchups = useMemo(() => {
+    const grouped = new Map()
+
+    gameFactTeams.forEach(row => {
+      const teamsKey = [normalizeString(row.team), normalizeString(row.opponent)].sort().join('|')
+      const key = `${row.season}|${row.week}|${teamsKey}`
+      if (!grouped.has(key)) grouped.set(key, [])
+      grouped.get(key).push(row)
+    })
+
+    return Array.from(grouped.values()).map(rows => {
+      const ordered = [...rows].sort((a, b) => a.sourceIndex - b.sourceIndex)
+      const first = ordered[0]
+      return {
+        id: `${first.season}|${first.week}|${ordered.map(r => normalizeString(r.team)).sort().join('|')}`,
+        season: first.season,
+        week: first.week,
+        team: first.team,
+        opponent: first.opponent,
+        pf: first.pf,
+        pa: first.pa,
+        margin: first.margin,
+        result: first.result,
+        stage: first.stage,
+        streak: first.streak,
+        powerRanking: first.powerRanking,
+        weeklyHighScorer: first.weeklyHighScorer,
+        maxPF: first.maxPF,
+        startersAccuracy: first.startersAccuracy,
+        participants: Array.from(new Map(ordered.flatMap(r => [r.team, r.opponent]).map(name => [normalizeString(name), name])).values()),
+        sides: ordered,
+      }
+    })
+  }, [gameFactTeams])
+
+  const gameFactFilterOptions = useMemo(() => {
+    const seasons = [...new Set(gameFactTeams.map(r => r.season))]
+      .filter(Boolean)
+      .sort((a, b) => Number(b) - Number(a))
+    const teams = [...new Set(gameFactTeams.map(r => r.team))]
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b))
+    const opponents = [...new Set(gameFactTeams.map(r => r.opponent))]
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b))
+    const stages = [...new Set(gameFactTeams.map(r => r.stage))]
+      .filter(Boolean)
+      .sort()
+    const powerRankings = [...new Set(gameFactTeams.map(r => parseNumber(r.powerRanking)).filter(v => v > 0))]
+      .sort((a, b) => a - b)
+      .map(v => `#${v}`)
+    return { seasons, teams, opponents, stages, powerRankings }
+  }, [gameFactTeams])
+
+  const filteredGameFacts = useMemo(() => {
+    const search = normalizeString(gfSearch)
+
+    const matchesAny = (selected, candidates) => {
+      if (!Array.isArray(selected) || selected.length === 0) return true
+      const values = Array.isArray(candidates) ? candidates : [candidates]
+      return values.some(value =>
+        selected.some(item => normalizeString(item) === normalizeString(value))
+      )
+    }
+
+    // GAME_FACTS_ALL stores every matchup twice: one row for each side.
+    // IMPORTANT FILTER BEHAVIOR:
+    // - With no side-specific filter active, keep BOTH mirrored rows.
+    // - Team filters apply ONLY to the Team column. Therefore selecting
+    //   OldBrady returns only the OldBrady row of each matchup, never the
+    //   mirrored row where OldBrady is the Opponent.
+    // - Opponent filters apply ONLY to the Opponent column.
+    // - HS / Power Ranking / Result are also row-level filters. They naturally
+    //   collapse to the relevant mirrored row when appropriate.
+    // This keeps the complete database available for sorting, while making
+    // side-specific filters behave like an actual spreadsheet column filter.
+    const filtered = gameFactTeams.filter(row => {
+      if (!matchesAny(gfSeason, row.season)) return false
+      if (!matchesAny(gfStage, row.stage)) return false
+      if (!gfIncludeDoubleWeeks && String(row.week).includes('-')) return false
+
+      // Team = left side only.
+      if (!matchesAny(gfTeam, row.team)) return false
+
+      // Opponent = right side only.
+      if (!matchesAny(gfOpponent, row.opponent)) return false
+
+      if (gfPowerRanking.length > 0 && !matchesAny(gfPowerRanking, `#${row.powerRanking}`)) {
+        return false
+      }
+
+      if (gfHS.length > 0) {
+        const isHS = normalizeString(row.weeklyHighScorer) === normalizeString(row.team)
+        if (!matchesAny(gfHS, isHS ? 'HS' : '')) return false
+      }
+
+      if (!matchesAny(gfResult, row.result)) return false
+
+      if (gfMinPF !== '' && row.pf < parseNumber(gfMinPF)) return false
+
+      const searchText = `${row.team} ${row.opponent} ${row.season} ${row.week}`
+      if (search && !normalizeString(searchText).includes(search)) return false
+
+      return true
+    })
+
+    const getVal = row => {
+      if (gfSortCol === 'Season') return Number(row.season) || 0
+      if (gfSortCol === 'Week') return Number(String(row.week).split('-')[0]) || 0
+      if (gfSortCol === 'PF') return row.pf
+      if (gfSortCol === 'PA') return row.pa
+      if (gfSortCol === 'Margin') return row.margin
+      if (gfSortCol === 'Streak') return row.streak
+      if (gfSortCol === 'Max PF') return row.maxPF
+      if (gfSortCol === 'Starters Accuracy') return row.startersAccuracy
+      return row.pf
+    }
+
+    filtered.sort((a, b) => {
+      const av = getVal(a)
+      const bv = getVal(b)
+      const diff = gfSortDir === 'asc' ? av - bv : bv - av
+      if (diff !== 0) return diff
+
+      const seasonDiff = Number(b.season) - Number(a.season)
+      if (seasonDiff !== 0) return seasonDiff
+      const weekDiff = Number(String(b.week).split('-')[0]) - Number(String(a.week).split('-')[0])
+      if (weekDiff !== 0) return weekDiff
+      return a.sourceIndex - b.sourceIndex
+    })
+
+    return filtered
+  }, [
+    gameFactTeams,
+    gfSeason,
+    gfTeam,
+    gfOpponent,
+    gfStage,
+    gfResult,
+    gfPowerRanking,
+    gfHS,
+    gfSearch,
+    gfMinPF,
+    gfIncludeDoubleWeeks,
+    gfSortCol,
+    gfSortDir,
+  ])
+
+  const GAME_FACT_PAGE_SIZE = 15
+  const gameFactTotalPages = Math.max(1, Math.ceil(filteredGameFacts.length / GAME_FACT_PAGE_SIZE))
+  const pagedGameFacts = filteredGameFacts.slice(
+    gfPage * GAME_FACT_PAGE_SIZE,
+    gfPage * GAME_FACT_PAGE_SIZE + GAME_FACT_PAGE_SIZE
+  )
+
+  const handleGameFactSort = (col) => {
+    if (!['Season', 'Week', 'PF', 'PA', 'Margin', 'Streak', 'Max PF', 'Starters Accuracy'].includes(col)) return
+    if (gfSortCol === col) setGfSortDir(d => d === 'desc' ? 'asc' : 'desc')
+    else {
+      setGfSortCol(col)
+      setGfSortDir('desc')
+    }
+  }
+
   const chartData = useMemo(() => {
     if (!chartTeam) return []
     const stat = CHART_STATS.find(s => s.label === chartStat)
@@ -451,6 +790,10 @@ export default function StandingsPage() {
 
   useEffect(() => { setPage(0) }, [tab, season, sortCol, sortDir])
 
+  useEffect(() => {
+    setGfPage(0)
+  }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfSearch, gfMinPF, gfSortCol, gfSortDir])
+
   const tabCols = {
     'Overall': ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles', 'PR #1', 'High Score'],
     'Reg Season': ['W', 'L', 'W%', 'PF'],
@@ -465,6 +808,8 @@ export default function StandingsPage() {
       setSortDir(col === 'Pos' ? 'asc' : 'desc')
     }
   }
+
+  useEffect(() => { setGfPage(0) }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfSearch, gfMinPF, gfIncludeDoubleWeeks, gfSortCol, gfSortDir])
 
   const getCol = (row, col) => {
     if (col === 'Pos') return row.standing ? (['1st', '2nd', '3rd'][row.standing - 1] ?? `${row.standing}th`) : '—'
@@ -494,9 +839,9 @@ export default function StandingsPage() {
 
       <Header onSummaryOpen={() => setDrawerOpen(true)} />
 
-      <section className="mx-auto max-w-[1680px] px-3 pb-16 pt-4 sm:px-5 md:px-6">
+      <section className="px-3 pb-20 md:px-6">
         {/* HERO */}
-        <div className="relative mb-10 min-h-[280px] overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] tp-shadow-navy">
+        <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] tp-shadow-navy">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <svg className="absolute right-0 top-0 h-full w-[62%]" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
               <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2">
@@ -523,29 +868,40 @@ export default function StandingsPage() {
             <div className="absolute inset-0 bg-[linear-gradient(90deg,#F7F6F2_0%,#F7F6F2_40%,rgba(247,246,242,0.9)_56%,rgba(247,246,242,0.15)_100%)]" />
           </div>
 
-          <div className="relative z-10 flex min-h-[280px] items-center p-6 sm:p-10 md:p-12">
-            <div className="max-w-3xl">
-              <div className="mb-5 inline-flex items-center gap-2 border-2 border-[#D01F2D] bg-[#D01F2D] px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] text-white">
-                <Medal className="h-4 w-4" />
-                League
-              </div>
-
-              <h1
-                className="leading-[0.82] tracking-[-0.02em]"
-                style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(56px, 8vw, 110px)' }}
+          <div className="relative z-10 p-6 sm:p-8 md:p-10">
+            <div
+              className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2 text-white"
+              style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
+            >
+              <Medal className="h-3 w-3 sm:h-4 sm:w-4 shrink-0 text-white" />
+              <span
+                className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap"
+                style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
               >
-                <span className="text-[#16274F]">League</span>{' '}
-                <span className="text-[#D01F2D]" style={{ textShadow: '3px 3px 0 #0A0A0A' }}>Standings</span>
-              </h1>
-
-              <p className="mt-5 max-w-xl text-base font-semibold leading-relaxed text-[#3F4757] sm:text-lg">
-                Every team. Every season. Every stat.
-              </p>
+                League
+              </span>
             </div>
+
+            <h1
+              className="leading-[0.9] tracking-[-0.02em] text-[#16274F] whitespace-nowrap"
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: 'clamp(48px, 7vw, 96px)',
+              }}
+            >
+              League <span className="text-[#D01F2D]">Stats</span>
+            </h1>
+
+            <p
+              className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-[#3F4757]"
+              style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+            >
+              Every team. Every season. Every stat.
+            </p>
           </div>
         </div>
 
-        {/* STANDINGS */}
+        {/* TEAM STATS */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -562,7 +918,7 @@ export default function StandingsPage() {
                 <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Team Rankings</div>
               </div>
               <div className="mt-1 text-lg font-bold text-white/80">
-                {season === 'All-Time' ? 'All-Time standings' : `Season ${season}`}
+                {season === 'All-Time' ? 'All-Time stats' : `Season ${season}`}
               </div>
             </div>
             <div className="w-full md:w-56">
@@ -691,13 +1047,14 @@ export default function StandingsPage() {
           )}
         </motion.div>
 
+
         {/* TEAM EVOLUTION */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.5 }}
-          className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
+          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
         >
           <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
@@ -754,6 +1111,188 @@ export default function StandingsPage() {
             </div>
           )}
         </motion.div>
+
+        {/* GAME LOG */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.08 }}
+          transition={{ duration: 0.5 }}
+          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
+        >
+          <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D]">
+                  <Activity className="h-4.5 w-4.5 text-white" />
+                </div>
+                <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Game Log</div>
+              </div>
+              <div className="mt-1 text-lg font-bold text-white/80">
+                {filteredGameFacts.length.toLocaleString()} team performances · {gameFactMatchups.length.toLocaleString()} total matchups
+              </div>
+            </div>
+          </div>
+
+          <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-4 py-4 sm:px-6">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-10">
+              <input
+                value={gfSearch}
+                onChange={e => setGfSearch(e.target.value)}
+                placeholder="Search team..."
+                className="h-10 min-w-0 w-full border-2 border-[#0A0A0A] bg-white px-3 text-xs font-black text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
+              />
+
+              <MultiSelect values={gfSeason} onChange={setGfSeason} options={gameFactFilterOptions.seasons} label="Season" />
+              <MultiSelect values={gfTeam} onChange={setGfTeam} options={gameFactFilterOptions.teams} label="Team" />
+              <MultiSelect values={gfOpponent} onChange={setGfOpponent} options={gameFactFilterOptions.opponents} label="Opponent" />
+              <MultiSelect values={gfStage} onChange={setGfStage} options={gameFactFilterOptions.stages} label="Stage" />
+              <MultiSelect values={gfResult} onChange={setGfResult} options={['W', 'L', 'T']} label="Result" />
+              <MultiSelect values={gfPowerRanking} onChange={setGfPowerRanking} options={gameFactFilterOptions.powerRankings} label="Power Ranking" />
+              <MultiSelect values={gfHS} onChange={setGfHS} options={['HS']} label="Highest Scorer" />
+
+              <div className="flex h-10 min-w-0 items-center gap-2 border-2 border-[#0A0A0A] bg-white px-3">
+                <input
+                  id="include-double-weeks"
+                  type="checkbox"
+                  checked={gfIncludeDoubleWeeks}
+                  onChange={e => setGfIncludeDoubleWeeks(e.target.checked)}
+                  className="h-4 w-4 shrink-0 accent-[#16274F]"
+                />
+                <label htmlFor="include-double-weeks" className="cursor-pointer text-[10px] font-black uppercase tracking-[0.08em] text-[#3F4757]">
+                  Include double weeks
+                </label>
+              </div>
+
+              <input
+                value={gfMinPF}
+                onChange={e => setGfMinPF(e.target.value.replace(/[^0-9.,]/g, ''))}
+                inputMode="decimal"
+                placeholder="Min PF"
+                className="h-10 min-w-0 w-full border-2 border-[#0A0A0A] bg-white px-3 text-xs font-black text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
+              />
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
+              <span>1 row = 1 team performance</span>
+              <span>·</span>
+              <span>Mirror rows are kept as separate source records</span>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-20 text-sm font-black uppercase tracking-[0.2em] text-[#6B7280]">Loading...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-[#0A0A0A]/15 bg-[#F7F6F2]">
+                    {[
+                      ['Season', 'Season'],
+                      ['Week', 'Week'],
+                      ['Team', 'Team'],
+                      ['Opponent', 'Opponent'],
+                      ['PF', 'PF'],
+                      ['PA', 'PA'],
+                      ['Margin', 'Margin'],
+                      ['Result', 'Result'],
+                      ['Stage', 'Stage'],
+                      ['Streak', 'Streak'],
+                      ['Power Ranking', 'Power Ranking'],
+                      ['HS', 'HS'],
+                      ['Max PF', 'Max PF'],
+                      ['Starters Accuracy', 'Starters Accuracy'],
+                    ].map(([col, label]) => {
+                      const sortable = ['Season', 'Week', 'PF', 'PA', 'Margin', 'Streak', 'Max PF', 'Starters Accuracy'].includes(col)
+                      return (
+                        <th key={col} className={`px-3 py-3 ${['PF','PA','Margin','Streak','Power Ranking','Max PF','Starters Accuracy'].includes(col) ? 'text-right' : 'text-left'}`}>
+                          {sortable ? (
+                            <button
+                              onClick={() => handleGameFactSort(col)}
+                              className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.14em] transition-colors"
+                              style={{ color: gfSortCol === col ? '#D01F2D' : '#6B7280' }}
+                            >
+                              {label}{gfSortCol === col ? (gfSortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                            </button>
+                          ) : (
+                            <span className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.14em] text-[#6B7280]">
+                              {label}
+                            </span>
+                          )}
+                        </th>
+                      )
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedGameFacts.map(row => (
+                    <tr key={row.id} className="border-b border-[#0A0A0A]/8 bg-white transition-colors hover:bg-[#F7F6F2]">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-xs font-black text-[#6B7280]">{row.season}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-xs font-black text-[#6B7280]">{row.week}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-black uppercase text-[#16274F]">{row.team}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-bold uppercase text-[#3F4757]">{row.opponent}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#16274F]">{row.pf.toFixed(2)}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#6B7280]">{row.pa.toFixed(2)}</td>
+                      <td className={`whitespace-nowrap px-3 py-2.5 text-right text-sm font-black ${row.margin >= 0 ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
+                        {row.margin > 0 ? '+' : ''}{row.margin.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`inline-flex min-w-7 items-center justify-center px-2 py-1 text-[10px] font-black ${row.result === 'W' ? 'bg-[#E9F6ED] text-[#1E8E3E]' : row.result === 'L' ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'bg-[#F7F6F2] text-[#6B7280]'}`}>
+                          {row.result}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.08em] text-[#6B7280]">{row.stage}</td>
+                      <td className={`whitespace-nowrap px-3 py-2.5 text-right text-sm font-black ${row.streak > 0 ? 'text-[#1E8E3E]' : row.streak < 0 ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
+                        {row.streak > 0 ? `W${row.streak}` : row.streak < 0 ? `L${Math.abs(row.streak)}` : '0'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#16274F]">
+                        {row.powerRanking > 0 ? `#${row.powerRanking}` : '—'}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {row.weeklyHighScorer && normalizeString(row.weeklyHighScorer) === normalizeString(row.team) ? (
+                          <span className="inline-flex min-w-7 items-center justify-center bg-[#FFF4C7] px-2 py-1 text-[10px] font-black text-[#B8860B]">HS</span>
+                        ) : (
+                          <span className="text-xs font-black text-[#B8BFC9]">—</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#3F4757]">
+                        {row.maxPF > 0 ? row.maxPF.toFixed(2) : '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#16274F]">
+                        {row.maxPF > 0 ? `${row.startersAccuracy.toFixed(1)}%` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                  {pagedGameFacts.length === 0 && (
+                    <tr><td colSpan="14" className="py-16 text-center text-sm font-bold text-[#6B7280]">No games found</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {gameFactTotalPages > 1 && (
+            <div className="flex flex-col gap-3 border-t-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+              <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
+                Showing {gfPage * GAME_FACT_PAGE_SIZE + 1}–{Math.min((gfPage + 1) * GAME_FACT_PAGE_SIZE, filteredGameFacts.length)} of {filteredGameFacts.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setGfPage(p => Math.max(0, p - 1))}
+                  disabled={gfPage === 0}
+                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
+                ><ChevronLeft className="h-4 w-4" /></button>
+                <span className="min-w-12 text-center text-xs font-black text-[#16274F]">{gfPage + 1}/{gameFactTotalPages}</span>
+                <button
+                  onClick={() => setGfPage(p => Math.min(gameFactTotalPages - 1, p + 1))}
+                  disabled={gfPage >= gameFactTotalPages - 1}
+                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
+                ><ChevronRight className="h-4 w-4" /></button>
+              </div>
+            </div>
+          )}
+        </motion.div>
+
       </section>
 
       <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">

@@ -1699,8 +1699,8 @@ export default function TeamsPage() {
               [Target, 'Best Week', Number(weeklyBestRecord?.points ?? weeklyMax).toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(Number(weeklyBestRecord?.points ?? weeklyMax)) ? 0 : 1, maximumFractionDigits: 1 }), weeklyBestRecord ? `${weeklyBestRecord.season} · Week ${weeklyBestRecord.week}${weeklyBestRank ? ` · ${weeklyBestRank}` : ''}` : (weeklyMaxRank || 'single weeks only'), 'navy', weeklyBestHref],
               [TrendingDown, 'Worst Week', weeklyWorstRecord ? Number(weeklyWorstRecord.points).toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(Number(weeklyWorstRecord.points)) ? 0 : 1, maximumFractionDigits: 1 }) : '—', weeklyWorstRecord ? `${weeklyWorstRecord.season} · Week ${weeklyWorstRecord.week}${weeklyWorstRank ? ` · ${weeklyWorstRank}` : ''}` : 'single weeks only', 'red', weeklyWorstHref],
               [Zap, '200+ Pt Games', games200, games200Rank || 'single weeks only', 'gold'],
-              [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
-              [Star, 'Weeks as #1 Scorer', topScoringWeeks, topScoringWeeksRank || 'regular season', 'gold'],
+              [TrendingUp, 'Power Ranking #1 (RS)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
+              [Star, 'High Scorer (RS)', topScoringWeeks, topScoringWeeksRank || 'regular season', 'gold'],
               [Flame, 'Best Streak', streakRecords.bestW ? `W${streakRecords.bestW}` : '—', bestStreakSub, 'green', '/records'],
               [TrendingDown, 'Worst Streak', streakRecords.bestL ? `L${streakRecords.bestL}` : '—', worstStreakSub, 'red', '/records'],
             ].map(([Icon, label, value, sub, accent, href = '/records']) => {
