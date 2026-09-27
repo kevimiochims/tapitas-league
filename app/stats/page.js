@@ -312,6 +312,7 @@ export default function StatsPage() {
   const [gfPowerRanking, setGfPowerRanking] = useState([])
   const [gfHS, setGfHS] = useState([])
   const [gfIncludeDoubleWeeks, setGfIncludeDoubleWeeks] = useState(true)
+  const [gfInclude200Plus, setGfInclude200Plus] = useState(false)
   const [gfSortCol, setGfSortCol] = useState('Season')
   const [gfSortDir, setGfSortDir] = useState('desc')
   const [gfPage, setGfPage] = useState(0)
@@ -639,6 +640,8 @@ export default function StatsPage() {
       if (!matchesAny(gfSeason, row.season)) return false
       if (!matchesAny(gfStage, row.stage)) return false
       if (!gfIncludeDoubleWeeks && String(row.week).includes('-')) return false
+      // 200+ filter: only single-week games.
+      if (gfInclude200Plus && (String(row.week).includes('-') || row.pf < 200)) return false
 
       // Team = left side only.
       if (!matchesAny(gfTeam, row.team)) return false
@@ -696,6 +699,7 @@ export default function StatsPage() {
     gfPowerRanking,
     gfHS,
     gfIncludeDoubleWeeks,
+    gfInclude200Plus,
     gfSortCol,
     gfSortDir,
   ])
@@ -829,7 +833,7 @@ export default function StatsPage() {
     }
   }
 
-  useEffect(() => { setGfPage(0) }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfIncludeDoubleWeeks, gfSortCol, gfSortDir])
+  useEffect(() => { setGfPage(0) }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfIncludeDoubleWeeks, gfInclude200Plus, gfSortCol, gfSortDir])
 
   const getCol = (row, col) => {
     if (col === 'Pos') return row.standing ? (['1st', '2nd', '3rd'][row.standing - 1] ?? `${row.standing}th`) : '—'
@@ -898,7 +902,7 @@ export default function StatsPage() {
                 className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap"
                 style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
               >
-                League
+                Standings & Game Insights
               </span>
             </div>
 
@@ -1174,6 +1178,19 @@ export default function StatsPage() {
                 />
                 <label htmlFor="include-double-weeks" className="cursor-pointer text-[10px] font-black uppercase tracking-[0.08em] text-[#3F4757]">
                   Include double weeks
+                </label>
+              </div>
+
+              <div className="flex h-10 min-w-0 items-center gap-2 border-2 border-[#0A0A0A] bg-white px-3">
+                <input
+                  id="include-200-plus"
+                  type="checkbox"
+                  checked={gfInclude200Plus}
+                  onChange={e => setGfInclude200Plus(e.target.checked)}
+                  className="h-4 w-4 shrink-0 accent-[#16274F]"
+                />
+                <label htmlFor="include-200-plus" className="cursor-pointer text-[10px] font-black uppercase tracking-[0.08em] text-[#3F4757]">
+                  200+ points
                 </label>
               </div>
 

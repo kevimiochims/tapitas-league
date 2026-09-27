@@ -889,16 +889,25 @@ export default function TeamsPage() {
     return map
   }, [games])
 
-  // Highest single-week regular-season score for each franchise.
-  // Double weeks are excluded from both the record and the ranking.
+  // Highest single-week score for each franchise.
+  // Double weeks are excluded, but regular-season, playoff and consolation
+  // games are all eligible as long as the matchup is a single week.
   const getTeamWeeklyMax = (teamName) => {
     let max = 0
     const seen = new Set()
     games.forEach(g => {
       if (normalizeTeamName(g?.Team) !== normalizeTeamName(teamName)) return
-      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       if (isDoubleWeek(g)) return
-      const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
+
+      const season = String(g?.Season || '').trim()
+      const week = String(g?.Week || '').trim()
+      const stage = String(g?.GameStage || '').trim()
+      const opponent = normalizeTeamName(g?.Opponent)
+      if (!season || !week) return
+
+      // Deduplicate the mirrored GAME_FACTS_ALL rows while still allowing
+      // different single-week stages/opponents to remain distinct if they exist.
+      const key = `${season}|${week}|${stage}|${opponent}`
       if (seen.has(key)) return
       seen.add(key)
       max = Math.max(max, parseWeeklyPoints(g?.PF))
@@ -906,11 +915,11 @@ export default function TeamsPage() {
     return max
   }
 
-  // All single-week regular-season team scores, deduplicated to one row per
-  // franchise + season + week. Used to rank Best/Worst Week within all-time history.
-  // All-time Best/Worst Week rankings use current franchises only.
-  // Historical franchises that are no longer in TEAM_ALL_TIME must not
-  // affect the ranking of a current team's weekly score.
+  // All single-week team scores, deduplicated to one row per franchise +
+  // season + week + matchup. Used to rank Best/Worst Week within all-time
+  // history. All-time rankings use current franchises only.
+  // IMPORTANT: do NOT restrict this to Reg Season. Playoff and Consolation
+  // games count as long as they are not double weeks.
   const allTimeWeeklyScores = useMemo(() => {
     const currentTeamKeys = new Set(
       allTime
@@ -920,15 +929,16 @@ export default function TeamsPage() {
     const scores = []
     const seen = new Set()
     games.forEach(g => {
-      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       if (isDoubleWeek(g)) return
 
       const team = normalizeTeamName(g?.Team)
       const season = String(g?.Season || '').trim()
       const week = String(g?.Week || '').trim()
+      const stage = String(g?.GameStage || '').trim()
+      const opponent = normalizeTeamName(g?.Opponent)
       if (!team || !currentTeamKeys.has(team) || !season || !week) return
 
-      const key = `${team}|${season}|${week}`
+      const key = `${team}|${season}|${week}|${stage}|${opponent}`
       if (seen.has(key)) return
       seen.add(key)
       scores.push(parseWeeklyPoints(g?.PF))
@@ -936,24 +946,28 @@ export default function TeamsPage() {
     return scores
   }, [allTime, games])
 
-  // Best/Worst single-week regular-season score with its occurrence.
-  // Keep the same single-week + Reg Season basis as the existing Best Week record.
+  // Best/Worst single-week score with its occurrence.
+  // Double weeks are excluded, but all game stages are eligible.
   const getTeamWeeklyRecord = (teamName, mode = 'max') => {
     let record = null
     const seen = new Set()
     games.forEach(g => {
       if (normalizeTeamName(g?.Team) !== normalizeTeamName(teamName)) return
-      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       if (isDoubleWeek(g)) return
 
       const season = String(g?.Season || '').trim()
       const week = String(g?.Week || '').trim()
-      const key = `${season}|${week}`
+      const stage = String(g?.GameStage || '').trim()
+      const opponent = normalizeTeamName(g?.Opponent)
+      if (!season || !week) return
+
+      // Deduplicate the mirrored rows without excluding playoff/consolation.
+      const key = `${season}|${week}|${stage}|${opponent}`
       if (seen.has(key)) return
       seen.add(key)
 
       const points = parseWeeklyPoints(g?.PF)
-      const candidate = { points, season, week }
+      const candidate = { points, season, week, stage, opponent }
       if (!record || (mode === 'min' ? points < record.points : points > record.points)) {
         record = candidate
       }
