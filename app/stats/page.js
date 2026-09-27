@@ -311,8 +311,6 @@ export default function StatsPage() {
   const [gfResult, setGfResult] = useState([])
   const [gfPowerRanking, setGfPowerRanking] = useState([])
   const [gfHS, setGfHS] = useState([])
-  const [gfSearch, setGfSearch] = useState('')
-  const [gfMinPF, setGfMinPF] = useState('')
   const [gfIncludeDoubleWeeks, setGfIncludeDoubleWeeks] = useState(true)
   const [gfSortCol, setGfSortCol] = useState('Season')
   const [gfSortDir, setGfSortDir] = useState('desc')
@@ -618,8 +616,6 @@ export default function StatsPage() {
   }, [gameFactTeams])
 
   const filteredGameFacts = useMemo(() => {
-    const search = normalizeString(gfSearch)
-
     const matchesAny = (selected, candidates) => {
       if (!Array.isArray(selected) || selected.length === 0) return true
       const values = Array.isArray(candidates) ? candidates : [candidates]
@@ -661,11 +657,6 @@ export default function StatsPage() {
 
       if (!matchesAny(gfResult, row.result)) return false
 
-      if (gfMinPF !== '' && row.pf < parseNumber(gfMinPF)) return false
-
-      const searchText = `${row.team} ${row.opponent} ${row.season} ${row.week}`
-      if (search && !normalizeString(searchText).includes(search)) return false
-
       return true
     })
 
@@ -704,8 +695,6 @@ export default function StatsPage() {
     gfResult,
     gfPowerRanking,
     gfHS,
-    gfSearch,
-    gfMinPF,
     gfIncludeDoubleWeeks,
     gfSortCol,
     gfSortDir,
@@ -725,6 +714,37 @@ export default function StatsPage() {
       setGfSortCol(col)
       setGfSortDir('desc')
     }
+  }
+
+  const getGameFactMatchupHref = (row) => {
+    if (!row) return '/matchups'
+
+    const season = String(row.season || '').trim()
+    const week = String(row.week || '').trim()
+    const team = String(row.team || '').trim()
+    const opponent = String(row.opponent || '').trim()
+
+    // Always send Matchups the FIRST source row of this matchup.
+    // GAME_FACTS_ALL contains mirrored rows; the earliest sourceIndex is the
+    // canonical row that Matchups should receive so it opens the same matchup
+    // already selected regardless of which side was clicked here.
+    const firstRow = gameFactTeams
+      .filter(candidate => {
+        if (candidate.season !== season || candidate.week !== week) return false
+        const samePair =
+          (normalizeString(candidate.team) === normalizeString(team) &&
+            normalizeString(candidate.opponent) === normalizeString(opponent)) ||
+          (normalizeString(candidate.team) === normalizeString(opponent) &&
+            normalizeString(candidate.opponent) === normalizeString(team))
+        return samePair
+      })
+      .sort((a, b) => a.sourceIndex - b.sourceIndex)[0] || row
+
+    return `/matchups?season=${encodeURIComponent(firstRow.season)}&week=${encodeURIComponent(firstRow.week)}&team=${encodeURIComponent(firstRow.team)}&opp=${encodeURIComponent(firstRow.opponent)}`
+  }
+
+  const handleGameFactClick = (row) => {
+    router.push(getGameFactMatchupHref(row))
   }
 
   const chartData = useMemo(() => {
@@ -792,7 +812,7 @@ export default function StatsPage() {
 
   useEffect(() => {
     setGfPage(0)
-  }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfSearch, gfMinPF, gfSortCol, gfSortDir])
+  }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfSortCol, gfSortDir])
 
   const tabCols = {
     'Overall': ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles', 'PR #1', 'High Score'],
@@ -809,7 +829,7 @@ export default function StatsPage() {
     }
   }
 
-  useEffect(() => { setGfPage(0) }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfSearch, gfMinPF, gfIncludeDoubleWeeks, gfSortCol, gfSortDir])
+  useEffect(() => { setGfPage(0) }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfIncludeDoubleWeeks, gfSortCol, gfSortDir])
 
   const getCol = (row, col) => {
     if (col === 'Pos') return row.standing ? (['1st', '2nd', '3rd'][row.standing - 1] ?? `${row.standing}th`) : '—'
@@ -1136,13 +1156,6 @@ export default function StatsPage() {
 
           <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-4 py-4 sm:px-6">
             <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-10">
-              <input
-                value={gfSearch}
-                onChange={e => setGfSearch(e.target.value)}
-                placeholder="Search team..."
-                className="h-10 min-w-0 w-full border-2 border-[#0A0A0A] bg-white px-3 text-xs font-black text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
-              />
-
               <MultiSelect values={gfSeason} onChange={setGfSeason} options={gameFactFilterOptions.seasons} label="Season" />
               <MultiSelect values={gfTeam} onChange={setGfTeam} options={gameFactFilterOptions.teams} label="Team" />
               <MultiSelect values={gfOpponent} onChange={setGfOpponent} options={gameFactFilterOptions.opponents} label="Opponent" />
@@ -1164,13 +1177,6 @@ export default function StatsPage() {
                 </label>
               </div>
 
-              <input
-                value={gfMinPF}
-                onChange={e => setGfMinPF(e.target.value.replace(/[^0-9.,]/g, ''))}
-                inputMode="decimal"
-                placeholder="Min PF"
-                className="h-10 min-w-0 w-full border-2 border-[#0A0A0A] bg-white px-3 text-xs font-black text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]"
-              />
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
@@ -1226,7 +1232,12 @@ export default function StatsPage() {
                 </thead>
                 <tbody>
                   {pagedGameFacts.map(row => (
-                    <tr key={row.id} className="border-b border-[#0A0A0A]/8 bg-white transition-colors hover:bg-[#F7F6F2]">
+                    <tr
+                      key={row.id}
+                      onClick={() => handleGameFactClick(row)}
+                      className="cursor-pointer border-b border-[#0A0A0A]/8 bg-white transition-colors hover:bg-[#F7F6F2]"
+                      title="Open matchup"
+                    >
                       <td className="whitespace-nowrap px-3 py-2.5 text-xs font-black text-[#6B7280]">{row.season}</td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-xs font-black text-[#6B7280]">{row.week}</td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-black uppercase text-[#16274F]">{row.team}</td>

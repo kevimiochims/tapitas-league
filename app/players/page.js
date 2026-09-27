@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
-import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronLeft, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
 import Header from '../components/Header'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -345,10 +346,18 @@ function getPlayerIdentity(name, playerLookup) {
 
 function canonicalMatchupHref(game, games) {
   if (!game) return '/matchups'
-  const season = String(game?.Season || '').trim()
-  const week = String(game?.Week || '').trim()
-  const team = String(game?.Team || '').trim()
-  const opp = String(game?.Opponent || '').trim()
+
+  // Performance rows use normalized lowercase keys (season/week/team/opponent),
+  // while GAME_FACTS_ALL uses the original column names (Season/Week/Team/Opponent).
+  // Read both forms so a performance click always carries the correct matchup.
+  const season = String(game?.Season ?? game?.season ?? '').trim()
+  const week = String(game?.Week ?? game?.week ?? '').trim()
+  const team = String(game?.Team ?? game?.team ?? '').trim()
+  const opp = String(game?.Opponent ?? game?.opponent ?? '').trim()
+
+  // Always resolve the canonical/original first row of that matchup from the
+  // complete GAME_FACTS_ALL array. This guarantees Matchups opens the same
+  // matchup regardless of which performance row was clicked.
   const canonical = Array.isArray(games) ? games.find(row => {
     if (String(row?.Season || '').trim() !== season || String(row?.Week || '').trim() !== week) return false
     const rowTeam = normalizeTeamName(row?.Team)
@@ -356,8 +365,16 @@ function canonicalMatchupHref(game, games) {
     return (rowTeam === normalizeTeamName(team) && rowOpp === normalizeTeamName(opp)) ||
       (rowTeam === normalizeTeamName(opp) && rowOpp === normalizeTeamName(team))
   }) : null
+
   const target = canonical || game
-  return `/matchups?season=${encodeURIComponent(String(target?.Season || '').trim())}&week=${encodeURIComponent(String(target?.Week || '').trim())}&team=${encodeURIComponent(String(target?.Team || '').trim())}&opp=${encodeURIComponent(String(target?.Opponent || '').trim())}`
+  const targetSeason = String(target?.Season ?? target?.season ?? season).trim()
+  const targetWeek = String(target?.Week ?? target?.week ?? week).trim()
+  const targetTeam = String(target?.Team ?? target?.team ?? team).trim()
+  const targetOpp = String(target?.Opponent ?? target?.opponent ?? opp).trim()
+
+  if (!targetSeason || !targetWeek || !targetTeam || !targetOpp) return '/matchups'
+
+  return `/matchups?season=${encodeURIComponent(targetSeason)}&week=${encodeURIComponent(targetWeek)}&team=${encodeURIComponent(targetTeam)}&opp=${encodeURIComponent(targetOpp)}`
 }
 
 function HeaderFilter({ value, onChange, options, label }) {
@@ -797,6 +814,7 @@ function PlayerProfile({ player, games, playerLookup, onClose }) {
 }
 
 export default function PlayersPage() {
+  const router = useRouter()
   const [games, setGames] = useState([]), [playerLookup, setPlayerLookup] = useState(new Map()), [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [position, setPosition] = useState(['All'])
@@ -804,6 +822,11 @@ export default function PlayersPage() {
   const [season, setSeason] = useState(['All'])
   const [minApps, setMinApps] = useState('')
   const [sort, setSort] = useState({ key: 'appearances', dir: 'desc' })
+  const [archiveView, setArchiveView] = useState('consolidated')
+  const [performanceSort, setPerformanceSort] = useState({ key: 'pts', dir: 'desc' })
+  const [performanceIncludeDoubleWeeks, setPerformanceIncludeDoubleWeeks] = useState(false)
+  const [performancePage, setPerformancePage] = useState(0)
+  const [consolidatedPage, setConsolidatedPage] = useState(0)
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
@@ -936,6 +959,144 @@ export default function PlayersPage() {
       })
   }, [players, search, position, teamFilter, season, minApps, sort])
 
+  const togglePerformanceSort = (key) => setPerformanceSort(cur => cur.key === key
+    ? { key, dir: cur.dir === 'desc' ? 'asc' : 'desc' }
+    : { key, dir: 'desc' })
+
+  const performanceRows = useMemo(() => {
+    const seasonSel = season.includes('All') ? null : season
+    const teamSel = teamFilter.includes('All') ? null : teamFilter.map(normalizeTeamName)
+    const posSel = position.includes('All') ? null : position
+    const searchKey = normalizePlayerKey(search)
+
+    const playerByKey = new Map(players.map(p => [p.identityKey, p]))
+    const rows = []
+
+    gameAppearances.forEach((apps, gameIndex) => {
+      const g = games[gameIndex]
+      const gSeason = String(g?.Season || '').trim()
+      const gTeam = String(g?.Team || '').trim()
+      const gOpponent = String(g?.Opponent || '').trim()
+      const result = String(g?.Result || '').trim().toUpperCase()
+      const stage = String(g?.GameStage || '').trim()
+      const doubleWeek = isDoubleWeek(g)
+
+      if (seasonSel && !seasonSel.includes(gSeason)) return
+      if (!performanceIncludeDoubleWeeks && doubleWeek) return
+      if (teamSel && !teamSel.includes(normalizeTeamName(gTeam))) return
+
+      const seen = new Set()
+      apps.forEach(app => {
+        const raw = String(app.name || '').trim()
+        if (!raw || getNFLTeamLogo(raw)) return
+        const key = `raw:${raw}`
+        if (seen.has(key)) return
+        seen.add(key)
+
+        const playerPosition = getPlayerPosition(raw, playerLookup)
+        if (playerPosition === 'DEF') return
+        const displayName = getDisplayPlayerName(raw, playerLookup)
+        if (posSel && !posSel.includes(playerPosition)) return
+        if (searchKey && !normalizePlayerKey(displayName).includes(searchKey)) return
+
+        const player = playerByKey.get(key) || {
+          identityKey: key,
+          rawName: raw,
+          name: displayName,
+          position: playerPosition,
+          appearances: 0,
+          starts: 0,
+          bench: 0,
+          total: 0,
+          avg: 0,
+          best: 0,
+          seasons: [],
+          teams: [],
+          rostered: 0,
+        }
+
+        rows.push({
+          identityKey: key,
+          rawName: raw,
+          name: displayName,
+          position: playerPosition,
+          pts: Number.isFinite(Number(app.pts)) ? Number(app.pts) : 0,
+          season: gSeason,
+          week: String(g?.Week || '').trim(),
+          team: gTeam,
+          opponent: gOpponent,
+          status: app.status,
+          result,
+          stage,
+          isDoubleWeek: doubleWeek,
+          player,
+          href: canonicalMatchupHref(g, games),
+        })
+      })
+    })
+
+    const sorted = [...rows].sort((a, b) => {
+      const dirMul = performanceSort.dir === 'desc' ? 1 : -1
+      const valueA = performanceSort.key === 'season' ? (Number(a.season) || 0)
+        : performanceSort.key === 'week' ? (parseFloat(a.week) || 0)
+          : a.pts
+      const valueB = performanceSort.key === 'season' ? (Number(b.season) || 0)
+        : performanceSort.key === 'week' ? (parseFloat(b.week) || 0)
+          : b.pts
+      const diff = (valueB - valueA) * dirMul
+      if (diff !== 0) return diff
+      return (Number(b.season) - Number(a.season)) || ((parseFloat(b.week) || 0) - (parseFloat(a.week) || 0)) || a.name.localeCompare(b.name)
+    })
+
+    return sorted
+  }, [games, gameAppearances, players, playerLookup, search, position, teamFilter, season, performanceSort, performanceIncludeDoubleWeeks])
+
+  const consolidatedPageSize = 15
+  const consolidatedTotalPages = Math.max(1, Math.ceil(filtered.length / consolidatedPageSize))
+  const visibleConsolidatedRows = useMemo(() => {
+    const start = consolidatedPage * consolidatedPageSize
+    return filtered.slice(start, start + consolidatedPageSize)
+  }, [filtered, consolidatedPage])
+
+  const performancePageSize = 15
+  const performanceTotalPages = Math.max(1, Math.ceil(performanceRows.length / performancePageSize))
+  const visiblePerformanceRows = useMemo(() => {
+    const start = performancePage * performancePageSize
+    return performanceRows.slice(start, start + performancePageSize)
+  }, [performanceRows, performancePage])
+
+  useEffect(() => {
+    setConsolidatedPage(0)
+  }, [archiveView, search, position, teamFilter, season, minApps, sort])
+
+  useEffect(() => {
+    setConsolidatedPage(current => Math.min(current, consolidatedTotalPages - 1))
+  }, [consolidatedTotalPages])
+
+  useEffect(() => {
+    setPerformancePage(0)
+  }, [archiveView, search, position, teamFilter, season, performanceSort, performanceIncludeDoubleWeeks])
+
+  useEffect(() => {
+    setPerformancePage(current => Math.min(current, performanceTotalPages - 1))
+  }, [performanceTotalPages])
+
+  const goConsolidatedPage = (direction) => {
+    setConsolidatedPage(current => {
+      const next = current + direction
+      if (next < 0 || next >= consolidatedTotalPages) return current
+      return next
+    })
+  }
+
+  const goPerformancePage = (direction) => {
+    setPerformancePage(current => {
+      const next = current + direction
+      if (next < 0 || next >= performanceTotalPages) return current
+      return next
+    })
+  }
+
   return <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]"><style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');.tp-shadow-navy{box-shadow:6px 6px 0 #16274F}.tp-shadow-navy-sm{box-shadow:4px 4px 0 #16274F}`}</style><Header />
     <section className="px-3 pb-20 md:px-6">
       {/* Hero */}
@@ -1002,9 +1163,9 @@ export default function PlayersPage() {
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]"><Users className="h-4 w-4 text-white" /></div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">Player Archive</div>
+                <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">{archiveView === 'consolidated' ? 'Player Archive' : 'Player Performances'}</div>
                 <div className="text-sm text-[#6B7280]">
-                  {filtered.length} players
+                  {archiveView === 'consolidated' ? `${filtered.length} players` : `${performanceRows.length} performances`}
                   {season.includes('All') && teamFilter.includes('All') && position.includes('All') && !minApps.trim() && !search.trim()
                     ? ' across all Tapitas League franchises'
                     : (() => {
@@ -1012,12 +1173,32 @@ export default function PlayersPage() {
                       if (!season.includes('All')) parts.push(`Season: ${season.join(', ')}`)
                       if (!teamFilter.includes('All')) parts.push(`Franchise: ${teamFilter.map(shortName).join(', ')}`)
                       if (!position.includes('All')) parts.push(`Position: ${position.join(', ')}`)
-                      if (minApps.trim()) parts.push(`Min apps: ${minApps.trim()}`)
+                      if (archiveView === 'consolidated' && minApps.trim()) parts.push(`Min apps: ${minApps.trim()}`)
                       if (search.trim()) parts.push(`Search: "${search.trim()}"`)
                       return <> — stats scoped to <span className="font-bold text-[#16274F]">{parts.join(' · ')}</span></>
                     })()}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* View switch */}
+          <div className="border-b-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-3 py-2.5 sm:px-6 sm:py-3">
+            <div className="inline-flex w-full sm:w-auto border-2 border-[#0A0A0A] bg-white p-1">
+              <button
+                type="button"
+                onClick={() => setArchiveView('consolidated')}
+                className={`flex-1 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-colors sm:flex-none ${archiveView === 'consolidated' ? 'bg-[#16274F] text-white' : 'text-[#6B7280] hover:bg-[#F7F6F2]'}`}
+              >
+                Consolidated
+              </button>
+              <button
+                type="button"
+                onClick={() => setArchiveView('performances')}
+                className={`flex-1 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-colors sm:flex-none ${archiveView === 'performances' ? 'bg-[#16274F] text-white' : 'text-[#6B7280] hover:bg-[#F7F6F2]'}`}
+              >
+                Performances
+              </button>
             </div>
           </div>
 
@@ -1027,75 +1208,178 @@ export default function PlayersPage() {
               <div className="w-full lg:w-36"><CompactCheckFilter value={season} onChange={setSeason} options={seasons} label="Season" multiple /></div>
               <div className="w-full lg:w-32"><CompactCheckFilter value={position} onChange={setPosition} options={positions} label="Position" multiple /></div>
               <div className="w-full lg:w-40"><CompactCheckFilter value={teamFilter} onChange={setTeamFilter} options={teams} label="Franchise" multiple /></div>
-              <input
-                value={minApps}
-                onChange={e => setMinApps(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="Min apps"
-                inputMode="numeric"
-                className="w-full border-2 border-[#0A0A0A] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#16274F] outline-none placeholder:text-[#6B7280] placeholder:normal-case placeholder:tracking-normal focus:border-[#D01F2D] lg:w-24"
-              />
+              {archiveView === 'consolidated' && (
+                <input
+                  value={minApps}
+                  onChange={e => setMinApps(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Min apps"
+                  inputMode="numeric"
+                  className="w-full border-2 border-[#0A0A0A] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#16274F] outline-none placeholder:text-[#6B7280] placeholder:normal-case placeholder:tracking-normal focus:border-[#D01F2D] lg:w-24"
+                />
+              )}
+              {archiveView === 'performances' && (
+                <label className="inline-flex w-full items-center gap-2 border-2 border-[#0A0A0A] bg-white px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#16274F] lg:w-auto">
+                  <input
+                    type="checkbox"
+                    checked={performanceIncludeDoubleWeeks}
+                    onChange={e => setPerformanceIncludeDoubleWeeks(e.target.checked)}
+                    className="h-4 w-4 accent-[#16274F]"
+                  />
+                  Include double weeks
+                </label>
+              )}
               <div className="col-span-2 w-full lg:w-64 lg:col-span-1 lg:ml-auto">
                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search player..." className="w-full border-2 border-[#0A0A0A] bg-white px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]" />
               </div>
             </div>
           </div>
 
-          <div className="max-h-[720px] overflow-auto">
-            <table className="min-w-[920px] w-full">
-              <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
-                <tr>
-                  {[
-                    { label: 'Player', key: null },
-                    { label: 'Pos', key: null },
-                    { label: 'Franchises', key: null },
-                    { label: 'Apps', key: 'appearances' },
-                    { label: 'Starts', key: 'starts' },
-                    { label: 'Avg Pts', key: 'avg' },
-                    { label: 'Best', key: 'best' },
-                    { label: 'Seasons', key: null },
-                  ].map(col => {
-                    const active = col.key && sort.key === col.key
-                    return (
-                      <th key={col.label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
-                        {col.key ? (
-                          <button
-                            type="button"
-                            onClick={() => toggleSortCol(col.key)}
-                            className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${active ? 'text-[#D01F2D]' : ''}`}
-                          >
-                            {col.label}
-                            <span className="text-[9px]">{active ? (sort.dir === 'desc' ? '↓' : '↑') : ''}</span>
-                          </button>
-                        ) : (
-                          col.label
-                        )}
-                      </th>
-                    )
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(p => (
-                  <tr key={p.identityKey} onClick={() => setSelected(p)} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-white">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={40} />
-                        <div className="min-w-0 truncate text-sm font-black text-[#16274F]">{p.name}</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">{p.position && <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-black ${getPositionBadgeClasses(p.position)}`}>{p.position}</span>}</td>
-                    <td className="max-w-[260px] px-4 py-3 text-xs font-bold text-[#3F4757]">{p.teams.map(shortName).join(', ')}</td>
-                    <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.appearances}</td>
-                    <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.starts}</td>
-                    <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.avg.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.best.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{formatSeasonList(Array.from(p.seasons))}</td>
+          {archiveView === 'consolidated' ? (
+            <>
+            <div className="max-h-[720px] overflow-auto">
+              <table className="min-w-[920px] w-full">
+                <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
+                  <tr>
+                    {[
+                      { label: 'Player', key: null },
+                      { label: 'Pos', key: null },
+                      { label: 'Franchises', key: null },
+                      { label: 'Apps', key: 'appearances' },
+                      { label: 'Starts', key: 'starts' },
+                      { label: 'Avg Pts', key: 'avg' },
+                      { label: 'Best', key: 'best' },
+                      { label: 'Seasons', key: null },
+                    ].map(col => {
+                      const active = col.key && sort.key === col.key
+                      return (
+                        <th key={col.label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
+                          {col.key ? (
+                            <button type="button" onClick={() => toggleSortCol(col.key)} className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${active ? 'text-[#D01F2D]' : ''}`}>
+                              {col.label}<span className="text-[9px]">{active ? (sort.dir === 'desc' ? '↓' : '↑') : ''}</span>
+                            </button>
+                          ) : col.label}
+                        </th>
+                      )
+                    })}
                   </tr>
-                ))}
-                {filtered.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-sm font-bold text-[#6B7280]">No players found</td></tr>}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {visibleConsolidatedRows.map(p => (
+                    <tr key={p.identityKey} onClick={() => setSelected(p)} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-white">
+                      <td className="px-4 py-3"><div className="flex items-center gap-3"><PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={40} /><div className="min-w-0 truncate text-sm font-black text-[#16274F]">{p.name}</div></div></td>
+                      <td className="px-4 py-3">{p.position && <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-black ${getPositionBadgeClasses(p.position)}`}>{p.position}</span>}</td>
+                      <td className="max-w-[260px] px-4 py-3 text-xs font-bold text-[#3F4757]">{p.teams.map(shortName).join(', ')}</td>
+                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.appearances}</td>
+                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.starts}</td>
+                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.avg.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.best.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{formatSeasonList(Array.from(p.seasons))}</td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-sm font-bold text-[#6B7280]">No players found</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            {filtered.length > 0 && (
+              <div className="flex items-center justify-between gap-3 border-t-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-3 py-3 sm:px-5">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6B7280]">
+                  {consolidatedPage * consolidatedPageSize + 1}–{Math.min((consolidatedPage + 1) * consolidatedPageSize, filtered.length)} of {filtered.length}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => goConsolidatedPage(-1)}
+                    disabled={consolidatedPage === 0}
+                    aria-label="Previous page"
+                    className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-colors hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <div className="min-w-[72px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#16274F]">
+                    Page {consolidatedPage + 1} / {consolidatedTotalPages}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => goConsolidatedPage(1)}
+                    disabled={consolidatedPage >= consolidatedTotalPages - 1}
+                    aria-label="Next page"
+                    className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-colors hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+            </>
+          ) : (
+            <>
+            <div className="max-h-[720px] overflow-auto">
+              <table className="min-w-[1040px] w-full">
+                <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
+                  <tr>
+                    {['Player','Pos','Season','Week','Team','Opponent'].map(label => (
+                      <th key={label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{label}</th>
+                    ))}
+                    <th className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
+                      <button type="button" onClick={() => togglePerformanceSort('pts')} className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${performanceSort.key === 'pts' ? 'text-[#D01F2D]' : ''}`}>
+                        Points <span className="text-[9px]">{performanceSort.key === 'pts' ? (performanceSort.dir === 'desc' ? '↓' : '↑') : ''}</span>
+                      </button>
+                    </th>
+                    {['Status','Result','Stage'].map(label => <th key={label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{label}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visiblePerformanceRows.map((g, i) => (
+                    <tr key={`${g.identityKey}-${g.season}-${g.week}-${g.team}-${i}`} onClick={() => router.push(canonicalMatchupHref(g, games))} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(canonicalMatchupHref(g, games)) }} tabIndex={0} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-white focus:outline-none focus:bg-[#F7F6F2]">
+                      <td className="px-4 py-3"><div className="flex items-center gap-3"><PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={40} /><div className="min-w-0 truncate text-sm font-black text-[#16274F]">{g.name}</div></div></td>
+                      <td className="px-4 py-3">{g.position && <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-black ${getPositionBadgeClasses(g.position)}`}>{g.position}</span>}</td>
+                      <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td>
+                      <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td>
+                      <td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.team)}</td>
+                      <td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.opponent)}</td>
+                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1 text-[8px] font-black text-[#6B7280]">DW</span>}</td>
+                      <td className="px-4 py-3"><span className="inline-block border-2 border-[#0A0A0A] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white" style={{ background: g.status === 'Starter' ? '#1E8E3E' : '#6B7280' }}>{g.status}</span></td>
+                      <td className={`px-4 py-3 text-xs font-black ${g.result === 'W' ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{g.result || '—'}</td>
+                      <td className="px-4 py-3 text-[10px] font-bold text-[#6B7280]">{g.stage || '—'}</td>
+                    </tr>
+                  ))}
+                  {performanceRows.length === 0 && <tr><td colSpan="10" className="py-12 text-center text-sm font-bold text-[#6B7280]">No performances found</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            {performanceRows.length > 0 && (
+              <div className="flex items-center justify-between gap-3 border-t-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-3 py-3 sm:px-5">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6B7280]">
+                  {performancePage * performancePageSize + 1}–{Math.min((performancePage + 1) * performancePageSize, performanceRows.length)} of {performanceRows.length}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => goPerformancePage(-1)}
+                    disabled={performancePage === 0}
+                    aria-label="Previous page"
+                    className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-colors hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <div className="min-w-[72px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#16274F]">
+                    Page {performancePage + 1} / {performanceTotalPages}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => goPerformancePage(1)}
+                    disabled={performancePage >= performanceTotalPages - 1}
+                    aria-label="Next page"
+                    className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-colors hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+            </>
+          )}
+
         </div>
       )}
     </section><footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]"><div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6"><img src="/images/LogoFinalBlack.png" alt="" width="24" height="24" style={{ filter: 'invert(1)', opacity: .7 }} /><span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Tapitas League · Est. 2014</span></div></footer>{selected && <PlayerProfile player={selected} games={games} playerLookup={playerLookup} onClose={() => setSelected(null)} />}</main>
