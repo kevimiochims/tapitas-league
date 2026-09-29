@@ -1542,6 +1542,43 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   )
 }
 
+// ---- Componentes de card no padrão ESPN (usados no Week Recap e no Power Ranking)
+function CardShell({ title, subtitle, children }) {
+  return (
+    <section className="mb-2 overflow-hidden rounded-xl bg-white">
+      <div className="px-3 pb-2 pt-3">
+        <h2 className="truncate text-[15px] font-bold leading-tight text-[#111]">{title}</h2>
+        {subtitle && <div className="mt-0.5 text-[12px] text-[#6B7280]">{subtitle}</div>}
+      </div>
+      <div className="mx-3 border-t border-[#E6E8EB]" />
+      {children}
+    </section>
+  )
+}
+
+function CardGroup({ label, first = false, children }) {
+  return (
+    <div className={first ? 'pt-2' : 'mt-1 border-t border-[#F1F2F4] pt-2'}>
+      <div className="px-3 pb-0.5 text-[11px] font-medium text-[#6B7280]">{label}</div>
+      {children}
+    </div>
+  )
+}
+
+function StatRow({ left, eyebrow, title, subtitle, value, valueClass = 'text-[#111]' }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5">
+      {left}
+      <div className="min-w-0 flex-1">
+        {eyebrow && <div className="truncate text-[11px] text-[#6B7280]">{eyebrow}</div>}
+        <div className="truncate text-[13px] font-medium leading-tight text-[#111]">{title}</div>
+        {subtitle && <div className="truncate text-[11px] text-[#6B7280]">{subtitle}</div>}
+      </div>
+      <div className={`flex-shrink-0 text-[13px] font-semibold tabular-nums ${valueClass}`}>{value}</div>
+    </div>
+  )
+}
+
 function MatchupsPageContent() {
   const [games, setGames] = useState([])
   const [playerLookup, setPlayerLookup] = useState(new Map())
@@ -2091,6 +2128,133 @@ function MatchupsPageContent() {
   // Sufixo ordinal em português: 1º, 2º, 3º...
   const ordinalLabel = (n) => `${n}º`
 
+  const mobilePanelOpen = showWeekRecap || showPowerRankingPreview
+
+  const recapCard = weekRecap ? (
+    <CardShell title="Week Recap" subtitle={`${season} · Week ${week}`}>
+      <CardGroup label="Teams" first>
+        <StatRow
+          left={<TeamAvatar name={weekRecap.bestTeam.team} className="h-6 w-6 flex-shrink-0" textClassName="text-[8px]" />}
+          eyebrow="Best team" title={weekRecap.bestTeam.team} value={weekRecap.bestTeam.pf.toFixed(2)}
+        />
+        <StatRow
+          left={<TeamAvatar name={weekRecap.worstTeam.team} className="h-6 w-6 flex-shrink-0" textClassName="text-[8px]" />}
+          eyebrow="Worst team" title={weekRecap.worstTeam.team} value={weekRecap.worstTeam.pf.toFixed(2)}
+        />
+      </CardGroup>
+
+      {weekRecap.playersOfWeek.length > 0 && (
+        <CardGroup label="Players of the week">
+          {weekRecap.playersOfWeek.map(p => (
+            <StatRow
+              key={p.pos}
+              left={<PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={28} />}
+              title={getDisplayPlayerName(p.name, p.pos, playerLookup)}
+              subtitle={[p.pos, p.team].filter(Boolean).join(' · ')}
+              value={p.pts.toFixed(2)}
+            />
+          ))}
+        </CardGroup>
+      )}
+
+      {weekRecap.benchOfWeek.length > 0 && (
+        <CardGroup label="Benchwarmers of the week">
+          {weekRecap.benchOfWeek.map(p => (
+            <StatRow
+              key={p.pos}
+              left={<PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={28} />}
+              title={getDisplayPlayerName(p.name, p.pos, playerLookup)}
+              subtitle={[p.pos, p.team].filter(Boolean).join(' · ')}
+              value={p.pts.toFixed(2)}
+              valueClass="text-[#6B7280]"
+            />
+          ))}
+        </CardGroup>
+      )}
+
+      <CardGroup label="League awards">
+        {[
+          weekRecap.mostEfficient && { label: 'Most efficient manager', icon: '🎯', team: weekRecap.mostEfficient.team, value: weekRecap.mostEfficient.pf.toFixed(2), sub: `max ${weekRecap.mostEfficient.maxPts.toFixed(2)} · ${(weekRecap.mostEfficient.pct * 100).toFixed(1)}%` },
+          weekRecap.leastEfficient && { label: 'Least efficient manager', icon: '🪫', team: weekRecap.leastEfficient.team, value: weekRecap.leastEfficient.pf.toFixed(2), sub: `max ${weekRecap.leastEfficient.maxPts.toFixed(2)} · ${(weekRecap.leastEfficient.pct * 100).toFixed(1)}%` },
+          weekRecap.highestInLoss && { label: 'Highest score in a loss', icon: '😤', team: weekRecap.highestInLoss.team, value: weekRecap.highestInLoss.pf.toFixed(2), sub: `lost to ${weekRecap.highestInLoss.opponent}` },
+          weekRecap.lowestInWin && { label: 'Lowest score in a win', icon: '🍀', team: weekRecap.lowestInWin.team, value: weekRecap.lowestInWin.pf.toFixed(2), sub: `beat ${weekRecap.lowestInWin.opponent}` },
+          weekRecap.biggestBlowout && { label: 'Biggest blowout', icon: '💥', team: weekRecap.biggestBlowout.winner, value: weekRecap.biggestBlowout.margin.toFixed(2), sub: `vs ${weekRecap.biggestBlowout.loser} (${weekRecap.biggestBlowout.winnerScore.toFixed(2)}–${weekRecap.biggestBlowout.loserScore.toFixed(2)})` },
+          weekRecap.narrowVictory && { label: 'Narrow victory', icon: '😅', team: weekRecap.narrowVictory.winner, value: weekRecap.narrowVictory.margin.toFixed(2), sub: `vs ${weekRecap.narrowVictory.loser} (${weekRecap.narrowVictory.winnerScore.toFixed(2)}–${weekRecap.narrowVictory.loserScore.toFixed(2)})` },
+        ].filter(Boolean).map(a => (
+          <StatRow
+            key={a.label}
+            left={<span className="w-6 flex-shrink-0 text-center text-[15px] leading-none">{a.icon}</span>}
+            eyebrow={a.label} title={a.team} subtitle={a.sub} value={a.value}
+          />
+        ))}
+      </CardGroup>
+
+      <CardGroup label="Score vs. max possible">
+        <div className="pb-2">
+          {weekRecap.teamPerformance.map((e, i) => {
+            const pct = e.maxPts > 0 ? Math.min(100, (e.pf / e.maxPts) * 100) : 0
+            return (
+              <div key={e.team} className="flex items-center gap-2 px-3 py-1.5">
+                <span className="w-4 flex-shrink-0 text-right text-[11px] text-[#6B7280]">{i + 1}</span>
+                <TeamAvatar name={e.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-[13px] font-medium text-[#111]">{e.team}</span>
+                    <span className="flex-shrink-0 text-[12px] tabular-nums text-[#111]">{e.pf.toFixed(2)}</span>
+                  </div>
+                  <div className="mt-1 h-1 w-full rounded-full bg-[#EEF0F2]">
+                    <div className="h-full rounded-full bg-[#9CA3AF]" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+                <span className="w-8 flex-shrink-0 text-right text-[11px] tabular-nums text-[#6B7280]">{pct.toFixed(0)}%</span>
+              </div>
+            )
+          })}
+        </div>
+      </CardGroup>
+    </CardShell>
+  ) : null
+
+  const prHref = `/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`
+  const powerCard = powerRankingPreview.length > 0 ? (
+    <CardShell title="Power Rankings" subtitle={`${season} · Week ${week}`}>
+      <div className="grid grid-cols-[18px_minmax(0,1fr)_36px_30px_34px_28px] items-center gap-x-1.5 border-b border-[#EEF0F2] px-3 py-1.5 text-[11px] font-medium uppercase text-[#6B7280]">
+        <span className="text-right">#</span>
+        <span>Team</span>
+        <span className="text-right">Rec</span>
+        <span className="text-right">Strk</span>
+        <span className="text-right">Avg</span>
+        <span className="text-right">Ovw</span>
+      </div>
+      {powerRankingPreview.map((team, i) => {
+        const streakIsWin = team.streak.startsWith('W')
+        const streakIsLoss = team.streak.startsWith('L')
+        return (
+          <div
+            key={team.team || i}
+            className="grid grid-cols-[18px_minmax(0,1fr)_36px_30px_34px_28px] items-center gap-x-1.5 border-b border-[#F1F2F4] px-3 py-2 text-[12px] tabular-nums last:border-b-0"
+          >
+            <span className={`text-right ${team.rank <= 3 ? 'font-bold text-[#111]' : 'text-[#6B7280]'}`}>{team.rank}</span>
+            <span className="flex min-w-0 items-center gap-1.5">
+              <TeamAvatar name={team.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
+              <span className="truncate text-[13px] font-medium text-[#111]">{team.team}</span>
+            </span>
+            <span className="text-right text-[#111]">{team.wins}-{team.losses}</span>
+            <span className={`text-right font-medium ${streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#111]'}`}>{team.streak || '—'}</span>
+            <span className="text-right text-[#111]" title={`AVG rank #${team.avgRank}`}>{team.avgPF.toFixed(1)}</span>
+            <span className="text-right text-[#111]" title={`OVW rank #${team.ovwRank}`}>{team.ovw.toFixed(0)}</span>
+          </div>
+        )
+      })}
+      <a
+        href={prHref}
+        className="block border-t border-[#E6E8EB] px-3 py-3 text-center text-[13px] font-medium text-[#1D5FD1] hover:underline"
+      >
+        Full Power Rankings
+      </a>
+    </CardShell>
+  ) : null
+
   return (
     <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
       <style>{`
@@ -2109,117 +2273,49 @@ function MatchupsPageContent() {
       {/* Header */}
       <Header />
 
-      <section className="mx-auto w-full max-w-[960px] px-3 pb-16 pt-4 md:px-4">
-
-        {/* Título */}
-        <div className="mb-3 px-1">
-          <h1 className="text-[22px] font-bold leading-tight text-[#111]">Matchups</h1>
-          <p className="mt-0.5 text-[13px] text-[#6B7280]">Every game. Every score. Every moment.</p>
-        </div>
+      <section className="mx-auto w-full max-w-[1400px] px-0 pb-10 pt-2 sm:px-2">
 
         {loading ? (
           <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">Loading...</div>
         ) : (
           <>
-            {/* Temporada e semana */}
-            <div className="mb-3 overflow-hidden rounded-xl bg-white">
-              <div className="px-4 pb-1 pt-4 text-[15px] font-bold text-[#111]">Season</div>
-              <div
-                ref={seasonsRef}
-                className="scroll-hide flex justify-start gap-2 overflow-x-auto px-4 pb-3 pt-2 md:justify-center"
-              >
-                {seasons.map(s => {
-                  const isActive = season === s
+            {/* Temporada + semana (uma linha só) */}
+            <div className="mb-2 flex items-stretch overflow-hidden rounded-xl bg-white">
+              <label className="relative flex flex-shrink-0 items-center border-r border-[#EEF0F2] pl-3 pr-7">
+                <span className="sr-only">Season</span>
+                <select
+                  value={season}
+                  onChange={e => handleSeasonClick(e.target.value)}
+                  className="cursor-pointer appearance-none bg-transparent py-3 text-[14px] font-bold text-[#111] outline-none"
+                >
+                  {seasons.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-[#6B7280]" />
+              </label>
+              <span className="flex-shrink-0 self-center pl-3 pr-1 text-[12px] text-[#6B7280]">Week</span>
+              <div ref={weeksRef} className="scroll-hide flex min-w-0 flex-1 overflow-x-auto">
+                {weeks.map(w => {
+                  const isActive = week === String(w)
                   return (
                     <button
-                      key={s}
-                      ref={isActive ? activeSeasonRef : null}
-                      onClick={() => handleSeasonClick(s)}
-                      className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${isActive ? 'bg-white text-[#111] ring-2 ring-[#111]' : 'bg-[#F1F2F4] text-[#4B5563] hover:bg-[#E7E9EC]'}`}
+                      key={w}
+                      ref={isActive ? activeWeekRef : null}
+                      onClick={() => handleWeekClick(w)}
+                      className={`flex-shrink-0 border-b-2 px-2.5 py-3 text-[13px] tabular-nums transition-colors ${isActive ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}
                     >
-                      {s}
+                      {w}
                     </button>
                   )
                 })}
               </div>
-
-              {season && (
-                <>
-                  <div className="mx-4 border-t border-[#EEF0F2]" />
-                  <div className="px-4 pb-1 pt-3 text-[15px] font-bold text-[#111]">Week</div>
-                  <div
-                    ref={weeksRef}
-                    className="scroll-hide flex justify-start gap-2 overflow-x-auto px-4 pb-4 pt-2 md:justify-center"
-                  >
-                    {weeks.map(w => {
-                      const isActive = week === String(w)
-                      return (
-                        <button
-                          key={w}
-                          ref={isActive ? activeWeekRef : null}
-                          onClick={() => handleWeekClick(w)}
-                          className={`flex-shrink-0 h-8 min-w-[2rem] rounded-full px-2.5 text-[13px] font-medium transition-colors ${isActive ? 'bg-white text-[#111] ring-2 ring-[#111]' : 'bg-[#F1F2F4] text-[#4B5563] hover:bg-[#E7E9EC]'}`}
-                        >
-                          {w}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
             </div>
 
-            {/* Cards de matchups */}
+            {/* Seletor de matchup (faixa de placares) */}
             {week && matchups.length > 0 && (
-              <div
-                
-                
-                
-                 className="mb-3 overflow-hidden rounded-xl bg-white">
-                <div className="flex items-center justify-between gap-3 border-b border-[#EEF0F2] px-4 py-3">
-                  <div
-                    className="font-bold text-[#111]"
-                    style={{ fontSize: 15 }}
-                  >
-                    {season} — Week {week}
-                  </div>
-                  <div className="flex flex-shrink-0 items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setShowWeekRecap(v => !v)
-                        setShowPowerRankingPreview(false)
-                        setSelected(null)
-                      }}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${showWeekRecap
-                        ? 'bg-[#111] text-white'
-                        : 'bg-[#F1F2F4] text-[#4B5563] hover:bg-[#E7E9EC]'
-                        }`}
-                    >
-                      Week Recap
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowPowerRankingPreview(v => !v)
-                        setShowWeekRecap(false)
-                        setSelected(null)
-                      }}
-                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${showPowerRankingPreview
-                        ? 'bg-[#111] text-white'
-                        : 'bg-[#F1F2F4] text-[#4B5563] hover:bg-[#E7E9EC]'
-                        }`}
-                    >
-                      PR
-                      <ChevronRight className={`h-3 w-3 transition-transform ${showPowerRankingPreview ? 'rotate-90' : ''}`} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Centraliza quando cabe tudo na tela (poucos jogos); começa do início quando precisa rolar */}
-                <div
-                  ref={matchupsFrameRef}
-                  className={`scroll-hide flex gap-2.5 overflow-x-auto p-4 ${matchupsCanCenter ? 'justify-center' : 'justify-start'}`}
-                >
+              <div className="mb-2 overflow-hidden rounded-xl bg-white">
+                <div ref={matchupsFrameRef} className="scroll-hide flex gap-1.5 overflow-x-auto p-2">
                   {matchups.map((g, i) => {
                     const pf = parseNumber(g?.PF)
                     const pa = parseNumber(g?.PA)
@@ -2227,70 +2323,30 @@ function MatchupsPageContent() {
                     const isSelected = selected === g
                     const team = String(g?.Team || '').trim()
                     const opp = String(g?.Opponent || '').trim()
-                    const stage = String(g?.GameStage || g?.GameType || '').trim()
-
+                    const gameType = String(g?.GameType || '').trim()
                     return (
                       <button
                         key={i}
-                        // LIGAÇÃO DA REF: Identifica qual card de confronto está ativo
                         ref={isSelected ? activeGameRef : null}
                         onClick={() => {
-                          setSelected(isSelected ? null : g)
+                          setSelected(g)
                           setShowWeekRecap(false)
                           setShowPowerRankingPreview(false)
                         }}
-                        className={`flex-shrink-0 w-52 rounded-xl p-3 text-left transition-colors ${isSelected ? 'bg-white ring-2 ring-[#111]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
+                        className={`w-[10.5rem] flex-shrink-0 rounded-lg px-2.5 py-2 text-left transition-colors ${isSelected ? 'bg-white ring-1 ring-inset ring-[#111]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
                       >
-                        {/* Stage badge */}
-                        {(() => {
-                          const gameType = String(g?.GameType || '').trim()
-                          if (!gameType || gameType === 'Reg Season') return null
-                          return (
-                            <div className="mb-2 inline-block rounded bg-[#111] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                              {gameType}
-                            </div>
-                          )
-                        })()}
-
-                        {/* Time A */}
-                        <div className="flex items-center justify-between mb-1">
-                          <a
-                            href={`/teams?team=${encodeURIComponent(team)}`}
-                            onClick={e => e.stopPropagation()}
-                            className="flex items-center gap-1.5 min-w-0 group"
-                          >
-                            <TeamAvatar name={team} className="h-5 w-5 rounded-lg flex-shrink-0" textClassName="text-[8px]" />
-                            <span className={`text-[13px] font-semibold truncate max-w-[100px] group-hover:underline ${won ? 'text-[#111]' : 'text-[#6B7280]'}`}>
-                              {team}
-                            </span>
-                          </a>
-                          <span className={`text-[15px] font-bold tabular-nums ml-2 flex-shrink-0 ${won ? 'text-[#111]' : 'text-[#9CA3AF]'}`}>
-                            {pf > 0 ? pf.toFixed(2) : '—'}
-                          </span>
+                        {gameType && gameType !== 'Reg Season' && (
+                          <div className="mb-0.5 text-[10px] font-medium text-[#6B7280]">{gameType}</div>
+                        )}
+                        <div className="flex items-center gap-1.5 text-[13px] leading-5">
+                          <TeamAvatar name={team} className="h-4 w-4 flex-shrink-0 rounded-sm" textClassName="text-[6px]" />
+                          <span className={`min-w-0 flex-1 truncate ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{team}</span>
+                          <span className={`tabular-nums ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{pf > 0 ? pf.toFixed(2) : '—'}</span>
                         </div>
-
-                        <div className="my-1.5 h-px bg-[#E6E8EB]" />
-
-                        {/* Time B */}
-                        <div className="flex items-center justify-between mt-1">
-                          <a
-                            href={`/teams?team=${encodeURIComponent(opp)}`}
-                            onClick={e => e.stopPropagation()}
-                            className="flex items-center gap-1.5 min-w-0 group"
-                          >
-                            <TeamAvatar name={opp} className="h-5 w-5 rounded-lg flex-shrink-0" textClassName="text-[8px]" />
-                            <span className={`text-[13px] font-semibold truncate max-w-[100px] group-hover:underline ${!won ? 'text-[#111]' : 'text-[#6B7280]'}`}>
-                              {opp}
-                            </span>
-                          </a>
-                          <span className={`text-[15px] font-bold tabular-nums ml-2 flex-shrink-0 ${!won ? 'text-[#111]' : 'text-[#9CA3AF]'}`}>
-                            {pa > 0 ? pa.toFixed(2) : '—'}
-                          </span>
-                        </div>
-
-                        {/* Margem */}
-                        <div className="mt-2 text-[11px] text-[#6B7280]">
-                          Margin: {Math.abs(pf - pa).toFixed(2)}
+                        <div className="flex items-center gap-1.5 text-[13px] leading-5">
+                          <TeamAvatar name={opp} className="h-4 w-4 flex-shrink-0 rounded-sm" textClassName="text-[6px]" />
+                          <span className={`min-w-0 flex-1 truncate ${!won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{opp}</span>
+                          <span className={`tabular-nums ${!won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{pa > 0 ? pa.toFixed(2) : '—'}</span>
                         </div>
                       </button>
                     )
@@ -2299,268 +2355,53 @@ function MatchupsPageContent() {
               </div>
             )}
 
-            {/* Power Ranking Preview */}
-            {showPowerRankingPreview && powerRankingPreview.length > 0 && (
-              <div
-                
-                
-                
-                className="mb-3 overflow-hidden rounded-xl bg-white"
-              >
-                <div className="flex items-center justify-between gap-3 border-b border-[#EEF0F2] px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-2 font-bold text-[#2F6FB0]" style={{ fontSize: 15 }}>
-                    <Activity className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="truncate">Power Rankings — {season} · Week {week}</span>
-                  </div>
-                  <a
-                    href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
-                    className="inline-flex flex-shrink-0 items-center gap-1.5 bg-[#16274F] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-white transition-all hover:bg-[#223866] sm:px-3.5 sm:py-2 sm:text-[10px]"
+            {/* Abas (só no mobile/tablet — no desktop os cards ficam nas laterais) */}
+            {week && matchups.length > 0 && (
+              <div className="mb-2 flex overflow-hidden rounded-xl bg-white xl:hidden">
+                {[
+                  {
+                    key: 'matchup', label: 'Matchup', active: !mobilePanelOpen,
+                    onClick: () => {
+                      setShowWeekRecap(false)
+                      setShowPowerRankingPreview(false)
+                      if (!selected && matchups[0]) setSelected(matchups[0])
+                    },
+                  },
+                  {
+                    key: 'recap', label: 'Week Recap', active: showWeekRecap,
+                    onClick: () => { setShowWeekRecap(true); setShowPowerRankingPreview(false) },
+                  },
+                  {
+                    key: 'pr', label: 'Power Rankings', active: showPowerRankingPreview,
+                    onClick: () => { setShowPowerRankingPreview(true); setShowWeekRecap(false) },
+                  },
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={tab.onClick}
+                    className={`flex-1 border-b-2 px-2 py-2.5 text-[13px] transition-colors ${tab.active ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280]'}`}
                   >
-                    Full PR
-                    <ChevronRight className="h-3 w-3" />
-                  </a>
-                </div>
-
-                <div className="divide-y divide-[#EEF0F2]">
-                  {powerRankingPreview.map((team, i) => {
-                    const rankColor =
-                      team.rank === 1 ? '#B8860B' :
-                      team.rank === 2 ? '#16274F' :
-                      team.rank === 3 ? '#1E8E3E' : '#3F4757'
-                    const streakIsWin = team.streak.startsWith('W')
-                    const streakIsLoss = team.streak.startsWith('L')
-                    return (
-                      <div key={team.team || i} className="flex items-center gap-3 px-5 py-4 sm:gap-4 sm:px-6">
-                        <div className="flex w-10 flex-shrink-0 flex-col items-center sm:w-12">
-                          <div
-                            className="leading-none font-semibold"
-                            style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(18px, 2.4vw, 24px)', color: rankColor }}
-                          >
-                            {team.rank}
-                          </div>
-                          {team.result && (
-                            <div className={`mt-2 flex h-5 w-5 items-center justify-center text-[8px] font-semibold text-white ${team.result === 'W' ? 'bg-[#1E8E3E]' : 'bg-[#D01F2D]'}`}>
-                              {team.result}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex min-w-0 flex-1 flex-col gap-2">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <TeamAvatar name={team.team} className="h-9 w-9 flex-shrink-0 sm:h-10 sm:w-10" textClassName="text-[8px]" />
-                            <span className="truncate text-[clamp(13px,1.7vw,20px)] font-semibold uppercase tracking-tight text-[#111]">
-                              {team.team}
-                            </span>
-                            {team.rank === 1 && <span className="flex-shrink-0 text-lg">⭐</span>}
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold sm:gap-x-4 sm:text-[11px]">
-                            <span className="text-[#6B7280]">
-                              REC: <strong className="text-[#111]">{team.wins}-{team.losses}</strong>
-                            </span>
-                            <span className="text-[#6B7280]">
-                              STRK: <strong className={streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#111]'}>{team.streak || '—'}</strong>
-                            </span>
-                            <span className="text-[#6B7280]">
-                              AVG: <strong className="text-[#111]">{team.avgPF.toFixed(1)}</strong> <span className="text-[#6B7280]">(#{team.avgRank})</span>
-                            </span>
-                            <span className="text-[#6B7280]">
-                              OVW: <strong className="text-[#111]">{team.ovw.toFixed(0)}</strong> <span className="text-[#6B7280]">(#{team.ovwRank})</span>
-                            </span>
-                          </div>
-                        </div>
-
-                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#6B7280]" />
-                      </div>
-                    )
-                  })}
-                </div>
-
-                <div className="border-t-2 border-[#EEF0F2] bg-[#F4F5F7] px-6 py-3">
-                  <a
-                    href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
-                    className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#111] transition-colors hover:text-[#D01F2D] sm:text-[10px]"
-                  >
-                    Open full Power Rankings for {season} Week {week}
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </a>
-                </div>
+                    {tab.label}
+                  </button>
+                ))}
               </div>
             )}
 
-            {/* Week Recap */}
-            {showWeekRecap && weekRecap && (
-              <div
-                
-                
-                
-                className="mb-3 overflow-hidden rounded-xl bg-white"
-              >
-                <div className="border-b border-[#EEF0F2] px-4 py-3">
-                  <div className="font-bold text-[#111]" style={{ fontSize: 15 }}>
-                    Week Recap — {season} · Week {week}
-                  </div>
+            {/* Grid: recap | matchup | power ranking */}
+            <div className="xl:grid xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:items-start xl:gap-2">
+              <aside className="hidden xl:block">{recapCard}</aside>
+
+              <div className="min-w-0">
+                {/* Painéis no mobile/tablet */}
+                <div className="xl:hidden">
+                  {showWeekRecap && recapCard}
+                  {!showWeekRecap && showPowerRankingPreview && powerCard}
                 </div>
-
-                <div className="p-5 sm:p-7">
-
-                  {/* Best / Worst Team */}
-                  <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="flex items-center gap-4 bg-[#F4F5F7] p-4">
-                      <TeamAvatar name={weekRecap.bestTeam.team} className="h-12 w-12 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-[#1E8E3E]">🏆 Best Team</div>
-                        <div className="truncate text-base font-semibold text-[#111]">{weekRecap.bestTeam.team}</div>
-                      </div>
-                      <div className="flex-shrink-0 text-lg font-bold text-[#1E8E3E]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {weekRecap.bestTeam.pf.toFixed(2)}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 bg-[#F4F5F7] p-4">
-                      <TeamAvatar name={weekRecap.worstTeam.team} className="h-12 w-12 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">💀 Worst Team</div>
-                        <div className="truncate text-base font-semibold text-[#111]">{weekRecap.worstTeam.team}</div>
-                      </div>
-                      <div className="flex-shrink-0 text-lg font-bold text-[#D01F2D]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {weekRecap.worstTeam.pf.toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Players of the Week */}
-                  {weekRecap.playersOfWeek.length > 0 && (
-                    <div className="mb-8">
-                      <div className="mb-3 text-[13px] font-semibold text-[#111]">Players of the Week</div>
-                      <div className="scroll-hide flex gap-2.5 overflow-x-auto pb-1">
-                        {weekRecap.playersOfWeek.map(p => (
-                          <div key={p.pos} className="w-[112px] flex-shrink-0 bg-white p-3 text-center">
-                            <div className="mb-2 flex justify-center">
-                              <PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={44} />
-                            </div>
-                            <div className="mx-auto mb-1 inline-block px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide" style={{ background: POS_RING[p.pos] || '#6B7280', color: '#fff' }}>
-                              {p.pos}
-                            </div>
-                            <div className="truncate text-[12px] font-semibold text-[#111]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</div>
-                            <div className="truncate text-[10px] font-bold text-[#6B7280]">{p.team}</div>
-                            <div className="mt-1 text-base font-bold text-[#D01F2D]" style={{ fontVariantNumeric: 'tabular-nums' }}>{p.pts.toFixed(2)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Benchwarmers of the Week */}
-                  {weekRecap.benchOfWeek.length > 0 && (
-                    <div className="mb-8">
-                      <div className="mb-3 text-[13px] font-semibold text-[#111]">Benchwarmers of the Week</div>
-                      <div className="scroll-hide flex gap-2.5 overflow-x-auto pb-1">
-                        {weekRecap.benchOfWeek.map(p => (
-                          <div key={p.pos} className="w-[112px] flex-shrink-0 border border-[#EEF0F2] bg-[#F4F5F7] p-3 text-center">
-                            <div className="mb-2 flex justify-center">
-                              <PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={44} />
-                            </div>
-                            <div className="mx-auto mb-1 inline-block px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide" style={{ background: POS_RING[p.pos] || '#6B7280', color: '#fff' }}>
-                              {p.pos}
-                            </div>
-                            <div className="truncate text-[12px] font-semibold text-[#111]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</div>
-                            <div className="truncate text-[10px] font-bold text-[#6B7280]">{p.team}</div>
-                            <div className="mt-1 text-base font-bold text-[#3F4757]" style={{ fontVariantNumeric: 'tabular-nums' }}>{p.pts.toFixed(2)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* League Awards */}
-                  <div className="mb-8">
-                    <div className="mb-3 text-[13px] font-semibold text-[#111]">League Awards</div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {[
-                        weekRecap.mostEfficient && {
-                          label: 'Most Efficient Manager', icon: '🎯', team: weekRecap.mostEfficient.team,
-                          value: weekRecap.mostEfficient.pf.toFixed(2), sub: `max ${weekRecap.mostEfficient.maxPts.toFixed(2)} · ${(weekRecap.mostEfficient.pct * 100).toFixed(1)}%`,
-                          color: '#1E8E3E',
-                        },
-                        weekRecap.leastEfficient && {
-                          label: 'Least Efficient Manager', icon: '🪫', team: weekRecap.leastEfficient.team,
-                          value: weekRecap.leastEfficient.pf.toFixed(2), sub: `max ${weekRecap.leastEfficient.maxPts.toFixed(2)} · ${(weekRecap.leastEfficient.pct * 100).toFixed(1)}%`,
-                          color: '#D01F2D',
-                        },
-                        weekRecap.highestInLoss && {
-                          label: 'Highest Pts in a Loss', icon: '😤', team: weekRecap.highestInLoss.team,
-                          value: weekRecap.highestInLoss.pf.toFixed(2), sub: `lost to ${weekRecap.highestInLoss.opponent}`,
-                          color: '#16274F',
-                        },
-                        weekRecap.lowestInWin && {
-                          label: 'Lowest Pts in a Win', icon: '🍀', team: weekRecap.lowestInWin.team,
-                          value: weekRecap.lowestInWin.pf.toFixed(2), sub: `beat ${weekRecap.lowestInWin.opponent}`,
-                          color: '#1E8E3E',
-                        },
-                        weekRecap.biggestBlowout && {
-                          label: 'Biggest Blowout', icon: '💥', team: weekRecap.biggestBlowout.winner,
-                          value: weekRecap.biggestBlowout.margin.toFixed(2), sub: `vs ${weekRecap.biggestBlowout.loser} (${weekRecap.biggestBlowout.winnerScore.toFixed(2)}–${weekRecap.biggestBlowout.loserScore.toFixed(2)})`,
-                          color: '#D01F2D',
-                        },
-                        weekRecap.narrowVictory && {
-                          label: 'Narrow Victory', icon: '😅', team: weekRecap.narrowVictory.winner,
-                          value: weekRecap.narrowVictory.margin.toFixed(2), sub: `vs ${weekRecap.narrowVictory.loser} (${weekRecap.narrowVictory.winnerScore.toFixed(2)}–${weekRecap.narrowVictory.loserScore.toFixed(2)})`,
-                          color: '#16274F',
-                        },
-                      ].filter(Boolean).map(award => (
-                        <div key={award.label} className="flex items-center gap-3 border border-[#EEF0F2] bg-[#F4F5F7] p-3.5">
-                          <span className="flex-shrink-0 text-xl">{award.icon}</span>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">{award.label}</div>
-                            <div className="truncate text-sm font-semibold text-[#111]">{award.team}</div>
-                            <div className="truncate text-[10px] font-bold text-[#6B7280]">{award.sub}</div>
-                          </div>
-                          <div className="flex-shrink-0 text-base font-bold" style={{ fontVariantNumeric: 'tabular-nums', color: award.color }}>{award.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Team Performance */}
-                  <div>
-                    <div className="mb-3 text-[13px] font-semibold text-[#111]">Team Performance</div>
-                    <div className="space-y-2.5">
-                      {weekRecap.teamPerformance.map((e, i) => {
-                        const pct = e.maxPts > 0 ? Math.min(100, (e.pf / e.maxPts) * 100) : 0
-                        return (
-                          <div key={e.team} className="flex items-center gap-3">
-                            <div className="w-4 flex-shrink-0 text-right text-xs font-semibold text-[#6B7280]">{i + 1}</div>
-                            <TeamAvatar name={e.team} className="h-7 w-7 flex-shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <div className="mb-1 flex items-center justify-between gap-2">
-                                <span className="truncate text-[13px] font-semibold text-[#111]">{e.team}</span>
-                                <span className="flex-shrink-0 text-[11px] font-bold text-[#6B7280]">
-                                  {e.pf.toFixed(2)} of {e.maxPts.toFixed(2)} MAX
-                                </span>
-                              </div>
-                              <div className="h-2 w-full bg-[#F4F5F7]">
-                                <div className="h-full bg-[#16274F]" style={{ width: `${pct}%` }} />
-                              </div>
-                            </div>
-                            <div className="w-10 flex-shrink-0 text-right text-[11px] font-bold text-[#6B7280]">{pct.toFixed(0)}%</div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            )}
 
             {/* Detalhe do matchup selecionado */}
-            {selected && !showWeekRecap && (
-              <div
-                
-                
-                
-                
-                className="mb-3 overflow-hidden rounded-xl bg-white">
+            {selected && (
+              <div className={`mb-2 overflow-hidden rounded-xl bg-white ${mobilePanelOpen ? 'hidden xl:block' : ''}`}>
 
                 {/* Header do confronto */}
                 {(() => {
@@ -2596,10 +2437,10 @@ function MatchupsPageContent() {
                   const gameType = String(selected?.GameType || '').trim()
 
                   return (
-                    <div className="border-b border-[#EEF0F2] px-4 py-6">
+                    <div className="border-b border-[#EEF0F2] px-3 py-4">
 
                       {/* Badge do tipo de jogo */}
-                      <div className="flex justify-center mb-6">
+                      <div className="flex justify-center mb-3">
                         <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F2F4] px-3 py-1">
                           <span className="text-[12px] font-medium text-[#4B5563]">
                             {season} · Week {week}{gameType && gameType !== 'Reg Season' ? ` · ${gameType}` : ''}
@@ -2608,11 +2449,11 @@ function MatchupsPageContent() {
                       </div>
 
                       {/* Confronto principal */}
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
 
                         {/* Time A */}
                         <div className="flex flex-col items-center gap-2">
-                          <TeamAvatar name={teamName} className="h-12 w-12 rounded-xl" textClassName="text-lg" />
+                          <TeamAvatar name={teamName} className="h-10 w-10 rounded-lg" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(teamName)}`}
                             className={`text-center font-semibold leading-tight hover:underline ${teamWon ? 'text-[#111]' : 'text-[#6B7280]'}`}
                             style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
@@ -2661,7 +2502,7 @@ function MatchupsPageContent() {
 
                         {/* Time B */}
                         <div className="flex flex-col items-center gap-2">
-                          <TeamAvatar name={oppName} className="h-12 w-12 rounded-xl" textClassName="text-lg" />
+                          <TeamAvatar name={oppName} className="h-10 w-10 rounded-lg" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(oppName)}`}
                             className={`text-center font-semibold leading-tight hover:underline ${!teamWon ? 'text-[#111]' : 'text-[#6B7280]'}`}
                             style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
@@ -2702,7 +2543,7 @@ function MatchupsPageContent() {
                 {/* Starters */}
                 {/* Ajustado: px-3 no mobile para economizar espaço nas bordas, px-8 no desktop */}
                 {hasPlayerData && (
-                <div className="px-3 md:px-6 py-4 border-b border-[#EEF0F2]">
+                <div className="px-2 md:px-4 py-3 border-b border-[#EEF0F2]">
                   <div className="text-[15px] font-bold text-[#111] mb-3">Starters</div>
 
                   {/* Header colunas */}
@@ -2810,7 +2651,7 @@ function MatchupsPageContent() {
 
                 {/* Bench */}
                 {hasPlayerData && (bench.length > 0 || oppBench.length > 0) && (
-                  <div className="px-3 md:px-6 py-4 border-b border-[#EEF0F2]">
+                  <div className="px-2 md:px-4 py-3 border-b border-[#EEF0F2]">
                     <div className="text-[15px] font-bold text-[#111] mb-3">Bench</div>
 
                     <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-3">
@@ -2909,7 +2750,7 @@ function MatchupsPageContent() {
 
                 {/* Recap */}
                 {recap && (
-                  <div className="px-4 py-5 md:px-6">
+                  <div className="px-3 py-4 md:px-4">
                     <div className="text-[15px] font-bold text-[#111] mb-3">
                       📝 Game Recap
                     </div>
@@ -2937,6 +2778,10 @@ function MatchupsPageContent() {
 
               </div>
             )}
+              </div>
+
+              <aside className="hidden xl:block">{powerCard}</aside>
+            </div>
           </>
         )}
 
