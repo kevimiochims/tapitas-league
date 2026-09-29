@@ -2103,7 +2103,7 @@ function MatchupsPageContent() {
         .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
         .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
         .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-        .tp-stack-title { color: #D01F2D; text-shadow: 4px 4px 0 #0A0A0A; }
+        .tp-stack-title { color: #D01F2D; }
       `}</style>
 
       {/* Header */}
@@ -2775,8 +2775,8 @@ function MatchupsPageContent() {
               <motion.div
                 initial={{
                   opacity: 0,
-                  y: 50,
-                  filter: 'blur(10px)',
+                  y: 20,
+                  filter: 'blur(0px)',
                 }}
                 whileInView={{
                   opacity: 1,
@@ -2785,10 +2785,10 @@ function MatchupsPageContent() {
                 }}
                 viewport={{
                   once: false,
-                  amount: 0.05,
+                  amount: 0.01,
                 }}
                 transition={{
-                  duration: 0.8,
+                  duration: 0.35,
                   ease: [0.22, 1, 0.36, 1],
                 }}
                 className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy">

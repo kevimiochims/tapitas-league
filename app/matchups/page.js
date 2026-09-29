@@ -6,7 +6,6 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { ChevronRight, ChevronLeft, ChevronDown, Swords, BarChart3, Activity, Send, Radio } from 'lucide-react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
-import { motion } from 'framer-motion'
 import Header from '../components/Header'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
@@ -56,14 +55,14 @@ function HeaderFilter({ value, onChange, options, label }) {
       <button
         type="button"
         onClick={() => setOpen(p => !p)}
-        className={`inline-flex min-w-0 max-w-full items-center gap-1 truncate uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}
+        className={`inline-flex min-w-0 max-w-full items-center gap-1 truncate uppercase tracking-wide hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}
       >
         <span className="min-w-0 truncate">{value === 'All' ? label : value}</span>
-        <span className="shrink-0 text-[9px] text-[#D01F2D]">⌄</span>
+        <span className="shrink-0 text-[10px] text-[#D01F2D]">⌄</span>
       </button>
 
       {open && (
-        <span className="absolute left-0 top-[calc(100%+6px)] z-[200] block w-[176px] max-w-[calc(100vw-32px)] border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
+        <span className="absolute left-0 top-[calc(100%+6px)] z-[200] block w-[176px] max-w-[calc(100vw-32px)] bg-white">
           <span className="block max-h-[150px] overflow-y-auto overscroll-contain pb-4">
             {options.map(opt => (
               <button
@@ -73,7 +72,7 @@ function HeaderFilter({ value, onChange, options, label }) {
                   onChange(opt)
                   setOpen(false)
                 }}
-                className={`block h-[28px] w-full truncate px-3 text-left text-[9px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}
+                className={`block h-[28px] w-full truncate px-3 text-left text-[10px] font-semibold uppercase hover:bg-[#F4F5F7] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}
               >
                 {opt === 'All' ? label : opt}
               </button>
@@ -102,15 +101,15 @@ const HISTORIC_PTS_THRESHOLD = 45
 
 function getPosColor(pos) {
   const colors = {
-    'QB': 'text-white border-[#0A0A0A] bg-[#D01F2D]',
-    'RB': 'text-white border-[#0A0A0A] bg-[#1E8E3E]',
-    'WR': 'text-white border-[#0A0A0A] bg-[#16274F]',
-    'TE': 'text-white border-[#0A0A0A] bg-[#B8860B]',
-    'FLEX': 'text-white border-[#0A0A0A] bg-[#3F4757]',
-    'K': 'text-white border-[#0A0A0A] bg-[#6B7280]',
-    'DEF': 'text-white border-[#0A0A0A] bg-[#3F4757]',
+    'QB': 'text-white bg-[#D01F2D]',
+    'RB': 'text-white bg-[#1E8E3E]',
+    'WR': 'text-white bg-[#16274F]',
+    'TE': 'text-white bg-[#B8860B]',
+    'FLEX': 'text-white bg-[#3F4757]',
+    'K': 'text-white bg-[#6B7280]',
+    'DEF': 'text-white bg-[#3F4757]',
   }
-  return colors[pos] ?? 'text-[#3F4757] border-[#0A0A0A]/15 bg-[#F7F6F2]'
+  return colors[pos] ?? 'text-[#3F4757] border-[#EEF0F2] bg-[#F4F5F7]'
 }
 
 // Extrai jogadores de uma linha do GAME_FACTS_ALL
@@ -220,7 +219,7 @@ function TeamAvatar({ name, className = '', textClassName = '' }) {
   }
   return (
     <div className={`${className} bg-[#16274F] flex items-center justify-center flex-shrink-0`}>
-      <span className={`font-black text-white ${textClassName}`}>
+      <span className={`font-semibold text-white ${textClassName}`}>
         {getInitials(name)}
       </span>
     </div>
@@ -459,7 +458,7 @@ function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false })
     .toUpperCase()
 
   const badgeSize = Math.round(size * 0.56)
-  const ringWidth = 2
+  const ringWidth = 1
 
   const photo = (
     <div
@@ -473,7 +472,7 @@ function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false })
         flexShrink: 0,
         boxSizing: 'border-box',
         border: `${ringWidth}px solid ${ring}`,
-        background: '#F7F6F2',
+        background: '#F4F5F7',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -520,7 +519,7 @@ function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false })
         borderRadius: '50%',
         flexShrink: 0,
         background: '#FFFFFF',
-        border: '1px solid #0A0A0A',
+        border: '1px solid #E3E5E8',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -664,13 +663,13 @@ function getPlayerId(name, playerLookup) {
 
 function getPositionBadgeClasses(position) {
   const colors = {
-    QB: 'border-[#0A0A0A] bg-[#D01F2D] text-white',
-    RB: 'border-[#0A0A0A] bg-[#1E8E3E] text-white',
-    WR: 'border-[#0A0A0A] bg-[#5B2CA0] text-white',
-    TE: 'border-[#0A0A0A] bg-[#B8860B] text-white',
-    FLEX: 'border-[#0A0A0A] bg-[#3F4757] text-white',
-    K: 'border-[#0A0A0A] bg-[#6B7280] text-white',
-    DEF: 'border-[#0A0A0A] bg-[#3F4757] text-white',
+    QB: 'bg-[#111] text-white',
+    RB: 'bg-[#1E8E3E] text-white',
+    WR: 'bg-[#5B2CA0] text-white',
+    TE: 'bg-[#B8860B] text-white',
+    FLEX: 'bg-[#3F4757] text-white',
+    K: 'bg-[#6B7280] text-white',
+    DEF: 'bg-[#3F4757] text-white',
   }
   return colors[String(position || '').toUpperCase()] || 'border-white/20 bg-white/10 text-white'
 }
@@ -724,7 +723,7 @@ function ResponsiveStatGroup({ group }) {
       data-stat-group={group.label}
       className="flex min-w-0 items-start gap-0 sm:gap-2"
     >
-      <span className="hidden w-[34px] shrink-0 items-center gap-1 pt-0.5 text-[7px] font-black uppercase tracking-[0.06em] text-[#16274F] sm:flex sm:w-[42px] sm:text-[8px]">
+      <span className="hidden w-[34px] shrink-0 items-center gap-1 pt-0.5 text-[7px] font-semibold uppercase tracking-wide text-[#111] sm:flex sm:w-[42px] sm:text-[8px]">
         {group.label === 'PASS' ? <Send size={10} strokeWidth={2.5} /> : group.label === 'REC' ? <Radio size={10} strokeWidth={2.5} /> : <Activity size={10} strokeWidth={2.5} />}
         <span>{group.label}</span>
       </span>
@@ -735,12 +734,12 @@ function ResponsiveStatGroup({ group }) {
         {group.items.map((item, i) => (
           <div key={i} className="flex min-w-0 max-w-full shrink-0 items-baseline gap-1 whitespace-nowrap">
             <strong
-              className="font-black leading-none tracking-tight text-[#16274F]"
+              className="font-semibold leading-none tracking-tight text-[#111]"
               style={{ fontSize: 'var(--weekly-stat-size, 18px)' }}
             >
               {item.value}
             </strong>
-            <span className="shrink-0 text-[5px] font-black uppercase tracking-[0.03em] text-[#6B7280] sm:text-[6px]">
+            <span className="shrink-0 text-[5px] font-semibold uppercase tracking-wide text-[#6B7280] sm:text-[6px]">
               {item.label}
             </span>
           </div>
@@ -1335,12 +1334,12 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 
   const MinimalMenu = ({ label, value, options, onChange }) => (
     <details className="relative min-w-0">
-      <summary className="flex min-h-7 cursor-pointer list-none items-center gap-1 border border-[#D6D6D6] bg-white px-2 py-1 text-[8px] font-black uppercase tracking-[0.08em] text-[#16274F] [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-7 cursor-pointer list-none items-center gap-1 border border-[#D6D6D6] bg-white px-2 py-1 text-[8px] font-semibold uppercase tracking-wide text-[#111] [&::-webkit-details-marker]:hidden">
         <span className="truncate">{label}: {value === 'All' ? 'All' : value}</span><ChevronDown className="h-3 w-3 flex-shrink-0 text-[#6B7280]" />
       </summary>
-      <div className="absolute left-0 top-full z-30 mt-1 max-h-56 min-w-[150px] overflow-auto border-2 border-[#0A0A0A] bg-white p-1.5 shadow-[3px_3px_0_#16274F]">
+      <div className="absolute left-0 top-full z-30 mt-1 max-h-56 min-w-[150px] overflow-auto rounded-lg bg-white p-1.5 shadow-lg ring-1 ring-black/5">
         {options.map(opt => (
-          <label key={opt} className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-[8px] font-black uppercase text-[#16274F] hover:bg-[#F3F6FC]">
+          <label key={opt} className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-[8px] font-semibold uppercase text-[#111] hover:bg-[#F3F6FC]">
             <input type="checkbox" checked={value === opt} onChange={() => onChange(opt)} className="h-3.5 w-3.5 accent-[#16274F]" />
             <span>{opt === 'All' ? 'All' : opt === label ? opt : getTeamShortName(opt)}</span>
           </label>
@@ -1382,32 +1381,32 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/60 p-2 pt-3 sm:items-center sm:p-5" onClick={onClose}>
-      <div className="flex h-[calc(100dvh-24px)] max-h-[960px] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F] sm:h-auto sm:max-h-[94vh]" onClick={e => e.stopPropagation()}>
-        <div className="relative flex-shrink-0 overflow-hidden border-b-2 border-[#0A0A0A] bg-[#16274F] text-white">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden bg-black/50 p-2 pt-3 sm:items-center sm:p-5" onClick={onClose}>
+      <div className="flex h-[calc(100dvh-24px)] max-h-[960px] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-xl sm:h-auto sm:max-h-[94vh]" onClick={e => e.stopPropagation()}>
+        <div className="relative flex-shrink-0 overflow-hidden bg-[#111] text-white">
           <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(135deg, transparent 0 58%, rgba(255,255,255,.13) 58% 59%, transparent 59% 68%, rgba(255,255,255,.08) 68% 69%, transparent 69%)' }} />
           <div className="relative border-b border-white/15 px-4 py-2.5 sm:px-6 sm:py-3 flex items-center justify-between">
-            <div className="text-[11px] font-black uppercase tracking-[0.25em]">Player Profile</div>
-            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center border-2 border-white/70 bg-white/10 text-lg font-black hover:bg-white/20">×</button>
+            <div className="text-[11px] font-semibold uppercase tracking-wide">Player Profile</div>
+            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-lg font-semibold hover:bg-white/20">×</button>
           </div>
           <div className="relative px-3 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-3 sm:gap-5">
               <PlayerRowAvatar name={profile.rawName} pos={position} playerLookup={playerLookup} size={76} />
               <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-2"><h2 className="truncate text-[22px] font-black leading-none tracking-tight sm:text-3xl">{profile.displayName}</h2><span className={`inline-flex flex-shrink-0 px-2 py-1 text-[9px] font-black uppercase tracking-wide ${getPositionBadgeClasses(position)}`}>{position}</span></div>
-                <div className="mt-2 flex items-center gap-2 text-[10px] font-black sm:text-xs">
+                <div className="flex min-w-0 items-center gap-2"><h2 className="truncate text-[22px] font-semibold leading-none tracking-tight sm:text-3xl">{profile.displayName}</h2><span className={`inline-flex flex-shrink-0 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${getPositionBadgeClasses(position)}`}>{position}</span></div>
+                <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold sm:text-xs">
                   {sleeperInfo?.team && <span className="flex items-center gap-1.5">{getNFLTeamLogo(sleeperInfo.team) && <img src={getNFLTeamLogo(sleeperInfo.team)} alt="" className="h-5 w-5 object-contain" />}{String(sleeperInfo.team).toUpperCase()}</span>}
                   <span className="text-white/35">·</span><span className={String(sleeperInfo?.status || '').toLowerCase() === 'active' ? 'text-[#69C174]' : 'text-[#FFB84D]'}>{sleeperInfo?.status ? (String(sleeperInfo.status).toLowerCase() === 'active' ? 'Active' : 'Inactive') : (loadingStats ? 'Loading…' : 'Status —')}</span>
                 </div>
-                <div className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-[9px] font-bold text-white/75 sm:text-[11px]"><span><b className="text-white">Jersey</b> {sleeperInfo?.number != null ? `#${sleeperInfo.number}` : '—'}</span><span className="text-white/30">·</span><span><b className="text-white">Age</b> {sleeperInfo?.age != null ? `${sleeperInfo.age} yrs` : '—'}</span><span className="text-white/30">·</span><span><b className="text-white">Experience</b> {sleeperInfo?.years_exp != null ? `${sleeperInfo.years_exp} yrs` : '—'}</span></div>
+                <div className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-[10px] font-bold text-white/75 sm:text-[11px]"><span><b className="text-white">Jersey</b> {sleeperInfo?.number != null ? `#${sleeperInfo.number}` : '—'}</span><span className="text-white/30">·</span><span><b className="text-white">Age</b> {sleeperInfo?.age != null ? `${sleeperInfo.age} yrs` : '—'}</span><span className="text-white/30">·</span><span><b className="text-white">Experience</b> {sleeperInfo?.years_exp != null ? `${sleeperInfo.years_exp} yrs` : '—'}</span></div>
               </div>
               <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" alt="NFL" className="h-10 w-10 flex-shrink-0 object-contain sm:h-14 sm:w-14" />
             </div>
           </div>
         </div>
 
-        <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2 sm:px-6">
-          <div className="flex items-center justify-between gap-2"><div className="whitespace-nowrap"><span className="text-[11px] font-black uppercase tracking-[0.1em] text-[#16274F]">Tapitas League Teams</span><span className="ml-1 text-[8px] font-bold text-[#6B7280]">— Select franchises to include</span></div><span className="text-[8px] font-black uppercase text-[#D01F2D]">{selectedTeams.length} selected</span></div>
+        <div className="flex-shrink-0 border-b border-[#EEF0F2] bg-white px-3 py-2 sm:px-6">
+          <div className="flex items-center justify-between gap-2"><div className="whitespace-nowrap"><span className="text-[11px] font-semibold uppercase tracking-wide text-[#111]">Tapitas League Teams</span><span className="ml-1 text-[8px] font-bold text-[#6B7280]">— Select franchises to include</span></div><span className="text-[8px] font-semibold uppercase text-[#D01F2D]">{selectedTeams.length} selected</span></div>
           <div className="mt-1 flex max-w-full flex-nowrap gap-1 overflow-x-auto overflow-y-hidden pb-0.5">
             {history.map(h => {
               const checked = selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(h.team))
@@ -1415,13 +1414,13 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
               return <label
                 key={h.team}
                 ref={isProfileTeam ? selectedTeamRef : null}
-                className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 ${checked ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white'}`}
+                className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 ${checked ? 'border-[#111] bg-[#F1F2F4]' : 'border-[#D6D6D6] bg-white'}`}
               >
                 <input type="checkbox" checked={checked} onChange={() => toggleTeam(h.team)} className="h-3.5 w-3.5 accent-[#16274F]"/>
                 <span className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center overflow-hidden">
                   <TeamAvatar name={h.team} className="h-[22px] w-[22px]" textClassName="text-[7px]"/>
                 </span>
-                <span className="text-[9px] font-black text-[#16274F]">{getTeamShortName(h.team)}</span>
+                <span className="text-[10px] font-semibold text-[#111]">{getTeamShortName(h.team)}</span>
                 <span className="text-[8px] font-bold text-[#6B7280]">{h.seasons.map(y=>`'${String(y).slice(-2)}`).join(', ')}</span>
               </label>
             })}
@@ -1429,7 +1428,7 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
         </div>
 
         <div className="flex-shrink-0 bg-[#F7F8FB] px-2.5 pt-2.5 pb-1">
-          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',formatSeasonList(Array.from(stats.seasons))]].map(([l,v],i)=><div key={l} className={`border-2 px-2 py-2 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]','border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]','border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]','border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]','border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]','border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F]">{v}</div></div>)}</div>
+          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps',stats.apps],['Starts',stats.starts],['Bench',stats.bench],['Avg Pts',stats.avg.toFixed(2)],['Best Pts',stats.best.toFixed(2)],['Seasons',formatSeasonList(Array.from(stats.seasons))]].map(([l,v],i)=><div key={l} className={`rounded-lg px-2 py-2 ${['bg-[#F4F5F7]','bg-[#F4F5F7]','bg-[#F4F5F7]','bg-[#F4F5F7]','bg-[#F4F5F7]','bg-[#F4F5F7]'][i]}`}><div className="text-[7px] font-semibold uppercase tracking-wide text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-semibold text-[#111]">{v}</div></div>)}</div>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">
@@ -1437,14 +1436,14 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
             <div className="grid grid-cols-[2fr_1fr] items-stretch gap-3">
               {/* WEEKLY STATS — Option A: stats on the left, fantasy points highlighted on the right */}
               <div className="min-w-0 h-full">
-                <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#16274F]/25 bg-[#F3F6FC] px-3 py-2.5 shadow-[3px_3px_0_#16274F] sm:px-4 sm:py-3">
+                <div className="flex h-full min-h-[94px] min-w-0 flex-col rounded-lg bg-[#F4F5F7] px-3 py-2.5 sm:px-4 sm:py-3">
                   <div className="flex min-w-0 items-center justify-between gap-1.5 whitespace-nowrap sm:gap-2">
-                    <div className="flex min-w-0 items-center gap-1 truncate text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.11em] text-[#2F6FB0] sm:gap-1.5 sm:tracking-[0.16em]">
+                    <div className="flex min-w-0 items-center gap-1 truncate text-[clamp(8px,0.72vw,12px)] font-semibold uppercase tracking-wide text-[#2F6FB0] sm:gap-1.5 sm:tracking-wide">
                       <BarChart3 size={11} strokeWidth={2.5} className="flex-shrink-0 sm:h-3 sm:w-3" />
                       <span className="truncate">{profile.season} Week {profile.week}<span className="hidden sm:inline"> Stats</span></span>
                     </div>
                     {sleeperInfo?.matchupOpponent ? (
-                      <div className="flex min-w-0 shrink-0 items-center gap-1 text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.06em] text-[#16274F]/80 sm:gap-1.5 sm:tracking-[0.08em]">
+                      <div className="flex min-w-0 shrink-0 items-center gap-1 text-[clamp(8px,0.72vw,12px)] font-semibold uppercase tracking-wide text-[#111]/80 sm:gap-1.5 sm:tracking-wide">
                         <span className="truncate">vs {getCompactTeamName(sleeperInfo.matchupOpponent)}</span>
                         <img src={getNFLTeamLogo(sleeperInfo.matchupOpponent)} alt="" style={{ width: '18px', height: '18px', flexShrink: 0, objectFit: 'contain', display: 'block' }} className="sm:!h-[22px] sm:!w-[22px]" />
                       </div>
@@ -1460,15 +1459,15 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
                           ))}
                         </div>
                                             ) : (
-                        <span className="text-[9px] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
+                        <span className="text-[10px] font-bold text-[#6B7280]">{loadingStats ? 'Loading…' : 'Stats unavailable'}</span>
                       )}
                     </div>
 
                     <div className="flex w-[72px] shrink-0 flex-col items-center justify-center border-l-2 border-[#16274F]/10 pl-2 sm:w-[96px] sm:pl-3 lg:w-[112px]">
-                      <strong className="text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">
+                      <strong className="text-[clamp(17px,2.2vw,36px)] font-semibold leading-none tracking-tight text-[#111]">
                         {currentGameRow ? currentGameRow.displayPts.toFixed(2) : '—'}
                       </strong>
-                      <span className="mt-1 text-[5px] font-black uppercase tracking-[0.1em] text-[#16274F] sm:text-[7px]">Fantasy Pts</span>
+                      <span className="mt-1 text-[5px] font-semibold uppercase tracking-wide text-[#111] sm:text-[7px]">Fantasy Pts</span>
                     </div>
                   </div>
                 </div>
@@ -1476,14 +1475,14 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 
               {/* HISTORIC — two equal metrics: Best + Avg */}
               <div className="min-w-0 h-full">
-                <div className="flex h-full min-h-[94px] min-w-0 flex-col border-2 border-[#5B2CA0]/25 bg-[#F6F1FC] px-3 py-2.5 shadow-[3px_3px_0_#5B2CA0] sm:px-4 sm:py-3">
-                  <div className="flex min-w-0 items-center justify-between gap-1.5 whitespace-nowrap text-[clamp(8px,0.72vw,12px)] font-black uppercase tracking-[0.11em] text-[#5B2CA0] sm:gap-2 sm:tracking-[0.16em]">
+                <div className="flex h-full min-h-[94px] min-w-0 flex-col rounded-lg bg-[#F4F5F7] px-3 py-2.5 sm:px-4 sm:py-3">
+                  <div className="flex min-w-0 items-center justify-between gap-1.5 whitespace-nowrap text-[clamp(8px,0.72vw,12px)] font-semibold uppercase tracking-wide text-[#5B2CA0] sm:gap-2 sm:tracking-wide">
                     <span className="flex min-w-0 items-center gap-1 truncate sm:gap-1.5">
                       <Swords size={11} strokeWidth={2.5} className="flex-shrink-0 sm:h-3 sm:w-3" />
                       <span className="sm:hidden">H2H</span>
                       <span className="hidden sm:inline">Historic</span>
                     </span>
-                    <div className="flex min-w-0 shrink-0 items-center gap-1 tracking-[0.06em] sm:gap-1.5 sm:tracking-normal">
+                    <div className="flex min-w-0 shrink-0 items-center gap-1 tracking-wide sm:gap-1.5 sm:tracking-normal">
                       <span className="truncate">vs {getCompactTeamName(profile.opponent)}</span>
                       <div className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center overflow-hidden sm:h-[22px] sm:w-[22px]">
                         <TeamAvatar name={profile.opponent} className="h-full w-full" textClassName="text-[5px] sm:text-[6px]" />
@@ -1493,12 +1492,12 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 
                   <div className="mt-2 grid w-full flex-1 grid-cols-2 items-center">
                     <div className="flex min-w-0 flex-col items-center justify-center border-r border-[#5B2CA0]/15 px-1 text-center sm:px-3">
-                      <strong className="whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.best.toFixed(2)}</strong>
-                      <span className="mt-1 text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
+                      <strong className="whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-semibold leading-none tracking-tight text-[#111]">{versus.best.toFixed(2)}</strong>
+                      <span className="mt-1 text-[5px] font-semibold uppercase tracking-wide text-[#6B7280] sm:text-[7px]">BEST POINTS</span>
                     </div>
                     <div className="flex min-w-0 flex-col items-center justify-center px-1 text-center sm:px-3">
-                      <strong className="whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-black leading-none tracking-tight text-[#16274F]">{versus.avg.toFixed(2)}</strong>
-                      <span className="mt-1 text-[5px] font-black uppercase tracking-[0.06em] text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
+                      <strong className="whitespace-nowrap text-[clamp(17px,2.2vw,36px)] font-semibold leading-none tracking-tight text-[#111]">{versus.avg.toFixed(2)}</strong>
+                      <span className="mt-1 text-[5px] font-semibold uppercase tracking-wide text-[#6B7280] sm:text-[7px]">AVG POINTS</span>
                     </div>
                   </div>
                 </div>
@@ -1507,31 +1506,31 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
           </div>
           <div className="overflow-x-auto overscroll-x-contain max-w-full min-w-0 min-h-0 flex-1 overflow-auto">
             <table className="min-w-[680px] min-w-[700px] w-full table-fixed">
-              <thead className="sticky top-0 z-20 bg-[#F7F6F2]">
-                <tr className="border-b-2 border-[#0A0A0A]/10">
-                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('season')} className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Season <span className="text-[#D01F2D]">{logSort.key === 'season' ? sortDirLabel : '↕'}</span></button></th>
-                  <th className="w-[9%] min-w-[68px] px-2 py-2.5 text-left align-middle text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button type="button" onClick={() => toggleSort('week')} className="inline-flex w-max items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Week <span className="inline-block whitespace-nowrap text-[#D01F2D]">{logSort.key === 'week' ? sortDirLabel : '↕'}</span></button></th>
-                  <th className="w-[11%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team</th>
-                  <th className="w-[18%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Opponent" value={logOpponentFilter} options={logOpponentOptions} onChange={setLogOpponentFilter} /></th>
-                  <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Status" value={logStatusFilter} options={logStatusOptions} onChange={setLogStatusFilter} /></th>
-                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><button onClick={() => toggleSort('pts')} className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Player Pts <span className="text-[#D01F2D]">{logSort.key === 'pts' ? sortDirLabel : '↕'}</span></button></th>
-                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]">Team PF</th>
-                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Result" value={logResultFilter} options={logResultOptions} onChange={setLogResultFilter} /></th>
-                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-black uppercase tracking-[0.16em] text-[#6B7280]"><HeaderFilter label="Stage" value={logStageFilter} options={logStageOptions} onChange={setLogStageFilter} /></th>
+              <thead className="sticky top-0 z-20 bg-[#F4F5F7]">
+                <tr className="border-b border-[#EEF0F2]">
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]"><button onClick={() => toggleSort('season')} className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Season <span className="text-[#D01F2D]">{logSort.key === 'season' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[9%] min-w-[68px] px-2 py-2.5 text-left align-middle text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]"><button type="button" onClick={() => toggleSort('week')} className="inline-flex w-max items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Week <span className="inline-block whitespace-nowrap text-[#D01F2D]">{logSort.key === 'week' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[11%] px-2 py-2.5 text-left text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]">Team</th>
+                  <th className="w-[18%] px-2 py-2.5 text-left text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]"><HeaderFilter label="Opponent" value={logOpponentFilter} options={logOpponentOptions} onChange={setLogOpponentFilter} /></th>
+                  <th className="w-[13%] px-2 py-2.5 text-left text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]"><HeaderFilter label="Status" value={logStatusFilter} options={logStatusOptions} onChange={setLogStatusFilter} /></th>
+                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]"><button onClick={() => toggleSort('pts')} className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#D01F2D]">Player Pts <span className="text-[#D01F2D]">{logSort.key === 'pts' ? sortDirLabel : '↕'}</span></button></th>
+                  <th className="w-[11%] px-2 py-2.5 text-right text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]">Team PF</th>
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]"><HeaderFilter label="Result" value={logResultFilter} options={logResultOptions} onChange={setLogResultFilter} /></th>
+                  <th className="w-[9%] px-2 py-2.5 text-left text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]"><HeaderFilter label="Stage" value={logStageFilter} options={logStageOptions} onChange={setLogStageFilter} /></th>
                 </tr>
               </thead>
               <tbody>
                     {sortedGames.map((x,i) => (
-                      <tr key={i} ref={x.isCurrentGame ? selectedGameRef : null} onClick={() => openGameFromLog(x)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') openGameFromLog(x) }} tabIndex={0} role="button" className={`cursor-pointer border-b border-[#0A0A0A]/8 transition-colors hover:bg-[#F3F6FC] ${x.isCurrentGame ? 'bg-[#FFF3F4]' : 'bg-white'}`}>
-                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{x.season}</td>
+                      <tr key={i} ref={x.isCurrentGame ? selectedGameRef : null} onClick={() => openGameFromLog(x)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') openGameFromLog(x) }} tabIndex={0} role="button" className={`cursor-pointer border-b border-[#EEF0F2] transition-colors hover:bg-[#F3F6FC] ${x.isCurrentGame ? 'bg-[#FFF3F4]' : 'bg-white'}`}>
+                        <td className="px-2 py-2.5 text-[10px] font-semibold text-[#111]">{x.season}</td>
                         <td className="px-2 py-2.5 text-[10px] font-bold text-[#3F4757]">{x.week}</td>
-                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.team)}</td>
-                        <td className="px-2 py-2.5 text-[10px] font-black text-[#16274F]">{getTeamShortName(x.opponent)}</td>
-                        <td className="px-2 py-2.5"><span className={`inline-block border px-2 py-1 text-[8px] font-black uppercase tracking-wide ${x.appearance.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]'}`}>{x.appearance.status}</span></td>
-                        <td className="px-3 py-2.5 text-right text-[11px] font-black text-[#16274F]">{x.displayPts.toFixed(2)}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-semibold text-[#111]">{getTeamShortName(x.team)}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-semibold text-[#111]">{getTeamShortName(x.opponent)}</td>
+                        <td className="px-2 py-2.5"><span className={`inline-block border px-2 py-1 text-[8px] font-semibold uppercase tracking-wide ${x.appearance.status === 'Starter' ? 'border-[#1E8E3E] bg-[#F4FAF5] text-[#1E8E3E]' : 'border-[#EEF0F2] bg-[#F4F5F7] text-[#6B7280]'}`}>{x.appearance.status}</span></td>
+                        <td className="px-3 py-2.5 text-right text-[11px] font-semibold text-[#111]">{x.displayPts.toFixed(2)}</td>
                         <td className="px-3 py-2.5 text-right text-[10px] font-bold text-[#3F4757]">{parseNumber(x.g?.PF).toFixed(2)}</td>
-                        <td className={`px-2 py-2.5 text-[10px] font-black ${x.result === 'W' ? 'text-[#1E8E3E]' : x.result === 'L' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>{x.result || '—'}</td>
-                        <td className="px-2 py-2.5 text-[9px] font-bold text-[#6B7280]">{x.g?.GameStage || '—'}</td>
+                        <td className={`px-2 py-2.5 text-[10px] font-semibold ${x.result === 'W' ? 'text-[#1E8E3E]' : x.result === 'L' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>{x.result || '—'}</td>
+                        <td className="px-2 py-2.5 text-[10px] font-bold text-[#6B7280]">{x.g?.GameStage || '—'}</td>
                       </tr>
                     ))}
               </tbody>
@@ -2093,307 +2092,94 @@ function MatchupsPageContent() {
   const ordinalLabel = (n) => `${n}º`
 
   return (
-    <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
+    <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .mx-root {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+          font-variant-numeric: tabular-nums;
+        }
         .scroll-hide::-webkit-scrollbar { display: none; }
         .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-        .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
-        .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
-        .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-        .tp-stack-title { color: #D01F2D; }
       `}</style>
 
       {/* Header */}
       <Header />
 
-      <section className="px-3 md:px-6 mx-auto pb-20">
+      <section className="mx-auto w-full max-w-[960px] px-3 pb-16 pt-4 md:px-4">
 
-        {/* Hero */}
-        <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
-
-          {/* Background */}
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-
-            <svg
-              className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
-              preserveAspectRatio="xMidYMid slice"
-              viewBox="0 0 900 340"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-
-              {/* Listras diagonais */}
-              <g opacity="0.06">
-                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect
-                    key={i}
-                    x={x}
-                    y="-80"
-                    width={i % 2 === 0 ? 55 : 22}
-                    height="520"
-                    fill="#16274F"
-                    transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`}
-                  />
-                ))}
-              </g>
-
-              {/* Losangos */}
-              <g opacity="0.10" fill="none" stroke="#16274F" strokeWidth="1">
-                {[
-                  "M380 -30 L460 85 L380 200 L300 85 Z",
-                  "M460 85 L540 200 L460 315 L380 200 Z",
-                  "M540 -30 L620 85 L540 200 L460 85 Z",
-                  "M620 85 L700 200 L620 315 L540 200 Z",
-                  "M700 -30 L780 85 L700 200 L620 85 Z",
-                  "M780 85 L860 200 L780 315 L700 200 Z",
-                ].map((d, i) => (
-                  <path key={i} d={d} />
-                ))}
-              </g>
-
-              {/* Losangos preenchidos */}
-              <g opacity="0.05" fill="#D01F2D">
-                {[
-                  "M420 30 L440 58 L420 86 L400 58 Z",
-                  "M500 120 L520 148 L500 176 L480 148 Z",
-                  "M580 30 L600 58 L580 86 L560 58 Z",
-                  "M660 120 L680 148 L660 176 L640 148 Z",
-                  "M740 30 L760 58 L740 86 L720 58 Z",
-                ].map((d, i) => (
-                  <path key={i} d={d} />
-                ))}
-              </g>
-
-              {/* Chevrons */}
-              <g
-                opacity="0.08"
-                fill="none"
-                stroke="#16274F"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              >
-                {[520, 600, 680].map((x, i) => (
-                  <polyline
-                    key={i}
-                    points={`${x},0 ${x + 160},170 ${x},340`}
-                  />
-                ))}
-              </g>
-
-              {/* Triângulos */}
-              <g opacity="0.08" fill="#16274F">
-                <polygon points="900,0 900,140 760,0" />
-                <polygon points="900,340 900,200 760,340" />
-              </g>
-
-              {/* Círculos */}
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="1">
-                {[30, 50, 70].map((r) => (
-                  <circle key={r} cx="870" cy="60" r={r} />
-                ))}
-              </g>
-
-              {/* Grid pontos */}
-              <g opacity="0.10" fill="#16274F">
-                {[40, 60, 80, 100].map((y) =>
-                  [310, 330, 350].map((x) => (
-                    <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
-                  ))
-                )}
-              </g>
-
-              {/* Linhas */}
-              <g opacity="0.10" stroke="#16274F" strokeWidth="0.5">
-                {[56, 113, 226, 284].map((y) => (
-                  <line key={y} x1="0" y1={y} x2="900" y2={y} />
-                ))}
-              </g>
-
-              {/* Número fantasma */}
-              <text
-                x="820"
-                y="310"
-                fontFamily="'Bebas Neue', sans-serif"
-                fontSize="340"
-                fill="#16274F"
-                opacity="0.04"
-                textAnchor="middle"
-              >
-                12
-              </text>
-            </svg>
-
-            {/* Overlay */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(105deg, #F7F6F2 28%, rgba(247,246,242,0.90) 48%, rgba(247,246,242,0.25) 100%)',
-              }}
-            />
-          </div>
-
-          {/* Content */}
-          <div className="relative z-10 p-6 sm:p-8 md:p-10">
-
-            {/* Bloco "Game by Game" Responsivo */}
-            <div
-              className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
-            >
-              <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-white shrink-0" />
-              <span
-                className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap"
-                style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-              >
-                Game by Game
-              </span>
-            </div>
-
-            {/* Título Principal */}
-            <h1
-              className="leading-[0.9] tracking-[-0.02em] text-[#16274F]"
-              style={{
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(48px, 7vw, 96px)',
-              }}
-            >
-              Match
-              <span className="tp-stack-title">ups</span>
-            </h1>
-
-            {/* Subtítulo */}
-            <p
-              className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-[#3F4757]"
-              style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
-            >
-              Every game. Every score. Every moment.
-            </p>
-
-          </div>
+        {/* Título */}
+        <div className="mb-3 px-1">
+          <h1 className="text-[22px] font-bold leading-tight text-[#111]">Matchups</h1>
+          <p className="mt-0.5 text-[13px] text-[#6B7280]">Every game. Every score. Every moment.</p>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">Loading...</div>
         ) : (
           <>
-            {/* Seletor de temporada */}
-            <div className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-              <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                <div
-                  className="font-black uppercase tracking-[0.3em] text-[#16274F]"
-                  style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-                >
-                  Season
-                </div>
-              </div>
-
-              {/* Container com o scroll horizontal ajustado */}
+            {/* Temporada e semana */}
+            <div className="mb-3 overflow-hidden rounded-xl bg-white">
+              <div className="px-4 pb-1 pt-4 text-[15px] font-bold text-[#111]">Season</div>
               <div
                 ref={seasonsRef}
-                className="scroll-hide flex justify-start md:justify-center gap-2 overflow-x-auto px-6 py-4"
+                className="scroll-hide flex justify-start gap-2 overflow-x-auto px-4 pb-3 pt-2 md:justify-center"
               >
                 {seasons.map(s => {
-                  const isActive = season === s;
+                  const isActive = season === s
                   return (
                     <button
                       key={s}
-                      // ESSA LINHA É CRUCIAL: Ela liga o botão ativo à referência do JS
                       ref={isActive ? activeSeasonRef : null}
                       onClick={() => handleSeasonClick(s)}
-                      className={`flex-shrink-0 border-2 px-5 py-2.5 text-sm font-black transition-all ${isActive
-                        ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                        : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                        }`}
+                      className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${isActive ? 'bg-white text-[#111] ring-2 ring-[#111]' : 'bg-[#F1F2F4] text-[#4B5563] hover:bg-[#E7E9EC]'}`}
                     >
                       {s}
                     </button>
-                  );
+                  )
                 })}
               </div>
-            </div>
 
-            {/* Seletor de semana */}
-            {season && (
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  y: 50,
-                  filter: 'blur(10px)',
-                }}
-                whileInView={{
-                  opacity: 1,
-                  y: 0,
-                  filter: 'blur(0px)',
-                }}
-                viewport={{
-                  once: true,
-                  amount: 0.15,
-                }}
-                transition={{
-                  duration: 0.8,
-                  ease: [0.22, 1, 0.36, 1],
-                }} className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-                <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
+              {season && (
+                <>
+                  <div className="mx-4 border-t border-[#EEF0F2]" />
+                  <div className="px-4 pb-1 pt-3 text-[15px] font-bold text-[#111]">Week</div>
                   <div
-                    className="font-black uppercase tracking-[0.3em] text-[#16274F]"
-                    style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+                    ref={weeksRef}
+                    className="scroll-hide flex justify-start gap-2 overflow-x-auto px-4 pb-4 pt-2 md:justify-center"
                   >
-                    Week
+                    {weeks.map(w => {
+                      const isActive = week === String(w)
+                      return (
+                        <button
+                          key={w}
+                          ref={isActive ? activeWeekRef : null}
+                          onClick={() => handleWeekClick(w)}
+                          className={`flex-shrink-0 h-8 min-w-[2rem] rounded-full px-2.5 text-[13px] font-medium transition-colors ${isActive ? 'bg-white text-[#111] ring-2 ring-[#111]' : 'bg-[#F1F2F4] text-[#4B5563] hover:bg-[#E7E9EC]'}`}
+                        >
+                          {w}
+                        </button>
+                      )
+                    })}
                   </div>
-                </div>
-
-                {/* Mudado de justify-center para justify-start md:justify-center */}
-                <div ref={weeksRef} className="scroll-hide flex justify-start md:justify-center gap-2 overflow-x-auto px-6 py-4">
-                  {weeks.map(w => {
-                    const isActive = week === String(w);
-                    return (
-                      <button
-                        key={w}
-                        // LIGAÇÃO DA REF: Identifica qual semana está ativa
-                        ref={isActive ? activeWeekRef : null}
-                        onClick={() => handleWeekClick(w)}
-                        className={`flex-shrink-0 h-11 w-11 border-2 text-sm font-black transition-all ${isActive
-                          ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                          : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                          }`}
-                      >
-                        {w}
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
+                </>
+              )}
+            </div>
 
             {/* Cards de matchups */}
             {week && matchups.length > 0 && (
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  y: 50,
-                  filter: 'blur(10px)',
-                }}
-                whileInView={{
-                  opacity: 1,
-                  y: 0,
-                  filter: 'blur(0px)',
-                }}
-                viewport={{
-                  once: true,
-                  amount: 0.15,
-                }}
-                transition={{
-                  duration: 0.8,
-                  ease: [0.22, 1, 0.36, 1],
-                }} className="mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-                <div className="flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-6 py-4">
+              <div
+                
+                
+                
+                 className="mb-3 overflow-hidden rounded-xl bg-white">
+                <div className="flex items-center justify-between gap-3 border-b border-[#EEF0F2] px-4 py-3">
                   <div
-                    className="font-black uppercase tracking-[0.3em] text-[#16274F]"
-                    style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+                    className="font-bold text-[#111]"
+                    style={{ fontSize: 15 }}
                   >
                     {season} — Week {week}
                   </div>
@@ -2404,9 +2190,9 @@ function MatchupsPageContent() {
                         setShowPowerRankingPreview(false)
                         setSelected(null)
                       }}
-                      className={`inline-flex items-center gap-1.5 border-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-all sm:px-3.5 sm:py-2 sm:text-[10px] ${showWeekRecap
-                        ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                        : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${showWeekRecap
+                        ? 'bg-[#111] text-white'
+                        : 'bg-[#F1F2F4] text-[#4B5563] hover:bg-[#E7E9EC]'
                         }`}
                     >
                       Week Recap
@@ -2418,9 +2204,9 @@ function MatchupsPageContent() {
                         setShowWeekRecap(false)
                         setSelected(null)
                       }}
-                      className={`inline-flex items-center gap-1 border-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-all sm:px-3.5 sm:py-2 sm:text-[10px] ${showPowerRankingPreview
-                        ? 'border-[#0A0A0A] bg-[#16274F] text-white'
-                        : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${showPowerRankingPreview
+                        ? 'bg-[#111] text-white'
+                        : 'bg-[#F1F2F4] text-[#4B5563] hover:bg-[#E7E9EC]'
                         }`}
                     >
                       PR
@@ -2432,7 +2218,7 @@ function MatchupsPageContent() {
                 {/* Centraliza quando cabe tudo na tela (poucos jogos); começa do início quando precisa rolar */}
                 <div
                   ref={matchupsFrameRef}
-                  className={`scroll-hide flex gap-4 overflow-x-auto p-6 ${matchupsCanCenter ? 'justify-center' : 'justify-start'}`}
+                  className={`scroll-hide flex gap-2.5 overflow-x-auto p-4 ${matchupsCanCenter ? 'justify-center' : 'justify-start'}`}
                 >
                   {matchups.map((g, i) => {
                     const pf = parseNumber(g?.PF)
@@ -2453,17 +2239,14 @@ function MatchupsPageContent() {
                           setShowWeekRecap(false)
                           setShowPowerRankingPreview(false)
                         }}
-                        className={`flex-shrink-0 w-56 border-2 p-4 text-left transition-all ${isSelected
-                          ? 'border-[#D01F2D] bg-[#FDEDEE] tp-shadow-red-sm'
-                          : 'border-[#0A0A0A] bg-white hover:bg-[#F7F6F2]'
-                          }`}
+                        className={`flex-shrink-0 w-52 rounded-xl p-3 text-left transition-colors ${isSelected ? 'bg-white ring-2 ring-[#111]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
                       >
                         {/* Stage badge */}
                         {(() => {
                           const gameType = String(g?.GameType || '').trim()
                           if (!gameType || gameType === 'Reg Season') return null
                           return (
-                            <div className="mb-2 inline-block border-2 border-[#0A0A0A] bg-[#16274F] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
+                            <div className="mb-2 inline-block rounded bg-[#111] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                               {gameType}
                             </div>
                           )
@@ -2477,16 +2260,16 @@ function MatchupsPageContent() {
                             className="flex items-center gap-1.5 min-w-0 group"
                           >
                             <TeamAvatar name={team} className="h-5 w-5 rounded-lg flex-shrink-0" textClassName="text-[8px]" />
-                            <span className={`text-sm font-black truncate max-w-[100px] group-hover:text-[#D01F2D] transition-colors ${won ? 'text-[#16274F]' : 'text-[#6B7280]'}`}>
+                            <span className={`text-[13px] font-semibold truncate max-w-[100px] group-hover:underline ${won ? 'text-[#111]' : 'text-[#6B7280]'}`}>
                               {team}
                             </span>
                           </a>
-                          <span className={`text-lg font-black ml-2 flex-shrink-0 ${won ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
+                          <span className={`text-[15px] font-bold tabular-nums ml-2 flex-shrink-0 ${won ? 'text-[#111]' : 'text-[#9CA3AF]'}`}>
                             {pf > 0 ? pf.toFixed(2) : '—'}
                           </span>
                         </div>
 
-                        <div className="my-1 h-px bg-[#0A0A0A]/8" />
+                        <div className="my-1.5 h-px bg-[#E6E8EB]" />
 
                         {/* Time B */}
                         <div className="flex items-center justify-between mt-1">
@@ -2496,49 +2279,49 @@ function MatchupsPageContent() {
                             className="flex items-center gap-1.5 min-w-0 group"
                           >
                             <TeamAvatar name={opp} className="h-5 w-5 rounded-lg flex-shrink-0" textClassName="text-[8px]" />
-                            <span className={`text-sm font-black truncate max-w-[100px] group-hover:text-[#D01F2D] transition-colors ${!won ? 'text-[#16274F]' : 'text-[#6B7280]'}`}>
+                            <span className={`text-[13px] font-semibold truncate max-w-[100px] group-hover:underline ${!won ? 'text-[#111]' : 'text-[#6B7280]'}`}>
                               {opp}
                             </span>
                           </a>
-                          <span className={`text-lg font-black ml-2 flex-shrink-0 ${!won ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
+                          <span className={`text-[15px] font-bold tabular-nums ml-2 flex-shrink-0 ${!won ? 'text-[#111]' : 'text-[#9CA3AF]'}`}>
                             {pa > 0 ? pa.toFixed(2) : '—'}
                           </span>
                         </div>
 
                         {/* Margem */}
-                        <div className="mt-3 text-[10px] font-bold text-[#6B7280]">
+                        <div className="mt-2 text-[11px] text-[#6B7280]">
                           Margin: {Math.abs(pf - pa).toFixed(2)}
                         </div>
                       </button>
                     )
                   })}
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Power Ranking Preview */}
             {showPowerRankingPreview && powerRankingPreview.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy"
+              <div
+                
+                
+                
+                className="mb-3 overflow-hidden rounded-xl bg-white"
               >
-                <div className="flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                  <div className="flex min-w-0 items-center gap-2 font-black uppercase tracking-[0.3em] text-[#2F6FB0]" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
+                <div className="flex items-center justify-between gap-3 border-b border-[#EEF0F2] px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-2 font-bold text-[#2F6FB0]" style={{ fontSize: 15 }}>
                     <Activity className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} />
                     <span className="truncate">Power Rankings — {season} · Week {week}</span>
                   </div>
                   <a
                     href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
-                    className="inline-flex flex-shrink-0 items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#16274F] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-all hover:bg-[#223866] sm:px-3.5 sm:py-2 sm:text-[10px]"
+                    className="inline-flex flex-shrink-0 items-center gap-1.5 bg-[#16274F] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-white transition-all hover:bg-[#223866] sm:px-3.5 sm:py-2 sm:text-[10px]"
                   >
                     Full PR
                     <ChevronRight className="h-3 w-3" />
                   </a>
                 </div>
 
-                <div className="divide-y-2 divide-[#0A0A0A]/8">
+                <div className="divide-y divide-[#EEF0F2]">
                   {powerRankingPreview.map((team, i) => {
                     const rankColor =
                       team.rank === 1 ? '#B8860B' :
@@ -2550,13 +2333,13 @@ function MatchupsPageContent() {
                       <div key={team.team || i} className="flex items-center gap-3 px-5 py-4 sm:gap-4 sm:px-6">
                         <div className="flex w-10 flex-shrink-0 flex-col items-center sm:w-12">
                           <div
-                            className="leading-none font-black"
-                            style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(32px, 3.5vw, 50px)', color: rankColor }}
+                            className="leading-none font-semibold"
+                            style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(18px, 2.4vw, 24px)', color: rankColor }}
                           >
                             {team.rank}
                           </div>
                           {team.result && (
-                            <div className={`mt-2 flex h-5 w-5 items-center justify-center border-2 border-[#0A0A0A] text-[8px] font-black text-white ${team.result === 'W' ? 'bg-[#1E8E3E]' : 'bg-[#D01F2D]'}`}>
+                            <div className={`mt-2 flex h-5 w-5 items-center justify-center text-[8px] font-semibold text-white ${team.result === 'W' ? 'bg-[#1E8E3E]' : 'bg-[#D01F2D]'}`}>
                               {team.result}
                             </div>
                           )}
@@ -2565,24 +2348,24 @@ function MatchupsPageContent() {
                         <div className="flex min-w-0 flex-1 flex-col gap-2">
                           <div className="flex min-w-0 items-center gap-2">
                             <TeamAvatar name={team.team} className="h-9 w-9 flex-shrink-0 sm:h-10 sm:w-10" textClassName="text-[8px]" />
-                            <span className="truncate text-[clamp(13px,1.7vw,20px)] font-black uppercase tracking-tight text-[#16274F]">
+                            <span className="truncate text-[clamp(13px,1.7vw,20px)] font-semibold uppercase tracking-tight text-[#111]">
                               {team.team}
                             </span>
                             {team.rank === 1 && <span className="flex-shrink-0 text-lg">⭐</span>}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-black sm:gap-x-4 sm:text-[11px]">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold sm:gap-x-4 sm:text-[11px]">
                             <span className="text-[#6B7280]">
-                              REC: <strong className="text-[#16274F]">{team.wins}-{team.losses}</strong>
+                              REC: <strong className="text-[#111]">{team.wins}-{team.losses}</strong>
                             </span>
                             <span className="text-[#6B7280]">
-                              STRK: <strong className={streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#16274F]'}>{team.streak || '—'}</strong>
+                              STRK: <strong className={streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#111]'}>{team.streak || '—'}</strong>
                             </span>
                             <span className="text-[#6B7280]">
-                              AVG: <strong className="text-[#16274F]">{team.avgPF.toFixed(1)}</strong> <span className="text-[#6B7280]">(#{team.avgRank})</span>
+                              AVG: <strong className="text-[#111]">{team.avgPF.toFixed(1)}</strong> <span className="text-[#6B7280]">(#{team.avgRank})</span>
                             </span>
                             <span className="text-[#6B7280]">
-                              OVW: <strong className="text-[#16274F]">{team.ovw.toFixed(0)}</strong> <span className="text-[#6B7280]">(#{team.ovwRank})</span>
+                              OVW: <strong className="text-[#111]">{team.ovw.toFixed(0)}</strong> <span className="text-[#6B7280]">(#{team.ovwRank})</span>
                             </span>
                           </div>
                         </div>
@@ -2593,28 +2376,28 @@ function MatchupsPageContent() {
                   })}
                 </div>
 
-                <div className="border-t-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-6 py-3">
+                <div className="border-t-2 border-[#EEF0F2] bg-[#F4F5F7] px-6 py-3">
                   <a
                     href={`/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`}
-                    className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.18em] text-[#16274F] transition-colors hover:text-[#D01F2D] sm:text-[10px]"
+                    className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#111] transition-colors hover:text-[#D01F2D] sm:text-[10px]"
                   >
                     Open full Power Rankings for {season} Week {week}
                     <ChevronRight className="h-3.5 w-3.5" />
                   </a>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Week Recap */}
             {showWeekRecap && weekRecap && (
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy"
+              <div
+                
+                
+                
+                className="mb-3 overflow-hidden rounded-xl bg-white"
               >
-                <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                  <div className="font-black uppercase tracking-[0.3em] text-[#16274F]" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
+                <div className="border-b border-[#EEF0F2] px-4 py-3">
+                  <div className="font-bold text-[#111]" style={{ fontSize: 15 }}>
                     Week Recap — {season} · Week {week}
                   </div>
                 </div>
@@ -2623,23 +2406,23 @@ function MatchupsPageContent() {
 
                   {/* Best / Worst Team */}
                   <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 tp-shadow-navy-sm">
+                    <div className="flex items-center gap-4 bg-[#F4F5F7] p-4">
                       <TeamAvatar name={weekRecap.bestTeam.team} className="h-12 w-12 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">🏆 Best Team</div>
-                        <div className="truncate text-base font-black text-[#16274F]">{weekRecap.bestTeam.team}</div>
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-[#1E8E3E]">🏆 Best Team</div>
+                        <div className="truncate text-base font-semibold text-[#111]">{weekRecap.bestTeam.team}</div>
                       </div>
-                      <div className="flex-shrink-0 text-2xl font-black text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                      <div className="flex-shrink-0 text-lg font-bold text-[#1E8E3E]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                         {weekRecap.bestTeam.pf.toFixed(2)}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 tp-shadow-navy-sm">
+                    <div className="flex items-center gap-4 bg-[#F4F5F7] p-4">
                       <TeamAvatar name={weekRecap.worstTeam.team} className="h-12 w-12 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D01F2D]">💀 Worst Team</div>
-                        <div className="truncate text-base font-black text-[#16274F]">{weekRecap.worstTeam.team}</div>
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">💀 Worst Team</div>
+                        <div className="truncate text-base font-semibold text-[#111]">{weekRecap.worstTeam.team}</div>
                       </div>
-                      <div className="flex-shrink-0 text-2xl font-black text-[#D01F2D]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
+                      <div className="flex-shrink-0 text-lg font-bold text-[#D01F2D]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                         {weekRecap.worstTeam.pf.toFixed(2)}
                       </div>
                     </div>
@@ -2648,19 +2431,19 @@ function MatchupsPageContent() {
                   {/* Players of the Week */}
                   {weekRecap.playersOfWeek.length > 0 && (
                     <div className="mb-8">
-                      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">Players of the Week</div>
+                      <div className="mb-3 text-[13px] font-semibold text-[#111]">Players of the Week</div>
                       <div className="scroll-hide flex gap-2.5 overflow-x-auto pb-1">
                         {weekRecap.playersOfWeek.map(p => (
-                          <div key={p.pos} className="w-[112px] flex-shrink-0 border-2 border-[#0A0A0A] bg-white p-3 text-center tp-shadow-navy-sm">
+                          <div key={p.pos} className="w-[112px] flex-shrink-0 bg-white p-3 text-center">
                             <div className="mb-2 flex justify-center">
                               <PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={44} />
                             </div>
-                            <div className="mx-auto mb-1 inline-block border-2 border-[#0A0A0A] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest" style={{ background: POS_RING[p.pos] || '#6B7280', color: '#fff' }}>
+                            <div className="mx-auto mb-1 inline-block px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide" style={{ background: POS_RING[p.pos] || '#6B7280', color: '#fff' }}>
                               {p.pos}
                             </div>
-                            <div className="truncate text-[12px] font-black text-[#16274F]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</div>
+                            <div className="truncate text-[12px] font-semibold text-[#111]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</div>
                             <div className="truncate text-[10px] font-bold text-[#6B7280]">{p.team}</div>
-                            <div className="mt-1 text-lg font-black text-[#D01F2D]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{p.pts.toFixed(2)}</div>
+                            <div className="mt-1 text-base font-bold text-[#D01F2D]" style={{ fontVariantNumeric: 'tabular-nums' }}>{p.pts.toFixed(2)}</div>
                           </div>
                         ))}
                       </div>
@@ -2670,19 +2453,19 @@ function MatchupsPageContent() {
                   {/* Benchwarmers of the Week */}
                   {weekRecap.benchOfWeek.length > 0 && (
                     <div className="mb-8">
-                      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">Benchwarmers of the Week</div>
+                      <div className="mb-3 text-[13px] font-semibold text-[#111]">Benchwarmers of the Week</div>
                       <div className="scroll-hide flex gap-2.5 overflow-x-auto pb-1">
                         {weekRecap.benchOfWeek.map(p => (
-                          <div key={p.pos} className="w-[112px] flex-shrink-0 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] p-3 text-center">
+                          <div key={p.pos} className="w-[112px] flex-shrink-0 border border-[#EEF0F2] bg-[#F4F5F7] p-3 text-center">
                             <div className="mb-2 flex justify-center">
                               <PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={44} />
                             </div>
-                            <div className="mx-auto mb-1 inline-block border-2 border-[#0A0A0A] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest" style={{ background: POS_RING[p.pos] || '#6B7280', color: '#fff' }}>
+                            <div className="mx-auto mb-1 inline-block px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide" style={{ background: POS_RING[p.pos] || '#6B7280', color: '#fff' }}>
                               {p.pos}
                             </div>
-                            <div className="truncate text-[12px] font-black text-[#16274F]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</div>
+                            <div className="truncate text-[12px] font-semibold text-[#111]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</div>
                             <div className="truncate text-[10px] font-bold text-[#6B7280]">{p.team}</div>
-                            <div className="mt-1 text-lg font-black text-[#3F4757]" style={{ fontFamily: '"Bebas Neue", sans-serif' }}>{p.pts.toFixed(2)}</div>
+                            <div className="mt-1 text-base font-bold text-[#3F4757]" style={{ fontVariantNumeric: 'tabular-nums' }}>{p.pts.toFixed(2)}</div>
                           </div>
                         ))}
                       </div>
@@ -2691,7 +2474,7 @@ function MatchupsPageContent() {
 
                   {/* League Awards */}
                   <div className="mb-8">
-                    <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">League Awards</div>
+                    <div className="mb-3 text-[13px] font-semibold text-[#111]">League Awards</div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {[
                         weekRecap.mostEfficient && {
@@ -2725,14 +2508,14 @@ function MatchupsPageContent() {
                           color: '#16274F',
                         },
                       ].filter(Boolean).map(award => (
-                        <div key={award.label} className="flex items-center gap-3 border-2 border-[#0A0A0A]/15 bg-[#F7F6F2] p-3.5">
+                        <div key={award.label} className="flex items-center gap-3 border border-[#EEF0F2] bg-[#F4F5F7] p-3.5">
                           <span className="flex-shrink-0 text-xl">{award.icon}</span>
                           <div className="min-w-0 flex-1">
-                            <div className="text-[9px] font-black uppercase tracking-[0.15em] text-[#6B7280]">{award.label}</div>
-                            <div className="truncate text-sm font-black text-[#16274F]">{award.team}</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">{award.label}</div>
+                            <div className="truncate text-sm font-semibold text-[#111]">{award.team}</div>
                             <div className="truncate text-[10px] font-bold text-[#6B7280]">{award.sub}</div>
                           </div>
-                          <div className="flex-shrink-0 text-xl font-black" style={{ fontFamily: '"Bebas Neue", sans-serif', color: award.color }}>{award.value}</div>
+                          <div className="flex-shrink-0 text-base font-bold" style={{ fontVariantNumeric: 'tabular-nums', color: award.color }}>{award.value}</div>
                         </div>
                       ))}
                     </div>
@@ -2740,22 +2523,22 @@ function MatchupsPageContent() {
 
                   {/* Team Performance */}
                   <div>
-                    <div className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">Team Performance</div>
+                    <div className="mb-3 text-[13px] font-semibold text-[#111]">Team Performance</div>
                     <div className="space-y-2.5">
                       {weekRecap.teamPerformance.map((e, i) => {
                         const pct = e.maxPts > 0 ? Math.min(100, (e.pf / e.maxPts) * 100) : 0
                         return (
                           <div key={e.team} className="flex items-center gap-3">
-                            <div className="w-4 flex-shrink-0 text-right text-xs font-black text-[#6B7280]">{i + 1}</div>
+                            <div className="w-4 flex-shrink-0 text-right text-xs font-semibold text-[#6B7280]">{i + 1}</div>
                             <TeamAvatar name={e.team} className="h-7 w-7 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
                               <div className="mb-1 flex items-center justify-between gap-2">
-                                <span className="truncate text-[13px] font-black text-[#16274F]">{e.team}</span>
+                                <span className="truncate text-[13px] font-semibold text-[#111]">{e.team}</span>
                                 <span className="flex-shrink-0 text-[11px] font-bold text-[#6B7280]">
                                   {e.pf.toFixed(2)} of {e.maxPts.toFixed(2)} MAX
                                 </span>
                               </div>
-                              <div className="h-2 w-full bg-[#F7F6F2]">
+                              <div className="h-2 w-full bg-[#F4F5F7]">
                                 <div className="h-full bg-[#16274F]" style={{ width: `${pct}%` }} />
                               </div>
                             </div>
@@ -2767,31 +2550,17 @@ function MatchupsPageContent() {
                   </div>
 
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Detalhe do matchup selecionado */}
             {selected && !showWeekRecap && (
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  y: 20,
-                  filter: 'blur(0px)',
-                }}
-                whileInView={{
-                  opacity: 1,
-                  y: 0,
-                  filter: 'blur(0px)',
-                }}
-                viewport={{
-                  once: false,
-                  amount: 0.01,
-                }}
-                transition={{
-                  duration: 0.35,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy">
+              <div
+                
+                
+                
+                
+                className="mb-3 overflow-hidden rounded-xl bg-white">
 
                 {/* Header do confronto */}
                 {(() => {
@@ -2827,12 +2596,12 @@ function MatchupsPageContent() {
                   const gameType = String(selected?.GameType || '').trim()
 
                   return (
-                    <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-8">
+                    <div className="border-b border-[#EEF0F2] px-4 py-6">
 
                       {/* Badge do tipo de jogo */}
                       <div className="flex justify-center mb-6">
-                        <div className="inline-flex items-center gap-2 border-2 border-[#0A0A0A] bg-[#16274F] px-4 py-1.5">
-                          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F2F4] px-3 py-1">
+                          <span className="text-[12px] font-medium text-[#4B5563]">
                             {season} · Week {week}{gameType && gameType !== 'Reg Season' ? ` · ${gameType}` : ''}
                           </span>
                         </div>
@@ -2843,33 +2612,33 @@ function MatchupsPageContent() {
 
                         {/* Time A */}
                         <div className="flex flex-col items-center gap-2">
-                          <TeamAvatar name={teamName} className="h-14 w-14 rounded-2xl" textClassName="text-lg" />
+                          <TeamAvatar name={teamName} className="h-12 w-12 rounded-xl" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(teamName)}`}
-                            className={`text-center font-black leading-tight hover:text-[#D01F2D] transition-colors ${teamWon ? 'text-[#16274F]' : 'text-[#6B7280]'}`}
-                            style={{ fontSize: 'clamp(14px, 2.5vw, 22px)' }}>
+                            className={`text-center font-semibold leading-tight hover:underline ${teamWon ? 'text-[#111]' : 'text-[#6B7280]'}`}
+                            style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
                             {teamName}
                           </a>
-                          <div className={`font-black leading-none ${teamWon ? 'text-[#D01F2D]' : 'text-[#6B7280]'} ${
+                          <div className={`font-bold leading-none ${teamWon ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
                             isHistoricTeamScore(teamPF) ? 'text-[#B8860B]' : ''
                             }`}
-                            style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(42px, 7vw, 80px)' }}>
+                            style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(32px, 6vw, 44px)' }}>
                             {teamPF.toFixed(2)}
                           </div>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs font-black text-[#6B7280]">
+                            <span className="text-xs font-semibold text-[#6B7280]">
                               {teamRecord.w}–{teamRecord.l}
                             </span>
-                            <span className={`text-[10px] font-black px-2 py-0.5 border-2 ${teamStreak.startsWith('W')
-                              ? 'text-white border-[#0A0A0A] bg-[#1E8E3E]'
-                              : 'text-white border-[#0A0A0A] bg-[#D01F2D]'
+                            <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${teamStreak.startsWith('W')
+                              ? 'text-white bg-[#1E8E3E]'
+                              : 'text-white bg-[#D01F2D]'
                               }`}>
                               {teamStreak}
                             </span>
                           </div>
                           {isHistoricTeamScore(teamPF) && (
-                            <div className="flex items-center gap-1 border-2 border-[#0A0A0A] bg-[#F5C518] px-2 py-0.5">
+                            <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
                               <span className="text-xs">🚀</span>
-                              <span className="text-[9px] font-black uppercase tracking-widest text-[#0A0A0A]">
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-[#111]">
                                 {team200Ordinal.team ? `${ordinalLabel(team200Ordinal.team)} 200+` : '200+'}
                               </span>
                             </div>
@@ -2878,47 +2647,47 @@ function MatchupsPageContent() {
 
                         {/* VS central */}
                         <div className="flex flex-col items-center gap-1 self-center">
-                          <div className="text-[#6B7280] font-black text-lg">VS</div>
+                          <div className="text-[#9CA3AF] font-semibold text-sm">VS</div>
                           <div className="text-[10px] font-bold text-[#6B7280]">
                             {Math.abs(teamPF - teamPA).toFixed(2)}
                           </div>
-                          <div className="text-[9px] font-black uppercase tracking-widest text-[#6B7280]">margin</div>
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">margin</div>
                           {teamWon ? (
-                            <div className="mt-1 text-[9px] font-black uppercase tracking-widest text-[#D01F2D]">← WIN</div>
+                            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">← WIN</div>
                           ) : (
-                            <div className="mt-1 text-[9px] font-black uppercase tracking-widest text-[#D01F2D]">WIN →</div>
+                            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">WIN →</div>
                           )}
                         </div>
 
                         {/* Time B */}
                         <div className="flex flex-col items-center gap-2">
-                          <TeamAvatar name={oppName} className="h-14 w-14 rounded-2xl" textClassName="text-lg" />
+                          <TeamAvatar name={oppName} className="h-12 w-12 rounded-xl" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(oppName)}`}
-                            className={`text-center font-black leading-tight hover:text-[#D01F2D] transition-colors ${!teamWon ? 'text-[#16274F]' : 'text-[#6B7280]'}`}
-                            style={{ fontSize: 'clamp(14px, 2.5vw, 22px)' }}>
+                            className={`text-center font-semibold leading-tight hover:underline ${!teamWon ? 'text-[#111]' : 'text-[#6B7280]'}`}
+                            style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
                             {oppName}
                           </a>
-                          <div className={`font-black leading-none ${!teamWon ? 'text-[#D01F2D]' : 'text-[#6B7280]'} ${
+                          <div className={`font-bold leading-none ${!teamWon ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
                             isHistoricTeamScore(teamPA) ? 'text-[#B8860B]' : ''
                             }`}
-                            style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(42px, 7vw, 80px)' }}>
+                            style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(32px, 6vw, 44px)' }}>
                             {teamPA.toFixed(2)}
                           </div>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs font-black text-[#6B7280]">
+                            <span className="text-xs font-semibold text-[#6B7280]">
                               {oppRecord.w}–{oppRecord.l}
                             </span>
-                            <span className={`text-[10px] font-black px-2 py-0.5 border-2 ${oppStreak.startsWith('W')
-                              ? 'text-white border-[#0A0A0A] bg-[#1E8E3E]'
-                              : 'text-white border-[#0A0A0A] bg-[#D01F2D]'
+                            <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${oppStreak.startsWith('W')
+                              ? 'text-white bg-[#1E8E3E]'
+                              : 'text-white bg-[#D01F2D]'
                               }`}>
                               {oppStreak}
                             </span>
                           </div>
                           {isHistoricTeamScore(teamPA) && (
-                            <div className="flex items-center gap-1 border-2 border-[#0A0A0A] bg-[#F5C518] px-2 py-0.5">
+                            <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
                               <span className="text-xs">🚀</span>
-                              <span className="text-[9px] font-black uppercase tracking-widest text-[#0A0A0A]">
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-[#111]">
                                 {team200Ordinal.opp ? `${ordinalLabel(team200Ordinal.opp)} 200+` : '200+'}
                               </span>
                             </div>
@@ -2933,16 +2702,16 @@ function MatchupsPageContent() {
                 {/* Starters */}
                 {/* Ajustado: px-3 no mobile para economizar espaço nas bordas, px-8 no desktop */}
                 {hasPlayerData && (
-                <div className="px-3 md:px-8 py-6 border-b-2 border-[#0A0A0A]/10">
-                  <div className="text-xs font-black uppercase tracking-[0.3em] text-[#16274F] mb-4">Starters</div>
+                <div className="px-3 md:px-6 py-4 border-b border-[#EEF0F2]">
+                  <div className="text-[15px] font-bold text-[#111] mb-3">Starters</div>
 
                   {/* Header colunas */}
                   <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-3">
-                    <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-[#6B7280] pb-2 border-b-2 border-[#0A0A0A]/10 truncate">
+                    <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-[#6B7280] pb-2 border-b border-[#EEF0F2] truncate">
                       {String(selected?.Team || '').trim()}
                     </div>
-                    <div className="border-b-2 border-[#0A0A0A]/10" />
-                    <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-[#6B7280] pb-2 border-b-2 border-[#0A0A0A]/10 text-right truncate">
+                    <div className="border-b border-[#EEF0F2]" />
+                    <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-[#6B7280] pb-2 border-b border-[#EEF0F2] text-right truncate">
                       {String(selected?.Opponent || '').trim()}
                     </div>
                   </div>
@@ -2957,37 +2726,37 @@ function MatchupsPageContent() {
                       const pos = positions[i] || ''
                       return (
                         <React.Fragment key={i}>
-                          <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-2 items-center">
+                          <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 items-center border-b border-[#F1F2F4]">
 
                             {/* Time A — Nome → Pts */}
-                            <div onClick={() => home && openPlayerProfile(home, pos, 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
+                            <div onClick={() => home && openPlayerProfile(home, pos, 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-1 md:px-2 py-2 min-w-0 cursor-pointer ${
                               home
                                 ? (isHistoricPlayer(home)
-                                  ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
-                                  : 'bg-white border-2 border-[#0A0A0A]/10')
+                                  ? 'bg-[#FFF9E5]'
+                                  : 'bg-white')
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={42} />
+                                    <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={36} />
                                   </div>
-                                  <span className={`text-[22px] md:text-[28px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
+                                  <span className={`text-[15px] md:text-base font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
                                       ? 'text-[#B8860B]'
-                                      : ((home?.pts ?? 0) > 0 ? 'text-[#16274F]' : 'text-[#6B7280]')
+                                      : ((home?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
                                     }`}>
                                     {isHistoricPlayer(home) && <span className="text-base md:text-lg">🔥</span>}
                                     {home ? home.pts.toFixed(1) : '—'}
                                   </span>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5">
-                                  <div className={`text-[15px] md:text-base font-black truncate leading-tight min-w-0 block ${
-                                    isHistoricPlayer(home) ? 'text-[#8A6600]' : 'text-[#16274F]'
+                                  <div className={`text-[13px] md:text-sm font-medium truncate leading-tight min-w-0 block ${
+                                    isHistoricPlayer(home) ? 'text-[#8A6600]' : 'text-[#111]'
                                     }`}>
                                     {getDisplayPlayerName(home?.name, pos, playerLookup)}
                                   </div>
-                                  <span className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest px-1.5 py-0.5 border-2 ${getPosColor(getDisplayPlayerPos(home?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>
+                                  <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${getPosColor(getDisplayPlayerPos(home?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>
                                     {getDisplayPlayerPos(home?.name, pos, playerLookup)}
                                   </span>
                                 </div>
@@ -2995,36 +2764,36 @@ function MatchupsPageContent() {
                             </div>
 
                             {/* Divisória central */}
-                            <div className="self-stretch w-px bg-[#0A0A0A]/8" />
+                            <div className="self-stretch w-px bg-[#EEF0F2]" />
 
                             {/* Time B — Pts → Nome (espelhado) */}
-                            <div onClick={() => away && openPlayerProfile(away, pos, 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
+                            <div onClick={() => away && openPlayerProfile(away, pos, 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-1 md:px-2 py-2 min-w-0 cursor-pointer ${
                               away
                                 ? (isHistoricPlayer(away)
-                                  ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
-                                  : 'bg-white border-2 border-[#0A0A0A]/10')
+                                  ? 'bg-[#FFF9E5]'
+                                  : 'bg-white')
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
-                                  <span className={`text-[22px] md:text-[28px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
+                                  <span className={`text-[15px] md:text-base font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(away)
                                       ? 'text-[#B8860B]'
-                                      : ((away?.pts ?? 0) > 0 ? 'text-[#16274F]' : 'text-[#6B7280]')
+                                      : ((away?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
                                     }`}>
                                     {away ? away.pts.toFixed(1) : '—'}
                                     {isHistoricPlayer(away) && <span className="text-base md:text-lg">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={42} mirror />
+                                    <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={36} mirror />
                                   </div>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5 w-full">
-                                  <span className={`text-[10px] md:text-[11px] font-black uppercase tracking-widest px-1.5 py-0.5 border-2 ${getPosColor(getDisplayPlayerPos(away?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>
+                                  <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${getPosColor(getDisplayPlayerPos(away?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>
                                     {getDisplayPlayerPos(away?.name, pos, playerLookup)}
                                   </span>
-                                  <div className={`text-[15px] md:text-base font-black truncate leading-tight text-right min-w-0 block ${
-                                    isHistoricPlayer(away) ? 'text-[#8A6600]' : 'text-[#16274F]'
+                                  <div className={`text-[13px] md:text-sm font-medium truncate leading-tight text-right min-w-0 block ${
+                                    isHistoricPlayer(away) ? 'text-[#8A6600]' : 'text-[#111]'
                                     }`}>
                                     {getDisplayPlayerName(away?.name, pos, playerLookup)}
                                   </div>
@@ -3041,15 +2810,15 @@ function MatchupsPageContent() {
 
                 {/* Bench */}
                 {hasPlayerData && (bench.length > 0 || oppBench.length > 0) && (
-                  <div className="px-3 md:px-8 py-6 border-b-2 border-[#0A0A0A]/10">
-                    <div className="text-xs font-black uppercase tracking-[0.3em] text-[#6B7280] mb-4">Bench</div>
+                  <div className="px-3 md:px-6 py-4 border-b border-[#EEF0F2]">
+                    <div className="text-[15px] font-bold text-[#111] mb-3">Bench</div>
 
                     <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-3">
-                      <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-[#6B7280] pb-2 border-b-2 border-[#0A0A0A]/10 truncate">
+                      <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-[#6B7280] pb-2 border-b border-[#EEF0F2] truncate">
                         {String(selected?.Team || '').trim()}
                       </div>
-                      <div className="pb-2 border-b-2 border-[#0A0A0A]/10" />
-                      <div className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-[#6B7280] pb-2 border-b-2 border-[#0A0A0A]/10 text-right truncate">
+                      <div className="pb-2 border-b border-[#EEF0F2]" />
+                      <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-[#6B7280] pb-2 border-b border-[#EEF0F2] text-right truncate">
                         {String(selected?.Opponent || '').trim()}
                       </div>
                     </div>
@@ -3059,21 +2828,21 @@ function MatchupsPageContent() {
                       const away = oppBench[i]
                       return (
                         <React.Fragment key={i}>
-                          <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-2 items-center">
+                          <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 items-center border-b border-[#F1F2F4]">
 
-                            <div onClick={() => home && openPlayerProfile(home, getDisplayPlayerPos(home?.name, 'BN', playerLookup), 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
+                            <div onClick={() => home && openPlayerProfile(home, getDisplayPlayerPos(home?.name, 'BN', playerLookup), 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-1 md:px-2 py-2 min-w-0 cursor-pointer ${
                               home
                                 ? (isHistoricPlayer(home)
-                                  ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
-                                  : 'bg-[#F7F6F2] border-2 border-[#0A0A0A]/8')
+                                  ? 'bg-[#FFF9E5]'
+                                  : 'bg-white')
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={32} />
+                                    <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={30} />
                                   </div>
-                                  <span className={`text-[18px] md:text-[20px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
+                                  <span className={`text-[14px] md:text-[15px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
                                       ? 'text-[#B8860B]'
                                       : ((home?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
@@ -3083,12 +2852,12 @@ function MatchupsPageContent() {
                                   </span>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5">
-                                  <div className={`text-[13px] md:text-sm font-bold truncate leading-tight min-w-0 block ${
+                                  <div className={`text-[12px] md:text-[13px] font-medium truncate leading-tight min-w-0 block ${
                                     isHistoricPlayer(home) ? 'text-[#8A6600]' : 'text-[#3F4757]'
                                     }`}>
                                     {getDisplayPlayerName(home?.name, 'BN', playerLookup)}
                                   </div>
-                                  <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 border-2 ${getPosColor(getDisplayPlayerPos(home?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>
+                                  <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${getPosColor(getDisplayPlayerPos(home?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>
                                     {getDisplayPlayerPos(home?.name, 'BN', playerLookup)}
                                   </span>
                                 </div>
@@ -3096,18 +2865,18 @@ function MatchupsPageContent() {
                             </div>
 
                             {/* Divisória central */}
-                            <div className="self-stretch w-px bg-[#0A0A0A]/8" />
+                            <div className="self-stretch w-px bg-[#EEF0F2]" />
 
-                            <div onClick={() => away && openPlayerProfile(away, getDisplayPlayerPos(away?.name, 'BN', playerLookup), 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-2 md:px-3 py-2 min-w-0 cursor-pointer ${
+                            <div onClick={() => away && openPlayerProfile(away, getDisplayPlayerPos(away?.name, 'BN', playerLookup), 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-1 md:px-2 py-2 min-w-0 cursor-pointer ${
                               away
                                 ? (isHistoricPlayer(away)
-                                  ? 'bg-[#FFF9E5] border-2 border-[#F5C518]'
-                                  : 'bg-[#F7F6F2] border-2 border-[#0A0A0A]/8')
+                                  ? 'bg-[#FFF9E5]'
+                                  : 'bg-white')
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
-                                  <span className={`text-[18px] md:text-[20px] font-black flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
+                                  <span className={`text-[14px] md:text-[15px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(away)
                                       ? 'text-[#B8860B]'
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
@@ -3116,14 +2885,14 @@ function MatchupsPageContent() {
                                     {isHistoricPlayer(away) && <span className="text-sm md:text-base">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={32} mirror />
+                                    <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={30} mirror />
                                   </div>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5 w-full">
-                                  <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 border-2 ${getPosColor(getDisplayPlayerPos(away?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>
+                                  <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${getPosColor(getDisplayPlayerPos(away?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>
                                     {getDisplayPlayerPos(away?.name, 'BN', playerLookup)}
                                   </span>
-                                  <div className={`text-[13px] md:text-sm font-bold truncate leading-tight text-right min-w-0 block ${
+                                  <div className={`text-[12px] md:text-[13px] font-medium truncate leading-tight text-right min-w-0 block ${
                                     isHistoricPlayer(away) ? 'text-[#8A6600]' : 'text-[#3F4757]'
                                     }`}>
                                     {getDisplayPlayerName(away?.name, 'BN', playerLookup)}
@@ -3140,23 +2909,23 @@ function MatchupsPageContent() {
 
                 {/* Recap */}
                 {recap && (
-                  <div className="px-8 py-6">
-                    <div className="text-xs font-black uppercase tracking-[0.3em] text-[#16274F] mb-4">
+                  <div className="px-4 py-5 md:px-6">
+                    <div className="text-[15px] font-bold text-[#111] mb-3">
                       📝 Game Recap
                     </div>
-                    <div className="text-[#3F4757] text-sm leading-relaxed text-justify">
+                    <div className="text-[#374151] text-[14px] leading-relaxed text-left">
                       <ReactMarkdown
                         components={{
-                          h1: ({ children }) => <h1 className="text-2xl font-black text-[#16274F] mb-4 mt-6 leading-tight">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-xl font-black text-[#16274F] mb-3 mt-5 leading-tight">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-lg font-black text-[#16274F] mb-2 mt-4">{children}</h3>,
-                          p: ({ children }) => <p className="text-[#3F4757] mb-3 leading-relaxed text-justify">{children}</p>,
-                          strong: ({ children }) => <strong className="text-[#16274F] font-black">{children}</strong>,
+                          h1: ({ children }) => <h1 className="text-lg font-bold text-[#111] mb-3 mt-5 leading-tight">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base font-bold text-[#111] mb-2 mt-4 leading-tight">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-[15px] font-bold text-[#111] mb-2 mt-3">{children}</h3>,
+                          p: ({ children }) => <p className="text-[#3F4757] mb-3 leading-relaxed text-left">{children}</p>,
+                          strong: ({ children }) => <strong className="text-[#111] font-semibold">{children}</strong>,
                           em: ({ children }) => <em className="text-[#D01F2D] not-italic font-bold">{children}</em>,
                           ul: ({ children }) => <ul className="list-disc list-inside mb-3 text-[#3F4757] space-y-1">{children}</ul>,
                           ol: ({ children }) => <ol className="list-decimal list-inside mb-3 text-[#3F4757] space-y-1">{children}</ol>,
                           li: ({ children }) => <li className="text-[#3F4757]">{children}</li>,
-                          hr: () => <hr className="border-[#0A0A0A]/10 my-4" />,
+                          hr: () => <hr className="border-[#EEF0F2] my-4" />,
                           blockquote: ({ children }) => <blockquote className="border-l-4 border-[#D01F2D] pl-4 my-3 text-[#3F4757] italic">{children}</blockquote>,
                         }}
                       >
@@ -3166,7 +2935,7 @@ function MatchupsPageContent() {
                   </div>
                 )}
 
-              </motion.div>
+              </div>
             )}
           </>
         )}
@@ -3183,10 +2952,10 @@ function MatchupsPageContent() {
       </section>
 
       {/* Footer */}
-      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
+      <footer className="w-full border-t border-[#E3E5E8] bg-white">
         <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-70" />
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">
+          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} className="opacity-60" />
+          <span className="text-xs font-medium text-[#6B7280]">
             Tapitas League · Est. 2014
           </span>
         </div>
@@ -3200,7 +2969,7 @@ export default function MatchupsPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
+        <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
           <Header />
           <section className="px-3 md:px-6 mx-auto">
             <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">
