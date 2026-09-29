@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ChevronRight, ChevronLeft, ChevronDown, Swords, BarChart3, Activity, Send, Radio } from 'lucide-react'
@@ -1545,12 +1544,12 @@ function PlayerProfileModal({ profile, games, playerLookup, onClose }) {
 // ---- Componentes de card no padrão ESPN (usados no Week Recap e no Power Ranking)
 function CardShell({ title, subtitle, children }) {
   return (
-    <section className="mb-2 overflow-hidden rounded-xl bg-white">
-      <div className="px-3 pb-2 pt-3">
+    <section className="mb-2 overflow-hidden rounded-xl bg-white lg:bg-[#F6F7F9]">
+      <div className="px-3 pb-2 pt-3 lg:px-4 lg:pb-3 lg:pt-4">
         <h2 className="truncate text-[15px] font-bold leading-tight text-[#111]">{title}</h2>
         {subtitle && <div className="mt-0.5 text-[12px] text-[#6B7280]">{subtitle}</div>}
       </div>
-      <div className="mx-3 border-t border-[#E6E8EB]" />
+      <div className="mx-3 border-t border-[#E6E8EB] lg:mx-4" />
       {children}
     </section>
   )
@@ -1558,8 +1557,8 @@ function CardShell({ title, subtitle, children }) {
 
 function CardGroup({ label, first = false, children }) {
   return (
-    <div className={first ? 'pt-2' : 'mt-1 border-t border-[#F1F2F4] pt-2'}>
-      <div className="px-3 pb-0.5 text-[11px] font-medium text-[#6B7280]">{label}</div>
+    <div className={first ? 'pt-2 lg:pt-4' : 'mt-1 border-t border-[#F1F2F4] pt-2 lg:mt-3 lg:pt-4'}>
+      <div className="px-3 pb-1 text-[11px] font-medium text-[#6B7280] lg:px-4 lg:pb-2">{label}</div>
       {children}
     </div>
   )
@@ -1567,7 +1566,7 @@ function CardGroup({ label, first = false, children }) {
 
 function StatRow({ left, eyebrow, title, subtitle, value, valueClass = 'text-[#111]' }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5">
+    <div className="flex items-center gap-2 px-3 py-2 lg:gap-3 lg:px-4 lg:py-3">
       {left}
       <div className="min-w-0 flex-1">
         {eyebrow && <div className="truncate text-[11px] text-[#6B7280]">{eyebrow}</div>}
@@ -2190,11 +2189,11 @@ function MatchupsPageContent() {
       </CardGroup>
 
       <CardGroup label="Score vs. max possible">
-        <div className="pb-2">
+        <div className="pb-2 lg:pb-3">
           {weekRecap.teamPerformance.map((e, i) => {
             const pct = e.maxPts > 0 ? Math.min(100, (e.pf / e.maxPts) * 100) : 0
             return (
-              <div key={e.team} className="flex items-center gap-2 px-3 py-1.5">
+              <div key={e.team} className="flex items-center gap-2 px-3 py-2 lg:gap-3 lg:px-4 lg:py-3">
                 <span className="w-4 flex-shrink-0 text-right text-[11px] text-[#6B7280]">{i + 1}</span>
                 <TeamAvatar name={e.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
                 <div className="min-w-0 flex-1">
@@ -2218,13 +2217,13 @@ function MatchupsPageContent() {
   const prHref = `/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`
   const powerCard = powerRankingPreview.length > 0 ? (
     <CardShell title="Power Rankings" subtitle={`${season} · Week ${week}`}>
-      <div className="grid grid-cols-[18px_minmax(0,1fr)_36px_30px_34px_28px] items-center gap-x-1.5 border-b border-[#EEF0F2] px-3 py-1.5 text-[11px] font-medium uppercase text-[#6B7280]">
+      <div className="grid grid-cols-[18px_minmax(0,1fr)_36px_30px] xl:grid-cols-[18px_minmax(0,1fr)_36px_30px_34px_28px] items-center gap-x-1.5 border-b border-[#EEF0F2] px-3 py-2 text-[11px] lg:px-4 font-medium uppercase text-[#6B7280]">
         <span className="text-right">#</span>
         <span>Team</span>
         <span className="text-right">Rec</span>
         <span className="text-right">Strk</span>
-        <span className="text-right">Avg</span>
-        <span className="text-right">Ovw</span>
+        <span className="hidden text-right xl:block">Avg</span>
+        <span className="hidden text-right xl:block">Ovw</span>
       </div>
       {powerRankingPreview.map((team, i) => {
         const streakIsWin = team.streak.startsWith('W')
@@ -2232,7 +2231,7 @@ function MatchupsPageContent() {
         return (
           <div
             key={team.team || i}
-            className="grid grid-cols-[18px_minmax(0,1fr)_36px_30px_34px_28px] items-center gap-x-1.5 border-b border-[#F1F2F4] px-3 py-2 text-[12px] tabular-nums last:border-b-0"
+            className="grid grid-cols-[18px_minmax(0,1fr)_36px_30px] xl:grid-cols-[18px_minmax(0,1fr)_36px_30px_34px_28px] items-center gap-x-1.5 border-b border-[#F1F2F4] px-3 py-2 text-[12px] lg:px-4 lg:py-3.5 tabular-nums last:border-b-0"
           >
             <span className={`text-right ${team.rank <= 3 ? 'font-bold text-[#111]' : 'text-[#6B7280]'}`}>{team.rank}</span>
             <span className="flex min-w-0 items-center gap-1.5">
@@ -2241,14 +2240,14 @@ function MatchupsPageContent() {
             </span>
             <span className="text-right text-[#111]">{team.wins}-{team.losses}</span>
             <span className={`text-right font-medium ${streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#111]'}`}>{team.streak || '—'}</span>
-            <span className="text-right text-[#111]" title={`AVG rank #${team.avgRank}`}>{team.avgPF.toFixed(1)}</span>
-            <span className="text-right text-[#111]" title={`OVW rank #${team.ovwRank}`}>{team.ovw.toFixed(0)}</span>
+            <span className="hidden text-right text-[#111] xl:block" title={`AVG rank #${team.avgRank}`}>{team.avgPF.toFixed(1)}</span>
+            <span className="hidden text-right text-[#111] xl:block" title={`OVW rank #${team.ovwRank}`}>{team.ovw.toFixed(0)}</span>
           </div>
         )
       })}
       <a
         href={prHref}
-        className="block border-t border-[#E6E8EB] px-3 py-3 text-center text-[13px] font-medium text-[#1D5FD1] hover:underline"
+        className="block border-t border-[#E6E8EB] px-3 py-3 text-center lg:py-4 text-[13px] font-medium text-[#1D5FD1] hover:underline"
       >
         Full Power Rankings
       </a>
@@ -2273,7 +2272,7 @@ function MatchupsPageContent() {
       {/* Header */}
       <Header />
 
-      <section className="mx-auto w-full max-w-[1400px] px-0 pb-10 pt-2 sm:px-2">
+      <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
 
         {loading ? (
           <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">Loading...</div>
@@ -2357,7 +2356,7 @@ function MatchupsPageContent() {
 
             {/* Abas (só no mobile/tablet — no desktop os cards ficam nas laterais) */}
             {week && matchups.length > 0 && (
-              <div className="mb-2 flex overflow-hidden rounded-xl bg-white xl:hidden">
+              <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">
                 {[
                   {
                     key: 'matchup', label: 'Matchup', active: !mobilePanelOpen,
@@ -2389,19 +2388,19 @@ function MatchupsPageContent() {
             )}
 
             {/* Grid: recap | matchup | power ranking */}
-            <div className="xl:grid xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:items-start xl:gap-2">
-              <aside className="hidden xl:block">{recapCard}</aside>
+            <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
+              <aside className="hidden lg:block">{recapCard}</aside>
 
               <div className="min-w-0">
                 {/* Painéis no mobile/tablet */}
-                <div className="xl:hidden">
+                <div className="lg:hidden">
                   {showWeekRecap && recapCard}
                   {!showWeekRecap && showPowerRankingPreview && powerCard}
                 </div>
 
             {/* Detalhe do matchup selecionado */}
             {selected && (
-              <div className={`mb-2 overflow-hidden rounded-xl bg-white ${mobilePanelOpen ? 'hidden xl:block' : ''}`}>
+              <div className={`mb-2 overflow-hidden rounded-xl bg-white ${mobilePanelOpen ? 'hidden lg:block' : ''}`}>
 
                 {/* Header do confronto */}
                 {(() => {
@@ -2437,10 +2436,10 @@ function MatchupsPageContent() {
                   const gameType = String(selected?.GameType || '').trim()
 
                   return (
-                    <div className="border-b border-[#EEF0F2] px-3 py-4">
+                    <div className="border-b border-[#EEF0F2] px-3 py-3">
 
                       {/* Badge do tipo de jogo */}
-                      <div className="flex justify-center mb-3">
+                      <div className="flex justify-center mb-2">
                         <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F2F4] px-3 py-1">
                           <span className="text-[12px] font-medium text-[#4B5563]">
                             {season} · Week {week}{gameType && gameType !== 'Reg Season' ? ` · ${gameType}` : ''}
@@ -2543,11 +2542,11 @@ function MatchupsPageContent() {
                 {/* Starters */}
                 {/* Ajustado: px-3 no mobile para economizar espaço nas bordas, px-8 no desktop */}
                 {hasPlayerData && (
-                <div className="px-2 md:px-4 py-3 border-b border-[#EEF0F2]">
-                  <div className="text-[15px] font-bold text-[#111] mb-3">Starters</div>
+                <div className="px-2 md:px-4 py-2 border-b border-[#EEF0F2]">
+                  <div className="text-[15px] font-bold text-[#111] mb-2">Starters</div>
 
                   {/* Header colunas */}
-                  <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-3">
+                  <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-1">
                     <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-[#6B7280] pb-2 border-b border-[#EEF0F2] truncate">
                       {String(selected?.Team || '').trim()}
                     </div>
@@ -2570,17 +2569,17 @@ function MatchupsPageContent() {
                           <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 items-center border-b border-[#F1F2F4]">
 
                             {/* Time A — Nome → Pts */}
-                            <div onClick={() => home && openPlayerProfile(home, pos, 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-1 md:px-2 py-2 min-w-0 cursor-pointer ${
+                            <div onClick={() => home && openPlayerProfile(home, pos, 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-1 md:px-2 py-1 min-w-0 cursor-pointer ${
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5]'
                                   : 'bg-white')
                                 : 'opacity-0'
                               }`}>
-                              <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
+                              <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={36} />
+                                    <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={32} />
                                   </div>
                                   <span className={`text-[15px] md:text-base font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
@@ -2608,14 +2607,14 @@ function MatchupsPageContent() {
                             <div className="self-stretch w-px bg-[#EEF0F2]" />
 
                             {/* Time B — Pts → Nome (espelhado) */}
-                            <div onClick={() => away && openPlayerProfile(away, pos, 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-1 md:px-2 py-2 min-w-0 cursor-pointer ${
+                            <div onClick={() => away && openPlayerProfile(away, pos, 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-1 md:px-2 py-1 min-w-0 cursor-pointer ${
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5]'
                                   : 'bg-white')
                                 : 'opacity-0'
                               }`}>
-                              <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
+                              <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <span className={`text-[15px] md:text-base font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(away)
@@ -2626,7 +2625,7 @@ function MatchupsPageContent() {
                                     {isHistoricPlayer(away) && <span className="text-base md:text-lg">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={36} mirror />
+                                    <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={32} mirror />
                                   </div>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5 w-full">
@@ -2651,10 +2650,10 @@ function MatchupsPageContent() {
 
                 {/* Bench */}
                 {hasPlayerData && (bench.length > 0 || oppBench.length > 0) && (
-                  <div className="px-2 md:px-4 py-3 border-b border-[#EEF0F2]">
-                    <div className="text-[15px] font-bold text-[#111] mb-3">Bench</div>
+                  <div className="px-2 md:px-4 py-2 border-b border-[#EEF0F2]">
+                    <div className="text-[15px] font-bold text-[#111] mb-2">Bench</div>
 
-                    <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-3">
+                    <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-1">
                       <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-[#6B7280] pb-2 border-b border-[#EEF0F2] truncate">
                         {String(selected?.Team || '').trim()}
                       </div>
@@ -2671,17 +2670,17 @@ function MatchupsPageContent() {
                         <React.Fragment key={i}>
                           <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 items-center border-b border-[#F1F2F4]">
 
-                            <div onClick={() => home && openPlayerProfile(home, getDisplayPlayerPos(home?.name, 'BN', playerLookup), 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-1 md:px-2 py-2 min-w-0 cursor-pointer ${
+                            <div onClick={() => home && openPlayerProfile(home, getDisplayPlayerPos(home?.name, 'BN', playerLookup), 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-1 md:px-2 py-1 min-w-0 cursor-pointer ${
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5]'
                                   : 'bg-white')
                                 : 'opacity-0'
                               }`}>
-                              <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
+                              <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={30} />
+                                    <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={28} />
                                   </div>
                                   <span className={`text-[14px] md:text-[15px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
@@ -2708,14 +2707,14 @@ function MatchupsPageContent() {
                             {/* Divisória central */}
                             <div className="self-stretch w-px bg-[#EEF0F2]" />
 
-                            <div onClick={() => away && openPlayerProfile(away, getDisplayPlayerPos(away?.name, 'BN', playerLookup), 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-1 md:px-2 py-2 min-w-0 cursor-pointer ${
+                            <div onClick={() => away && openPlayerProfile(away, getDisplayPlayerPos(away?.name, 'BN', playerLookup), 'away')} role={away ? 'button' : undefined} tabIndex={away ? 0 : undefined} className={`px-1 md:px-2 py-1 min-w-0 cursor-pointer ${
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5]'
                                   : 'bg-white')
                                 : 'opacity-0'
                               }`}>
-                              <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 4 }} className="min-w-0">
+                              <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <span className={`text-[14px] md:text-[15px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(away)
@@ -2726,7 +2725,7 @@ function MatchupsPageContent() {
                                     {isHistoricPlayer(away) && <span className="text-sm md:text-base">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={30} mirror />
+                                    <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={28} mirror />
                                   </div>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5 w-full">
@@ -2780,7 +2779,7 @@ function MatchupsPageContent() {
             )}
               </div>
 
-              <aside className="hidden xl:block">{powerCard}</aside>
+              <aside className="hidden lg:block">{powerCard}</aside>
             </div>
           </>
         )}
@@ -2795,17 +2794,6 @@ function MatchupsPageContent() {
         )}
 
       </section>
-
-      {/* Footer */}
-      <footer className="w-full border-t border-[#E3E5E8] bg-white">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} className="opacity-60" />
-          <span className="text-xs font-medium text-[#6B7280]">
-            Tapitas League · Est. 2014
-          </span>
-        </div>
-      </footer>
-
     </main>
   )
 }
