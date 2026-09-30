@@ -27,18 +27,19 @@ export function getLeagueStatus() {
 
     const teams = rosters.map(r => ({
       team: r.team,
-      lineupSeason: r.season,
+      source: r.source,
       lineupWeek: r.week,
       players: r.players.map(p => {
         const info = p.id ? players.get(p.id) : null
         const nflTeam = info?.team || null
         return {
           id: p.id,
-          name: info?.name || p.sheetName,
+          name: info?.name || p.sheetName || p.id,
           sheetName: p.sheetName,
           pos: info?.pos || null,
           nflTeam,
           starter: p.starter,
+          reserve: Boolean(p.reserve),
           injury: info?.injuryStatus ? { status: info.injuryStatus, bodyPart: info.injuryBodyPart, notes: info.injuryNotes } : null,
           byeThisWeek: Boolean(nflTeam && byeNow.includes(nflTeam)),
           byeNextWeek: Boolean(nflTeam && byeNext.includes(nflTeam)),

@@ -16,6 +16,10 @@ function Card({ title, subtitle, children }) {
   )
 }
 
+function Empty({ children }) {
+  return <div className="px-3 py-8 text-center text-[13px] text-[#6B7280] sm:px-4">{children}</div>
+}
+
 function timeAgo(iso) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
@@ -27,10 +31,12 @@ function timeAgo(iso) {
 }
 
 // Últimas manchetes do jogador (ESPN)
-export function PlayerNewsCard({ playerId }) {
+export function PlayerNewsCard({ playerId, emptyText }) {
   const { data, loading, error } = usePlayerNews(playerId)
   const news = data?.news || []
-  if (!playerId || error || (!loading && !news.length)) return null
+  if (!playerId || error || (!loading && !news.length)) {
+    return emptyText ? <Card title="Latest news" subtitle="Headlines from ESPN"><Empty>{emptyText}</Empty></Card> : null
+  }
   return (
     <Card title="Latest news" subtitle="Headlines from ESPN">
       {loading ? <div className="px-3 py-4 text-[13px] text-[#6B7280] sm:px-4">Loading…</div> : (
@@ -58,12 +64,13 @@ const fmtPct = v => (v == null ? '—' : `${Math.round(v)}%`)
 const fmtNum = v => (v == null ? '—' : String(Math.round(v)))
 
 // Uso do jogador na NFL: snaps, participação nos alvos e red zone
-export function PlayerAdvancedCard({ playerId, position }) {
+export function PlayerAdvancedCard({ playerId, position, emptyText }) {
   const { data, loading, error } = usePlayerAdvanced(playerId)
   const pos = String(position || '').toUpperCase()
-  if (!playerId || pos === 'DEF' || pos === 'K' || error) return null
   const weeks = (data?.weeks || []).filter(w => w.snapPct != null || w.targetShare != null || w.rzTargets != null || w.rzCarries != null)
-  if (!loading && !weeks.length) return null
+  if (!playerId || pos === 'DEF' || pos === 'K' || error || (!loading && !weeks.length)) {
+    return emptyText ? <Card title="NFL usage" subtitle="Snaps, target share and red zone"><Empty>{emptyText}</Empty></Card> : null
+  }
   const s = data?.summary || {}
   const isQb = pos === 'QB'
 

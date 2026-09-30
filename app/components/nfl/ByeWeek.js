@@ -1,7 +1,6 @@
 'use client'
 
-import { CardShell, TeamLogo, PositionBadge, SkeletonRows } from '../ui'
-import { useLeagueStatus } from './useNflData'
+import { TeamLogo, PositionBadge } from '../ui'
 import { nflLogo, EmptyNote } from './shared'
 
 function ByeTeams({ teams }) {
@@ -49,33 +48,24 @@ function FranchiseByes({ teams, flag }) {
   )
 }
 
-// Quem está de folga (bye) nesta semana e na próxima
-export default function ByeWeekCard() {
-  const { data, loading, error } = useLeagueStatus()
-  if (error && !data) return null
-  if (!loading && !data?.week) return null // fora da temporada regular
-
+// Folgas (bye) desta semana e da próxima, com os jogadores afetados em cada franquia
+export function ByeWeekContent({ data }) {
   const teams = data?.teams || []
   const now = data?.byeTeams || []
   const next = data?.nextWeekByeTeams || []
-
+  if (!data?.week) return <EmptyNote>Byes show up during the NFL regular season.</EmptyNote>
   return (
-    <CardShell title="Bye week watch" subtitle={data?.week ? `Week ${data.week} · NFL teams off this week and next` : 'NFL teams off this week'}>
-      {loading ? <div className="py-2"><SkeletonRows rows={3} /></div> : (
-        <>
-          <div className="px-3 pb-2 pt-3 lg:px-4">
-            <div className="mb-1.5 text-[11px] font-medium text-[#6B7280]">Week {data.week}</div>
-            {now.length ? <ByeTeams teams={now} /> : <div className="text-[12px] text-[#6B7280]">No byes this week — every NFL team plays.</div>}
-          </div>
-          {now.length > 0 && <FranchiseByes teams={teams} flag="byeThisWeek" />}
-          <div className="border-t border-[#F1F2F4] px-3 pb-2 pt-3 lg:px-4">
-            <div className="mb-1.5 text-[11px] font-medium text-[#6B7280]">Next: week {data.week + 1}</div>
-            {next.length ? <ByeTeams teams={next} /> : <div className="text-[12px] text-[#6B7280]">No byes next week.</div>}
-          </div>
-          {next.length > 0 && <FranchiseByes teams={teams} flag="byeNextWeek" />}
-          {!now.length && !next.length && <EmptyNote>Plan ahead: byes usually start around week 5.</EmptyNote>}
-        </>
-      )}
-    </CardShell>
+    <>
+      <div className="px-3 pb-2 pt-3 lg:px-4">
+        <div className="mb-1.5 text-[11px] font-medium text-[#6B7280]">Week {data.week}</div>
+        {now.length ? <ByeTeams teams={now} /> : <div className="text-[12px] text-[#6B7280]">No byes this week — every NFL team plays.</div>}
+      </div>
+      {now.length > 0 && <FranchiseByes teams={teams} flag="byeThisWeek" />}
+      <div className="border-t border-[#F1F2F4] px-3 pb-2 pt-3 lg:px-4">
+        <div className="mb-1.5 text-[11px] font-medium text-[#6B7280]">Next: week {data.week + 1}</div>
+        {next.length ? <ByeTeams teams={next} /> : <div className="text-[12px] text-[#6B7280]">No byes next week.</div>}
+      </div>
+      {next.length > 0 && <FranchiseByes teams={teams} flag="byeNextWeek" />}
+    </>
   )
 }

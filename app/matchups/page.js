@@ -7,7 +7,7 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import Header from '../components/Header'
 import SharedPlayerProfile from '../components/PlayerProfileModal'
-import { PageShell, PageSkeleton } from '../components/ui'
+import { PageShell, PageSkeleton, SiteFooter } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -1202,7 +1202,7 @@ function MatchupsPageContent() {
   ) : null
 
   return (
-    <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
+    <main className="mx-root flex min-h-screen flex-col bg-[#EDEEF0] text-[#111]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         .mx-root {
@@ -1751,6 +1751,7 @@ function MatchupsPageContent() {
         )}
 
       </section>
+      <SiteFooter />
     </main>
   )
 }

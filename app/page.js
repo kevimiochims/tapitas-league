@@ -13,10 +13,9 @@ import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
 import NflScoreStrip from './components/nfl/NflScoreStrip'
-import InjuryReportCard from './components/nfl/InjuryReportCard'
-import ByeWeekCard from './components/nfl/ByeWeekCard'
+import RosterAlertsCard from './components/nfl/RosterAlertsCard'
 import TrendingCard from './components/nfl/TrendingCard'
-import WeatherWatchCard from './components/nfl/WeatherWatchCard'
+import LeagueNewsCard from './components/nfl/LeagueNewsCard'
 import { SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, StatGrid, StatTile, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
 
 
@@ -622,13 +621,6 @@ function shortTeamName(name) {
 }
 
 // Returns top N teams for a key, handling ties
-function topNTeams(arr, getter, n = 3) {
-  const sorted = [...arr].sort((a, b) => getter(b) - getter(a))
-  if (!sorted.length) return []
-  const topVal = getter(sorted[0])
-  const tied = sorted.filter(t => getter(t) === topVal)
-  return tied.slice(0, n)
-}
 
 // Vagas de playoff na liga (linha tracejada na classificação da Home)
 const PLAYOFF_SPOTS = 6
@@ -732,7 +724,6 @@ export default function TapitasLeagueHomepage() {
   const closeDraftPlayer = () => setSelectedDraftPlayer(null)
   const [selectedPerformer, setSelectedPerformer] = useState(null)
   const [mobileTableTab, setMobileTableTab] = useState('pr')
-  const [mobileLeagueTab, setMobileLeagueTab] = useState('leaders')
   const closePerformer = () => setSelectedPerformer(null)
   // Jogador aberto a partir dos cards da NFL (lesões, trending)
   const [selectedNflPlayer, setSelectedNflPlayer] = useState(null)
@@ -740,7 +731,6 @@ export default function TapitasLeagueHomepage() {
   const [selectedDraftRound, setSelectedDraftRound] = useState(1)
   const [selectedMatchupKey, setSelectedMatchupKey] = useState('')
   const [prPage, setPrPage] = useState(0)
-  const [recordsPage, setRecordsPage] = useState(0)
   const draftScrollRef = useRef(null)
   const touchStartX = useRef(null);
   const totalSlides = 3;
@@ -1858,22 +1848,14 @@ export default function TapitasLeagueHomepage() {
     return v
   }
 
-  const recordItems = [
-    { label: 'Most wins', getter: t => t.wins, format: v => v },
-    { label: 'Most titles', getter: t => t.titles, format: v => v },
-    { label: 'Most points', getter: t => t.pf, format: v => Math.round(v).toLocaleString() },
-    { label: 'Best win %', getter: t => t.winPct, format: v => `${Number(v).toFixed(1)}%` },
-    { label: 'Most finals', getter: t => t.finals, format: v => v },
-    { label: 'Most playoff apps', getter: t => t.playoffApps, format: v => v },
-  ]
 
   const isFinalStandings = currentWeekLabel === '__final__'
   const heatTone = { Legendary: 'gold', Elite: 'navy', High: 'red' }
 
   // ── Blocos ──────────────────────────────────────────────────────────
   const scoreboardStrip = visibleMatchups.length > 0 && (
-    <div className="relative z-20 mb-2 flex items-stretch rounded-xl bg-white">
-      <div className="flex flex-shrink-0 flex-col items-start justify-center gap-0.5 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
+    <div className="relative z-20 flex items-stretch border-b border-[#E6E8EB] bg-white">
+      <div className="flex w-[5.75rem] flex-shrink-0 flex-col items-start justify-center gap-0.5 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
         <span className="pl-1 text-[12px] font-bold text-[#111]">{currentSeason}</span>
         <FilterPill value={selectedMatchupKey} onChange={setSelectedMatchupKey} options={matchupOptions.map(o => o.key)} displayOption={key => `Week ${matchupOptions.find(o => o.key === key)?.week ?? ''}`} label="Week" neutral hideLabel />
       </div>
@@ -2215,89 +2197,62 @@ export default function TapitasLeagueHomepage() {
     </div>
   )
 
-  const recordsList = (
-    <div className="py-1 lg:py-2">
-      {recordItems.map(item => {
-        const leaders = topNTeams(standings, item.getter, 3)
-        if (!leaders.length) return null
-        return (
-          <StatRow
-            key={item.label}
-            href="/records"
-            left={<div className="flex -space-x-1.5">{leaders.map(t => <TeamLogo key={t.team} name={t.team} size={24} />)}</div>}
-            eyebrow={item.label}
-            title={leaders.map(t => t.team).join(', ')}
-            value={item.format(item.getter(leaders[0]))}
-          />
-        )
-      })}
-    </div>
-  )
 
-  // Desktop: cards separados nas colunas laterais.
-  const powerCard = <CardShell title="Power Rankings" subtitle={`${currentSeason} · latest week`} sidebar action={cardLink('/powerrankings', 'Full')}>{powerList}</CardShell>
-  const standingsCard = currentStandings.length > 0 && <CardShell title="Standings" subtitle={standingsSubtitle} sidebar action={cardLink('/stats', 'Stats')}>{standingsList}</CardShell>
-  const leadersCard = <CardShell title="Franchise leaders" subtitle="All-time" sidebar withMenus action={cardLink('/records', 'Records')}>{leadersFilters}{leadersList}</CardShell>
-  const championsCard = championsData.length > 0 && <CardShell title="Champions wall" subtitle="Every Tapitas League title" sidebar action={cardLink('/history', 'History')}>{championsList}</CardShell>
-  const recordsCard = <CardShell title="All-time records" subtitle="Best of the best" sidebar action={cardLink('/records', 'Record book')}>{recordsList}</CardShell>
-
-  // Mobile: um card com abas no lugar de várias listas iguais em sequência.
-  const mobileTableCard = (
-    <CardShell
-      title={mobileTableTab === 'pr' ? 'Power Rankings' : 'Standings'}
-      subtitle={mobileTableTab === 'pr' ? `${currentSeason} · latest week` : standingsSubtitle}
-      action={<Segmented options={[['pr', 'Rankings'], ['standings', 'Standings']]} value={mobileTableTab} onChange={setMobileTableTab} />}
-    >
-      {mobileTableTab === 'pr' ? powerList : standingsList}
-      <div className="border-t border-[#EEF0F2] py-2 text-center">{mobileTableTab === 'pr' ? cardLink('/powerrankings', 'Full power rankings') : cardLink('/stats', 'Full standings')}</div>
-    </CardShell>
-  )
-
-  const mobileLeagueCard = (
-    <CardShell
-      title={{ leaders: 'Franchise leaders', champions: 'Champions wall', records: 'All-time records' }[mobileLeagueTab]}
-      subtitle={{ leaders: 'All-time', champions: 'Every Tapitas League title', records: 'Best of the best' }[mobileLeagueTab]}
-      withMenus
-    >
-      <div className="px-3 pt-2.5">
-        <Segmented options={[['leaders', 'Leaders'], ['champions', 'Champions'], ['records', 'Records']]} value={mobileLeagueTab} onChange={setMobileLeagueTab} />
+  // Rankings, standings e líderes num card só com abas (desktop e mobile).
+  const tablesMeta = {
+    pr: { title: 'Power Rankings', subtitle: `${currentSeason} · latest week`, link: cardLink('/powerrankings', 'Full power rankings') },
+    standings: { title: 'Standings', subtitle: standingsSubtitle, link: cardLink('/stats', 'Full standings') },
+    leaders: { title: 'Franchise leaders', subtitle: 'All-time', link: cardLink('/records', 'Record book') },
+  }
+  const tablesTab = tablesMeta[mobileTableTab] ? mobileTableTab : 'pr'
+  const tablesCard = (
+    <CardShell title={tablesMeta[tablesTab].title} subtitle={tablesMeta[tablesTab].subtitle} sidebar withMenus>
+      <div className="px-3 pt-2.5 lg:px-4">
+        <Segmented options={[['pr', 'Rankings'], ['standings', 'Standings'], ['leaders', 'Leaders']]} value={tablesTab} onChange={setMobileTableTab} />
       </div>
-      {mobileLeagueTab === 'leaders' && <>{leadersFilters}{leadersList}</>}
-      {mobileLeagueTab === 'champions' && championsList}
-      {mobileLeagueTab === 'records' && recordsList}
+      {tablesTab === 'pr' && powerList}
+      {tablesTab === 'standings' && standingsList}
+      {tablesTab === 'leaders' && <>{leadersFilters}{leadersList}</>}
+      <div className="border-t border-[#EEF0F2] py-2 text-center">{tablesMeta[tablesTab].link}</div>
     </CardShell>
+  )
+  const championsCard = championsData.length > 0 && <CardShell title="Champions wall" subtitle="Every Tapitas League title" sidebar action={cardLink('/history', 'History')}>{championsList}</CardShell>
+
+  // Cards da NFL (coluna da direita no desktop; no mobile entram no meio da página)
+  const nflCards = (
+    <>
+      <RosterAlertsCard onOpenPlayer={openNflPlayer} />
+      <TrendingCard onOpenPlayer={openNflPlayer} />
+      <LeagueNewsCard onOpenPlayer={openNflPlayer} />
+    </>
   )
 
   return (
-    <PageShell loading={leagueLoading || prLoading} headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
-      {scoreboardStrip}
-      <NflScoreStrip />
-
-      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
+    <PageShell
+      loading={leagueLoading || prLoading}
+      headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}
+      topBar={<><NflScoreStrip />{scoreboardStrip}</>}
+    >
+      <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[320px_minmax(0,1fr)_340px] xl:gap-5">
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
-          {powerCard}
-          {standingsCard}
+          {tablesCard}
+          {championsCard}
         </aside>
 
         <div className="min-w-0">
           {heroCard}
           {numbersCard}
           {weekCard}
-          <div className="lg:hidden">{mobileTableCard}</div>
-          <InjuryReportCard onOpenPlayer={openNflPlayer} />
-          <WeatherWatchCard />
+          <div className="lg:hidden">{tablesCard}</div>
           {rivalryCard}
           {newsCard}
-          <ByeWeekCard />
-          <TrendingCard onOpenPlayer={openNflPlayer} />
+          <div className="lg:hidden">{nflCards}</div>
           {draftCard}
-          <div className="lg:hidden">{mobileLeagueCard}</div>
+          <div className="lg:hidden">{championsCard}</div>
         </div>
 
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
-          {leadersCard}
-          {championsCard}
-          {recordsCard}
+          {nflCards}
         </aside>
       </div>
 

@@ -34,7 +34,7 @@ export default function TeamNflNotice({ team, onOpenPlayer }) {
         <div className="min-w-0">
           <h2 className="text-[15px] font-bold leading-tight text-[#111]">Roster status</h2>
           <div className="mt-0.5 text-[12px] text-[#6B7280]">
-            {data.week ? `NFL week ${data.week}` : 'NFL'} · lineup from week {roster.lineupWeek} · injuries via Sleeper
+            {data.week ? `NFL week ${data.week}` : 'NFL'} · {roster.source === 'sleeper' ? 'live Sleeper roster' : `lineup from week ${roster.lineupWeek}`} · injuries via Sleeper
           </div>
         </div>
         {clean && <Tag tone="green">All clear</Tag>}

@@ -61,14 +61,7 @@ export function getPlayerNews(espnId) {
       try {
         const data = await fetchJson(url)
         answered = true
-        const items = (data?.feed || data?.articles || data?.headlines || []).map(a => ({
-          id: String(a?.id || a?.dataSourceIdentifier || a?.headline || ''),
-          headline: a?.headline || a?.title || '',
-          description: a?.description || '',
-          published: a?.published || a?.lastModified || null,
-          url: a?.links?.web?.href || a?.link?.href || null,
-          image: a?.images?.[0]?.url || null,
-        })).filter(a => a.headline)
+        const items = mapNews(data)
         if (items.length) return items.slice(0, 8)
       } catch (err) {
         lastError = err
@@ -76,5 +69,36 @@ export function getPlayerNews(espnId) {
     }
     if (!answered && lastError) throw lastError
     return []
+  })
+}
+
+// IDs de atletas citados numa notícia (o formato varia entre os feeds da ESPN)
+function athleteIds(a) {
+  const ids = new Set()
+  ;[a?.playerId, a?.athleteId, a?.athlete?.id].forEach(v => v && ids.add(String(v)))
+  ;(a?.categories || []).forEach(c => {
+    if (c?.athleteId) ids.add(String(c.athleteId))
+    if (c?.type === 'athlete' && c?.athlete?.id) ids.add(String(c.athlete.id))
+  })
+  return Array.from(ids)
+}
+
+function mapNews(data) {
+  return (data?.feed || data?.articles || data?.headlines || []).map(a => ({
+    id: String(a?.id || a?.dataSourceIdentifier || a?.headline || ''),
+    headline: a?.headline || a?.title || '',
+    description: a?.description || '',
+    published: a?.published || a?.lastModified || null,
+    url: a?.links?.web?.href || a?.link?.href || null,
+    image: a?.images?.[0]?.url || null,
+    athleteIds: athleteIds(a),
+  })).filter(a => a.headline)
+}
+
+// Feed geral de notícias de fantasy da ESPN (todas as notícias recentes de jogadores)
+export function getFantasyNewsFeed() {
+  return cached('espn:news:feed', 900, async () => {
+    const data = await fetchJson('https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?limit=150')
+    return mapNews(data)
   })
 }

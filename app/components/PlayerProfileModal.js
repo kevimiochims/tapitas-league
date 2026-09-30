@@ -582,6 +582,13 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     : null
   const weeklyGroups = formatCompactPlayerStatGroups(weeklyStats, pos)
 
+  const profileTabs = [
+    ...(matchup ? [['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(matchup.opponent)}`]] : []),
+    ['career', 'Career'],
+    ...(pos !== 'DEF' && pos !== 'K' ? [['nfl', 'NFL usage']] : []),
+    ['news', 'News'],
+  ]
+
   const options = key => ['All', ...Array.from(new Set(profileGames.map(x => x[key]).filter(Boolean))).sort()]
   const filtered = profileGames
     .filter(x => opponentFilter === 'All' || x.opponent === opponentFilter)
@@ -717,11 +724,11 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
           </div>
         </div>
 
-        {/* Abas (só no perfil aberto a partir de um confronto) */}
-        {matchup && (
-          <div className="flex flex-shrink-0 border-b border-[#E6E8EB] bg-white">
-            {[['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(matchup.opponent)}`], ['career', 'Career']].map(([key, label]) => (
-              <button key={key} type="button" onClick={() => setTab(key)} className={`flex-1 border-b-2 px-2 py-2.5 text-[13px] transition-colors ${tab === key ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}>
+        {/* Abas (também no desktop) */}
+        {(
+          <div className="scroll-hide flex flex-shrink-0 overflow-x-auto border-b border-[#E6E8EB] bg-white">
+            {profileTabs.map(([key, label]) => (
+              <button key={key} type="button" onClick={() => setTab(key)} className={`flex-1 whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] transition-colors ${tab === key ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}>
                 {label}
               </button>
             ))}
@@ -804,8 +811,8 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
           )}
 
           {/* NFL: uso do jogador e últimas notícias */}
-          {tab === 'career' && <PlayerAdvancedCard playerId={playerId} position={pos} />}
-          {tab === 'career' && <PlayerNewsCard playerId={playerId} />}
+          {tab === 'nfl' && <PlayerAdvancedCard playerId={playerId} position={pos} emptyText="No NFL usage data for this player yet." />}
+          {tab === 'news' && <PlayerNewsCard playerId={playerId} emptyText="No recent ESPN news for this player." />}
 
           {/* Game log */}
           {tab === 'career' && (

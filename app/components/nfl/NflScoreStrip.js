@@ -105,9 +105,9 @@ export default function NflScoreStrip() {
   const open = games.find(g => g.id === openId)
 
   return (
-    <div className="mb-2 overflow-hidden rounded-xl bg-white">
+    <div className="border-b border-[#E6E8EB] bg-white">
       <div className="flex items-stretch">
-        <div className="flex flex-shrink-0 flex-col items-start justify-center gap-0.5 border-r border-[#EEF0F2] py-1.5 pl-3 pr-3">
+        <div className="flex w-[5.75rem] flex-shrink-0 flex-col items-start justify-center gap-0.5 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
           <span className="flex items-center gap-1 text-[12px] font-bold text-[#111]">
             <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" alt="" className="h-4 w-4 object-contain" /> NFL
           </span>

@@ -8,20 +8,37 @@ import { ChevronDown, Check, Trophy } from 'lucide-react'
 import Header from './Header'
 
 // ── Estrutura da página ─────────────────────────────────────────────
-export function PageShell({ children, loading = false, headerProps }) {
+// `topBar`: faixas de largura total logo abaixo do header, sem espaçamento
+// (ex.: placares da Home). O espaço volta só antes do conteúdo principal.
+export function PageShell({ children, loading = false, headerProps, topBar }) {
   return (
-    <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
+    <main className="mx-root flex min-h-screen flex-col bg-[#EDEEF0] text-[#111]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         .mx-root { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-variant-numeric:tabular-nums; }
         .scroll-hide::-webkit-scrollbar { display: none; }
         .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-      <Header {...headerProps} />
+      <Header {...headerProps} flush={Boolean(topBar)} />
+      {topBar && <div className="mb-2">{topBar}</div>}
       <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
         {loading ? <PageSkeleton /> : children}
       </section>
+      <SiteFooter />
     </main>
+  )
+}
+
+// Rodapé branco em todas as páginas: o fim da página (e a área que aparece
+// ao "arrastar" no celular) fica branco, igual ao topo com o header.
+export function SiteFooter() {
+  return (
+    <footer className="mt-auto border-t border-[#E6E8EB] bg-white">
+      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-5 text-[12px] text-[#6B7280]">
+        <span className="font-semibold text-[#111]">Tapitas League</span>
+        <span>Est. 2014 · Fantasy Football</span>
+      </div>
+    </footer>
   )
 }
 
