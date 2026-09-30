@@ -4,10 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, ChevronLeft, Flame, Swords } from 'lucide-react'
 import { PageShell, CardShell, FilterPill, ToggleChip, Tag, TeamLogo } from '../components/ui'
 
-const SHEET_ID =
-  '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-
-const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+const BASE_URL = '/api/sheet'
 
 /* =====================================================
 UTILS

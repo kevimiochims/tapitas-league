@@ -13,7 +13,7 @@ import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 
 const SCRIPT_URL =
-    'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
+    '/api/news'
 
 export default function NewsArticle() {
 

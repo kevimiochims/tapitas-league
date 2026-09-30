@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Newspaper, Laugh, FileText, ChevronRight } from 'lucide-react'
+import { Newspaper, Laugh, FileText, ChevronRight, SquarePen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { PageShell, PageTitle, ToggleChip, Tag, ShowMore, LoadingState } from '../components/ui'
 import ReactMarkdown from 'react-markdown'
+import { NEWS_FORM_URL } from '../config/news'
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
+const SCRIPT_URL = '/api/news'
 
 const CATEGORIES = ['Todos', 'Meme', 'Recap', 'Notícia']
 
@@ -75,7 +76,21 @@ export default function NewsPage() {
 
   return (
     <PageShell>
-      <PageTitle title="News & Memes" subtitle="Every headline, every recap, every joke from the league." />
+      <PageTitle
+        title="News & Memes"
+        subtitle="Every headline, every recap, every joke from the league."
+        right={NEWS_FORM_URL && (
+          <a
+            href={NEWS_FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-[#D01F2D] px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#B01A26]"
+          >
+            <SquarePen className="h-4 w-4" />
+            <span>Publicar</span>
+          </a>
+        )}
+      />
 
       {/* Filtros de categoria */}
       <div className="scroll-hide mb-2 flex gap-1.5 overflow-x-auto rounded-xl bg-white p-2">

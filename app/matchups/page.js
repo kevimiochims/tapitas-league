@@ -9,8 +9,7 @@ import Header from '../components/Header'
 import SharedPlayerProfile from '../components/PlayerProfileModal'
 import { PageShell, PageSkeleton } from '../components/ui'
 
-const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+const BASE_URL = '/api/sheet'
 
 function parseNumber(value) {
   if (value === null || value === undefined || value === '') return 0

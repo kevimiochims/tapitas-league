@@ -5,8 +5,7 @@ import SummaryDrawer from '../components/SummaryDrawer'
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Flame, Swords, Activity, Users, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
 
-const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+const BASE_URL = '/api/sheet'
 
 function parseNumber(value) {
   if (value === null || value === undefined || value === '') return 0
