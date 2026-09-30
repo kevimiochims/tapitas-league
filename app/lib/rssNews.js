@@ -12,11 +12,28 @@ const SOURCES = [
   { name: 'ESPN NFL', urls: ['https://www.espn.com/espn/rss/nfl/news'] },
 ]
 
-const decode = str => String(str || '')
+const NAMED_ENTITIES = {
+  nbsp: ' ', amp: '&', quot: '"', apos: "'", lt: '<', gt: '>',
+  rsquo: "'", lsquo: "'", sbquo: "'", rdquo: '"', ldquo: '"', bdquo: '"',
+  ndash: '–', mdash: '—', hellip: '…', prime: "'", acute: "'",
+}
+
+// Decodifica entidades HTML (nomeadas, &#39; e &#x27;) — sem isso "De&rsquo;Von"
+// não bate com "De'Von"
+function decodeEntities(str) {
+  return str.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, code) => {
+    if (code[0] === '#') {
+      const n = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10)
+      return Number.isFinite(n) ? String.fromCodePoint(n) : m
+    }
+    return NAMED_ENTITIES[code.toLowerCase()] ?? m
+  })
+}
+
+const decode = str => decodeEntities(decodeEntities(String(str || '')
   .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;|&apos;|&#8217;/g, "'")
-  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#8211;|&#8212;/g, '–')
+  .replace(/<[^>]+>/g, ' ')))
+  .replace(/[\u2018\u2019\u02BC\u0060\u00B4]/g, "'")
   .replace(/\s+/g, ' ')
   .trim()
 
@@ -63,22 +80,25 @@ export async function getRssNews() {
   return sources.flatMap(s => s.items)
 }
 
-// Liga notícias a jogadores pelo nome completo no título ou no resumo
-export function matchNewsToPlayers(items, players) {
+// Liga notícias a jogadores pelo nome completo no título ou no resumo.
+// `loose` (busca de um jogador só): também aceita só o sobrenome, se ele tiver
+// 5+ letras (ex.: "Dolphins' Achane carted off").
+export function matchNewsToPlayers(items, players, { loose = false } = {}) {
   // Variações do nome: "de von achane" e "devon achane" (apóstrofos e hífens)
   const keyed = players
     .filter(p => p?.name && p.pos !== 'DEF' && p.name.trim().split(/\s+/).length >= 2)
     .map(p => {
       const base = normalizePlayerKey(p.name)
       const joined = normalizePlayerKey(String(p.name).replace(/['’`.-]/g, ''))
-      return { player: p, keys: Array.from(new Set([` ${base} `, ` ${joined} `])) }
+      return { player: p, keys: Array.from(new Set([` ${base} `, ` ${joined} `])), last: joined.split(' ').pop() || '' }
     })
   const out = []
   items.forEach(n => {
     const raw = `${n.headline} ${n.description}`
     const text = ` ${normalizePlayerKey(raw)} `
     const textJoined = ` ${normalizePlayerKey(raw.replace(/['’`.-]/g, ''))} `
-    const hit = keyed.find(k => k.keys.some(key => text.includes(key) || textJoined.includes(key)))
+    let hit = keyed.find(k => k.keys.some(key => text.includes(key) || textJoined.includes(key)))
+    if (!hit && loose) hit = keyed.find(k => k.last.length >= 5 && (text.includes(` ${k.last} `) || textJoined.includes(` ${k.last} `)))
     if (hit) out.push({ ...n, player: hit.player })
   })
   return out

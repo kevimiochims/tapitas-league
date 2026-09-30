@@ -1,4 +1,4 @@
-import { getPlayerNews } from '@/app/lib/espn'
+import { getPlayerNews, findEspnIdByName } from '@/app/lib/espn'
 import { getSleeperPlayers } from '@/app/lib/sleeper'
 import { cdnHeaders } from '@/app/lib/cache'
 import { getRssNews, matchNewsToPlayers } from '@/app/lib/rssNews'
@@ -10,9 +10,16 @@ export async function GET(request) {
   try {
     const players = await getSleeperPlayers()
     const info = players.get(id)
+    // ESPN pelo ID do Sleeper; se não houver ID ou nada vier, procura o jogador pelo nome
+    const espnNews = async () => {
+      const byId = info?.espnId ? await getPlayerNews(info.espnId).catch(() => []) : []
+      if (byId.length || !info?.name) return byId
+      const found = await findEspnIdByName(info.name).catch(() => null)
+      return found && found !== info.espnId ? getPlayerNews(found).catch(() => []) : []
+    }
     const [espn, rss] = await Promise.all([
-      info?.espnId ? getPlayerNews(info.espnId).catch(() => []) : [],
-      info ? getRssNews().then(items => matchNewsToPlayers(items, [info])).catch(() => []) : [],
+      espnNews(),
+      info ? getRssNews().then(items => matchNewsToPlayers(items, [info], { loose: true })).catch(() => []) : [],
     ])
     const seen = new Set()
     const news = [...espn, ...rss]

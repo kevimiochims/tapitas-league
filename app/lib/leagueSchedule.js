@@ -2,6 +2,7 @@ import { cached, fetchJson } from './cache'
 import { getSheetRows } from './sheets'
 import { getLeagueRosters, getSheetNames, SLEEPER_LEAGUE_ID } from './leagueRosters'
 import { getNflState, getSleeperPlayers } from './sleeper'
+import { getScoreboard } from './espn'
 
 // Calendário e placares da Tapitas League por semana.
 // - Semanas já registradas na planilha (GAME_FACTS_ALL): placar final da planilha.
@@ -83,7 +84,15 @@ function getSleeperWeek(week) {
   })
 }
 
-// Semana da liga: status (final / live / upcoming) + confrontos
+// Função que diz se um jogador (ID do Sleeper) está num jogo da NFL em andamento
+async function getLiveStarterCheck() {
+  const [board, players] = await Promise.all([getScoreboard().catch(() => ({ games: [] })), getSleeperPlayers().catch(() => new Map())])
+  const liveTeams = new Set(board.games.filter(g => g.state === 'in').flatMap(g => [g.home.team, g.away.team]))
+  if (!liveTeams.size) return () => false
+  return id => liveTeams.has(players.get(String(id))?.team)
+}
+
+// Semana da liga: status (final / current / upcoming) + confrontos
 export async function getLeagueWeek(requestedWeek) {
   const [info, state] = await Promise.all([getLeagueInfo().catch(() => null), getNflState().catch(() => null)])
   const season = info?.season || state?.season
@@ -96,16 +105,17 @@ export async function getLeagueWeek(requestedWeek) {
   }
 
   const sleeper = await getSleeperWeek(week).catch(err => { console.error('[league-week]', err.message); return [] })
-  const status = !currentWeek || week < currentWeek ? 'final' : week === currentWeek ? 'live' : 'upcoming'
-  return {
-    season,
-    week,
-    currentWeek,
-    source: 'sleeper',
-    status,
+  // final: semana encerrada · current: semana em andamento · upcoming: futura
+  const status = !currentWeek || week < currentWeek ? 'final' : week === currentWeek ? 'current' : 'upcoming'
+  const liveIds = status === 'current' ? await getLiveStarterCheck() : null
+  const matchups = sleeper.map(m => ({
+    ...m,
+    // "Live" só quando há jogo da NFL rolando com algum titular do confronto
+    live: Boolean(liveIds && m.teams.some(t => t.starters.some(liveIds))),
     // Na lista resumida não mandamos a escalação completa
-    matchups: sleeper.map(m => ({ ...m, teams: m.teams.map(({ starters, startersPoints, playersPoints, players, ...t }) => t) })),
-  }
+    teams: m.teams.map(({ starters, startersPoints, playersPoints, players, ...t }) => t),
+  }))
+  return { season, week, currentWeek, source: 'sleeper', status, live: matchups.some(m => m.live), matchups }
 }
 
 // Confronto completo do Sleeper (escalação e pontos por jogador) para a página Matchups
@@ -154,10 +164,12 @@ export function getSleeperSeasonRows() {
     const weeks = []
     for (let week = startWeek; week <= lastRegular; week++) if (!inSheet.has(week)) weeks.push(week)
     const allMatchups = await Promise.all(weeks.map(w => getSleeperWeek(w).catch(() => [])))
+    const isLive = currentWeek && weeks.includes(currentWeek) ? await getLiveStarterCheck() : () => false
     weeks.forEach((week, wi) => {
       const matchups = allMatchups[wi]
-      const status = week === currentWeek ? 'live' : week > (currentWeek || 0) ? 'upcoming' : 'final'
+      const weekStatus = week === currentWeek ? 'current' : week > (currentWeek || 0) ? 'upcoming' : 'final'
       matchups.forEach(m => {
+        const status = weekStatus === 'current' && m.teams.some(t => t.starters.some(isLive)) ? 'live' : weekStatus
         m.teams.forEach((t, i) => {
           const opp = m.teams[1 - i]
           const row = {

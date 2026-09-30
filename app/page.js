@@ -2248,12 +2248,13 @@ export default function TapitasLeagueHomepage() {
     <PageShell
       loading={leagueLoading || prLoading}
       headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}
+      wide
       topBar={<ScoreStrip onTapitasWeek={week => {
         const opt = matchupOptions.find(o => Number(o.week) === week && String(o.season) === String(currentSeason))
         if (opt) setSelectedMatchupKey(opt.key)
       }} />}
     >
-      <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[320px_minmax(0,1fr)_340px] xl:gap-5">
+      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[280px_minmax(0,1fr)_340px] xl:gap-5">
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
           {tablesCard}
           {championsCard}

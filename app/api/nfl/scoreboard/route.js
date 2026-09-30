@@ -14,7 +14,9 @@ export async function GET(request) {
     board = await getScoreboard({ week: requested && requested >= 1 && requested <= 23 ? requested : null, season: state?.season })
   } catch (err) {
     console.error('[api/nfl/scoreboard]', err)
-    return Response.json({ error: 'Failed to load scoreboard' }, { status: 502 })
+    // Mesmo sem a ESPN, devolve a semana atual para o seletor da Home
+    const state = await getNflState().catch(() => null)
+    return Response.json({ error: `Failed to load scoreboard: ${err.message}`, week: requested || state?.week || null, games: [], live: false }, { status: 200, headers: { 'Cache-Control': 'no-store' } })
   }
 
   // Jogadores da liga por time da NFL (se falhar, o placar sai sem essa parte)

@@ -113,3 +113,21 @@ export function getFantasyNewsFeed() {
     return mapNews(data)
   })
 }
+
+// ID da ESPN pelo nome (quando o Sleeper não informa ou o ID não traz notícias).
+// Tenta o nome como está e sem apóstrofos/hífens ("De'Von" → "DeVon").
+export function findEspnIdByName(name) {
+  const variants = Array.from(new Set([String(name || '').trim(), String(name || '').replace(/['’`.-]/g, '').trim()])).filter(Boolean)
+  return cached(`espn:search:${variants[0]}`, 24 * 3600, async () => {
+    for (const q of variants) {
+      try {
+        const data = await fetchJson(`https://site.web.api.espn.com/apis/common/v3/search?query=${encodeURIComponent(q)}&limit=5&type=player&sport=football&league=nfl`)
+        const list = data?.items || data?.results?.flatMap(r => r?.contents || []) || []
+        const hit = list.find(x => /football/i.test(String(x?.sport || x?.league || x?.uid || 'football')))
+        const id = hit?.id || String(hit?.uid || '').match(/a:(\d+)/)?.[1]
+        if (id) return String(id)
+      } catch { /* tenta a próxima variação */ }
+    }
+    return null
+  })
+}

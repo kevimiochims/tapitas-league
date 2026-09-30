@@ -38,7 +38,9 @@ export async function cached(key, ttlSeconds, load) {
 }
 
 export async function fetchJson(url, { timeoutMs = 15000, headers } = {}) {
-  const res = await fetch(url, { cache: 'no-store', headers: { 'User-Agent': BROWSER_HEADERS['User-Agent'], ...headers }, signal: AbortSignal.timeout(timeoutMs) })
+  // APIs JSON (ESPN, Sleeper, Open-Meteo) vão sem user agent de navegador: a
+  // ESPN passou a recusar o placar quando ele era enviado.
+  const res = await fetch(url, { cache: 'no-store', headers, signal: AbortSignal.timeout(timeoutMs) })
   if (!res.ok) throw new Error(`${res.status} from ${url.split('?')[0]}`)
   return res.json()
 }

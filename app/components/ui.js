@@ -10,7 +10,8 @@ import Header from './Header'
 // ── Estrutura da página ─────────────────────────────────────────────
 // `topBar`: faixas de largura total logo abaixo do header, sem espaçamento
 // (ex.: placares da Home). O espaço volta só antes do conteúdo principal.
-export function PageShell({ children, loading = false, headerProps, topBar }) {
+// `wide`: usa mais largura em telas grandes (Home, com três colunas).
+export function PageShell({ children, loading = false, headerProps, topBar, wide = false }) {
   return (
     <main className="mx-root flex min-h-screen flex-col bg-[#EDEEF0] text-[#111]">
       <style>{`
@@ -21,7 +22,7 @@ export function PageShell({ children, loading = false, headerProps, topBar }) {
       `}</style>
       <Header {...headerProps} flush={Boolean(topBar)} />
       {topBar && <div className="mb-2">{topBar}</div>}
-      <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
+      <section className={`mx-auto w-full ${wide ? 'max-w-[1720px]' : 'max-w-[1400px]'} px-0 pb-6 pt-0 sm:px-2 lg:px-4`}>
         {loading ? <PageSkeleton /> : children}
       </section>
       <SiteFooter />

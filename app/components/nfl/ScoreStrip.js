@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { TeamLogo, PositionBadge, FilterPill, getTeamAbbr } from '../ui'
+import { TeamLogo, PositionBadge, getTeamAbbr } from '../ui'
 import { WeatherIcon, weatherSummary } from './weatherUi'
 import { nflLogo } from './shared'
 
@@ -28,7 +28,7 @@ function useWeekData(url) {
         .then(data => {
           if (cancelled) return
           setState({ url, data, error: null })
-          if (data?.live || data?.status === 'live') timer = setTimeout(load, 60000)
+          if (data?.live) timer = setTimeout(load, 60000)
         })
         .catch(error => { if (!cancelled) setState(s => ({ url, data: s.url === url ? s.data : null, error })) })
     }
@@ -140,12 +140,12 @@ function TapitasChip({ season, status, m }) {
   const final = status === 'final'
   const aWon = final && a.score > b.score
   const bWon = final && b.score > a.score
-  const label = status === 'live' ? 'Live' : status === 'upcoming' ? 'Upcoming' : 'Final'
+  const label = m.live ? 'Live' : status === 'final' ? 'Final' : status === 'upcoming' ? 'Upcoming' : played ? 'In progress' : 'This week'
   return (
     <a href={matchupHref(season, m)} className="w-[9rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 py-1.5 transition-colors hover:bg-[#ECEEF1]">
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
-        <span className={status === 'live' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}>
-          {status === 'live' && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
+        <span className={m.live ? 'text-[#D01F2D]' : 'text-[#6B7280]'}>
+          {m.live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
           {label}
         </span>
         {m.gameType && <span className="truncate text-[#6B7280]">{m.gameType}</span>}
@@ -162,6 +162,40 @@ function TapitasChip({ season, status, m }) {
   )
 }
 
+// Seletor de semana discreto: só o texto e uma seta leve (como os números da Home)
+function WeekSelect({ week, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [open])
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)} className="group flex items-center gap-0.5 text-[12px] font-medium text-[#3F4757] hover:text-[#111]">
+        {week ? `Week ${week}` : 'Week'}
+        <ChevronDown className={`h-3.5 w-3.5 text-[#9CA3AF] transition-transform group-hover:text-[#D01F2D] ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-28 overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5">
+          {WEEKS.map(w => (
+            <button
+              key={w}
+              type="button"
+              onClick={() => { onChange(w); setOpen(false) }}
+              className={`block w-full px-3 py-1.5 text-left text-[12px] hover:bg-[#F4F5F7] ${String(week) === w ? 'font-semibold text-[#D01F2D]' : 'text-[#3F4757]'}`}
+            >
+              Week {w}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function SectionLabel({ logo, name, week, onWeek, live }) {
   return (
     <div className="flex w-[6.5rem] flex-shrink-0 flex-col items-start justify-center gap-1 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
@@ -169,7 +203,7 @@ function SectionLabel({ logo, name, week, onWeek, live }) {
         <img src={logo} alt="" className="h-4 w-4 object-contain" />{name}
         {live && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" title="Live" />}
       </span>
-      <FilterPill value={String(week || '')} onChange={onWeek} options={WEEKS} displayOption={w => `Week ${w}`} label="Week" neutral hideLabel />
+      <WeekSelect week={week} onChange={onWeek} />
     </div>
   )
 }
@@ -214,7 +248,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
             name="Tapitas"
             week={tapWeek || tap.data?.week}
             onWeek={w => { setTapWeek(Number(w)); onTapitasWeek?.(Number(w)) }}
-            live={tap.data?.status === 'live'}
+            live={tap.data?.live}
           />
           <div className={chipsRow}>
             {tap.loading && skeleton(5)}

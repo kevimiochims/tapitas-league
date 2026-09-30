@@ -984,7 +984,7 @@ function MatchupsPageContent() {
   const teamWon = selected ? String(selected?.Result || '').trim().toUpperCase() === 'W' : false
   // Semanas vindas do Sleeper: em andamento (live) ou futuras (upcoming)
   const matchStatus = String(selected?.Status || '').trim()
-  const undecided = matchStatus === 'live' || matchStatus === 'upcoming'
+  const undecided = matchStatus === 'live' || matchStatus === 'current' || matchStatus === 'upcoming'
   const teamBold = undecided || teamWon
   const oppBold = undecided || !teamWon
 
@@ -1450,7 +1450,7 @@ function MatchupsPageContent() {
                           {undecided ? (
                             <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${matchStatus === 'live' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
                               {matchStatus === 'live' && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" />}
-                              {matchStatus === 'live' ? 'Live' : 'Upcoming'}
+                              {matchStatus === 'live' ? 'Live' : matchStatus === 'current' ? 'In progress' : 'Upcoming'}
                             </div>
                           ) : teamWon ? (
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">← WIN</div>
