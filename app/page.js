@@ -592,9 +592,8 @@ function buildStreakMap(gamesJson, teamsJson) {
 
 // ── NEW CONSTANTS ─────────────────────────────────────────────────────────────
 
-const NEWS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
-const SHEET_ID_HOME = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-const BASE_URL_HOME = `https://opensheet.elk.sh/${SHEET_ID_HOME}`
+const NEWS_SCRIPT_URL = '/api/news'
+const BASE_URL_HOME = '/api/sheet'
 
 const CATEGORY_STYLE = {
   'Meme': { color: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/10', icon: Laugh },
@@ -913,8 +912,7 @@ export default function TapitasLeagueHomepage() {
     let mounted = true
     async function loadChampionsData() {
       try {
-        const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-        const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+        const BASE_URL = '/api/sheet'
 
         const [historyJson, gamesJson] = await Promise.all([
           safeSheetFetch(`${BASE_URL}/TEAM_HISTORY_SORTED`),
@@ -1003,8 +1001,7 @@ export default function TapitasLeagueHomepage() {
 
     async function loadLeagueData() {
       try {
-        const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-        const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+        const BASE_URL = '/api/sheet'
 
         const [teamsJson, gamesJson, h2hSortedJson] = await Promise.all([
           safeSheetFetch(`${BASE_URL}/TEAM_ALL_TIME`),

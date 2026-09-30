@@ -7,8 +7,7 @@ import Header from '../components/Header'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 import { PageSkeleton, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
 
-const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+const BASE_URL = '/api/sheet'
 
 const TEAM_IMAGES = {
   'howmuch': '/images/howmuch.png',

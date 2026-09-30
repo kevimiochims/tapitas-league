@@ -16,8 +16,7 @@ import { SummaryButton, PageShell, CardShell, CardGroup, StatRow, ResultBadge, S
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
-const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+const BASE_URL = '/api/sheet'
 
 function normalizeString(value) {
   return String(value || '')

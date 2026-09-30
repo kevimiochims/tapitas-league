@@ -7,8 +7,7 @@ import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords
 import { PageShell, PageTitle, Tabs, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 
-const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
-const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
+const BASE_URL = '/api/sheet'
 
 // Sleeper player data is loaded directly from Sleeper when a Player Profile
 // is opened. The API returns the complete NFL player map; cache the promise
