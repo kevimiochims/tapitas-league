@@ -4,7 +4,8 @@ import React, { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronLeft, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
-import Header from '../components/Header'
+import { PageShell, PageTitle, Tabs, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
+import PlayerProfileModal from '../components/PlayerProfileModal'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -12,23 +13,6 @@ const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
 // Sleeper player data is loaded directly from Sleeper when a Player Profile
 // is opened. The API returns the complete NFL player map; cache the promise
 // in this module so the 5MB payload is not downloaded repeatedly.
-let SLEEPER_PLAYERS_PROMISE = null
-
-async function fetchSleeperPlayers() {
-  if (!SLEEPER_PLAYERS_PROMISE) {
-    SLEEPER_PLAYERS_PROMISE = fetch('https://api.sleeper.app/v1/players/nfl')
-      .then(res => {
-        if (!res.ok) throw new Error(`Sleeper players request failed: ${res.status}`)
-        return res.json()
-      })
-      .then(data => data && typeof data === 'object' ? data : {})
-      .catch(error => {
-        SLEEPER_PLAYERS_PROMISE = null
-        throw error
-      })
-  }
-  return SLEEPER_PLAYERS_PROMISE
-}
 
 const TEAM_IMAGES = {
   'howmuch': '/images/howmuch.png',
@@ -176,24 +160,6 @@ function getOrdinalRankLabel(value, allValues) {
   return `${rank}${suffix} all-time`
 }
 
-function TeamAvatar({ name, size = 'md' }) {
-  const img = getTeamImage(name)
-  const sizes = { xs: 22, sm: 40, md: 64, lg: 96, xl: 128 }
-  const px = sizes[size]
-
-  if (img) return (
-    <div className="flex-shrink-0" style={{ width: px, height: px }}>
-      <img src={img} alt={name} className="w-full h-full object-contain" />
-    </div>
-  )
-  return (
-    <div className="flex-shrink-0 flex items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] font-black text-white"
-      style={{ width: px, height: px, fontSize: px * 0.3 }}>
-      {getInitials(name)}
-    </div>
-  )
-}
-
 // ── Player lookup (mirrors the pattern used on the Matchups page) ──────
 function normalizePlayerKey(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
@@ -233,13 +199,13 @@ function PlayerAvatar({ name, playerLookup, size = 56 }) {
   const initials = String(name || '?').trim().split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
 
   return (
-    <div className="flex-shrink-0 overflow-hidden rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2]" style={{ width: size, height: size }}>
+    <div className="flex-shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-[#E6E8EB]" style={{ width: size, height: size }}>
       {src ? (
         <img src={src} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : defenseLogo ? (
         <img src={defenseLogo} alt={name} className="h-full w-full object-contain bg-white p-1" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-[#16274F] font-black text-white" style={{ fontSize: size * 0.32 }}>
+        <div className="flex h-full w-full items-center justify-center bg-[#16274F] font-semibold text-white" style={{ fontSize: size * 0.32 }}>
           {initials}
         </div>
       )}
@@ -377,146 +343,6 @@ function canonicalMatchupHref(game, games) {
   return `/matchups?season=${encodeURIComponent(targetSeason)}&week=${encodeURIComponent(targetWeek)}&team=${encodeURIComponent(targetTeam)}&opp=${encodeURIComponent(targetOpp)}`
 }
 
-function HeaderFilter({ value, onChange, options, label }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useEffect(() => {
-    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-  return (
-    <div ref={ref} className="relative inline-block">
-      <button type="button" onClick={() => setOpen(p => !p)} className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}>
-        {value === 'All' ? label : value}
-        <span className="text-[9px] text-[#D01F2D]">⌄</span>
-      </button>
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-30 min-w-[150px] overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="max-h-56 overflow-y-auto">
-            {options.map(opt => (
-              <button key={opt} type="button" onClick={() => { onChange(opt); setOpen(false) }} className={`block w-full px-3 py-2 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}>
-                {opt === 'All' ? label : opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function Select({ value, onChange, options, placeholder, disabled }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => !disabled && setOpen(p => !p)}
-        disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 border-2 px-4 py-2.5 text-sm font-bold transition-all ${disabled ? 'cursor-not-allowed border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]/50'
-          : open ? 'border-[#D01F2D] bg-white text-[#16274F] tp-shadow-red-sm'
-            : 'border-[#0A0A0A] bg-white text-[#16274F] hover:bg-[#F7F6F2]'
-          }`}
-      >
-        <span className="truncate">{value === 'All' ? placeholder : value}</span>
-        <ChevronRight className={`h-4 w-4 flex-shrink-0 text-[#6B7280] transition-transform duration-200 ${open ? 'rotate-90 text-[#D01F2D]' : ''}`} />
-      </button>
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="max-h-56 overflow-y-auto">
-            {options.map(opt => (
-              <button
-                key={opt}
-                onClick={() => { onChange(opt); setOpen(false) }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all hover:bg-[#F7F6F2] ${opt === value ? 'text-[#D01F2D] bg-[#FDEDEE]' : 'text-[#3F4757]'}`}
-              >
-                {opt === value && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#D01F2D]" />}
-                <span className={opt === value ? '' : 'ml-[14px]'}>{opt}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CompactCheckFilter({ value, onChange, options, label, multiple = false, displayOption }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useEffect(() => {
-    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const selectedValues = multiple ? (Array.isArray(value) ? value : []) : [value]
-  const activeSelections = selectedValues.filter(v => v !== 'All')
-  const activeCount = activeSelections.length
-  const formatOption = displayOption || (opt => opt)
-  const display = activeCount === 0
-    ? label
-    : multiple
-      ? activeSelections.map(formatOption).join(', ')
-      : formatOption(value)
-
-  return (
-    <div ref={ref} className="relative min-w-0">
-      <button
-        type="button"
-        onClick={() => setOpen(p => !p)}
-        className={`flex min-h-9 w-full items-center justify-between gap-2 border-2 bg-white px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.12em] transition-all ${open ? 'border-[#D01F2D] shadow-[2px_2px_0_#D01F2D]' : 'border-[#16274F]/20 hover:border-[#16274F]/50'} ${activeCount ? 'text-[#D01F2D]' : 'text-[#16274F]'}`}
-      >
-        <span className="truncate">{display}</span>
-        <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center border text-[9px] transition-transform ${open ? 'rotate-180 border-[#D01F2D] text-[#D01F2D]' : 'border-[#16274F]/30 text-[#6B7280]'}`}>⌄</span>
-      </button>
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+5px)] z-[70] w-[220px] overflow-hidden border-2 border-[#16274F] bg-white shadow-[4px_4px_0_#16274F]">
-          <div className="border-b border-[#16274F]/10 bg-[#F7F6F2] px-3 py-2 text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{label}</div>
-          <div className="max-h-64 overflow-y-auto p-1.5">
-            {options.map(opt => {
-              const checked = multiple ? selectedValues.includes(opt) : opt === value
-              return (
-                <label key={opt} className="flex cursor-pointer items-center gap-2 px-2.5 py-2 text-[10px] font-bold text-[#16274F] hover:bg-[#F7F6F2]">
-                  <input
-                    type={multiple ? 'checkbox' : 'checkbox'}
-                    checked={checked}
-                    onChange={() => {
-                      if (multiple) {
-                        const next = opt === 'All'
-                          ? ['All']
-                          : checked
-                            ? selectedValues.filter(v => v !== opt)
-                            : [...selectedValues.filter(v => v !== 'All'), opt]
-                        onChange(next.length ? next : ['All'])
-                      } else {
-                        onChange(opt)
-                        setOpen(false)
-                      }
-                    }}
-                    className="h-4 w-4 flex-shrink-0 accent-[#16274F]"
-                  />
-                  <span className={checked ? 'font-black text-[#16274F]' : ''}>{opt === 'All' ? `All ${label}` : formatOption(opt)}</span>
-                </label>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 const shortName = (name) => {
   const mappings = {
     'i am megatron': 'Megatron',
@@ -548,7 +374,6 @@ const shortName = (name) => {
   const key = raw.toLocaleLowerCase()
   return mappings[key] || raw
 }
-
 
 function canonicalPlayerKey(rawName, allAppearances, playerLookup) {
   const raw = String(rawName || '').trim()
@@ -624,195 +449,6 @@ function formatSeasonList(seasons) {
   return parts.join(' ')
 }
 
-function PlayerProfile({ player, games, playerLookup, onClose }) {
-  const [selectedTeams, setSelectedTeams] = useState([])
-  const [opponentFilter, setOpponentFilter] = useState('All')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [resultFilter, setResultFilter] = useState('All')
-  const [stageFilter, setStageFilter] = useState('All')
-  const [weekFilter, setWeekFilter] = useState('All')
-  const [sort, setSort] = useState({ key: 'season', dir: 'desc' })
-  const [sleeperInfo, setSleeperInfo] = useState(null)
-  const [sleeperLoading, setSleeperLoading] = useState(false)
-
-  const gameAppearances = useMemo(() => games.map(g => extractPlayerAppearances(g)), [games])
-  const allAppearances = useMemo(() => gameAppearances.flat(), [gameAppearances])
-  const identityMatcher = useMemo(() => {
-    const targetRaw = String(player?.rawName || '').trim()
-    return (name) => String(name || '').trim() === targetRaw
-  }, [player?.rawName])
-
-  const clubs = useMemo(() => {
-    const map = new Map()
-    games.forEach(g => {
-      if (!extractPlayerAppearances(g).some(a => identityMatcher(a.name))) return
-      const team = String(g?.Team || '').trim()
-      if (!team) return
-      if (!map.has(normalizeTeamName(team))) map.set(normalizeTeamName(team), { team, seasons: new Set() })
-      map.get(normalizeTeamName(team)).seasons.add(String(g?.Season || '').trim())
-    })
-    return Array.from(map.values()).map(c => ({ ...c, seasons: Array.from(c.seasons).sort((a, b) => Number(a) - Number(b)) })).sort((a, b) => normalizeTeamName(a.team).localeCompare(normalizeTeamName(b.team)))
-  }, [games, identityMatcher])
-
-  useEffect(() => {
-    setSelectedTeams(clubs.map(c => c.team))
-  }, [player?.identityKey, clubs.map(c => c.team).join('|')])
-
-  useEffect(() => {
-    let cancelled = false
-    const id = getPlayerId(player.rawName, playerLookup)
-    if (!id) { setSleeperInfo(null); return () => { cancelled = true } }
-    setSleeperLoading(true)
-    fetchSleeperPlayers().then(data => { if (!cancelled) setSleeperInfo(data?.[String(id)] || null) }).catch(() => { if (!cancelled) setSleeperInfo(null) }).finally(() => { if (!cancelled) setSleeperLoading(false) })
-    return () => { cancelled = true }
-  }, [player?.identityKey, player?.rawName, playerLookup])
-
-  useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const esc = e => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', esc)
-    return () => { document.body.style.overflow = prev; document.removeEventListener('keydown', esc) }
-  }, [onClose])
-
-  const profileGames = useMemo(() => games.flatMap(g => {
-    const app = extractPlayerAppearances(g).find(a => identityMatcher(a.name))
-    if (!app) return []
-    const team = String(g?.Team || '').trim()
-    if (!selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(team))) return []
-    const doubleWeek = isDoubleWeek(g)
-    return [{
-      season: String(g?.Season || '').trim(), week: String(g?.Week || '').trim(), team,
-      opponent: String(g?.Opponent || '').trim(), status: app.status,
-      pts: app.pts, avgPts: doubleWeek ? app.pts / 2 : app.pts,
-      isDoubleWeek: doubleWeek, teamPF: parseNumber(g?.PF),
-      result: String(g?.Result || '').trim().toUpperCase(), stage: String(g?.GameStage || '').trim(),
-      href: canonicalMatchupHref(g, games)
-    }]
-  }).sort((a, b) => Number(b.season) - Number(a.season) || (parseFloat(b.week) || 0) - (parseFloat(a.week) || 0)), [games, identityMatcher, selectedTeams])
-
-  const stats = profileGames.reduce((a, g) => {
-    a.apps++; if (g.status === 'Starter') a.starts++; else a.bench++
-    a.total += g.pts || 0; if (!(g.status === 'Bench' && g.pts === 0)) { a.avgTotal += g.avgPts || 0; a.avgCount++ }
-    if (!g.isDoubleWeek) a.best = Math.max(a.best, g.pts || 0)
-    a.seasons.add(g.season); return a
-  }, { apps: 0, starts: 0, bench: 0, total: 0, avgTotal: 0, avgCount: 0, best: 0, seasons: new Set() })
-  stats.avg = stats.avgCount ? stats.avgTotal / stats.avgCount : 0
-
-  const filterOpts = {
-    opponent: ['All', ...Array.from(new Set(profileGames.map(g => g.opponent).filter(Boolean))).sort()],
-    status: ['All', ...Array.from(new Set(profileGames.map(g => g.status).filter(Boolean))).sort()],
-    result: ['All', ...Array.from(new Set(profileGames.map(g => g.result).filter(Boolean))).sort()],
-    stage: ['All', ...Array.from(new Set(profileGames.map(g => g.stage).filter(Boolean))).sort()],
-    week: ['All', ...Array.from(new Set(profileGames.map(g => g.week).filter(Boolean))).sort((a, b) => (parseFloat(a) || 0) - (parseFloat(b) || 0))],
-  }
-  const filtered = profileGames.filter(g => (opponentFilter === 'All' || g.opponent === opponentFilter) && (statusFilter === 'All' || g.status === statusFilter) && (resultFilter === 'All' || g.result === resultFilter) && (stageFilter === 'All' || g.stage === stageFilter) && (weekFilter === 'All' || g.week === weekFilter))
-  // Cada coluna ordena de forma totalmente independente — quem clicar em "Player Pts"
-  // vê o maior placar de TODA a tabela primeiro, não só dentro de cada temporada.
-  const sortValue = (row, key) => key === 'season' ? (Number(row.season) || 0)
-    : key === 'week' ? (parseFloat(row.week) || 0)
-      : key === 'pts' ? row.pts
-        : key === 'teamPF' ? row.teamPF
-          : 0
-  const sorted = [...filtered].sort((a, b) => {
-    const dirMul = sort.dir === 'desc' ? 1 : -1
-    const diff = (sortValue(b, sort.key) - sortValue(a, sort.key)) * dirMul
-    if (diff !== 0) return diff
-    // desempate estável: temporada mais recente primeiro, depois semana
-    return (Number(b.season) - Number(a.season)) || ((parseFloat(b.week) || 0) - (parseFloat(a.week) || 0))
-  })
-
-  const toggleTeam = team => setSelectedTeams(cur => cur.length === 1 && cur.includes(team) ? cur : cur.some(t => normalizeTeamName(t) === normalizeTeamName(team)) ? cur.filter(t => normalizeTeamName(t) !== normalizeTeamName(team)) : [...cur, team])
-  const toggleSort = key => setSort(cur => cur.key === key ? { key, dir: cur.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: 'desc' })
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden bg-[#0A0A0A]/60 p-2 pt-3 sm:items-center sm:p-5" onClick={onClose}>
-      <div className="flex h-[calc(100dvh-24px)] max-h-[960px] w-full max-w-5xl flex-col overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F] sm:h-auto sm:max-h-[94vh]" onClick={e => e.stopPropagation()}>
-        <div className="relative flex-shrink-0 overflow-hidden border-b-2 border-[#0A0A0A] bg-[#16274F] text-white">
-          <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(135deg,transparent 0 58%,rgba(255,255,255,.13) 58% 59%,transparent 59% 68%,rgba(255,255,255,.08) 68% 69%,transparent 69%)' }} />
-          <div className="relative border-b border-white/15 px-4 py-2.5 sm:px-6 sm:py-3 flex items-center justify-between"><div className="text-[11px] font-black uppercase tracking-[0.25em] sm:text-sm">Player Profile</div><button onClick={onClose} className="flex h-8 w-8 items-center justify-center border-2 border-white/70 bg-white/10 text-lg font-black">×</button></div>
-          <div className="relative px-3 py-3 sm:px-6 sm:py-4"><div className="flex items-center gap-3 sm:gap-5">
-            <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={76} />
-            <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h2 className="truncate text-[25px] font-black leading-none sm:text-4xl">{player.rawName}</h2>{player.position && <span className={`px-2 py-1 text-[9px] font-black ${getPositionBadgeClasses(player.position)}`}>{player.position}</span>}</div>
-              <div className="mt-2 flex items-center gap-2 text-[10px] font-black sm:text-xs">{sleeperInfo?.team && <><img src={getNFLTeamLogo(sleeperInfo.team)} className="h-5 w-5 object-contain" /><span>{String(sleeperInfo.team).toUpperCase()}</span></>}{sleeperInfo?.status && <><span className="text-white/35">·</span><span>{String(sleeperInfo.status).toLowerCase() === 'active' ? 'Active' : 'Inactive'}</span></>}{sleeperLoading && <span className="text-white/50">Loading…</span>}</div>
-              <div className="mt-2 flex gap-2 whitespace-nowrap text-[9px] font-bold text-white/75 sm:text-[11px]"><span><b className="text-white">Jersey</b> {sleeperInfo?.number != null ? `#${sleeperInfo.number}` : '—'}</span><span>·</span><span><b className="text-white">Age</b> {sleeperInfo?.age != null ? `${sleeperInfo.age} yrs` : '—'}</span><span>·</span><span><b className="text-white">Experience</b> {sleeperInfo?.years_exp != null ? `${sleeperInfo.years_exp} yrs` : '—'}</span></div></div>
-            <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
-          </div></div>
-        </div>
-        <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2 sm:px-6 sm:py-2.5"><div className="flex items-center justify-between"><div><span className="text-[10px] font-black uppercase tracking-[0.1em] text-[#16274F]">Tapitas League Teams</span><span className="ml-1 text-[8px] font-bold text-[#6B7280]">— Select franchises to include</span></div><span className="text-[8px] font-black uppercase tracking-wider text-[#D01F2D]">{selectedTeams.length} selected</span></div>
-          <div className="mt-1 flex max-w-full gap-1 overflow-x-auto pb-0.5 scrollbar-none">{clubs.map(c => <label key={c.team} className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 border px-1.5 ${selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(c.team)) ? 'border-[#16274F] bg-[#EEF3FF] shadow-[2px_2px_0_#16274F]' : 'border-[#D6D6D6] bg-white'}`}><input type="checkbox" checked={selectedTeams.some(t => normalizeTeamName(t) === normalizeTeamName(c.team))} onChange={() => toggleTeam(c.team)} className="h-3.5 w-3.5 accent-[#16274F]" /><TeamAvatar name={c.team} size="xs" /><span className="text-[9px] font-black text-[#16274F]">{shortName(c.team)}</span><span className="text-[8px] font-bold text-[#6B7280]">{formatSeasonList(c.seasons)}</span></label>)}</div>
-        </div>
-        <div className="flex-shrink-0 border-b-2 border-[#0A0A0A]/10 bg-[#F7F8FB] p-2.5 sm:p-3"><div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">{[['Apps', stats.apps], ['Starts', stats.starts], ['Bench', stats.bench], ['Avg Pts', stats.avg.toFixed(2)], ['Best Pts', stats.best.toFixed(2)], ['Seasons', formatSeasonList(Array.from(stats.seasons))]].map(([l, v], i) => <div key={l} className={`border-2 px-2 py-2 sm:px-2.5 sm:py-2.5 ${['border-[#16274F]/25 bg-[#F3F6FC] shadow-[3px_3px_0_#16274F]', 'border-[#1E8E3E]/30 bg-[#F2F8F3] shadow-[3px_3px_0_#1E8E3E]', 'border-[#B8860B]/30 bg-[#FBF7EA] shadow-[3px_3px_0_#B8860B]', 'border-[#5B2CA0]/25 bg-[#F6F1FC] shadow-[3px_3px_0_#5B2CA0]', 'border-[#D01F2D]/25 bg-[#FDF1F2] shadow-[3px_3px_0_#D01F2D]', 'border-[#3F4757]/25 bg-[#F3F4F6] shadow-[3px_3px_0_#3F4757]'][i]}`}><div className="text-[7px] font-black uppercase tracking-[0.13em] text-[#6B7280]">{l}</div><div className="mt-0.5 text-xl font-black text-[#16274F] sm:text-2xl" style={{ fontFamily: '"Bebas Neue",sans-serif' }}>{v}</div></div>)}</div></div>
-        <div className="min-h-0 flex-1 overflow-auto">
-          <table className="min-w-[900px] w-full">
-            <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
-              <tr>
-                {[
-                  { label: 'Season', key: 'season' },
-                  { label: 'Week', key: null, filter: { value: weekFilter, onChange: setWeekFilter, options: filterOpts.week } },
-                  { label: 'Team', key: null },
-                  { label: 'Opponent', key: null, filter: { value: opponentFilter, onChange: setOpponentFilter, options: filterOpts.opponent } },
-                  { label: 'Status', key: null, filter: { value: statusFilter, onChange: setStatusFilter, options: filterOpts.status } },
-                  { label: 'Player Pts', key: 'pts' },
-                  { label: 'Team PF', key: 'teamPF' },
-                  { label: 'Result', key: null, filter: { value: resultFilter, onChange: setResultFilter, options: filterOpts.result } },
-                  { label: 'Stage', key: null, filter: { value: stageFilter, onChange: setStageFilter, options: filterOpts.stage } },
-                ].map(col => {
-                  const active = col.key && sort.key === col.key
-                  return (
-                    <th key={col.label} className="whitespace-nowrap px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
-                      {col.filter ? (
-                        <HeaderFilter value={col.filter.value} onChange={col.filter.onChange} options={col.filter.options} label={col.label} />
-                      ) : col.key ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleSort(col.key)}
-                          className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${active ? 'text-[#D01F2D]' : ''}`}
-                        >
-                          {col.label}
-                          <span className="text-[9px]">{active ? (sort.dir === 'desc' ? '↓' : '↑') : ''}</span>
-                        </button>
-                      ) : (
-                        col.label
-                      )}
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((g, i) => (
-                <tr
-                  key={`${g.season}-${g.week}-${g.team}-${g.opponent}-${i}`}
-                  onClick={() => window.location.href = g.href}
-                  className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-[#F7F6F2]"
-                >
-                  <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td>
-                  <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td>
-                  <td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.team)}</td>
-                  <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.opponent}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="inline-block border-2 border-[#0A0A0A] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white"
-                      style={{ background: g.status === 'Starter' ? '#1E8E3E' : '#6B7280' }}
-                    >
-                      {g.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-black text-[#16274F]">{g.pts.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.teamPF.toFixed(2)}</td>
-                  <td className={`px-4 py-3 text-xs font-black ${g.result === 'W' ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{g.result || '—'}</td>
-                  <td className="px-4 py-3 text-[10px] font-bold text-[#6B7280]">{g.stage || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function PlayersPage() {
   const router = useRouter()
   const [games, setGames] = useState([]), [playerLookup, setPlayerLookup] = useState(new Map()), [loading, setLoading] = useState(true)
@@ -828,6 +464,7 @@ export default function PlayersPage() {
   const [performancePage, setPerformancePage] = useState(0)
   const [consolidatedPage, setConsolidatedPage] = useState(0)
   const [selected, setSelected] = useState(null)
+  const closeProfile = () => setSelected(null)
 
   useEffect(() => {
     let alive = true
@@ -1097,290 +734,161 @@ export default function PlayersPage() {
     })
   }
 
-  return <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]"><style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');.tp-shadow-navy{box-shadow:6px 6px 0 #16274F}.tp-shadow-navy-sm{box-shadow:4px 4px 0 #16274F}`}</style><Header />
-    <section className="px-3 pb-20 md:px-6">
-      {/* Hero */}
-      <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
+  const scopeParts = []
+  if (!season.includes('All')) scopeParts.push(`Season ${season.join(', ')}`)
+  if (!teamFilter.includes('All')) scopeParts.push(teamFilter.map(shortName).join(', '))
+  if (!position.includes('All')) scopeParts.push(position.join(', '))
+  if (archiveView === 'consolidated' && minApps.trim()) scopeParts.push(`${minApps.trim()}+ apps`)
+  if (search.trim()) scopeParts.push(`"${search.trim()}"`)
+  const scopeLabel = scopeParts.length ? scopeParts.join(' · ') : 'All Tapitas League franchises'
+  const hasFilters = scopeParts.length > 0
+  const clearFilters = () => { setSeason(['All']); setTeamFilter(['All']); setPosition(['All']); setMinApps(''); setSearch('') }
 
-        {/* Background */}
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+  const th = 'whitespace-nowrap px-3 py-2 text-left text-[11px] font-medium text-[#6B7280] lg:px-4'
+  const thRight = 'whitespace-nowrap px-3 py-2 text-right text-[11px] font-medium text-[#6B7280] lg:px-4'
+  const td = 'px-3 py-2.5 lg:px-4'
 
-          {/* mantém aqui o SVG/background atual de Players */}
+  return (
+    <PageShell loading={loading}>
+      <PageTitle title="Players" subtitle="Every player who has left a mark on the Tapitas League." />
 
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(105deg, #F7F6F2 28%, rgba(247,246,242,0.90) 48%, rgba(247,246,242,0.25) 100%)',
-            }}
-          />
-        </div>
+      <Tabs
+        tabs={[['consolidated', 'Player Archive'], ['performances', 'Top Performances']]}
+        value={archiveView}
+        onChange={setArchiveView}
+      />
 
-        {/* Content */}
-        <div className="relative z-10 p-6 sm:p-8 md:p-10">
-
-          {/* Badge */}
-          <div
-            className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2"
-            style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
-          >
-            <Users className="h-3 w-3 sm:h-4 sm:w-4 text-white shrink-0" />
-
-            <span
-              className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap"
-              style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-            >
-              All Players
-            </span>
+      <CardShell
+        title={archiveView === 'consolidated' ? `${filtered.length} players` : `${performanceRows.length} performances`}
+        subtitle={hasFilters ? `Stats scoped to ${scopeLabel}` : scopeLabel}
+        action={hasFilters && <button type="button" onClick={clearFilters} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">Clear filters</button>}
+        withMenus
+      >
+        <FilterBar>
+          <MultiFilterPill value={season} onChange={setSeason} options={seasons} label="Season" />
+          <MultiFilterPill value={position} onChange={setPosition} options={positions} label="Position" />
+          <MultiFilterPill value={teamFilter} onChange={setTeamFilter} options={teams} label="Franchise" displayOption={shortName} />
+          {archiveView === 'consolidated' && (
+            <input
+              value={minApps}
+              onChange={e => setMinApps(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder="Min apps"
+              inputMode="numeric"
+              className="h-8 w-24 rounded-full bg-[#F4F5F7] px-3 text-[12px] text-[#111] outline-none placeholder:text-[#6B7280] focus:bg-white focus:ring-1 focus:ring-[#02275F]"
+            />
+          )}
+          {archiveView === 'performances' && (
+            <ToggleChip active={performanceIncludeDoubleWeeks} onClick={() => setPerformanceIncludeDoubleWeeks(v => !v)}>Include double weeks</ToggleChip>
+          )}
+          <div className="w-full sm:ml-auto sm:w-auto">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search player…" className="sm:w-56" />
           </div>
+        </FilterBar>
 
-          {/* Título */}
-          <h1
-            className="leading-[0.9] tracking-[-0.02em] text-[#16274F] whitespace-nowrap"
-            style={{
-              fontFamily: '"Bebas Neue", sans-serif',
-              fontSize: 'clamp(48px, 7vw, 96px)',
-            }}
-          >
-            THE <span className="text-[#D01F2D]">PLAYERS</span>
-          </h1>
-
-          {/* Subtítulo */}
-          <p
-            className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-[#3F4757]"
-            style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
-          >
-            Every player who has left a mark on Tapitas League.
-          </p>
-
-        </div>
-      </div>
-      {loading ? (
-        <div className="py-20 text-center font-bold text-[#6B7280]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="border-b-2 border-[#0A0A0A]/10 px-5 py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F]"><Users className="h-4 w-4 text-white" /></div>
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.25em] text-[#16274F]">{archiveView === 'consolidated' ? 'Player Archive' : 'Player Performances'}</div>
-                <div className="text-sm text-[#6B7280]">
-                  {archiveView === 'consolidated' ? `${filtered.length} players` : `${performanceRows.length} performances`}
-                  {season.includes('All') && teamFilter.includes('All') && position.includes('All') && !minApps.trim() && !search.trim()
-                    ? ' across all Tapitas League franchises'
-                    : (() => {
-                      const parts = []
-                      if (!season.includes('All')) parts.push(`Season: ${season.join(', ')}`)
-                      if (!teamFilter.includes('All')) parts.push(`Franchise: ${teamFilter.map(shortName).join(', ')}`)
-                      if (!position.includes('All')) parts.push(`Position: ${position.join(', ')}`)
-                      if (archiveView === 'consolidated' && minApps.trim()) parts.push(`Min apps: ${minApps.trim()}`)
-                      if (search.trim()) parts.push(`Search: "${search.trim()}"`)
-                      return <> — stats scoped to <span className="font-bold text-[#16274F]">{parts.join(' · ')}</span></>
-                    })()}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* View switch */}
-          <div className="border-b-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-3 py-2.5 sm:px-6 sm:py-3">
-            <div className="inline-flex w-full sm:w-auto border-2 border-[#0A0A0A] bg-white p-1">
-              <button
-                type="button"
-                onClick={() => setArchiveView('consolidated')}
-                className={`flex-1 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-colors sm:flex-none ${archiveView === 'consolidated' ? 'bg-[#16274F] text-white' : 'text-[#6B7280] hover:bg-[#F7F6F2]'}`}
-              >
-                Consolidated
-              </button>
-              <button
-                type="button"
-                onClick={() => setArchiveView('performances')}
-                className={`flex-1 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-colors sm:flex-none ${archiveView === 'performances' ? 'bg-[#16274F] text-white' : 'text-[#6B7280] hover:bg-[#F7F6F2]'}`}
-              >
-                Performances
-              </button>
-            </div>
-          </div>
-
-          {/* Toolbar — Season, Position e Franchise todos multi-seleção, lado a lado */}
-          <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
-            <div className="grid grid-cols-2 gap-1.5 lg:flex lg:items-center lg:gap-2">
-              <div className="w-full lg:w-36"><CompactCheckFilter value={season} onChange={setSeason} options={seasons} label="Season" multiple /></div>
-              <div className="w-full lg:w-32"><CompactCheckFilter value={position} onChange={setPosition} options={positions} label="Position" multiple /></div>
-              <div className="w-full lg:w-40"><CompactCheckFilter value={teamFilter} onChange={setTeamFilter} options={teams} label="Franchise" multiple /></div>
-              {archiveView === 'consolidated' && (
-                <input
-                  value={minApps}
-                  onChange={e => setMinApps(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="Min apps"
-                  inputMode="numeric"
-                  className="w-full border-2 border-[#0A0A0A] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#16274F] outline-none placeholder:text-[#6B7280] placeholder:normal-case placeholder:tracking-normal focus:border-[#D01F2D] lg:w-24"
-                />
-              )}
-              {archiveView === 'performances' && (
-                <label className="inline-flex w-full items-center gap-2 border-2 border-[#0A0A0A] bg-white px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#16274F] lg:w-auto">
-                  <input
-                    type="checkbox"
-                    checked={performanceIncludeDoubleWeeks}
-                    onChange={e => setPerformanceIncludeDoubleWeeks(e.target.checked)}
-                    className="h-4 w-4 accent-[#16274F]"
-                  />
-                  Include double weeks
-                </label>
-              )}
-              <div className="col-span-2 w-full lg:w-64 lg:col-span-1 lg:ml-auto">
-                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search player..." className="w-full border-2 border-[#0A0A0A] bg-white px-4 py-2.5 text-sm font-bold text-[#16274F] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]" />
-              </div>
-            </div>
-          </div>
-
-          {archiveView === 'consolidated' ? (
-            <>
-            <div className="max-h-[720px] overflow-auto">
-              <table className="min-w-[920px] w-full">
-                <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
-                  <tr>
-                    {[
-                      { label: 'Player', key: null },
-                      { label: 'Pos', key: null },
-                      { label: 'Franchises', key: null },
-                      { label: 'Apps', key: 'appearances' },
-                      { label: 'Starts', key: 'starts' },
-                      { label: 'Avg Pts', key: 'avg' },
-                      { label: 'Best', key: 'best' },
-                      { label: 'Seasons', key: null },
-                    ].map(col => {
-                      const active = col.key && sort.key === col.key
-                      return (
-                        <th key={col.label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
-                          {col.key ? (
-                            <button type="button" onClick={() => toggleSortCol(col.key)} className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${active ? 'text-[#D01F2D]' : ''}`}>
-                              {col.label}<span className="text-[9px]">{active ? (sort.dir === 'desc' ? '↓' : '↑') : ''}</span>
-                            </button>
-                          ) : col.label}
-                        </th>
-                      )
-                    })}
+        {archiveView === 'consolidated' ? (
+          <div className="overflow-hidden rounded-b-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px]">
+                <thead>
+                  <tr className="border-b border-[#EEF0F2]">
+                    <th className={th}>Player</th>
+                    <th className={th}>Franchises</th>
+                    {[['Apps', 'appearances'], ['Starts', 'starts'], ['Avg pts', 'avg'], ['Best', 'best']].map(([label, key]) => (
+                      <th key={key} className={thRight}>
+                        <SortHeader label={label} active={sort.key === key} dir={sort.dir} onClick={() => toggleSortCol(key)} align="right" />
+                      </th>
+                    ))}
+                    <th className={th}>Seasons</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visibleConsolidatedRows.map(p => (
-                    <tr key={p.identityKey} onClick={() => setSelected(p)} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-white">
-                      <td className="px-4 py-3"><div className="flex items-center gap-3"><PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={40} /><div className="min-w-0 truncate text-sm font-black text-[#16274F]">{p.name}</div></div></td>
-                      <td className="px-4 py-3">{p.position && <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-black ${getPositionBadgeClasses(p.position)}`}>{p.position}</span>}</td>
-                      <td className="max-w-[260px] px-4 py-3 text-xs font-bold text-[#3F4757]">{p.teams.map(shortName).join(', ')}</td>
-                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.appearances}</td>
-                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.starts}</td>
-                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.avg.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{p.best.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{formatSeasonList(Array.from(p.seasons))}</td>
+                    <tr key={p.identityKey} onClick={() => setSelected(p)} className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
+                      <td className={td}>
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={34} />
+                          <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{p.name}</span>
+                          <PositionBadge position={p.position} />
+                        </div>
+                      </td>
+                      <td className={`${td} max-w-[240px]`}>
+                        <div className="flex items-center gap-1">
+                          {p.teams.slice(0, 5).map(t => <span key={t} title={t}><TeamLogo name={t} size={20} /></span>)}
+                          {p.teams.length > 5 && <span className="text-[11px] text-[#6B7280]">+{p.teams.length - 5}</span>}
+                        </div>
+                      </td>
+                      <td className={`${td} text-right text-[13px] tabular-nums text-[#3F4757]`}>{p.appearances}</td>
+                      <td className={`${td} text-right text-[13px] tabular-nums text-[#3F4757]`}>{p.starts}</td>
+                      <td className={`${td} text-right text-[13px] font-semibold tabular-nums text-[#111]`}>{p.avg.toFixed(2)}</td>
+                      <td className={`${td} text-right text-[13px] font-semibold tabular-nums text-[#111]`}>{p.best.toFixed(2)}</td>
+                      <td className={`${td} whitespace-nowrap text-[12px] text-[#6B7280]`}>{formatSeasonList(Array.from(p.seasons))}</td>
                     </tr>
                   ))}
-                  {filtered.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-sm font-bold text-[#6B7280]">No players found</td></tr>}
+                  {filtered.length === 0 && <tr><td colSpan="7" className="py-12 text-center text-[13px] text-[#6B7280]">No players found</td></tr>}
                 </tbody>
               </table>
             </div>
-            {filtered.length > 0 && (
-              <div className="flex items-center justify-between gap-3 border-t-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-3 py-3 sm:px-5">
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6B7280]">
-                  {consolidatedPage * consolidatedPageSize + 1}–{Math.min((consolidatedPage + 1) * consolidatedPageSize, filtered.length)} of {filtered.length}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => goConsolidatedPage(-1)}
-                    disabled={consolidatedPage === 0}
-                    aria-label="Previous page"
-                    className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-colors hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <div className="min-w-[72px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#16274F]">
-                    Page {consolidatedPage + 1} / {consolidatedTotalPages}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => goConsolidatedPage(1)}
-                    disabled={consolidatedPage >= consolidatedTotalPages - 1}
-                    aria-label="Next page"
-                    className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-colors hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-            </>
-          ) : (
-            <>
-            <div className="max-h-[720px] overflow-auto">
-              <table className="min-w-[1040px] w-full">
-                <thead className="sticky top-0 z-10 bg-[#F7F6F2]">
-                  <tr>
-                    {['Player','Pos','Season','Week','Team','Opponent'].map(label => (
-                      <th key={label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{label}</th>
-                    ))}
-                    <th className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">
-                      <button type="button" onClick={() => togglePerformanceSort('pts')} className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] transition-colors hover:text-[#D01F2D] ${performanceSort.key === 'pts' ? 'text-[#D01F2D]' : ''}`}>
-                        Points <span className="text-[9px]">{performanceSort.key === 'pts' ? (performanceSort.dir === 'desc' ? '↓' : '↑') : ''}</span>
-                      </button>
-                    </th>
-                    {['Status','Result','Stage'].map(label => <th key={label} className="whitespace-nowrap border-b-2 border-[#0A0A0A]/10 px-4 py-3 text-left text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{label}</th>)}
+            <Pager page={consolidatedPage} totalPages={consolidatedTotalPages} total={filtered.length} pageSize={consolidatedPageSize} onPrev={() => goConsolidatedPage(-1)} onNext={() => goConsolidatedPage(1)} />
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-b-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[820px]">
+                <thead>
+                  <tr className="border-b border-[#EEF0F2]">
+                    <th className={th}>Player</th>
+                    <th className={th}><SortHeader label="Season" active={performanceSort.key === 'season'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('season')} /></th>
+                    <th className={th}><SortHeader label="Week" active={performanceSort.key === 'week'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('week')} /></th>
+                    <th className={th}>Matchup</th>
+                    <th className={thRight}><SortHeader label="Points" active={performanceSort.key === 'pts'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('pts')} align="right" /></th>
+                    <th className={th}>Status</th>
+                    <th className={th}>Result</th>
+                    <th className={th}>Stage</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visiblePerformanceRows.map((g, i) => (
-                    <tr key={`${g.identityKey}-${g.season}-${g.week}-${g.team}-${i}`} onClick={() => router.push(canonicalMatchupHref(g, games))} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(canonicalMatchupHref(g, games)) }} tabIndex={0} className="cursor-pointer border-b border-[#0A0A0A]/8 hover:bg-white focus:outline-none focus:bg-[#F7F6F2]">
-                      <td className="px-4 py-3"><div className="flex items-center gap-3"><PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={40} /><div className="min-w-0 truncate text-sm font-black text-[#16274F]">{g.name}</div></div></td>
-                      <td className="px-4 py-3">{g.position && <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-black ${getPositionBadgeClasses(g.position)}`}>{g.position}</span>}</td>
-                      <td className="px-4 py-3 text-xs font-black text-[#16274F]">{g.season}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-[#3F4757]">{g.week}</td>
-                      <td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.team)}</td>
-                      <td className="px-4 py-3 text-xs font-black text-[#16274F]">{shortName(g.opponent)}</td>
-                      <td className="px-4 py-3 text-sm font-black text-[#16274F]">{g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1 text-[8px] font-black text-[#6B7280]">DW</span>}</td>
-                      <td className="px-4 py-3"><span className="inline-block border-2 border-[#0A0A0A] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white" style={{ background: g.status === 'Starter' ? '#1E8E3E' : '#6B7280' }}>{g.status}</span></td>
-                      <td className={`px-4 py-3 text-xs font-black ${g.result === 'W' ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{g.result || '—'}</td>
-                      <td className="px-4 py-3 text-[10px] font-bold text-[#6B7280]">{g.stage || '—'}</td>
+                    <tr
+                      key={`${g.identityKey}-${g.season}-${g.week}-${g.team}-${i}`}
+                      onClick={() => router.push(canonicalMatchupHref(g, games))}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(canonicalMatchupHref(g, games)) }}
+                      tabIndex={0}
+                      className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] focus:bg-[#F7F8FA] focus:outline-none"
+                    >
+                      <td className={td}>
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={34} />
+                          <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{g.name}</span>
+                          <PositionBadge position={g.position} />
+                        </div>
+                      </td>
+                      <td className={`${td} text-[13px] font-semibold text-[#111]`}>{g.season}</td>
+                      <td className={`${td} whitespace-nowrap text-[13px] tabular-nums text-[#3F4757]`}>{g.week}</td>
+                      <td className={td}>
+                        <div className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-[#111]">
+                          <TeamLogo name={g.team} size={18} />{shortName(g.team)}
+                          <span className="text-[#9CA3AF]">vs</span>
+                          <TeamLogo name={g.opponent} size={18} />{shortName(g.opponent)}
+                        </div>
+                      </td>
+                      <td className={`${td} whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-[#111]`}>
+                        {g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1"><Tag>DW</Tag></span>}
+                      </td>
+                      <td className={td}><Tag tone={g.status === 'Starter' ? 'green' : undefined}>{g.status}</Tag></td>
+                      <td className={td}><ResultBadge result={g.result} /></td>
+                      <td className={`${td} text-[12px] text-[#6B7280]`}>{g.stage || '—'}</td>
                     </tr>
                   ))}
-                  {performanceRows.length === 0 && <tr><td colSpan="10" className="py-12 text-center text-sm font-bold text-[#6B7280]">No performances found</td></tr>}
+                  {performanceRows.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-[13px] text-[#6B7280]">No performances found</td></tr>}
                 </tbody>
               </table>
             </div>
-            {performanceRows.length > 0 && (
-              <div className="flex items-center justify-between gap-3 border-t-2 border-[#0A0A0A]/10 bg-[#F7F6F2] px-3 py-3 sm:px-5">
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6B7280]">
-                  {performancePage * performancePageSize + 1}–{Math.min((performancePage + 1) * performancePageSize, performanceRows.length)} of {performanceRows.length}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => goPerformancePage(-1)}
-                    disabled={performancePage === 0}
-                    aria-label="Previous page"
-                    className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-colors hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <div className="min-w-[72px] text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#16274F]">
-                    Page {performancePage + 1} / {performanceTotalPages}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => goPerformancePage(1)}
-                    disabled={performancePage >= performanceTotalPages - 1}
-                    aria-label="Next page"
-                    className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] transition-colors hover:bg-[#F7F6F2] disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-            </>
-          )}
+            <Pager page={performancePage} totalPages={performanceTotalPages} total={performanceRows.length} pageSize={performancePageSize} onPrev={() => goPerformancePage(-1)} onNext={() => goPerformancePage(1)} />
+          </div>
+        )}
+      </CardShell>
 
-        </div>
-      )}
-    </section><footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]"><div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6"><img src="/images/LogoFinalBlack.png" alt="" width="24" height="24" style={{ filter: 'invert(1)', opacity: .7 }} /><span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Tapitas League · Est. 2014</span></div></footer>{selected && <PlayerProfile player={selected} games={games} playerLookup={playerLookup} onClose={() => setSelected(null)} />}</main>
+      {selected && <PlayerProfileModal key={selected.identityKey} rawName={selected.rawName} displayName={selected.name} position={selected.position} playerId={getPlayerId(selected.rawName, playerLookup)} games={games} onClose={closeProfile} />}
+    </PageShell>
+  )
 }

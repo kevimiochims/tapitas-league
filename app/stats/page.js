@@ -1,13 +1,9 @@
 'use client'
 
-import Image from 'next/image'
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Medal, Activity, ChevronRight, ChevronLeft,
-} from 'lucide-react'
-import { motion } from 'framer-motion'
-import Header from '../components/Header'
+import { ChevronRight } from 'lucide-react'
+import { PageShell, PageTitle, Tabs, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -18,7 +14,6 @@ function parseNumber(value) {
   if (value === null || value === undefined || value === '') return 0
   const cleaned = String(value).replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '')
   const parsed = Number(cleaned)
-  if (String(value).includes(',')) console.log('parseNumber:', value, '->', cleaned, '->', parsed)
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
@@ -72,12 +67,9 @@ function getTeamAvatar(name) {
 
 async function safeFetch(url) {
   try {
-    console.log('Fetching:', url)
     const res = await fetch(url)
-    console.log('Status:', res.status, url)
     if (!res.ok) return []
     const json = await res.json()
-    console.log('Resultado:', Array.isArray(json) ? json.length : typeof json, url)
     return Array.isArray(json) ? json : []
   } catch (err) {
     console.error('Erro:', err)
@@ -85,138 +77,6 @@ async function safeFetch(url) {
   }
 }
 
-
-function Select({ value, onChange, options, placeholder, disabled }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div ref={ref} className="relative min-w-0">
-      <button
-        onClick={() => !disabled && setOpen(p => !p)}
-        disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 border-2 px-4 py-2.5 text-sm font-black transition-all ${
-          disabled
-            ? 'cursor-not-allowed border-[#0A0A0A]/20 bg-white/50 text-[#0A0A0A]/30'
-            : open
-              ? 'border-[#D01F2D] bg-white text-[#16274F] tp-shadow-red-sm'
-              : 'border-[#0A0A0A] bg-white text-[#16274F] hover:bg-[#F7F6F2]'
-        }`}
-      >
-        <span className="truncate">{value || placeholder}</span>
-        <ChevronRight className={`h-4 w-4 shrink-0 text-[#6B7280] transition-transform duration-200 ${open ? 'rotate-90 text-[#D01F2D]' : ''}`} />
-      </button>
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="max-h-56 overflow-y-auto">
-            {options.map(opt => (
-              <button
-                key={opt}
-                onClick={() => { onChange(opt); setOpen(false) }}
-                className={`flex w-full items-center gap-3 border-b border-[#0A0A0A]/8 px-4 py-2.5 text-left text-sm font-black transition-colors last:border-0 hover:bg-[#F7F6F2] ${
-                  opt === value ? 'text-[#D01F2D] bg-[#FDEDEE]' : 'text-[#3F4757]'
-                }`}
-              >
-                {opt === value && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D01F2D]" />}
-                <span className={opt === value ? '' : 'ml-[14px]'}>{opt}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function MultiSelect({ values, onChange, options, label }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const selected = Array.isArray(values) ? values : []
-  const display = selected.length === 0
-    ? label
-    : selected.length === 1
-      ? `${label}: ${selected[0]}`
-      : `${label}: ${selected.length} selected`
-
-  function toggle(option) {
-    if (selected.includes(option)) onChange(selected.filter(v => v !== option))
-    else onChange([...selected, option])
-  }
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(p => !p)}
-        className={`flex h-10 min-w-0 w-full items-center justify-between gap-3 border-2 px-3 text-left text-xs font-black transition-all ${
-          open
-            ? 'border-[#D01F2D] bg-white text-[#16274F] tp-shadow-red-sm'
-            : 'border-[#0A0A0A] bg-white text-[#16274F] hover:bg-[#F7F6F2]'
-        }`}
-      >
-        <span className="truncate">{display}</span>
-        <ChevronRight className={`h-4 w-4 shrink-0 text-[#6B7280] transition-transform duration-200 ${open ? 'rotate-90 text-[#D01F2D]' : ''}`} />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="flex items-center justify-between border-b border-[#0A0A0A]/10 px-3 py-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6B7280]">
-              {selected.length === 0 ? 'All' : `${selected.length} selected`}
-            </span>
-            {selected.length > 0 && (
-              <button
-                type="button"
-                onClick={() => onChange([])}
-                className="text-[10px] font-black uppercase tracking-[0.12em] text-[#D01F2D]"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-          <div className="max-h-56 overflow-y-auto">
-            {options.map(option => {
-              const checked = selected.includes(option)
-              return (
-                <label
-                  key={option}
-                  className="flex cursor-pointer items-center gap-3 border-b border-[#0A0A0A]/8 px-3 py-2.5 transition-colors last:border-0 hover:bg-[#F7F6F2]"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggle(option)}
-                    className="h-4 w-4 shrink-0 accent-[#16274F]"
-                  />
-                  <span className={`min-w-0 truncate text-xs font-black ${checked ? 'text-[#16274F]' : 'text-[#3F4757]'}`}>
-                    {option}
-                  </span>
-                </label>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 function WinChart({ data, chartStats }) {
   const [isMobile, setIsMobile] = useState(false)
@@ -242,7 +102,8 @@ function WinChart({ data, chartStats }) {
   return (
 
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ display: 'block' }}>
-      <polyline points={points} fill="none" stroke="#16274F" strokeWidth="2" strokeLinejoin="round" />
+      <polyline points={areaPoints} fill="#02275F" fillOpacity="0.06" stroke="none" />
+      <polyline points={points} fill="none" stroke="#02275F" strokeWidth="2" strokeLinejoin="round" />
       {data.map((d, i) => (
         <g key={i}>
           <text x={xScale(i)} y={H - padB + 14} textAnchor="middle" fontSize={fsAxis} fill="#3F4757">
@@ -262,17 +123,11 @@ function WinChart({ data, chartStats }) {
                     ? "#D01F2D" // vermelho para as Piores Temporadas
                     : "#16274F" // navy padrão para temporadas regulares
             }
-            className={
-              d.champion ||
-                chartStats?.bestSeasons?.includes(d.season) ||
-                chartStats?.worstSeasons?.includes(d.season)
-                ? "font-black"
-                : ""
-            }
+            fontWeight={d.champion || chartStats?.bestSeasons?.includes(d.season) || chartStats?.worstSeasons?.includes(d.season) ? 700 : 400}
           >
             {Math.round(d.value)}
           </text>
-          <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill="#16274F" />
+          <circle cx={xScale(i)} cy={yScale(d.value)} r="3.5" fill={d.champion ? "#B8860B" : "#02275F"} stroke="#fff" strokeWidth="1.5" />
         </g>
       ))}
     </svg>
@@ -292,6 +147,7 @@ export default function StatsPage() {
   const [historyData, setHistoryData] = useState([])
   const [gamesData, setGamesData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [section, setSection] = useState('standings')
   const [tab, setTab] = useState('Overall')
   const [season, setSeason] = useState('All-Time')
   const [chartTeam, setChartTeam] = useState('Moneyball')
@@ -347,7 +203,7 @@ export default function StatsPage() {
     setLeftSlot(
       <button
         onClick={() => setDrawerOpen(true)}
-        className="inline-flex h-10 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-sm font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
+        className="inline-flex h-8 items-center gap-1 rounded-full bg-[#D01F2D] pl-3.5 pr-2.5 text-[13px] font-semibold text-white"
       >
         Summary
         <ChevronRight className="h-4 w-4" />
@@ -453,8 +309,6 @@ export default function StatsPage() {
         champion: false,
       }))
     } else {
-      console.log('Filtrando season:', season)
-      console.log('Seasons disponíveis:', historyData.map(r => r.Season).slice(0, 5))
       rows = historyData
         .filter(r => {
           const s = String(r?.Season || r?.season || '').trim()
@@ -462,7 +316,6 @@ export default function StatsPage() {
         })
         .map(r => {
           const team = String(r?.Team || r?.team || '').trim()
-          console.log('Row:', team, 'RS_W:', r?.RS_W, 'RS_L:', r?.RS_L, 'RS_PF:', r?.RS_PF)
           return {
             team,
             standing: parseNumber(r?.Standing || r?.standing || 0),
@@ -850,493 +703,188 @@ export default function StatsPage() {
   }
 
 
+  const multi = (state, setter, opts, label, displayOption) => (
+    <MultiFilterPill
+      value={state.length ? state : ['All']}
+      onChange={v => setter(v.includes('All') ? [] : v)}
+      options={['All', ...opts]}
+      label={label}
+      displayOption={displayOption}
+    />
+  )
+  const gfHasFilters = gfSeason.length || gfTeam.length || gfOpponent.length || gfStage.length || gfResult.length || gfPowerRanking.length || gfHS.length || !gfIncludeDoubleWeeks || gfInclude200Plus
+  const clearGameFilters = () => { setGfSeason([]); setGfTeam([]); setGfOpponent([]); setGfStage([]); setGfResult([]); setGfPowerRanking([]); setGfHS([]); setGfIncludeDoubleWeeks(true); setGfInclude200Plus(false) }
+
+  const th = 'whitespace-nowrap px-3 py-2 text-[11px] font-medium text-[#6B7280] lg:px-4'
+  const seasonsLabel = list => list.map(s => `'${String(s).slice(2)}`).join(', ')
+
   return (
-    <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-        .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
-        .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
-        .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-      `}</style>
+    <PageShell headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
+      <PageTitle title="League Stats" subtitle="Every team, every season, every stat." />
 
-      <Header onSummaryOpen={() => setDrawerOpen(true)} />
+      <Tabs tabs={[['standings', 'Standings'], ['evolution', 'Team Evolution'], ['games', 'Game Log']]} value={section} onChange={setSection} />
 
-      <section className="px-3 pb-20 md:px-6">
-        {/* HERO */}
-        <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] tp-shadow-navy">
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <svg className="absolute right-0 top-0 h-full w-[62%]" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2">
-                {[80, 150, 220, 290, 360, 430, 500, 570, 640, 710, 780].map((x) => (
-                  <line key={x} x1={x} y1="0" x2={x + 220} y2="340" />
-                ))}
-              </g>
-              <g opacity="0.08" fill="none" stroke="#D01F2D" strokeWidth="1.5">
-                {[
-                  "M460 0 L560 85 L460 170 L360 85 Z",
-                  "M600 85 L700 170 L600 255 L500 170 Z",
-                  "M740 0 L840 85 L740 170 L640 85 Z",
-                  "M740 170 L840 255 L740 340 L640 255 Z",
-                ].map((d, i) => <path key={i} d={d} />)}
-              </g>
-              <g opacity="0.07" fill="#D01F2D">
-                <circle cx="700" cy="72" r="5" />
-                <circle cx="760" cy="130" r="5" />
-                <circle cx="640" cy="190" r="5" />
-                <circle cx="820" cy="220" r="5" />
-              </g>
-              <text x="785" y="305" textAnchor="middle" fontFamily="'Bebas Neue', sans-serif" fontSize="310" fill="#16274F" opacity="0.035">12</text>
-            </svg>
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,#F7F6F2_0%,#F7F6F2_40%,rgba(247,246,242,0.9)_56%,rgba(247,246,242,0.15)_100%)]" />
-          </div>
-
-          <div className="relative z-10 p-6 sm:p-8 md:p-10">
-            <div
-              className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2 text-white"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
-            >
-              <Medal className="h-3 w-3 sm:h-4 sm:w-4 shrink-0 text-white" />
-              <span
-                className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap"
-                style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-              >
-                Standings & Game Insights
-              </span>
-            </div>
-
-            <h1
-              className="leading-[0.9] tracking-[-0.02em] text-[#16274F] whitespace-nowrap"
-              style={{
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(48px, 7vw, 96px)',
-              }}
-            >
-              League <span className="text-[#D01F2D]">Stats</span>
-            </h1>
-
-            <p
-              className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-[#3F4757]"
-              style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
-            >
-              Every team. Every season. Every stat.
-            </p>
-          </div>
-        </div>
-
-        {/* TEAM STATS */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
+      {section === 'standings' && (
+        <CardShell
+          title="Standings"
+          subtitle={season === 'All-Time' ? 'All-time · click a team to open its page' : `Season ${season} · click a team to open its page`}
+          withMenus
         >
-          <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D]">
-                  <Medal className="h-4.5 w-4.5 text-white" />
-                </div>
-                <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Team Rankings</div>
-              </div>
-              <div className="mt-1 text-lg font-bold text-white/80">
-                {season === 'All-Time' ? 'All-Time stats' : `Season ${season}`}
-              </div>
-            </div>
-            <div className="w-full md:w-56">
-              <Select value={season} onChange={setSeason} options={seasons} placeholder="Season..." />
-            </div>
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto border-b-2 border-[#0A0A0A]/10 bg-white px-5 py-4 sm:px-7">
-            {TABS.map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-shrink-0 border-2 px-5 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all ${
-                  tab === t
-                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-20 text-sm font-black uppercase tracking-[0.2em] text-[#6B7280]">Loading...</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-[#0A0A0A]/15 bg-[#F7F6F2]">
-                    <th className="sticky left-0 z-10 bg-[#F7F6F2] px-3 py-3 text-left">
-                      <button
-                        onClick={() => season !== 'All-Time' && handleSort('Pos')}
-                        className={`text-[10px] font-black uppercase tracking-[0.18em] ${season !== 'All-Time' ? 'text-[#6B7280] hover:text-[#D01F2D]' : 'cursor-default text-[#6B7280]'}`}
-                      >
-                        #
-                      </button>
-                    </th>
-                    <th className="sticky left-9 z-10 bg-[#F7F6F2] px-3 py-3 text-left">
-                      <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Franchise</span>
-                    </th>
-                    {tabCols[tab].map(col => (
-                      <th key={col} className="px-3 py-3 text-right">
-                        <button
-                          onClick={() => handleSort(col)}
-                          className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.14em] transition-colors"
-                          style={{ color: sortCol === col ? '#D01F2D' : '#6B7280' }}
-                        >
-                          {col}{sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                        </button>
+          <FilterBar>
+            <FilterPill value={season} onChange={setSeason} options={seasons} label="Season" neutral />
+            {TABS.map(t => <ToggleChip key={t} active={tab === t} onClick={() => setTab(t)}>{t}</ToggleChip>)}
+          </FilterBar>
+          {loading ? <LoadingState /> : (
+            <div className="overflow-hidden rounded-b-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#EEF0F2]">
+                      <th className={`${th} sticky left-0 z-10 w-10 bg-white text-left`}>
+                        {season !== 'All-Time'
+                          ? <SortHeader label="#" active={sortCol === 'Pos'} dir={sortDir} onClick={() => handleSort('Pos')} />
+                          : '#'}
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {paged.map((row, i) => {
-                    const rank = page * PER_PAGE + i + 1
-                    const pos = season !== 'All-Time' && row.standing ? row.standing : rank
-                    const avatar = getTeamAvatar(row.team)
-                    const rankClass = pos === 1 ? 'bg-[#F5C518] text-[#0A0A0A]' : pos === 2 ? 'bg-[#E8E8E8] text-[#0A0A0A]' : pos === 3 ? 'bg-[#E6D0B4] text-[#0A0A0A]' : 'bg-white text-[#6B7280]'
-
-                    return (
-                      <tr
-                        key={row.team}
-                        onClick={() => router.push(`/teams?team=${encodeURIComponent(row.team)}`)}
-                        className="cursor-pointer border-b border-[#0A0A0A]/8 bg-white transition-colors hover:bg-[#F7F6F2]"
-                      >
-                        <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5">
-                          <span className={`flex h-8 w-8 items-center justify-center text-sm font-black ${rankClass}`} style={{ fontFamily: '"Bebas Neue", sans-serif' }}>
-                            {pos}
-                          </span>
-                        </td>
-                        <td className="sticky left-9 z-10 bg-inherit px-3 py-2.5">
-                          <div className="flex min-w-0 items-center gap-2.5">
-                            {avatar ? (
-                              <img src={avatar} alt={row.team} className="h-8 w-8 shrink-0 rounded-full object-contain" />
-                            ) : (
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] text-[9px] font-black text-[#16274F]">
-                                {row.team.slice(0, 2).toUpperCase()}
-                              </div>
-                            )}
-                            <span className="max-w-[92px] truncate text-[13px] font-black uppercase tracking-tight text-[#16274F] sm:max-w-[170px] sm:text-sm">
-                              {row.team}
-                            </span>
-                            {row.champion && <span className="shrink-0 text-sm">🏆</span>}
-                          </div>
-                        </td>
-                        {tabCols[tab].map(col => (
-                          <td key={col} className="whitespace-nowrap px-3 py-2.5 text-right">
-                            <span className={`text-sm font-black ${sortCol === col ? 'text-[#D01F2D]' : 'text-[#3F4757]'}`}>
-                              {getCol(row, col)}
-                            </span>
+                      <th className={`${th} sticky left-10 z-10 bg-white text-left`}>Team</th>
+                      {tabCols[tab].map(col => (
+                        <th key={col} className={`${th} text-right`}>
+                          <SortHeader label={col} active={sortCol === col} dir={sortDir} onClick={() => handleSort(col)} align="right" />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paged.map((row, i) => {
+                      const rank = page * PER_PAGE + i + 1
+                      const pos = season !== 'All-Time' && row.standing ? row.standing : rank
+                      return (
+                        <tr key={row.team} onClick={() => router.push(`/teams?team=${encodeURIComponent(row.team)}`)} className="group cursor-pointer border-b border-[#F1F2F4] bg-white transition-colors hover:bg-[#F7F8FA]">
+                          <td className={`sticky left-0 z-10 bg-inherit px-3 py-2.5 text-[13px] font-semibold tabular-nums lg:px-4 ${pos === 1 ? 'text-[#B8860B]' : 'text-[#111]'}`}>{pos}</td>
+                          <td className="sticky left-10 z-10 bg-inherit px-3 py-2.5 lg:px-4">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <TeamLogo name={row.team} size={24} />
+                              <span className="max-w-[110px] truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D] sm:max-w-[220px]">{row.team}</span>
+                              {row.champion && <span className="flex-shrink-0 text-[12px]">🏆</span>}
+                            </div>
                           </td>
-                        ))}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          {tabCols[tab].map(col => (
+                            <td key={col} className={`whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums lg:px-4 ${sortCol === col ? 'font-semibold text-[#111]' : 'text-[#3F4757]'}`}>
+                              {getCol(row, col)}
+                            </td>
+                          ))}
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {totalPages > 1 && (
+                <Pager page={page} totalPages={totalPages} total={tableData.length} pageSize={PER_PAGE} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => Math.min(totalPages - 1, p + 1))} />
+              )}
             </div>
           )}
+        </CardShell>
+      )}
 
-          {totalPages > 1 && (
-            <div className="flex flex-col gap-3 border-t-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-              <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
-                Showing {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, tableData.length)} of {tableData.length}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage(p => Math.max(0, p - 1))}
-                  disabled={page === 0}
-                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="min-w-12 text-center text-xs font-black text-[#16274F]">{page + 1}/{totalPages}</span>
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                  disabled={page >= totalPages - 1}
-                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </motion.div>
-
-
-        {/* TEAM EVOLUTION */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
-        >
-          <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D]">
-                <Activity className="h-4.5 w-4.5 text-white" />
-              </div>
-              <div>
-                <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Team Evolution</div>
-                <div className="mt-1 text-lg font-bold text-white/80">Year by year performance</div>
-              </div>
-            </div>
-
-            <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[520px]">
-              <Select value={chartStat} onChange={setChartStat} options={CHART_STATS.map(s => s.label)} placeholder="Stat..." />
-              <Select value={chartScope} onChange={setChartScope} options={['Reg Season', 'Playoffs', 'Total']} placeholder="Scope..." />
-              <Select value={chartTeam} onChange={setChartTeam} options={allTeams} placeholder="Select Team..." />
-            </div>
+      {section === 'evolution' && (
+        <CardShell title="Team evolution" subtitle={`${chartTeam} · ${chartStat.toLowerCase()} per season (${chartScope.toLowerCase()})`} withMenus>
+          <FilterBar>
+            <FilterPill value={chartTeam} onChange={setChartTeam} options={allTeams} label="Team" neutral />
+            <FilterPill value={chartStat} onChange={setChartStat} options={CHART_STATS.map(s => s.label)} label="Stat" neutral />
+            <FilterPill value={chartScope} onChange={setChartScope} options={['Reg Season', 'Playoffs', 'Total']} label="Scope" neutral />
+          </FilterBar>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 px-3 pt-3 text-[12px] text-[#6B7280]">
+            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#B8860B]" /> Championship</span>
+            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#1E8E3E]" /> Best season</span>
+            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#D01F2D]" /> Worst season</span>
           </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 border-b-2 border-[#0A0A0A]/15 bg-[#F7F6F2] px-4 py-4 text-xs font-black uppercase tracking-[0.1em]">
-            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#F5C518]" /> Championships</div>
-            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#1E8E3E]" /> Best Seasons</div>
-            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-[#0A0A0A] bg-[#D01F2D]" /> Worst Seasons</div>
-          </div>
-
-          <div className="overflow-x-auto px-3 pb-1 pt-6 sm:px-6">
-            <div style={{ minWidth: '360px' }}>
+          <div className="overflow-x-auto px-3 pb-2 pt-4 sm:px-6">
+            <div className="mx-auto max-w-[760px]" style={{ minWidth: '360px' }}>
               <WinChart data={chartData} chartStats={chartStats} />
             </div>
           </div>
-
           {chartStats && (
-            <div className="grid grid-cols-2 gap-0 border-t-2 border-[#0A0A0A] md:grid-cols-4">
-              <div className="border-b-2 border-r-2 border-[#0A0A0A] bg-[#F7F6F2] p-5 md:border-b-0">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Best Season</div>
-                <div className="text-3xl font-black text-[#16274F]">{chartStats.bestVal}</div>
-                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.bestSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
-              </div>
-              <div className="border-b-2 border-[#0A0A0A] bg-[#FFF6F6] p-5 md:border-b-0 md:border-r-2">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Worst Season</div>
-                <div className="text-3xl font-black text-[#D01F2D]">{chartStats.worstVal}</div>
-                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.worstSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
-              </div>
-              <div className="border-r-2 border-[#0A0A0A] bg-white p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Season Avg</div>
-                <div className="text-3xl font-black text-[#16274F]">{chartStats.avg}</div>
-                <div className="mt-1 text-xs font-bold text-[#6B7280]">per season</div>
-              </div>
-              <div className="bg-[#FFF9E7] p-5">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B7280]">Championships</div>
-                <div className="text-3xl font-black text-[#0A0A0A]">{chartStats.titles}</div>
-                <div className="mt-1 text-xs font-bold text-[#6B7280]">{chartStats.championSeasons.map(s => `'${String(s).slice(2)}`).join(', ')}</div>
-              </div>
-            </div>
+            <StatGrid className="grid-cols-2 border-t border-[#EEF0F2] md:grid-cols-4">
+              <StatTile label="Best season" value={chartStats.bestVal} sub={seasonsLabel(chartStats.bestSeasons)} valueClass="text-[#1E8E3E]" />
+              <StatTile label="Worst season" value={chartStats.worstVal} sub={seasonsLabel(chartStats.worstSeasons)} valueClass="text-[#D01F2D]" />
+              <StatTile label="Season average" value={chartStats.avg} sub="per season" />
+              <StatTile label="Championships" value={chartStats.titles} sub={seasonsLabel(chartStats.championSeasons) || '—'} valueClass={chartStats.titles ? 'text-[#B8860B]' : 'text-[#111]'} />
+            </StatGrid>
           )}
-        </motion.div>
+        </CardShell>
+      )}
 
-        {/* GAME LOG */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.08 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
+      {section === 'games' && (
+        <CardShell
+          title="Game log"
+          subtitle={`${filteredGameFacts.length.toLocaleString()} team performances · ${gameFactMatchups.length.toLocaleString()} matchups · 1 row = 1 team`}
+          action={gfHasFilters ? <button type="button" onClick={clearGameFilters} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">Clear filters</button> : null}
+          withMenus
         >
-          <div className="flex flex-col gap-5 border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-5 text-white sm:px-7 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D]">
-                  <Activity className="h-4.5 w-4.5 text-white" />
-                </div>
-                <div className="text-sm font-black uppercase tracking-[0.24em] text-[#F5C518]">Game Log</div>
-              </div>
-              <div className="mt-1 text-lg font-bold text-white/80">
-                {filteredGameFacts.length.toLocaleString()} team performances · {gameFactMatchups.length.toLocaleString()} total matchups
-              </div>
-            </div>
-          </div>
-
-          <div className="border-b-2 border-[#0A0A0A]/10 bg-white px-4 py-4 sm:px-6">
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-10">
-              <MultiSelect values={gfSeason} onChange={setGfSeason} options={gameFactFilterOptions.seasons} label="Season" />
-              <MultiSelect values={gfTeam} onChange={setGfTeam} options={gameFactFilterOptions.teams} label="Team" />
-              <MultiSelect values={gfOpponent} onChange={setGfOpponent} options={gameFactFilterOptions.opponents} label="Opponent" />
-              <MultiSelect values={gfStage} onChange={setGfStage} options={gameFactFilterOptions.stages} label="Stage" />
-              <MultiSelect values={gfResult} onChange={setGfResult} options={['W', 'L', 'T']} label="Result" />
-              <MultiSelect values={gfPowerRanking} onChange={setGfPowerRanking} options={gameFactFilterOptions.powerRankings} label="Power Ranking" />
-              <MultiSelect values={gfHS} onChange={setGfHS} options={['HS']} label="Highest Scorer" />
-
-              <div className="flex h-10 min-w-0 items-center gap-2 border-2 border-[#0A0A0A] bg-white px-3">
-                <input
-                  id="include-double-weeks"
-                  type="checkbox"
-                  checked={gfIncludeDoubleWeeks}
-                  onChange={e => setGfIncludeDoubleWeeks(e.target.checked)}
-                  className="h-4 w-4 shrink-0 accent-[#16274F]"
-                />
-                <label htmlFor="include-double-weeks" className="cursor-pointer text-[10px] font-black uppercase tracking-[0.08em] text-[#3F4757]">
-                  Include double weeks
-                </label>
-              </div>
-
-              <div className="flex h-10 min-w-0 items-center gap-2 border-2 border-[#0A0A0A] bg-white px-3">
-                <input
-                  id="include-200-plus"
-                  type="checkbox"
-                  checked={gfInclude200Plus}
-                  onChange={e => setGfInclude200Plus(e.target.checked)}
-                  className="h-4 w-4 shrink-0 accent-[#16274F]"
-                />
-                <label htmlFor="include-200-plus" className="cursor-pointer text-[10px] font-black uppercase tracking-[0.08em] text-[#3F4757]">
-                  200+ points
-                </label>
-              </div>
-
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
-              <span>1 row = 1 team performance</span>
-              <span>·</span>
-              <span>Mirror rows are kept as separate source records</span>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-20 text-sm font-black uppercase tracking-[0.2em] text-[#6B7280]">Loading...</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-[#0A0A0A]/15 bg-[#F7F6F2]">
-                    {[
-                      ['Season', 'Season'],
-                      ['Week', 'Week'],
-                      ['Team', 'Team'],
-                      ['Opponent', 'Opponent'],
-                      ['PF', 'PF'],
-                      ['PA', 'PA'],
-                      ['Margin', 'Margin'],
-                      ['Result', 'Result'],
-                      ['Stage', 'Stage'],
-                      ['Streak', 'Streak'],
-                      ['Power Ranking', 'Power Ranking'],
-                      ['HS', 'HS'],
-                      ['Max PF', 'Max PF'],
-                      ['Starters Accuracy', 'Starters Accuracy'],
-                    ].map(([col, label]) => {
-                      const sortable = ['Season', 'Week', 'PF', 'PA', 'Margin', 'Streak', 'Max PF', 'Starters Accuracy'].includes(col)
+          <FilterBar>
+            {multi(gfSeason, setGfSeason, gameFactFilterOptions.seasons, 'Season')}
+            {multi(gfTeam, setGfTeam, gameFactFilterOptions.teams, 'Team')}
+            {multi(gfOpponent, setGfOpponent, gameFactFilterOptions.opponents, 'Opponent')}
+            {multi(gfStage, setGfStage, gameFactFilterOptions.stages, 'Stage')}
+            {multi(gfResult, setGfResult, ['W', 'L', 'T'], 'Result')}
+            {multi(gfPowerRanking, setGfPowerRanking, gameFactFilterOptions.powerRankings, 'Power ranking')}
+            <ToggleChip active={gfHS.includes('HS')} onClick={() => setGfHS(gfHS.includes('HS') ? [] : ['HS'])}>Week high scorer</ToggleChip>
+            <ToggleChip active={gfInclude200Plus} onClick={() => setGfInclude200Plus(v => !v)}>200+ pts</ToggleChip>
+            <ToggleChip active={!gfIncludeDoubleWeeks} onClick={() => setGfIncludeDoubleWeeks(v => !v)}>Hide double weeks</ToggleChip>
+          </FilterBar>
+          {loading ? <LoadingState /> : (
+            <div className="overflow-hidden rounded-b-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1100px]">
+                  <thead>
+                    <tr className="border-b border-[#EEF0F2]">
+                      {['Season', 'Week', 'Team', 'Opponent', 'PF', 'PA', 'Margin', 'Result', 'Stage', 'Streak', 'Power Ranking', 'HS', 'Max PF', 'Starters Accuracy'].map(col => {
+                        const sortable = ['Season', 'Week', 'PF', 'PA', 'Margin', 'Streak', 'Max PF', 'Starters Accuracy'].includes(col)
+                        const right = ['PF', 'PA', 'Margin', 'Streak', 'Power Ranking', 'Max PF', 'Starters Accuracy'].includes(col)
+                        const label = { 'Power Ranking': 'PR', 'Starters Accuracy': 'Accuracy' }[col] || col
+                        return (
+                          <th key={col} className={`${th} ${right ? 'text-right' : 'text-left'}`}>
+                            {sortable ? <SortHeader label={label} active={gfSortCol === col} dir={gfSortDir} onClick={() => handleGameFactSort(col)} align={right ? 'right' : 'left'} /> : label}
+                          </th>
+                        )
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedGameFacts.map(row => {
+                      const isHS = row.weeklyHighScorer && normalizeString(row.weeklyHighScorer) === normalizeString(row.team)
                       return (
-                        <th key={col} className={`px-3 py-3 ${['PF','PA','Margin','Streak','Power Ranking','Max PF','Starters Accuracy'].includes(col) ? 'text-right' : 'text-left'}`}>
-                          {sortable ? (
-                            <button
-                              onClick={() => handleGameFactSort(col)}
-                              className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.14em] transition-colors"
-                              style={{ color: gfSortCol === col ? '#D01F2D' : '#6B7280' }}
-                            >
-                              {label}{gfSortCol === col ? (gfSortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                            </button>
-                          ) : (
-                            <span className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.14em] text-[#6B7280]">
-                              {label}
-                            </span>
-                          )}
-                        </th>
+                        <tr key={row.id} onClick={() => handleGameFactClick(row)} title="Open matchup" className="cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[13px] font-semibold text-[#111] lg:px-4">{row.season}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[13px] tabular-nums text-[#6B7280] lg:px-4">{row.week}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 lg:px-4"><div className="flex items-center gap-2 text-[13px] font-medium text-[#111]"><TeamLogo name={row.team} size={20} />{row.team}</div></td>
+                          <td className="whitespace-nowrap px-3 py-2.5 lg:px-4"><div className="flex items-center gap-2 text-[13px] text-[#3F4757]"><TeamLogo name={row.opponent} size={20} />{row.opponent}</div></td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums text-[#111] lg:px-4">{row.pf.toFixed(2)}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#6B7280] lg:px-4">{row.pa.toFixed(2)}</td>
+                          <td className={`whitespace-nowrap px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums lg:px-4 ${row.margin >= 0 ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{row.margin > 0 ? '+' : ''}{row.margin.toFixed(2)}</td>
+                          <td className="px-3 py-2.5 lg:px-4"><ResultBadge result={row.result} /></td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[#6B7280] lg:px-4">{row.stage}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-right lg:px-4">{row.streak ? <StreakBadge streak={row.streak > 0 ? `W${row.streak}` : `L${Math.abs(row.streak)}`} /> : <span className="text-[12px] text-[#9CA3AF]">—</span>}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#111] lg:px-4">{row.powerRanking > 0 ? `#${row.powerRanking}` : '—'}</td>
+                          <td className="px-3 py-2.5 lg:px-4">{isHS ? <Tag tone="gold">HS</Tag> : <span className="text-[12px] text-[#C4C7CC]">—</span>}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#3F4757] lg:px-4">{row.maxPF > 0 ? row.maxPF.toFixed(2) : '—'}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#111] lg:px-4">{row.maxPF > 0 ? `${row.startersAccuracy.toFixed(1)}%` : '—'}</td>
+                        </tr>
                       )
                     })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagedGameFacts.map(row => (
-                    <tr
-                      key={row.id}
-                      onClick={() => handleGameFactClick(row)}
-                      className="cursor-pointer border-b border-[#0A0A0A]/8 bg-white transition-colors hover:bg-[#F7F6F2]"
-                      title="Open matchup"
-                    >
-                      <td className="whitespace-nowrap px-3 py-2.5 text-xs font-black text-[#6B7280]">{row.season}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-xs font-black text-[#6B7280]">{row.week}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-black uppercase text-[#16274F]">{row.team}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-bold uppercase text-[#3F4757]">{row.opponent}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#16274F]">{row.pf.toFixed(2)}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#6B7280]">{row.pa.toFixed(2)}</td>
-                      <td className={`whitespace-nowrap px-3 py-2.5 text-right text-sm font-black ${row.margin >= 0 ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
-                        {row.margin > 0 ? '+' : ''}{row.margin.toFixed(2)}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className={`inline-flex min-w-7 items-center justify-center px-2 py-1 text-[10px] font-black ${row.result === 'W' ? 'bg-[#E9F6ED] text-[#1E8E3E]' : row.result === 'L' ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'bg-[#F7F6F2] text-[#6B7280]'}`}>
-                          {row.result}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.08em] text-[#6B7280]">{row.stage}</td>
-                      <td className={`whitespace-nowrap px-3 py-2.5 text-right text-sm font-black ${row.streak > 0 ? 'text-[#1E8E3E]' : row.streak < 0 ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
-                        {row.streak > 0 ? `W${row.streak}` : row.streak < 0 ? `L${Math.abs(row.streak)}` : '0'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#16274F]">
-                        {row.powerRanking > 0 ? `#${row.powerRanking}` : '—'}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {row.weeklyHighScorer && normalizeString(row.weeklyHighScorer) === normalizeString(row.team) ? (
-                          <span className="inline-flex min-w-7 items-center justify-center bg-[#FFF4C7] px-2 py-1 text-[10px] font-black text-[#B8860B]">HS</span>
-                        ) : (
-                          <span className="text-xs font-black text-[#B8BFC9]">—</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#3F4757]">
-                        {row.maxPF > 0 ? row.maxPF.toFixed(2) : '—'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-black text-[#16274F]">
-                        {row.maxPF > 0 ? `${row.startersAccuracy.toFixed(1)}%` : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                  {pagedGameFacts.length === 0 && (
-                    <tr><td colSpan="14" className="py-16 text-center text-sm font-bold text-[#6B7280]">No games found</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {gameFactTotalPages > 1 && (
-            <div className="flex flex-col gap-3 border-t-2 border-[#0A0A0A] bg-[#F7F6F2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-              <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#6B7280]">
-                Showing {gfPage * GAME_FACT_PAGE_SIZE + 1}–{Math.min((gfPage + 1) * GAME_FACT_PAGE_SIZE, filteredGameFacts.length)} of {filteredGameFacts.length}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setGfPage(p => Math.max(0, p - 1))}
-                  disabled={gfPage === 0}
-                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
-                ><ChevronLeft className="h-4 w-4" /></button>
-                <span className="min-w-12 text-center text-xs font-black text-[#16274F]">{gfPage + 1}/{gameFactTotalPages}</span>
-                <button
-                  onClick={() => setGfPage(p => Math.min(gameFactTotalPages - 1, p + 1))}
-                  disabled={gfPage >= gameFactTotalPages - 1}
-                  className="flex h-9 w-9 items-center justify-center border-2 border-[#0A0A0A] bg-white text-[#16274F] disabled:cursor-not-allowed disabled:opacity-30"
-                ><ChevronRight className="h-4 w-4" /></button>
+                    {pagedGameFacts.length === 0 && <tr><td colSpan="14" className="py-16 text-center text-[13px] text-[#6B7280]">No games found</td></tr>}
+                  </tbody>
+                </table>
               </div>
+              {gameFactTotalPages > 1 && (
+                <Pager page={gfPage} totalPages={gameFactTotalPages} total={filteredGameFacts.length} pageSize={GAME_FACT_PAGE_SIZE} onPrev={() => setGfPage(p => Math.max(0, p - 1))} onNext={() => setGfPage(p => Math.min(gameFactTotalPages - 1, p + 1))} />
+              )}
             </div>
           )}
-        </motion.div>
+        </CardShell>
+      )}
 
-      </section>
-
-      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-70" />
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">
-            Tapitas League · Est. 2014
-          </span>
-        </div>
-      </footer>
-
-      <SummaryDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        allSeasons={allSeasons}
-      />
-    </main>
+      <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={allSeasons} />
+    </PageShell>
   )
 }

@@ -1,7 +1,6 @@
 'use client'
-import Image from 'next/image'
 import Link from 'next/link'
-import Header from '../components/Header'
+import { PageShell, PageTitle, LoadingState, TeamLogo, PositionBadge as UiPositionBadge } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Flame, Swords, Activity, Users, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
@@ -175,80 +174,24 @@ function getPlayerAvatar(playerId) {
 
 function PlayerAvatar({ playerId, name, size = 'md' }) {
   const avatar = getPlayerAvatar(playerId)
-  const sizeClass = size === 'sm'
-    ? 'h-8 w-8 rounded-full border-2 border-[#16274F]'
-    : 'h-10 w-10 rounded-full border-2 border-[#16274F]'
-
+  const px = size === 'sm' ? 28 : 36
   return (
-    <span
-      className={`${sizeClass} flex flex-shrink-0 items-center justify-center overflow-hidden bg-white text-[9px] font-black uppercase text-[#16274F]`}
-      title={name || ''}
-    >
-      {avatar ? (
-        <img
-          src={avatar}
-          alt={name || ''}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
-      ) : (
-        String(name || '?').split(/\s+/).map(part => part[0]).join('').slice(0, 2)
-      )}
+    <span className="flex flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-[10px] font-semibold uppercase text-[#16274F] ring-1 ring-[#E6E8EB]" style={{ width: px, height: px }} title={name || ''}>
+      {avatar
+        ? <img src={avatar} alt={name || ''} className="h-full w-full object-cover" loading="lazy" />
+        : String(name || '?').split(/\s+/).map(part => part[0]).join('').slice(0, 2)}
     </span>
   )
 }
 
 function PositionBadge({ position }) {
-  const pos = String(position || '').trim().toUpperCase()
-  if (!pos) return null
-
-  const styles = {
-    QB: 'bg-[#D91F2D] text-white',
-    RB: 'bg-[#1E8E3E] text-white',
-    WR: 'bg-[#16274F] text-white',
-    TE: 'bg-[#7C3AED] text-white',
-    K: 'bg-[#D97706] text-white',
-    DEF: 'bg-[#4B5563] text-white',
-    DST: 'bg-[#4B5563] text-white',
-  }
-
-  return (
-    <span className={`inline-flex min-w-[42px] items-center justify-center border-2 border-[#0A0A0A] px-2 py-1 text-[11px] font-black leading-none ${styles[pos] || 'bg-[#F7F6F2] text-[#16274F]'}`}>
-      {pos}
-    </span>
-  )
+  const pos = String(position || '').trim().toUpperCase() === 'DST' ? 'DEF' : position
+  return <UiPositionBadge position={pos} />
 }
 
 function TeamAvatar({ team, size = 'md' }) {
-  const avatar = getTeamAvatar(team)
-
-  const sizeClass =
-    size === 'sm'
-      ? 'h-8 w-8 rounded-full border-2 border-[#16274F]'
-      : size === 'lg'
-        ? 'h-12 w-12 rounded-full border-2 border-[#16274F]'
-        : 'h-10 w-10 rounded-full border-2 border-[#16274F]'
-
-  if (avatar) {
-    return (
-      <img
-        src={avatar}
-        alt={team}
-        className={`${sizeClass} object-cover flex-shrink-0 bg-white`}
-      />
-    )
-  }
-
-  return (
-    <div
-      className={`${sizeClass} flex flex-shrink-0 items-center justify-center rounded-full text-[10px] font-black uppercase text-white bg-[#16274F]`}
-      style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))',
-      }}
-    >
-      {String(team || '').slice(0, 2)}
-    </div>
-  )
+  const px = size === 'sm' ? 24 : size === 'lg' ? 44 : 32
+  return <TeamLogo name={team} size={px} />
 }
 
 async function safeFetch(url) {
@@ -260,214 +203,104 @@ async function safeFetch(url) {
   } catch { return [] }
 }
 
+const RECORD_ACCENTS = {
+  gold: 'bg-[#FFF2B8] text-[#8D6A00]',
+  cyan: 'bg-[#EEF3FF] text-[#02275F]',
+  emerald: 'bg-[#E8F5EC] text-[#1E8E3E]',
+  red: 'bg-[#FDECEE] text-[#D01F2D]',
+  purple: 'bg-[#EEF3FF] text-[#02275F]',
+  orange: 'bg-[#FFF1E0] text-[#B45309]',
+  slate: 'bg-[#F1F2F4] text-[#3F4757]',
+}
+
 function RecordCard({ label, value, sub, sub2, sub2Href, subHref, subItems, accent, icon: Icon, top5, wide, team, player }) {
   const [expanded, setExpanded] = useState(false)
-
-  const accents = {
-    gold: {
-      border: 'border-[#F5C518]',
-      bg: 'bg-[#FFF9E5]',
-      text: 'text-[#16274F]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#F5C518] text-[#0A0A0A] border-[#0A0A0A]',
-    },
-    cyan: {
-      border: 'border-[#16274F]',
-      bg: 'bg-white',
-      text: 'text-[#16274F]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#16274F] text-white border-[#0A0A0A]',
-    },
-    emerald: {
-      border: 'border-[#1E8E3E]',
-      bg: 'bg-[#F4FAF5]',
-      text: 'text-[#1E8E3E]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#1E8E3E] text-white border-[#0A0A0A]',
-    },
-    red: {
-      border: 'border-[#D01F2D]',
-      bg: 'bg-[#FFF3F4]',
-      text: 'text-[#D01F2D]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#D01F2D] text-white border-[#0A0A0A]',
-    },
-    purple: {
-      border: 'border-[#16274F]',
-      bg: 'bg-[#F3F7FF]',
-      text: 'text-[#16274F]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#16274F] text-white border-[#0A0A0A]',
-    },
-    orange: {
-      border: 'border-[#D97706]',
-      bg: 'bg-[#FFF7ED]',
-      text: 'text-[#D97706]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#F5C518] text-[#0A0A0A] border-[#0A0A0A]',
-    },
-    slate: {
-      border: 'border-[#16274F]',
-      bg: 'bg-[#F7F6F2]',
-      text: 'text-[#16274F]',
-      value: 'text-[#16274F]',
-      icon: 'bg-[#16274F] text-white border-[#0A0A0A]',
-    },
-  }
-
-  const a = accents[accent] || accents.slate
+  const accentClass = RECORD_ACCENTS[accent] || RECORD_ACCENTS.slate
   const subArr = Array.isArray(sub) ? sub.filter(Boolean) : sub ? [sub] : []
   const teamArr = Array.isArray(team) ? team.filter(Boolean) : team ? [team] : []
+  const hasPlayers = Array.isArray(player) && player.length > 0
 
   return (
-    <div className={`flex h-full flex-col border-2 shadow-[4px_4px_0_#16274F] ${a.border} ${a.bg} ${wide ? 'sm:col-span-2' : ''}`}>
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          {Icon ? (
-            <div className={`flex h-9 w-9 items-center justify-center border-2 shadow-[2px_2px_0_#0A0A0A] ${a.icon}`}>
-              <Icon className="h-4 w-4" />
-            </div>
-          ) : <div />}
-
-          {Array.isArray(player) && player.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-end">
-              {player.map((item, i) => (
-                <span key={`${item.playerId || item.name}-${i}`} className={i > 0 ? '-ml-2' : ''}>
-                  <PlayerAvatar playerId={item.playerId} name={item.name} size="md" />
-                </span>
-              ))}
+    <div className={`flex flex-col overflow-hidden rounded-xl bg-white ${wide ? 'sm:col-span-2' : ''}`}>
+      <div className="flex min-h-[148px] flex-1 flex-col p-3 sm:p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            {Icon && <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${accentClass}`}><Icon className="h-3.5 w-3.5" /></span>}
+            <span className="text-[13px] font-semibold leading-tight text-[#111]">{label}</span>
+          </div>
+          {hasPlayers ? (
+            <div className="flex flex-shrink-0 -space-x-2">
+              {player.map((item, i) => <PlayerAvatar key={`${item.playerId || item.name}-${i}`} playerId={item.playerId} name={item.name} size="md" />)}
             </div>
           ) : teamArr.length > 0 && (
-            <div className="flex flex-wrap items-center justify-end">
+            <div className="flex flex-shrink-0 -space-x-2">
               {teamArr.map((teamName, i) => (
-                <Link key={`${teamName}-${i}`} href={teamHref(teamName)} className={i > 0 ? '-ml-2' : ''} aria-label={`Open ${teamName}`}>
-                  <TeamAvatar team={teamName} size="md" />
-                </Link>
+                <Link key={`${teamName}-${i}`} href={teamHref(teamName)} aria-label={`Open ${teamName}`}><TeamAvatar team={teamName} size="md" /></Link>
               ))}
             </div>
           )}
         </div>
 
-        <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
-
-        <div
-          className={`leading-none ${a.value}`}
-          style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(40px, 6vw, 58px)' }}
-        >
-          {value}
-        </div>
+        <div className="mt-3 text-[32px] font-bold leading-none tabular-nums tracking-tight text-[#111] sm:text-[36px]">{value ?? '—'}</div>
 
         {(subArr.length > 0 || (Array.isArray(subItems) && subItems.length > 0) || sub2) && (
-          <div className="mt-auto flex min-h-[3.5rem] flex-col justify-end pt-3">
-            {(subArr.length > 0 || (Array.isArray(subItems) && subItems.length > 0)) && (
-              <div className="flex flex-col justify-end gap-0.5">
-                {Array.isArray(subItems) && subItems.length > 0
-                  ? subItems.map((item, i) => (
-                    item?.href ? (
-                      <Link key={i} href={item.href} className="flex items-center gap-2 text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
-                        <span className="min-w-0 flex-1">
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span className="min-w-0 truncate">{item.text}</span>
-                            {item?.position && <PositionBadge position={item.position} />}
-                          </span>
-                          {item?.meta && (
-                            <span className="mt-0.5 block truncate text-xs font-semibold leading-tight text-slate-500">
-                              {item.meta}
-                            </span>
-                          )}
-                        </span>
-                      </Link>
-                    ) : (
-                      <div key={i} className="flex items-center gap-2 text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
+          <div className="mt-auto pt-2.5">
+            {Array.isArray(subItems) && subItems.length > 0
+              ? subItems.map((item, i) => {
+                  const content = (
+                    <>
+                      <span className="flex min-w-0 items-center gap-1.5">
                         <span className="min-w-0 truncate">{item?.text || ''}</span>
                         {item?.position && <PositionBadge position={item.position} />}
-                      </div>
-                    )
-                  ))
-                  : subArr.map((s, i) => (
-                    subHref ? (
-                      <Link key={i} href={subHref} className="text-sm font-black leading-tight text-[#0A0A0A] hover:text-[#D01F2D] sm:text-[15px]">
-                        {s}
-                      </Link>
-                    ) : (
-                      <div key={i} className="text-sm font-black leading-tight text-[#0A0A0A] sm:text-[15px]">
-                        {s}
-                      </div>
-                    )
-                  ))}
-              </div>
-            )}
-
-            {sub2 && !(label === 'Most Rostered' || label === 'Most Started') && (sub2Href ? (
-              <Link href={sub2Href} className="mt-1 text-xs font-semibold text-slate-500 hover:text-[#D01F2D]">{sub2}</Link>
-            ) : (
-              <div className="mt-1 text-xs font-semibold text-slate-500">{sub2}</div>
-            ))}
+                      </span>
+                      {item?.meta && <span className="mt-0.5 block truncate text-[11px] font-normal text-[#6B7280]">{item.meta}</span>}
+                    </>
+                  )
+                  return item?.href
+                    ? <Link key={i} href={item.href} className="block text-[13px] font-medium leading-tight text-[#111] hover:text-[#D01F2D]">{content}</Link>
+                    : <div key={i} className="text-[13px] font-medium leading-tight text-[#111]">{content}</div>
+                })
+              : subArr.map((text, i) => subHref
+                  ? <Link key={i} href={subHref} className="block text-[13px] font-medium leading-tight text-[#111] hover:text-[#D01F2D]">{text}</Link>
+                  : <div key={i} className="text-[13px] font-medium leading-tight text-[#111]">{text}</div>)}
+            {sub2 && !(label === 'Most Rostered' || label === 'Most Started') && (sub2Href
+              ? <Link href={sub2Href} className="mt-0.5 block text-[11px] text-[#6B7280] hover:text-[#D01F2D]">{sub2}</Link>
+              : <div className="mt-0.5 text-[11px] text-[#6B7280]">{sub2}</div>)}
           </div>
         )}
       </div>
 
       {top5 && top5.length > 1 && (
-        <div className="border-t-2 border-[#16274F]/15">
-          <button
-            onClick={() => setExpanded(e => !e)}
-            className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-black/[0.03]"
-          >
-            <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${a.text}`}>
-              {expanded ? 'Hide Top 5' : 'Show Top 5'}
-            </span>
-            {expanded ? <ChevronUp className="h-4 w-4 text-[#16274F]" /> : <ChevronDown className="h-4 w-4 text-[#16274F]" />}
+        <div className="border-t border-[#EEF0F2]">
+          <button onClick={() => setExpanded(e => !e)} className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] font-medium text-[#6B7280] transition-colors hover:bg-[#F7F8FA] hover:text-[#111] sm:px-4">
+            {expanded ? 'Hide top 5' : 'Show top 5'}
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
-
           {expanded && (
-            <div className="border-t-2 border-[#16274F]/10 px-4 pb-3">
+            <div className="border-t border-[#F1F2F4]">
               {top5.slice(0, 5).map((item, i) => {
                 const labelText = Array.isArray(item.label) ? item.label.join(', ') : item.label
                 const isPlayer = Boolean(item.playerId || item.position)
                 const showAvatar = !Array.isArray(item.label) && !String(labelText).includes(' vs ')
-
-                return (
-                  (() => {
-                    const rowContent = (
-                      <>
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <span className={`w-5 flex-shrink-0 text-sm font-black ${i === 0 ? a.text : 'text-slate-500'}`}>
-                            {i + 1}
-                          </span>
-                          {showAvatar && (isPlayer ? (
-                            <span className="flex-shrink-0" aria-hidden="true">
-                              <PlayerAvatar playerId={item.playerId} name={labelText} size="sm" />
-                            </span>
-                          ) : (
-                            <span className="flex-shrink-0" aria-hidden="true">
-                              <TeamAvatar team={item.team || labelText} size="sm" />
-                            </span>
-                          ))}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex min-w-0 items-center gap-2">
-                              <div className="min-w-0 truncate text-sm font-bold leading-tight text-[#0A0A0A]">{labelText}</div>
-                              {isPlayer && <PositionBadge position={item.position} />}
-                            </div>
-                            {item.meta && <div className="mt-0.5 text-xs font-semibold leading-tight text-slate-500">{item.meta}</div>}
-                            {item.sub && <div className="mt-0.5 text-xs font-semibold leading-tight text-slate-500">{item.sub}</div>}
-                          </div>
-                        </div>
-                        <span className={`flex-shrink-0 text-base font-black ${i === 0 ? a.text : 'text-[#16274F]'}`}>
-                          {item.value}
-                        </span>
-                      </>
-                    )
-                    return item.href ? (
-                      <Link href={item.href} key={i} className="flex items-center justify-between gap-3 border-b border-[#16274F]/10 py-2.5 last:border-0 hover:bg-black/[0.03]">
-                        {rowContent}
-                      </Link>
-                    ) : (
-                      <div key={i} className="flex items-center justify-between gap-3 border-b border-[#16274F]/10 py-2.5 last:border-0">
-                        {rowContent}
+                const rowContent = (
+                  <>
+                    <span className={`w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums ${i === 0 ? 'text-[#111]' : 'text-[#9CA3AF]'}`}>{i + 1}</span>
+                    {showAvatar && (isPlayer ? <PlayerAvatar playerId={item.playerId} name={labelText} size="sm" /> : <TeamAvatar team={item.team || labelText} size="sm" />)}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-[13px] font-medium leading-tight text-[#111]">{labelText}</span>
+                        {isPlayer && <PositionBadge position={item.position} />}
                       </div>
-                    )
-                  })()
+                      {item.meta && <div className="truncate text-[11px] text-[#6B7280]">{item.meta}</div>}
+                      {item.sub && <div className="truncate text-[11px] text-[#6B7280]">{item.sub}</div>}
+                    </div>
+                    <span className="flex-shrink-0 text-[13px] font-semibold tabular-nums text-[#111]">{item.value}</span>
+                  </>
                 )
+                const cls = 'flex items-center gap-2 border-b border-[#F1F2F4] px-3 py-2 last:border-b-0 sm:px-4'
+                return item.href
+                  ? <Link href={item.href} key={i} className={`${cls} transition-colors hover:bg-[#F7F8FA]`}>{rowContent}</Link>
+                  : <div key={i} className={cls}>{rowContent}</div>
               })}
             </div>
           )}
@@ -479,15 +312,12 @@ function RecordCard({ label, value, sub, sub2, sub2Href, subHref, subItems, acce
 
 function RecordSection({ title, children }) {
   return (
-    <div className="mb-10">
-      <div className="mb-4 flex items-center gap-3">
-        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[#16274F]">{title}</h2>
-        <div className="h-[2px] flex-1 bg-[#16274F]/15" />
-      </div>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <section className="mb-4">
+      <h2 className="mb-2 px-1 text-[15px] font-bold text-[#111]">{title}</h2>
+      <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {children}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -1851,88 +1681,26 @@ export default function RecordsPage() {
   }, [history, allTime])
 
   return (
-    <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');`}</style>
+    <PageShell headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
+      <PageTitle title="Record Book" subtitle="The numbers that define glory, rivalry and heartbreak." />
 
-      <Header onSummaryOpen={() => setDrawerOpen(true)} />
-
-      <section className="px-3 pb-20 md:px-6">
-
-        {/* Hero */}
-        <div className="relative mb-10 overflow-hidden border-2 border-[#0A0A0A] bg-white shadow-[6px_6px_0_#16274F]">
-          <div className="absolute inset-0 overflow-hidden">
-            <svg width="100%" height="100%" viewBox="0 0 900 280" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <g opacity="0.06" fill="#16274F">
-                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="450" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 140)`} />
-                ))}
-              </g>
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="1">
-                {["M380 -30 L460 85 L380 200 L300 85 Z", "M460 85 L540 200 L460 315 L380 200 Z", "M540 -30 L620 85 L540 200 L460 85 Z", "M620 85 L700 200 L620 315 L540 200 Z", "M700 -30 L780 85 L700 200 L620 85 Z"].map((d, i) => <path key={i} d={d} />)}
-              </g>
-              <g opacity="0.06" fill="#F5C518">
-                {["M420 30 L440 58 L420 86 L400 58 Z", "M580 30 L600 58 L580 86 L560 58 Z", "M740 30 L760 58 L740 86 L720 58 Z", "M500 120 L520 148 L500 176 L480 148 Z", "M660 120 L680 148 L660 176 L640 148 Z"].map((d, i) => <path key={i} d={d} />)}
-              </g>
-              <text x="815" y="262" fontFamily="'Bebas Neue',sans-serif" fontSize="280" fill="#16274F" opacity="0.035" textAnchor="middle">REC</text>
-            </svg>
-          </div>
-
-          <div className="relative z-10 p-6 sm:p-8 md:p-10">
-            <div
-              className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2 text-white"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0 100%)' }}
-            >
-              <Trophy className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-              <span
-                className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap"
-                style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-              >
-                The Record Book
-              </span>
-            </div>
-
-            <h1
-              className="leading-[0.9] tracking-[-0.02em] text-[#16274F] whitespace-nowrap"
-              style={{
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(48px, 7vw, 96px)',
-              }}
-            >
-              League <span className="text-[#D01F2D]">Records</span>
-            </h1>
-
-            <p
-              className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-[#3F4757]"
-              style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
-            >
-              The numbers that define glory, rivalry and heartbreak.
-            </p>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-8 overflow-hidden border-2 border-[#16274F] bg-white shadow-[4px_4px_0_#16274F]">
-          <div className="flex overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-            {TABS.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`flex flex-shrink-0 items-center gap-2 border-b-4 px-5 py-4 text-sm font-black uppercase transition-all sm:px-6 ${tab === t.key
-                    ? 'border-[#D01F2D] bg-[#FFF3F4] text-[#D01F2D]'
-                    : 'border-transparent text-[#16274F]/60 hover:bg-[#F7F6F2] hover:text-[#16274F]'
-                  }`}
-              >
-                <t.Icon className="h-4 w-4" />
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="scroll-hide mb-2 flex overflow-x-auto rounded-xl bg-white">
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-[13px] transition-colors sm:flex-1 sm:justify-center ${tab === t.key ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}
+          >
+            <t.Icon className="h-3.5 w-3.5" />
+            {t.label}
+          </button>
+        ))}
+      </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-slate-500 font-bold">Loading...</div>
+          <LoadingState />
         ) : (
-          <div className="border-2 border-[#16274F] bg-white p-4 shadow-[5px_5px_0_#16274F] sm:p-6 md:p-8">
+          <div>
 
             {/* FRANCHISE */}
             {tab === 'franchise' && (
@@ -2259,20 +2027,7 @@ export default function RecordsPage() {
             )}
           </div>
         )}
-      </section>
-      <SummaryDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        allSeasons={allSeasons}
-      />
-
-      {/* Footer */}
-      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-          <Image src="/images/LogoFinalBlack.png" alt="Tapitas League" width={24} height={24} style={{ filter: 'invert(1)' }} className="opacity-50" />
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-[#B8C0D0]">Tapitas League · Est. 2014</span>
-        </div>
-      </footer>
-    </main>
+      <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={allSeasons} />
+    </PageShell>
   )
 }

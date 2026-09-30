@@ -2,32 +2,13 @@
 
 import React, { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
-import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
+import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, ChevronLeft, ChevronDown, Check, Skull, Zap, Filter, Users } from 'lucide-react'
 import Header from '../components/Header'
+import PlayerProfileModal from '../components/PlayerProfileModal'
+import { FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
-
-// Sleeper player data is loaded directly from Sleeper when a Player Profile
-// is opened. The API returns the complete NFL player map; cache the promise
-// in this module so the 5MB payload is not downloaded repeatedly.
-let SLEEPER_PLAYERS_PROMISE = null
-
-async function fetchSleeperPlayers() {
-  if (!SLEEPER_PLAYERS_PROMISE) {
-    SLEEPER_PLAYERS_PROMISE = fetch('https://api.sleeper.app/v1/players/nfl')
-      .then(res => {
-        if (!res.ok) throw new Error(`Sleeper players request failed: ${res.status}`)
-        return res.json()
-      })
-      .then(data => data && typeof data === 'object' ? data : {})
-      .catch(error => {
-        SLEEPER_PLAYERS_PROMISE = null
-        throw error
-      })
-  }
-  return SLEEPER_PLAYERS_PROMISE
-}
 
 const TEAM_IMAGES = {
   'howmuch': '/images/howmuch.png',
@@ -219,7 +200,7 @@ function TeamAvatar({ name, size = 'md' }) {
     </div>
   )
   return (
-    <div className="flex-shrink-0 flex items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] font-black text-white"
+    <div className="flex-shrink-0 flex items-center justify-center rounded-full bg-[#16274F] font-semibold text-white"
       style={{ width: px, height: px, fontSize: px * 0.3 }}>
       {getInitials(name)}
     </div>
@@ -265,13 +246,13 @@ function PlayerAvatar({ name, playerLookup, size = 56 }) {
   const initials = String(name || '?').trim().split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
 
   return (
-    <div className="flex-shrink-0 overflow-hidden rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2]" style={{ width: size, height: size }}>
+    <div className="flex-shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-[#E6E8EB]" style={{ width: size, height: size }}>
       {src ? (
         <img src={src} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : defenseLogo ? (
         <img src={defenseLogo} alt={name} className="h-full w-full object-contain bg-white p-1" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-[#16274F] font-black text-white" style={{ fontSize: size * 0.32 }}>
+        <div className="flex h-full w-full items-center justify-center bg-[#16274F] font-semibold text-white" style={{ fontSize: size * 0.32 }}>
           {initials}
         </div>
       )}
@@ -336,15 +317,15 @@ function getPlayerPosition(name, playerLookup) {
 
 function getPositionBadgeClasses(position) {
   const colors = {
-    QB: 'border-[#0A0A0A] bg-[#D01F2D] text-white',
-    RB: 'border-[#0A0A0A] bg-[#1E8E3E] text-white',
-    WR: 'border-[#0A0A0A] bg-[#5B2CA0] text-white',
-    TE: 'border-[#0A0A0A] bg-[#B8860B] text-white',
-    FLEX: 'border-[#0A0A0A] bg-[#3F4757] text-white',
-    K: 'border-[#0A0A0A] bg-[#6B7280] text-white',
-    DEF: 'border-[#0A0A0A] bg-[#3F4757] text-white',
+    QB: 'bg-[#D01F2D] text-white',
+    RB: 'bg-[#1E8E3E] text-white',
+    WR: 'bg-[#16274F] text-white',
+    TE: 'bg-[#B8860B] text-white',
+    FLEX: 'bg-[#3F4757] text-white',
+    K: 'bg-[#6B7280] text-white',
+    DEF: 'bg-[#3F4757] text-white',
   }
-  return colors[String(position || '').toUpperCase()] || 'border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#16274F]'
+  return colors[String(position || '').toUpperCase()] || 'bg-[#F4F5F7] text-[#3F4757]'
 }
 
 function formatPlayerHeight(value) {
@@ -388,145 +369,6 @@ function canonicalMatchupHref(game, games) {
   return `/matchups?season=${encodeURIComponent(String(target?.Season || '').trim())}&week=${encodeURIComponent(String(target?.Week || '').trim())}&team=${encodeURIComponent(String(target?.Team || '').trim())}&opp=${encodeURIComponent(String(target?.Opponent || '').trim())}`
 }
 
-function HeaderFilter({ value, onChange, options, label }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useEffect(() => {
-    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-  return (
-    <div ref={ref} className="relative inline-block">
-      <button type="button" onClick={() => setOpen(p => !p)} className={`inline-flex items-center gap-1 uppercase tracking-[0.18em] hover:text-[#D01F2D] ${value !== 'All' ? 'text-[#D01F2D]' : ''}`}>
-        {value === 'All' ? label : value}
-        <span className="text-[9px] text-[#D01F2D]">⌄</span>
-      </button>
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-30 min-w-[150px] overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="max-h-56 overflow-y-auto">
-            {options.map(opt => (
-              <button key={opt} type="button" onClick={() => { onChange(opt); setOpen(false) }} className={`block w-full px-3 py-2 text-left text-[10px] font-black uppercase hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'}`}>
-                {opt === 'All' ? label : opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function Select({ value, onChange, options, placeholder, disabled }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => !disabled && setOpen(p => !p)}
-        disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 border-2 px-4 py-2.5 text-sm font-bold transition-all ${disabled ? 'cursor-not-allowed border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]/50'
-          : open ? 'border-[#D01F2D] bg-white text-[#16274F] tp-shadow-red-sm'
-            : 'border-[#0A0A0A] bg-white text-[#16274F] hover:bg-[#F7F6F2]'
-          }`}
-      >
-        <span className="truncate">{value === 'All' ? placeholder : value}</span>
-        <ChevronRight className={`h-4 w-4 flex-shrink-0 text-[#6B7280] transition-transform duration-200 ${open ? 'rotate-90 text-[#D01F2D]' : ''}`} />
-      </button>
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-          <div className="max-h-56 overflow-y-auto">
-            {options.map(opt => (
-              <button
-                key={opt}
-                onClick={() => { onChange(opt); setOpen(false) }}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-all hover:bg-[#F7F6F2] ${opt === value ? 'text-[#D01F2D] bg-[#FDEDEE]' : 'text-[#3F4757]'}`}
-              >
-                {opt === value && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#D01F2D]" />}
-                <span className={opt === value ? '' : 'ml-[14px]'}>{opt}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CompactCheckFilter({ value, onChange, options, label, multiple = false, displayOption, neutral = false }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useEffect(() => {
-    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const selectedValues = multiple ? (Array.isArray(value) ? value : []) : [value]
-  const activeCount = multiple ? selectedValues.filter(v => v !== 'All').length : (value !== 'All' ? 1 : 0)
-  const formatOption = displayOption || (opt => opt)
-  const display = value === 'All' || (multiple && selectedValues.length === 0)
-    ? label
-    : multiple
-      ? `${activeCount} selected`
-      : formatOption(value)
-
-  return (
-    <div ref={ref} className="relative min-w-0">
-      <button
-        type="button"
-        onClick={() => setOpen(p => !p)}
-        className={`flex min-h-9 w-full items-center justify-between gap-2 border-2 bg-white px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.12em] transition-all ${open ? (neutral ? 'border-[#16274F] shadow-[2px_2px_0_#16274F]' : 'border-[#D01F2D] shadow-[2px_2px_0_#D01F2D]') : 'border-[#16274F]/20 hover:border-[#16274F]/50'} ${activeCount && !neutral ? 'text-[#D01F2D]' : 'text-[#16274F]'}`}
-      >
-        <span className="truncate">{display}</span>
-        <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center border text-[9px] transition-transform ${open ? (neutral ? 'rotate-180 border-[#16274F] text-[#16274F]' : 'rotate-180 border-[#D01F2D] text-[#D01F2D]') : 'border-[#16274F]/30 text-[#6B7280]'}`}>⌄</span>
-      </button>
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+5px)] z-[70] w-[220px] overflow-hidden border-2 border-[#16274F] bg-white shadow-[4px_4px_0_#16274F]">
-          <div className="border-b border-[#16274F]/10 bg-[#F7F6F2] px-3 py-2 text-[8px] font-black uppercase tracking-[0.18em] text-[#6B7280]">{label}</div>
-          <div className="max-h-64 overflow-y-auto p-1.5">
-            {options.map(opt => {
-              const checked = multiple ? selectedValues.includes(opt) : opt === value
-              return (
-                <label key={opt} className="flex cursor-pointer items-center gap-2 px-2.5 py-2 text-[10px] font-bold text-[#16274F] hover:bg-[#F7F6F2]">
-                  <input
-                    type={multiple ? 'checkbox' : 'checkbox'}
-                    checked={checked}
-                    onChange={() => {
-                      if (multiple) {
-                        const next = opt === 'All'
-                          ? ['All']
-                          : checked
-                            ? selectedValues.filter(v => v !== opt)
-                            : [...selectedValues.filter(v => v !== 'All'), opt]
-                        onChange(next.length ? next : ['All'])
-                      } else {
-                        onChange(opt)
-                        setOpen(false)
-                      }
-                    }}
-                    className="h-4 w-4 flex-shrink-0 accent-[#16274F]"
-                  />
-                  <span className={checked ? 'font-black text-[#16274F]' : ''}>{opt === 'All' ? `All ${label}` : formatOption(opt)}</span>
-                </label>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 const shortName = (name) => {
   const mappings = {
     'i am megatron': 'Megatron',
@@ -559,64 +401,6 @@ const shortName = (name) => {
   return mappings[key] || raw
 }
 
-const TeamList = ({ teams, selectTeam, getTeamHistory }) => {
-  const SectionHeader = ({ eyebrow, title, meta, icon: Icon }) => (
-    <div className="flex items-end justify-between gap-3 border-b border-[#EEF0F2] px-3 py-3 sm:px-4">
-      <div className="min-w-0 flex items-center gap-2.5">
-        {Icon && <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#F4F5F7] text-[#16274F]"><Icon className="h-4 w-4" /></div>}
-        <div className="min-w-0">
-          {eyebrow && <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#6B7280]">{eyebrow}</div>}
-          <div className="truncate text-[14px] font-semibold text-[#111]">{title}</div>
-        </div>
-      </div>
-      {meta && <div className="flex-shrink-0 text-[11px] text-[#6B7280]">{meta}</div>}
-    </div>
-  )
-
-  return (
-    <div className="overflow-hidden rounded-xl bg-white">
-      <SectionHeader eyebrow="Tapitas League" title="Current franchises" meta={`${teams.length} teams`} icon={Users} />
-      <div className="grid gap-px bg-[#EEF0F2] md:grid-cols-2">
-        {teams.map((team, i) => {
-          const teamHistory = getTeamHistory(team.team)
-          const teamTitles = teamHistory.filter(r => isTrueFlag(r?.Champion)).length
-          const currentSeason = teamHistory[0]
-          const seasonCount = new Set(teamHistory.map(r => String(r?.Season || '').trim()).filter(Boolean)).size
-          const record = `${parseNumber(team.W)}–${parseNumber(team.L)}`
-          const pct = String(team?.['W%'] || '').trim()
-          const isChampion = teamTitles > 0
-          return (
-            <button key={i} type="button" onClick={() => selectTeam(team)} className="group flex min-w-0 items-center gap-3 bg-white px-3 py-3.5 text-left transition-colors hover:bg-[#F7F8FA] md:px-4">
-              <TeamAvatar name={team.team} size="sm" />
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{shortName(team.team)}</span>
-                  {isChampion && <span className="flex-shrink-0 text-[11px]">🏆</span>}
-                </div>
-                <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-[#6B7280]">
-                  <span>{seasonCount} seasons</span><span>·</span><span>{teamTitles} titles</span>
-                  {currentSeason?.Season && <><span>·</span><span>{currentSeason.Season}</span></>}
-                </div>
-              </div>
-              <div className="flex w-[136px] flex-shrink-0 items-center justify-end gap-3 tabular-nums">
-                <div className="text-right">
-                  <div className="text-[16px] font-semibold leading-none text-[#111]">{record}</div>
-                  <div className="mt-1 text-[10px] text-[#6B7280]">{pct}</div>
-                </div>
-                <div className="hidden text-right sm:block">
-                  <div className="text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">PF</div>
-                  <div className="mt-0.5 text-[12px] font-medium text-[#3F4757]">{Math.round(parseNumber(team.PF)).toLocaleString()}</div>
-                </div>
-                <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#A0A5AD] transition-transform group-hover:translate-x-0.5 group-hover:text-[#D01F2D]" />
-              </div>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 export default function TeamsPage() {
   const [allTime, setAllTime] = useState([])
   const [history, setHistory] = useState([])
@@ -636,19 +420,14 @@ export default function TeamsPage() {
   const [log200Only, setLog200Only] = useState(false)
   const [logHighestOnly, setLogHighestOnly] = useState(false)
   const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
-  const [selectedPlayerTeams, setSelectedPlayerTeams] = useState([])
-  const [sleeperPlayerInfo, setSleeperPlayerInfo] = useState(null)
-  const [sleeperPlayerLoading, setSleeperPlayerLoading] = useState(false)
   const [playerSearch, setPlayerSearch] = useState('')
   const [playerPositionFilter, setPlayerPositionFilter] = useState('All')
   const [playerSort, setPlayerSort] = useState('Appearances')
   const [playerSeasonFilter, setPlayerSeasonFilter] = useState('All')
   const [playerMinApps, setPlayerMinApps] = useState('All')
-  const [playerLogSort, setPlayerLogSort] = useState({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
-  const [playerLogOpponentFilter, setPlayerLogOpponentFilter] = useState('All')
-  const [playerLogStatusFilter, setPlayerLogStatusFilter] = useState('All')
-  const [playerLogResultFilter, setPlayerLogResultFilter] = useState('All')
-  const [playerLogStageFilter, setPlayerLogStageFilter] = useState('All')
+  const [logLimit, setLogLimit] = useState(20)
+  const [playerLimit, setPlayerLimit] = useState(20)
+  const activeTeamChipRef = useRef(null)
 
   // Browser history for the in-page Teams selection.
   // There are only two navigation levels inside /teams:
@@ -715,7 +494,6 @@ export default function TeamsPage() {
         window.history.pushState(profileState, '', window.location.href)
       }
     }
-    setSelectedPlayerTeams(cleanTeam ? [cleanTeam] : [])
     setSelectedPlayerKey(playerKey)
   }
 
@@ -814,72 +592,19 @@ export default function TeamsPage() {
     setPlayerSort('Appearances')
     setPlayerSeasonFilter('All')
     setPlayerMinApps('All')
-    setPlayerLogSort({ key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: 'desc' })
-    setPlayerLogOpponentFilter('All')
-    setPlayerLogStatusFilter('All')
-    setPlayerLogResultFilter('All')
-    setPlayerLogStageFilter('All')
   }, [selected])
 
-  // Lock the document behind the Player Profile modal. This hook must stay
-  // at the component's top level so the hook order never changes between renders.
+  // Game Log / Player Archive start compact and grow with "Show more".
+  useEffect(() => { setLogLimit(20) }, [selected, logSeason, logOpponent, logGameType, log200Only, logHighestOnly])
+  useEffect(() => { setPlayerLimit(20) }, [selected, playerSearch, playerPositionFilter, playerSort, playerSeasonFilter, playerMinApps])
+
+  // Keep the selected franchise visible in the team switcher strip.
   useEffect(() => {
-    if (!selectedPlayerKey) return undefined
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') closePlayerProfile()
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('keydown', handleEscape)
-    }
-  }, [selectedPlayerKey])
-
-  // Player Profile state/effects MUST stay at TeamsPage's top level.
-  // They cannot live inside `if (selected)` because that changes the hook order.
-  useEffect(() => {
-    if (!selectedPlayerKey || !selected?.team) {
-      setSelectedPlayerTeams([])
-      return
-    }
-    setSelectedPlayerTeams([String(selected.team).trim()])
-  }, [selectedPlayerKey, selected?.team])
-
-  // Resolve the player's Sleeper ID from the existing identity lookup, then
-  // fetch the richer player object directly from Sleeper (not _PLAYER_CACHE).
-  useEffect(() => {
-    let cancelled = false
-    const rawName = selectedPlayerKey?.startsWith('raw:') ? selectedPlayerKey.slice(4) : ''
-    if (!rawName) {
-      setSleeperPlayerInfo(null)
-      setSleeperPlayerLoading(false)
-      return () => { cancelled = true }
-    }
-
-    const playerId = getPlayerId(rawName, playerLookup)
-    if (!playerId) {
-      setSleeperPlayerInfo(null)
-      setSleeperPlayerLoading(false)
-      return () => { cancelled = true }
-    }
-
-    setSleeperPlayerLoading(true)
-    fetchSleeperPlayers()
-      .then(players => {
-        if (cancelled) return
-        setSleeperPlayerInfo(players?.[String(playerId)] || null)
-      })
-      .catch(() => {
-        if (!cancelled) setSleeperPlayerInfo(null)
-      })
-      .finally(() => {
-        if (!cancelled) setSleeperPlayerLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [selectedPlayerKey, playerLookup])
+    const timer = setTimeout(() => {
+      activeTeamChipRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }, 80)
+    return () => clearTimeout(timer)
+  }, [selected?.team])
 
   // Force the page to the top after navigating between franchises from Historic.
   useEffect(() => {
@@ -1328,6 +1053,23 @@ export default function TeamsPage() {
 
   const allValuesFor = (key) => leagueStats ? Object.values(leagueStats).map(v => v[key]) : []
 
+  const renderShell = (content) => (
+    <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .mx-root { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-variant-numeric:tabular-nums; }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+      <Header />
+      <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-[13px] font-semibold text-[#6B7280]">Loading...</div>
+        ) : content}
+      </section>
+    </main>
+  )
+
   if (selected) {
     const teamH = getTeamHistory(selected.team)
     const teamH2H = getTeamH2H(selected.team)
@@ -1566,155 +1308,6 @@ export default function TeamsPage() {
       ? playerArchive.find(p => p.archiveKey === selectedPlayerKey) || null
       : null
 
-    const selectedPlayerGames = selectedPlayer
-      ? games.flatMap(g => {
-          const appearance = extractPlayerAppearances(g).find(a => {
-            const rawName = String(a?.name || '').trim()
-            return `raw:${rawName}` === selectedPlayer.archiveKey
-          })
-          if (!appearance) return []
-          const team = String(g?.Team || '').trim()
-          if (!selectedPlayerTeams.some(teamName => normalizeTeamName(teamName) === normalizeTeamName(team))) return []
-          return [{
-            season: String(g?.Season || '').trim(),
-            week: String(g?.Week || '').trim(),
-            team,
-            opponent: String(g?.Opponent || '').trim(),
-            status: appearance.status,
-            pts: isDoubleWeek(g) ? appearance.pts / 2 : appearance.pts,
-            rawPts: appearance.pts,
-            isDoubleWeek: isDoubleWeek(g),
-            position: getPlayerPosition(appearance.name, playerLookup),
-            matchupHref: canonicalMatchupHref(g, games),
-            teamPF: parseNumber(g?.PF),
-            result: String(g?.Result || '').trim().toUpperCase(),
-            gameStage: String(g?.GameStage || '').trim(),
-          }]
-        }).sort((a, b) => {
-          const sa = Number(a.season) || 0, sb = Number(b.season) || 0
-          if (sb !== sa) return sb - sa
-          return (parseFloat(b.week.replace(/[^0-9.]/g, '')) || 0) - (parseFloat(a.week.replace(/[^0-9.]/g, '')) || 0)
-        })
-      : []
-
-    const selectedPlayerStats = selectedPlayerGames.reduce((acc, game) => {
-      acc.appearances += 1
-      if (game.status === 'Starter') acc.starts += 1
-      else acc.bench += 1
-      acc.totalPts += game.pts || 0
-      if (!(game.status === 'Bench' && game.pts === 0)) {
-        acc.avgTotal += game.pts || 0
-        acc.avgCount += 1
-      }
-      // Double-weeks are valid for AVG but never qualify for BEST.
-      if (!game.isDoubleWeek) acc.bestPts = Math.max(acc.bestPts, game.pts || 0)
-      if (game.season) acc.seasons.add(game.season)
-      return acc
-    }, { appearances: 0, starts: 0, bench: 0, totalPts: 0, avgTotal: 0, avgCount: 0, bestPts: 0, seasons: new Set() })
-    selectedPlayerStats.avgPts = selectedPlayerStats.avgCount ? selectedPlayerStats.avgTotal / selectedPlayerStats.avgCount : 0
-
-    const playerLogOpponentOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.opponent).filter(Boolean))).sort()]
-    const playerLogStatusOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.status).filter(Boolean))).sort()]
-    const playerLogResultOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.result).filter(Boolean))).sort()]
-    const playerLogStageOptions = ['All', ...Array.from(new Set(selectedPlayerGames.map(g => g.gameStage).filter(Boolean))).sort()]
-
-    const filteredSelectedPlayerGames = selectedPlayerGames
-      .filter(g => playerLogOpponentFilter === 'All' || g.opponent === playerLogOpponentFilter)
-      .filter(g => playerLogStatusFilter === 'All' || g.status === playerLogStatusFilter)
-      .filter(g => playerLogResultFilter === 'All' || g.result === playerLogResultFilter)
-      .filter(g => playerLogStageFilter === 'All' || g.gameStage === playerLogStageFilter)
-
-    const sortedSelectedPlayerGames = [...filteredSelectedPlayerGames].sort((a, b) => {
-      const seasonA = Number(a.season) || 0
-      const seasonB = Number(b.season) || 0
-      const weekA = parseFloat(String(a.week || '').replace(/[^0-9.]/g, '')) || 0
-      const weekB = parseFloat(String(b.week || '').replace(/[^0-9.]/g, '')) || 0
-      const seasonDirection = playerLogSort.seasonDir === 'asc' ? 1 : -1
-      const weekDirection = playerLogSort.weekDir === 'asc' ? 1 : -1
-      const direction = playerLogSort.dir === 'asc' ? 1 : -1
-
-      // Season is always the primary grouping. Week sorting happens inside
-      // each season, so years never get interleaved.
-      if (seasonA !== seasonB) return (seasonA - seasonB) * seasonDirection
-
-      if (playerLogSort.key === 'week') {
-        if (weekA !== weekB) return (weekA - weekB) * weekDirection
-      } else if (playerLogSort.key === 'pts' || playerLogSort.key === 'teamPF') {
-        const av = playerLogSort.key === 'pts' ? a.pts || 0 : a.teamPF || 0
-        const bv = playerLogSort.key === 'pts' ? b.pts || 0 : b.teamPF || 0
-        if (av !== bv) return (av - bv) * direction
-      } else {
-        if (weekA !== weekB) return (weekA - weekB) * weekDirection
-      }
-
-      return `${a.season}-${a.week}-${a.opponent}`.localeCompare(`${b.season}-${b.week}-${b.opponent}`)
-    })
-
-    const handlePlayerLogSort = (key) => {
-      setPlayerLogSort(current => {
-        if (key === 'season') {
-          const nextDir = current.key === 'season' && current.seasonDir === 'desc' ? 'asc' : 'desc'
-          return { ...current, key, dir: nextDir, seasonDir: nextDir }
-        }
-        if (key === 'week') {
-          const nextDir = current.key === 'week' && current.weekDir === 'desc' ? 'asc' : 'desc'
-          return { ...current, key, dir: nextDir, weekDir: nextDir }
-        }
-        const nextDir = current.key === key && current.dir === 'desc' ? 'asc' : 'desc'
-        return { ...current, key, dir: nextDir }
-      })
-    }
-
-    // Historic clubs: scan the COMPLETE GAME_FACTS_ALL dataset using the
-    // player's exact raw name as identity. This intentionally does not use
-    // normalized/abbreviated names, so different players with the same
-    // display abbreviation are never merged.
-    const selectedPlayerClubs = selectedPlayer
-      ? Array.from(new Map(
-          games
-            .filter(g => extractPlayerAppearances(g).some(a => {
-              const rawName = String(a?.name || '').trim()
-              return `raw:${rawName}` === selectedPlayer.archiveKey
-            }))
-            .map(g => {
-              const teamName = String(g?.Team || '').trim()
-              return [teamName, null]
-            })
-        ).keys())
-          .filter(Boolean)
-          .map(teamName => ({
-            team: teamName,
-            seasons: Array.from(new Set(
-              games
-                .filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName))
-                .filter(g => extractPlayerAppearances(g).some(a => {
-                  const rawName = String(a?.name || '').trim()
-                  return `raw:${rawName}` === selectedPlayer.archiveKey
-                }))
-                .map(g => String(g?.Season || '').trim())
-                .filter(Boolean)
-            )).sort((a, b) => Number(a) - Number(b)),
-          }))
-          .sort((a, b) => {
-            const selectedKey = normalizeTeamName(selected.team)
-            return normalizeTeamName(a.team) === selectedKey ? -1 : normalizeTeamName(b.team) === selectedKey ? 1 : normalizeTeamName(a.team).localeCompare(normalizeTeamName(b.team))
-          })
-      : []
-
-
-    const togglePlayerTeam = (teamName) => {
-      const normalized = normalizeTeamName(teamName)
-      setSelectedPlayerTeams(current => {
-        const exists = current.some(team => normalizeTeamName(team) === normalized)
-        if (exists) {
-          // Never leave the profile without a franchise selected.
-          if (current.length === 1) return current
-          return current.filter(team => normalizeTeamName(team) !== normalized)
-        }
-        return [...current, teamName]
-      })
-    }
-
     const teamRecordLabel = `${parseNumber(selected.W)}–${parseNumber(selected.L)}`
     const teamSeasons = new Set(teamH.map(r => String(r?.Season || '').trim()).filter(Boolean)).size
     const recentSeason = teamH[0] || null
@@ -1736,61 +1329,75 @@ export default function TeamsPage() {
       { label: 'PR #1 Weeks', value: pr1Weeks, sub: pr1Rank || 'Regular season', href: '/powerrankings', accent: 'gold' },
     ]
 
-    const accentMap = {
-      gold: { text: 'text-[#8D6A00]', bg: 'bg-[#FFF8DA]' },
-      navy: { text: 'text-[#16274F]', bg: 'bg-[#F3F6FC]' },
-      green: { text: 'text-[#1E8E3E]', bg: 'bg-[#F2F8F3]' },
-      red: { text: 'text-[#D01F2D]', bg: 'bg-[#FDF1F2]' },
-    }
+    const firstSeason = teamH.length ? String(teamH[teamH.length - 1]?.Season || '').trim() : ''
+    const recentStanding = recentSeason ? parseNumber(recentSeason.Standing) : 0
+    const seasonRowBySeason = new Map(teamH.map(r => [String(r?.Season || '').trim(), r]))
 
-    const SectionHeader = ({ eyebrow, title, meta, icon: Icon }) => (
-      <div className="flex items-end justify-between gap-3 border-b border-[#EEF0F2] px-3 py-3 sm:px-4">
-        <div className="min-w-0 flex items-center gap-2.5">
-          {Icon && <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#F4F5F7] text-[#16274F]"><Icon className="h-4 w-4" /></div>}
-          <div className="min-w-0">
-            {eyebrow && <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#6B7280]">{eyebrow}</div>}
-            <div className="truncate text-[14px] font-semibold text-[#111]">{title}</div>
-          </div>
-        </div>
-        {meta && <div className="flex-shrink-0 text-[11px] text-[#6B7280]">{meta}</div>}
-      </div>
-    )
+    const recordGroups = [
+      {
+        label: 'Single weeks',
+        items: [
+          { ...recordHighlights[0], valueClass: 'text-[#1E8E3E]' },
+          { ...recordHighlights[1], valueClass: 'text-[#D01F2D]' },
+          recordHighlights[4],
+          { label: 'Week High Scorer', value: topScoringWeeks, sub: topScoringWeeksRank || 'Regular season', href: '/records' },
+          recordHighlights[5],
+        ],
+      },
+      {
+        label: 'Streaks',
+        items: [
+          { ...recordHighlights[2], valueClass: 'text-[#1E8E3E]' },
+          { ...recordHighlights[3], valueClass: 'text-[#D01F2D]' },
+        ],
+      },
+      {
+        label: 'Seasons',
+        items: [
+          { label: 'Best Season', value: bestSeason ? `${parseNumber(bestSeason.RS_W)}–${parseNumber(bestSeason.RS_L)}` : '—', sub: bestSeason ? `${bestSeason.Season} · ${Math.round(parseNumber(bestSeason.RS_PF)).toLocaleString()} pts` : '—', valueClass: 'text-[#1E8E3E]' },
+          { label: 'Worst Season', value: worstSeason ? `${parseNumber(worstSeason.RS_W)}–${parseNumber(worstSeason.RS_L)}` : '—', sub: worstSeason ? `${worstSeason.Season} · ${Math.round(parseNumber(worstSeason.RS_PF)).toLocaleString()} pts` : '—', valueClass: 'text-[#D01F2D]' },
+        ],
+      },
+    ]
 
-    const TeamList = () => (
-      <div className="overflow-hidden rounded-xl bg-white">
-        <SectionHeader eyebrow="Tapitas League" title="Current franchises" meta={`${teams.length} teams`} icon={Users} />
-        <div className="grid gap-px bg-[#EEF0F2] md:grid-cols-2">
-          {teams.map((team, i) => {
-            const teamHistory = getTeamHistory(team.team)
-            const teamTitles = teamHistory.filter(r => isTrueFlag(r?.Champion)).length
-            const currentSeason = teamHistory[0]
-            const seasonCount = new Set(teamHistory.map(r => String(r?.Season || '').trim()).filter(Boolean)).size
-            const record = `${parseNumber(team.W)}–${parseNumber(team.L)}`
-            const pct = String(team?.['W%'] || '').trim()
-            const isChampion = teamTitles > 0
+    const franchisePlayers = [
+      mostRostered.length > 0 ? { label: 'Most appearances', p: mostRostered[0], value: mostRostered[0].count } : null,
+      mostStarted.length > 0 ? { label: 'Most starts', p: mostStarted[0], value: mostStarted[0].count } : null,
+      bestAvgPlayer ? { label: 'Best average', p: bestAvgPlayer, value: bestAvgPlayer.avgPts.toFixed(2) } : null,
+      bestScorePlayer ? { label: 'Best single game', p: bestScorePlayer, value: bestScorePlayer.bestPts.toFixed(2) } : null,
+    ].filter(Boolean)
+
+    const hasLogFilters = logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly
+    const clearLogFilters = () => { setLogSeason('All'); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false) }
+    const visibleLog = filteredLog.slice(0, logLimit)
+    const visiblePlayers = filteredPlayers.slice(0, playerLimit)
+
+    // ── Team switcher (same strip pattern as the Matchups scoreboard) ──
+    const teamStrip = (
+      <div className="mb-2 overflow-hidden rounded-xl bg-white">
+        <div className="scroll-hide flex gap-1.5 overflow-x-auto p-2">
+          <button
+            type="button"
+            onClick={showAllTeams}
+            className="flex flex-shrink-0 items-center gap-1 rounded-lg bg-[#F4F5F7] px-3 py-2 text-[13px] font-medium text-[#3F4757] transition-colors hover:bg-[#ECEEF1]"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            All teams
+          </button>
+          {teams.map(t => {
+            const active = normalizeTeamName(t.team) === normalizeTeamName(selected.team)
             return (
-              <button key={i} type="button" onClick={() => selectTeam(team)} className="group flex min-w-0 items-center gap-3 bg-white px-3 py-3.5 text-left transition-colors hover:bg-[#F7F8FA] md:px-4">
-                <TeamAvatar name={team.team} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{shortName(team.team)}</span>
-                    {isChampion && <span className="flex-shrink-0 text-[11px]">🏆</span>}
-                  </div>
-                  <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-[#6B7280]">
-                    <span>{seasonCount} seasons</span><span>·</span><span>{teamTitles} titles</span>
-                    {currentSeason?.Season && <><span>·</span><span>{currentSeason.Season}</span></>}
-                  </div>
-                </div>
-                <div className="flex w-[136px] flex-shrink-0 items-center justify-end gap-3 tabular-nums">
-                  <div className="text-right">
-                    <div className="text-[16px] font-semibold leading-none text-[#111]">{record}</div>
-                    <div className="mt-1 text-[10px] text-[#6B7280]">{pct}</div>
-                  </div>
-                  <div className="hidden text-right sm:block">
-                    <div className="text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">PF</div>
-                    <div className="mt-0.5 text-[12px] font-medium text-[#3F4757]">{Math.round(parseNumber(team.PF)).toLocaleString()}</div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#A0A5AD] transition-transform group-hover:translate-x-0.5 group-hover:text-[#D01F2D]" />
+              <button
+                key={t.team}
+                ref={active ? activeTeamChipRef : null}
+                type="button"
+                onClick={() => { if (!active) selectTeam(t) }}
+                className={`flex w-[9.5rem] flex-shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors ${active ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
+              >
+                <TeamAvatar name={t.team} size="xs" />
+                <div className="min-w-0">
+                  <div className={`truncate text-[13px] leading-5 ${active ? 'font-semibold text-[#111]' : 'text-[#3F4757]'}`}>{shortName(t.team)}</div>
+                  <div className="text-[11px] leading-4 tabular-nums text-[#6B7280]">{parseNumber(t.W)}–{parseNumber(t.L)}</div>
                 </div>
               </button>
             )
@@ -1799,61 +1406,132 @@ export default function TeamsPage() {
       </div>
     )
 
-    const HeadToHeadCard = () => (
-      <div className="overflow-hidden rounded-xl bg-white">
-        <SectionHeader eyebrow="Matchups" title="Head to Head" meta="vs all franchises" icon={Swords} />
-        <div className="divide-y divide-[#F1F2F4]">
-          {teamH2H.map((h, i) => {
-            const total = h.wins + h.losses
-            const pct = total > 0 ? Math.round((h.wins / total) * 100) : 0
-            const ahead = h.wins > h.losses
-            const tied = h.wins === h.losses
-            return (
-              <a key={i} href={`/rivalries?teamA=${encodeURIComponent(selected.team)}&teamB=${encodeURIComponent(h.opponent)}`} className="flex items-center gap-3 px-3 py-3 transition-colors hover:bg-[#F7F8FA] sm:px-4">
-                <TeamAvatar name={h.opponent} size="xs" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-semibold text-[#111]">{shortName(h.opponent)}</div>
-                  <div className="mt-0.5 text-[10px] text-[#6B7280]">{h.games} games · {h.streak || '—'}</div>
-                </div>
-                <div className="text-right tabular-nums">
-                  <div className={`text-[12px] font-semibold ${ahead ? 'text-[#1E8E3E]' : tied ? 'text-[#6B7280]' : 'text-[#D01F2D]'}`}>{h.wins}–{h.losses}</div>
-                  <div className="text-[9px] text-[#6B7280]">{pct}%</div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[#A0A5AD]" />
-              </a>
-            )
-          })}
+    // ── Franchise header ───────────────────────────────────────────
+    const heroCard = (
+      <div className="mb-2 overflow-hidden rounded-xl bg-white">
+        <div className="flex items-center gap-3 px-3 py-4 sm:gap-4 sm:px-5 sm:py-5">
+          <TeamAvatar name={selected.team} size="md" />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-[22px] font-bold leading-tight tracking-tight text-[#111] sm:text-[30px]">{selected.team}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[#6B7280] sm:text-[13px]">
+              <span className="font-semibold text-[#111]">{teamRecordLabel}</span>
+              <span>·</span><span>{winPct} win rate</span>
+              <span>·</span><span>{teamSeasons} seasons</span>
+              {firstSeason && <><span>·</span><span>Since {firstSeason}</span></>}
+            </div>
+          </div>
+          {recentSeason && (
+            <div className="hidden flex-shrink-0 rounded-lg bg-[#F4F5F7] px-4 py-2.5 text-right sm:block">
+              <div className="text-[11px] text-[#6B7280]">{recentSeason.Season} season</div>
+              <div className="mt-0.5 text-[20px] font-bold leading-none tabular-nums text-[#111]">{parseNumber(recentSeason.RS_W)}–{parseNumber(recentSeason.RS_L)}</div>
+              <div className="mt-1 text-[11px] text-[#6B7280]">{recentStanding > 0 ? `Finished #${recentStanding}` : 'In progress'}</div>
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-px border-t border-[#EEF0F2] bg-[#EEF0F2] sm:grid-cols-6">
+          {profileStats.map(stat => (
+            <div key={stat.label} className="min-w-0 bg-white px-3 py-3 sm:px-5">
+              <div className="truncate text-[11px] text-[#6B7280]">{stat.label}</div>
+              <div className={`mt-1 text-[22px] font-bold leading-none tabular-nums ${stat.label === 'Titles' && titles.length ? 'text-[#B8860B]' : 'text-[#111]'}`}>{stat.value}</div>
+              <div className="mt-1 truncate text-[11px] text-[#6B7280]">{stat.sub}</div>
+            </div>
+          ))}
         </div>
       </div>
     )
 
-    const SeasonHistoryCard = () => (
-      <div className="overflow-hidden rounded-xl bg-white">
-        <SectionHeader eyebrow="History" title="Season History" meta={`${teamSeasons} seasons`} icon={Activity} />
+    // ── Sidebar: records + franchise players ───────────────────────
+    const recordsCard = (
+      <CardShell title="Franchise Records" subtitle="All-time · current franchises ranking" sidebar>
+        {recordGroups.map((group, gi) => (
+          <CardGroup key={group.label} label={group.label} first={gi === 0}>
+            {group.items.map(item => (
+              <StatRow key={item.label} title={item.label} subtitle={item.sub} value={item.value} valueClass={item.valueClass} href={item.href} />
+            ))}
+          </CardGroup>
+        ))}
+        <div className="h-2 lg:h-3" />
+      </CardShell>
+    )
+
+    const playersCard = franchisePlayers.length > 0 && (
+      <CardShell title="Franchise Players" subtitle="All-time roster leaders" sidebar>
+        <div className="py-1 lg:py-2">
+          {franchisePlayers.map(item => (
+            <StatRow
+              key={item.label}
+              onClick={() => openPlayerProfile(item.p.archiveKey || `raw:${item.p.rawName}`)}
+              left={<PlayerAvatar name={item.p.rawName} playerLookup={playerLookup} size={32} />}
+              eyebrow={item.label}
+              title={item.p.name}
+              value={item.value}
+            />
+          ))}
+        </div>
+      </CardShell>
+    )
+
+    const h2hCard = (
+      <CardShell title="Head to Head" subtitle="All-time vs every franchise" sidebar>
+        <div className="py-1 lg:py-2">
+          {teamH2H.map(h => {
+            const total = h.wins + h.losses
+            const pct = total > 0 ? Math.round((h.wins / total) * 100) : 0
+            const color = h.wins > h.losses ? 'text-[#1E8E3E]' : h.wins < h.losses ? 'text-[#D01F2D]' : 'text-[#6B7280]'
+            return (
+              <StatRow
+                key={h.opponent}
+                href={`/rivalries?teamA=${encodeURIComponent(selected.team)}&teamB=${encodeURIComponent(h.opponent)}`}
+                left={<TeamAvatar name={h.opponent} size="xs" />}
+                title={shortName(h.opponent)}
+                subtitle={`${h.games} games${h.streak ? ` · ${h.streak}` : ''}`}
+                value={<div className="text-right"><div className={color}>{h.wins}–{h.losses}</div><div className="text-[11px] font-normal text-[#6B7280]">{pct}%</div></div>}
+              />
+            )
+          })}
+        </div>
+      </CardShell>
+    )
+
+    // ── Main column ────────────────────────────────────────────────
+    const seasonHistoryCard = (
+      <CardShell title="Season History" subtitle={`${teamSeasons} seasons · tap a season to filter the game log`}>
         <div className="overflow-x-auto">
-          <table className="min-w-[680px] w-full">
-            <thead className="bg-[#F7F8FA]">
+          <table className="w-full">
+            <thead>
               <tr className="border-b border-[#EEF0F2]">
-                {['Season','RS','Overall','PF','Finish','Result'].map(h => <th key={h} className="px-3 py-2.5 text-left text-[9px] font-semibold uppercase tracking-[0.13em] text-[#6B7280] sm:px-4">{h}</th>)}
+                {[['Season', 'left', ''], ['Reg. season', 'left', ''], ['Overall', 'left', 'hidden sm:table-cell'], ['PF', 'right', 'hidden sm:table-cell'], ['Finish', 'right', ''], ['Result', 'left', '']].map(([h, align, visibility]) => (
+                  <th key={h} className={`px-3 py-2 text-[11px] font-medium text-[#6B7280] lg:px-4 ${align === 'right' ? 'text-right' : 'text-left'} ${visibility}`}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {teamH.map((r, i) => {
+              {teamH.map(r => {
                 const isChamp = isTrueFlag(r?.Champion)
                 const isFinal = isTrueFlag(r?.Reached_Final)
-                const isPlayoff = String(r?.Made_Playoffs || '').toUpperCase() === 'TRUE'
+                const isPlayoff = isTrueFlag(r?.Made_Playoffs)
+                const standing = parseNumber(r.Standing)
                 return (
-                  <tr key={i} onClick={() => { setLogSeason(String(r.Season)); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false); setMobileTeamView('games'); requestAnimationFrame(() => gameLogRef.current?.scrollIntoView({behavior:'smooth',block:'start'})) }} className="cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
-                    <td className="px-3 py-3 text-[12px] font-semibold text-[#16274F] sm:px-4">{r.Season}</td>
-                    <td className="px-3 py-3 text-[12px] tabular-nums text-[#3F4757] sm:px-4">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</td>
-                    <td className="px-3 py-3 text-[12px] tabular-nums text-[#3F4757] sm:px-4">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
-                    <td className="px-3 py-3 text-[12px] tabular-nums text-[#3F4757] sm:px-4">{Math.round(parseNumber(r.RS_PF))}</td>
-                    <td className="px-3 py-3 text-[10px] text-[#6B7280] sm:px-4">{parseNumber(r.Standing) > 0 ? `#${parseNumber(r.Standing)}` : '—'}</td>
-                    <td className="px-3 py-3 sm:px-4">
-                      {isChamp ? <span className="inline-flex rounded-full bg-[#FFF2B8] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-[#6B5A00]">Champion</span>
-                        : isFinal ? <span className="inline-flex rounded-full bg-[#EEF3FF] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-[#16274F]">Final</span>
-                        : isPlayoff ? <span className="inline-flex rounded-full bg-[#F4F5F7] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-[#6B7280]">Playoffs</span>
-                        : <span className="text-[9px] text-[#9CA3AF]">—</span>}
+                  <tr
+                    key={r.Season}
+                    onClick={() => {
+                      setLogSeason(String(r.Season)); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false)
+                      setMobileTeamView('games')
+                      requestAnimationFrame(() => gameLogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+                    }}
+                    className={`cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] ${isChamp ? 'bg-[#FFFBEA]' : ''}`}
+                  >
+                    <td className="px-3 py-2.5 text-[13px] font-semibold text-[#111] lg:px-4">{r.Season}</td>
+                    <td className="px-3 py-2.5 text-[13px] tabular-nums text-[#3F4757] lg:px-4">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</td>
+                    <td className="hidden px-3 py-2.5 text-[13px] tabular-nums text-[#3F4757] sm:table-cell lg:px-4">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
+                    <td className="hidden px-3 py-2.5 text-right text-[13px] tabular-nums text-[#3F4757] sm:table-cell lg:px-4">{Math.round(parseNumber(r.RS_PF)).toLocaleString()}</td>
+                    <td className="px-3 py-2.5 text-right text-[13px] tabular-nums text-[#3F4757] lg:px-4">{standing > 0 ? `#${standing}` : '—'}</td>
+                    <td className="px-3 py-2.5 lg:px-4">
+                      {isChamp ? <Tag tone="gold">🏆 Champion</Tag>
+                        : isFinal ? <Tag tone="navy">Final</Tag>
+                        : isPlayoff ? <Tag>Playoffs</Tag>
+                        : standing > 0 ? <span className="text-[12px] text-[#9CA3AF]">Missed playoffs</span>
+                        : <span className="text-[12px] text-[#9CA3AF]">In progress</span>}
                     </td>
                   </tr>
                 )
@@ -1861,220 +1539,274 @@ export default function TeamsPage() {
             </tbody>
           </table>
         </div>
+      </CardShell>
+    )
+
+    const gameLogCard = (
+      <div ref={gameLogRef} className="scroll-mt-3">
+        <CardShell
+          title="Game Log"
+          subtitle={`${filteredLog.length} of ${teamGames.length} games`}
+          withMenus
+          action={hasLogFilters && <button type="button" onClick={clearLogFilters} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">Clear filters</button>}
+        >
+          <div className="flex flex-wrap gap-1.5 border-b border-[#EEF0F2] px-3 py-2.5 lg:px-4">
+            <FilterPill value={logSeason} onChange={setLogSeason} options={logSeasonOptions} label="Season" />
+            <FilterPill value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} label="Opponent" displayOption={shortName} />
+            <FilterPill value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} label="Game type" displayOption={opt => ({ 'Reg Season': 'Regular season' }[opt] || opt)} />
+            <ToggleChip active={log200Only} onClick={() => setLog200Only(p => !p)}>200+ pts</ToggleChip>
+            <ToggleChip active={logHighestOnly} onClick={() => setLogHighestOnly(p => !p)}>Week high</ToggleChip>
+          </div>
+          <div className="overflow-hidden rounded-b-xl">
+            {visibleLog.map((g, i) => {
+              const season = String(g?.Season || '').trim()
+              const showSeasonHeader = i === 0 || season !== String(visibleLog[i - 1]?.Season || '').trim()
+              const seasonRow = seasonRowBySeason.get(season)
+              const result = String(g?.Result || '').trim().toUpperCase()
+              const pf = parseWeeklyPoints(g?.PF)
+              const pa = parseWeeklyPoints(g?.PA)
+              const gType = String(g?.GameStage || '').trim()
+              const key = `${season}|${String(g?.Week || '').trim()}`
+              const isWeekHigh = gType === 'Reg Season' && pf > 0 && pf === weeklyMaxPFRS[key]
+              return (
+                <React.Fragment key={`${season}-${g.Week}-${g.Opponent}-${i}`}>
+                  {showSeasonHeader && (
+                    <div className="flex items-center justify-between bg-[#F6F7F9] px-3 py-1.5 text-[12px] lg:px-4">
+                      <span className="font-semibold text-[#111]">{season}</span>
+                      {seasonRow && <span className="tabular-nums text-[#6B7280]">{parseNumber(seasonRow.W)}–{parseNumber(seasonRow.L)}</span>}
+                    </div>
+                  )}
+                  <a href={canonicalMatchupHref(g, games)} className="group grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-2 border-b border-[#F1F2F4] px-3 py-2.5 transition-colors hover:bg-[#F7F8FA] lg:grid-cols-[64px_minmax(0,1fr)_auto] lg:gap-3 lg:px-4">
+                    <div className="text-[12px] tabular-nums text-[#6B7280]">Wk {g.Week}</div>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <TeamAvatar name={g.Opponent} size="xs" />
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">vs {shortName(g.Opponent)}</div>
+                        {(gType !== 'Reg Season' || pf >= 200 || isWeekHigh) && (
+                          <div className="mt-0.5 flex flex-wrap gap-1">
+                            {gType && gType !== 'Reg Season' && <Tag>{gType}</Tag>}
+                            {pf >= 200 && !isDoubleWeek(g) && <Tag tone="gold">200+</Tag>}
+                            {isWeekHigh && <Tag tone="navy">Week high</Tag>}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ResultBadge result={result} />
+                      <span className="w-[92px] text-right text-[13px] tabular-nums">
+                        <span className="font-semibold text-[#111]">{pf.toFixed(1)}</span>
+                        <span className="text-[#9CA3AF]"> – {pa.toFixed(1)}</span>
+                      </span>
+                      <ChevronRight className="hidden h-4 w-4 text-[#A0A5AD] sm:block" />
+                    </div>
+                  </a>
+                </React.Fragment>
+              )
+            })}
+            {filteredLog.length === 0 && <div className="py-12 text-center text-[13px] text-[#6B7280]">No games match these filters</div>}
+            {filteredLog.length > logLimit && (
+              <button type="button" onClick={() => setLogLimit(l => l + 25)} className="w-full py-3 text-[13px] font-semibold text-[#D01F2D] transition-colors hover:bg-[#F7F8FA]">
+                Show more games ({filteredLog.length - logLimit} remaining)
+              </button>
+            )}
+          </div>
+        </CardShell>
       </div>
     )
 
-    const GameLogCard = () => (
-      <div ref={gameLogRef} className="overflow-hidden rounded-xl bg-white scroll-mt-3">
-        <SectionHeader eyebrow="Performance" title="Game Log" meta={`${filteredLog.length} of ${teamGames.length} games`} icon={Filter} />
-        <div className="border-b border-[#EEF0F2] p-2.5 sm:p-3">
-          <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
-            <CompactCheckFilter value={logSeason} onChange={setLogSeason} options={logSeasonOptions} label="Season" />
-            <CompactCheckFilter value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} label="Opponent" displayOption={opt => opt === 'All' ? opt : shortName(opt)} />
-            <CompactCheckFilter value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} label="Game Type" displayOption={opt => ({'Reg Season':'Regular','Playoffs':'Playoffs','Consolation':'Consol.'}[opt] || opt)} />
-            <button onClick={() => setLog200Only(p => !p)} className={`flex min-h-9 w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-[9px] font-semibold uppercase tracking-[0.12em] sm:w-auto ${log200Only ? 'border-[#16274F] bg-[#EEF3FF] text-[#16274F]' : 'border-[#E4E6EA] bg-white text-[#3F4757]'}`}><span className={`flex h-4 w-4 items-center justify-center rounded border text-[9px] ${log200Only ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#C9CDD4]'}`}>{log200Only ? '✓' : ''}</span>200+ pts</button>
-            <button onClick={() => setLogHighestOnly(p => !p)} className={`flex min-h-9 w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-[9px] font-semibold uppercase tracking-[0.12em] sm:w-auto ${logHighestOnly ? 'border-[#16274F] bg-[#EEF3FF] text-[#16274F]' : 'border-[#E4E6EA] bg-white text-[#3F4757]'}`}><span className={`flex h-4 w-4 items-center justify-center rounded border text-[9px] ${logHighestOnly ? 'border-[#16274F] bg-[#16274F] text-white' : 'border-[#C9CDD4]'}`}>{logHighestOnly ? '✓' : ''}</span>Week High</button>
-            {(logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly) && <button onClick={() => { setLogSeason('All'); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false) }} className="col-span-2 min-h-9 rounded-lg border border-[#E4E6EA] bg-[#F7F8FA] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6B7280] sm:col-span-1">Clear</button>}
-          </div>
+    const playerArchiveCard = (
+      <CardShell title="Player Archive" subtitle={`${filteredPlayers.length} of ${playerArchive.length} players who suited up for ${shortName(selected.team)}`} withMenus>
+        <div className="flex flex-wrap gap-1.5 border-b border-[#EEF0F2] px-3 py-2.5 lg:px-4">
+          <FilterPill value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} label="Sort" neutral />
+          <FilterPill value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
+          <FilterPill value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} label="Season" />
+          {playerMinAppOptions.length > 1 && <FilterPill value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} label="Min apps" />}
+          <input
+            value={playerSearch}
+            onChange={e => setPlayerSearch(e.target.value)}
+            placeholder="Search player…"
+            className="h-8 w-full min-w-0 rounded-full bg-[#F4F5F7] px-3 text-[12px] text-[#111] outline-none placeholder:text-[#9CA3AF] focus:bg-white focus:ring-1 focus:ring-[#111] sm:w-48"
+          />
         </div>
-        <div className="max-h-[560px] overflow-auto">
-          {filteredLog.map((g, i) => {
-            const won = String(g?.Result || '').trim().toUpperCase() === 'W'
-            const pf = parseWeeklyPoints(g?.PF)
-            const pa = parseWeeklyPoints(g?.PA)
-            const gType = String(g?.GameStage || '').trim()
-            const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
-            const isWeekHigh = gType === 'Reg Season' && pf > 0 && pf === weeklyMaxPFRS[key]
-            const canonical = games.find(row => String(row?.Season || '').trim() === String(g?.Season || '').trim() && String(row?.Week || '').trim() === String(g?.Week || '').trim() && ((normalizeTeamName(row?.Team) === normalizeTeamName(selected.team) && normalizeTeamName(row?.Opponent) === normalizeTeamName(g?.Opponent)) || (normalizeTeamName(row?.Team) === normalizeTeamName(g?.Opponent) && normalizeTeamName(row?.Opponent) === normalizeTeamName(selected.team)))) || g
-            const href = canonicalMatchupHref(canonical, games)
-            return (
-              <a key={i} href={href} className="grid grid-cols-[56px_28px_minmax(0,1fr)_auto] items-center gap-2 border-b border-[#F1F2F4] px-3 py-3 transition-colors hover:bg-[#F7F8FA] sm:grid-cols-[78px_32px_minmax(0,1fr)_auto] sm:gap-3 sm:px-4">
-                <div><div className="text-[11px] font-semibold text-[#16274F]">{g.Season}</div><div className="text-[9px] text-[#6B7280]">Wk {g.Week}</div></div>
-                <TeamAvatar name={g.Opponent} size="xs" />
+        <div className="grid grid-cols-[minmax(0,1fr)_52px_52px] gap-2 border-b border-[#EEF0F2] px-3 py-2 text-[11px] font-medium text-[#6B7280] sm:grid-cols-[minmax(0,1fr)_48px_48px_56px_56px] lg:px-4">
+          <span>Player</span>
+          <span className="hidden text-right sm:block">Apps</span>
+          <span className="hidden text-right sm:block">Starts</span>
+          <span className="text-right">Avg</span>
+          <span className="text-right">Best</span>
+        </div>
+        <div className="overflow-hidden rounded-b-xl">
+          {visiblePlayers.map(player => (
+            <button
+              key={player.archiveKey}
+              type="button"
+              onClick={() => openPlayerProfile(player.archiveKey)}
+              className="group grid w-full grid-cols-[minmax(0,1fr)_52px_52px] items-center gap-2 border-b border-[#F1F2F4] px-3 py-2 text-left transition-colors hover:bg-[#F7F8FA] sm:grid-cols-[minmax(0,1fr)_48px_48px_56px_56px] lg:px-4"
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={34} />
                 <div className="min-w-0">
-                  <div className="truncate text-[12px] font-semibold text-[#111]">vs {shortName(g.Opponent)}</div>
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    {gType !== 'Reg Season' && <span className="rounded-full bg-[#F4F5F7] px-1.5 py-0.5 text-[8px] font-medium uppercase text-[#6B7280]">{gType}</span>}
-                    {pf >= 200 && <span className="rounded-full bg-[#FFF2B8] px-1.5 py-0.5 text-[8px] font-semibold uppercase text-[#6B5A00]">200+</span>}
-                    {isWeekHigh && <span className="rounded-full bg-[#EEF3FF] px-1.5 py-0.5 text-[8px] font-semibold uppercase text-[#16274F]">Week High</span>}
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{player.name}</span>
+                    {player.position && <span className={`flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none ${getPositionBadgeClasses(player.position)}`}>{player.position}</span>}
+                  </div>
+                  <div className="mt-0.5 truncate text-[11px] text-[#6B7280]">
+                    {formatSeasonList(Array.from(player.seasons))}
+                    <span className="sm:hidden"> · {player.appearances} apps · {player.starts} starts</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 tabular-nums"><span className={`text-[12px] font-semibold whitespace-nowrap ${won ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{won ? 'W' : 'L'} {pf.toFixed(1)}–{pa.toFixed(1)}</span><ChevronRight className="h-4 w-4 text-[#A0A5AD]" /></div>
-              </a>
-            )
-          })}
-          {filteredLog.length === 0 && <div className="py-12 text-center text-[12px] text-[#6B7280]">No games match these filters</div>}
-        </div>
-      </div>
-    )
-
-    const PlayerArchiveCard = () => (
-      <div className="overflow-hidden rounded-xl bg-white">
-        <SectionHeader eyebrow="Roster history" title="Player Archive" meta={`${playerArchive.length} players`} icon={Users} />
-        <div className="border-b border-[#EEF0F2] p-2.5 sm:p-3">
-          <div className="grid grid-cols-2 gap-1.5 lg:flex lg:items-center">
-            <CompactCheckFilter value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
-            <CompactCheckFilter value={playerSort} onChange={setPlayerSort} options={['Appearances','Starts','Benchs','Average Points','Highest Score']} label="Sort by" neutral />
-            <CompactCheckFilter value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} label="Season" />
-            <CompactCheckFilter value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} label="Min apps" />
-            <div className="col-span-2 lg:w-64"><input value={playerSearch} onChange={e => setPlayerSearch(e.target.value)} placeholder="Search player..." className="w-full rounded-lg border border-[#E4E6EA] bg-white px-3 py-2.5 text-[12px] text-[#111] outline-none placeholder:text-[#9CA3AF] focus:border-[#D01F2D]" /></div>
-          </div>
-        </div>
-        <div className="grid max-h-[660px] grid-cols-1 gap-px overflow-y-auto bg-[#EEF0F2] sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          {filteredPlayers.map(player => (
-            <button key={player.archiveKey} onClick={() => openPlayerProfile(player.archiveKey)} className="group flex items-center gap-3 bg-white px-3 py-3.5 text-left transition-colors hover:bg-[#F7F8FA] sm:px-4">
-              <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={46} />
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[12px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{player.name}</span>{player.position && <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-semibold uppercase ${getPositionBadgeClasses(player.position).replace(/border-\S+/g,'border-transparent')}`}>{player.position}</span>}</div>
-                <div className="mt-1 text-[9px] text-[#6B7280]">{player.appearances} apps · {player.starts} starts · {player.bench} bench</div>
               </div>
-              <div className="hidden text-right sm:block"><div className="text-[11px] font-semibold text-[#16274F]">{player.avgPts.toFixed(2)}</div><div className="text-[8px] uppercase tracking-[0.1em] text-[#6B7280]">AVG</div></div>
-              <div className="text-right"><div className="text-[11px] font-semibold text-[#16274F]">{player.bestPts.toFixed(2)}</div><div className="text-[8px] uppercase tracking-[0.1em] text-[#6B7280]">BEST</div></div>
-              <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#A0A5AD]" />
+              <span className="hidden text-right text-[13px] tabular-nums text-[#3F4757] sm:block">{player.appearances}</span>
+              <span className="hidden text-right text-[13px] tabular-nums text-[#3F4757] sm:block">{player.starts}</span>
+              <span className="text-right text-[13px] font-semibold tabular-nums text-[#111]">{player.avgPts.toFixed(1)}</span>
+              <span className="text-right text-[13px] font-semibold tabular-nums text-[#111]">{player.bestPts.toFixed(1)}</span>
             </button>
           ))}
-          {filteredPlayers.length === 0 && <div className="col-span-full bg-white py-12 text-center text-[12px] text-[#6B7280]">No players found</div>}
+          {filteredPlayers.length === 0 && <div className="py-12 text-center text-[13px] text-[#6B7280]">No players found</div>}
+          {filteredPlayers.length > playerLimit && (
+            <button type="button" onClick={() => setPlayerLimit(l => l + 25)} className="w-full py-3 text-[13px] font-semibold text-[#D01F2D] transition-colors hover:bg-[#F7F8FA]">
+              Show more players ({filteredPlayers.length - playerLimit} remaining)
+            </button>
+          )}
         </div>
-      </div>
+      </CardShell>
     )
 
     const PlayerProfile = selectedPlayer ? (
-      <div className="fixed inset-0 z-[80] flex items-stretch justify-center bg-[#111]/55 p-0 sm:items-center sm:p-4" onClick={closePlayerProfile}>
-        <div className="flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white sm:h-[92vh]" onClick={e => e.stopPropagation()}>
-          <div className="flex-shrink-0 border-b border-[#EEF0F2] bg-[#16274F] px-3 py-3 text-white sm:px-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70">Player Profile</div>
-              <button onClick={closePlayerProfile} className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-lg text-white hover:bg-white/15" aria-label="Close player profile">×</button>
-            </div>
-            <div className="mt-3 flex items-center gap-3 sm:gap-4">
-              <PlayerAvatar name={selectedPlayer.rawName} playerLookup={playerLookup} size={64} />
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-2"><h2 className="truncate text-[20px] font-semibold sm:text-3xl">{selectedPlayer.rawName}</h2>{selectedPlayer.position && <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase ${getPositionBadgeClasses(selectedPlayer.position).replace(/border-\S+/g,'border-transparent')}`}>{selectedPlayer.position}</span>}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] text-white/65 sm:text-[11px]">
-                  {sleeperPlayerInfo?.team && <><span>{String(sleeperPlayerInfo.team).toUpperCase()}</span><span>·</span></>}
-                  <span>Jersey {sleeperPlayerInfo?.number != null ? `#${sleeperPlayerInfo.number}` : '—'}</span><span>·</span><span>Age {sleeperPlayerInfo?.age != null ? `${sleeperPlayerInfo.age}` : '—'}</span><span>·</span><span>Exp {sleeperPlayerInfo?.years_exp != null ? `${sleeperPlayerInfo.years_exp}` : '—'}</span>
-                  {sleeperPlayerLoading && <span>Loading…</span>}
-                </div>
-              </div>
-              <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" alt="NFL" className="hidden h-12 w-12 object-contain opacity-90 sm:block" />
-            </div>
-          </div>
-          <div className="flex-shrink-0 border-b border-[#EEF0F2] bg-white px-3 py-2 sm:px-5">
-            <div className="flex gap-1 overflow-x-auto">
-              {selectedPlayerClubs.map(c => {
-                const checked = selectedPlayerTeams.some(team => normalizeTeamName(team) === normalizeTeamName(c.team))
-                return <label key={normalizeTeamName(c.team)} className={`flex h-8 flex-shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2 transition-colors ${checked ? 'border-[#16274F] bg-[#EEF3FF]' : 'border-[#E4E6EA] bg-white'}`}><input type="checkbox" checked={checked} onChange={() => togglePlayerTeam(c.team)} className="h-3.5 w-3.5 accent-[#16274F]" /><span className="flex h-5 w-5 items-center justify-center"><TeamAvatar name={c.team} size="xs" /></span><span className="text-[9px] font-semibold text-[#16274F]">{shortName(c.team)}</span></label>
-              })}
-            </div>
-          </div>
-          <div className="flex-shrink-0 grid grid-cols-3 gap-px bg-[#EEF0F2] sm:grid-cols-6">
-            {[
-              ['Apps', selectedPlayerStats.appearances], ['Starts', selectedPlayerStats.starts], ['Bench', selectedPlayerStats.bench], ['Avg Pts', selectedPlayerStats.avgPts.toFixed(2)], ['Best Pts', selectedPlayerStats.bestPts.toFixed(2)], ['Seasons', selectedPlayerStats.seasons.size ? formatSeasonList(Array.from(selectedPlayerStats.seasons)) : '—'],
-            ].map(([label,value]) => <div key={label} className="bg-[#F7F8FA] px-2 py-2.5 text-center"><div className="text-[7px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">{label}</div><div className="mt-0.5 text-[15px] font-semibold tabular-nums text-[#16274F]">{value}</div></div>)}
-          </div>
-          <div className="min-h-0 flex-1 overflow-auto">
-            <table className="min-w-[820px] w-full">
-              <thead className="sticky top-0 z-10 bg-white"><tr className="border-b border-[#EEF0F2]">{['Season','Week','Team','Opponent','Status','Player Pts','Team PF','Result','Stage'].map((h,i) => <th key={h} className="whitespace-nowrap px-3 py-2.5 text-left text-[8px] font-semibold uppercase tracking-[0.14em] text-[#6B7280] sm:px-4">{h}</th>)}</tr></thead>
-              <tbody>
-                {sortedSelectedPlayerGames.map((g,i)=><tr key={`${g.season}-${g.week}-${g.opponent}-${i}`} onClick={()=>{window.location.href=g.matchupHref}} className="cursor-pointer border-b border-[#F1F2F4] hover:bg-[#F7F8FA]"><td className="px-3 py-2.5 text-[11px] font-semibold text-[#16274F] sm:px-4">{g.season}</td><td className="px-3 py-2.5 text-[11px] text-[#3F4757] sm:px-4">{g.week}</td><td className="px-3 py-2.5 text-[11px] font-medium text-[#111] sm:px-4">{shortName(g.team)}</td><td className="px-3 py-2.5 text-[11px] font-medium text-[#111] sm:px-4">{shortName(g.opponent)}</td><td className="px-3 py-2.5 sm:px-4"><span className={`rounded-full px-2 py-0.5 text-[8px] font-medium uppercase ${g.status === 'Starter' ? 'bg-[#F2F8F3] text-[#1E8E3E]' : 'bg-[#F4F5F7] text-[#6B7280]'}`}>{g.status}</span></td><td className="px-3 py-2.5 text-[11px] font-semibold tabular-nums text-[#16274F] sm:px-4">{g.pts.toFixed(2)}</td><td className="px-3 py-2.5 text-[11px] tabular-nums text-[#3F4757] sm:px-4">{g.teamPF.toFixed(2)}</td><td className={`px-3 py-2.5 text-[11px] font-semibold sm:px-4 ${g.result==='W'?'text-[#1E8E3E]':'text-[#D01F2D]'}`}>{g.result || '—'}</td><td className="px-3 py-2.5 text-[10px] text-[#6B7280] sm:px-4">{g.gameStage || '—'}</td></tr>)}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <PlayerProfileModal
+        key={selectedPlayer.rawName}
+        rawName={selectedPlayer.rawName}
+        displayName={selectedPlayer.name}
+        position={selectedPlayer.position}
+        playerId={getPlayerId(selectedPlayer.rawName, playerLookup)}
+        games={games}
+        initialTeams={[selected.team]}
+        onClose={closePlayerProfile}
+      />
     ) : null
 
-    return (
-      <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
-        <style>{`\n          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');\n          .mx-root { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-variant-numeric:tabular-nums; }\n          .scroll-hide::-webkit-scrollbar{display:none;} .scroll-hide{-ms-overflow-style:none;scrollbar-width:none;}\n        `}</style>
-        <Header />
-        <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-20 text-[12px] font-semibold text-[#6B7280]">Loading...</div>
-          ) : (
-            <>
-              <div className="mb-2 overflow-hidden rounded-xl bg-white">
-                <div className="flex items-center justify-between gap-3 px-3 py-3 sm:px-4">
-                  <div className="min-w-0">
-                    <div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#D01F2D]">Tapitas League</div>
-                    <div className="mt-0.5 text-[17px] font-semibold tracking-tight text-[#111] sm:text-[19px]">Franchises</div>
-                    <div className="mt-0.5 text-[11px] text-[#6B7280]">The active teams, records and history of the league.</div>
-                  </div>
-                  <div className="hidden flex-shrink-0 items-center gap-2 sm:flex"><span className="rounded-full bg-[#F4F5F7] px-2.5 py-1 text-[9px] font-medium uppercase tracking-wide text-[#6B7280]">{teams.length} current</span></div>
-                </div>
+    const mobileTabs = [['overview', 'Overview'], ['games', 'Game Log'], ['players', 'Players'], ['h2h', 'H2H']]
+
+    return renderShell(
+      <>
+        {teamStrip}
+        {heroCard}
+
+        {/* Abas (só no mobile/tablet — no desktop os cards ficam nas laterais) */}
+        <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">
+          {mobileTabs.map(([key, label]) => (
+            <button key={key} type="button" onClick={() => setMobileTeamView(key)} className={`flex-1 border-b-2 px-2 py-2.5 text-[13px] transition-colors ${mobileTeamView === key ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280]'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Grid: records | history + log + players | head to head */}
+        <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
+          <aside className="hidden lg:block">
+            {recordsCard}
+            {playersCard}
+          </aside>
+
+          <div className="min-w-0">
+            <div className={`${mobileTeamView === 'overview' ? 'block' : 'hidden'} lg:block`}>
+              {seasonHistoryCard}
+              <div className="lg:hidden">
+                {recordsCard}
+                {playersCard}
               </div>
+            </div>
+            <div className={`${mobileTeamView === 'games' ? 'block' : 'hidden'} lg:block`}>{gameLogCard}</div>
+            <div className={`${mobileTeamView === 'players' ? 'block' : 'hidden'} lg:block`}>{playerArchiveCard}</div>
+            <div className={`${mobileTeamView === 'h2h' ? 'block' : 'hidden'} lg:hidden`}>{h2hCard}</div>
+          </div>
 
-              {!selected ? <TeamList /> : (
-                <>
-                  <div className="mb-2 overflow-hidden rounded-xl bg-white">
-                    <div className="flex items-center gap-2 border-b border-[#EEF0F2] px-3 py-2.5 sm:px-4">
-                      <button type="button" onClick={showAllTeams} className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]" aria-label="Back to all franchises"><ChevronRight className="h-4 w-4 rotate-180" /></button>
-                      <div className="min-w-0 flex-1"><div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#D01F2D]">Franchise</div><div className="truncate text-[14px] font-semibold text-[#111]">{shortName(selected.team)}</div></div>
-                      <div className="hidden items-center gap-2 text-[10px] text-[#6B7280] sm:flex"><span>{teamRecordLabel}</span><span>·</span><span>{winPct}</span><span>·</span><span>{teamSeasons} seasons</span></div>
-                    </div>
-                    <div className="flex items-center gap-3 px-3 py-3 sm:px-4">
-                      <TeamAvatar name={selected.team} size="md" />
-                      <div className="min-w-0 flex-1"><div className="truncate text-[20px] font-semibold tracking-tight text-[#111] sm:text-[24px]">{selected.team}</div><div className="mt-1 flex flex-wrap gap-x-2 text-[10px] text-[#6B7280] sm:text-[11px]"><span>{teamRecordLabel}</span><span>·</span><span>{winPct} win rate</span><span>·</span><span>{teamSeasons} seasons</span>{titles.length > 0 && <><span>·</span><span className="text-[#8D6A00]">{titles.length} title{titles.length===1?'':'s'}</span></>}</div></div>
-                      <div className="hidden text-right sm:block"><div className="text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">Current</div><div className="mt-0.5 text-[14px] font-semibold text-[#16274F]">{recentSeason?.Season || '—'} {recentSeason ? `${parseNumber(recentSeason.RS_W)}–${parseNumber(recentSeason.RS_L)}` : ''}</div></div>
-                    </div>
-                  </div>
-
-                  <div className="mb-2 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-[#EEF0F2] sm:grid-cols-3 lg:grid-cols-6">
-                    {profileStats.map(stat => { const a=accentMap[stat.accent]; return <div key={stat.label} className="bg-white px-3 py-3 sm:px-4"><div className={`text-[9px] font-semibold uppercase tracking-[0.14em] ${a.text}`}>{stat.label}</div><div className="mt-1 text-[22px] font-semibold leading-none text-[#111]">{stat.value}</div><div className="mt-1 truncate text-[9px] text-[#6B7280]">{stat.sub}</div></div> })}
-                  </div>
-
-                  <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">
-                    {[['overview','Overview'],['games','Game Log'],['players','Players'],['h2h','H2H']].map(([key,label]) => <button key={key} type="button" onClick={()=>setMobileTeamView(key)} className={`flex-1 border-b-2 px-2 py-2.5 text-[12px] ${mobileTeamView===key?'border-[#D01F2D] font-semibold text-[#111]':'border-transparent text-[#6B7280]'}`}>{label}</button>)}
-                  </div>
-
-                  <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-4">
-                    <div className="min-w-0 space-y-2">
-                      <div className={`${mobileTeamView === 'overview' ? 'block' : 'hidden'} lg:block`}>
-                        <SeasonHistoryCard />
-                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                          {recordHighlights.map(item => { const a=accentMap[item.accent]; return <a key={item.label} href={item.href} className="rounded-xl bg-white px-3 py-3 transition-colors hover:bg-[#F7F8FA]"><div className={`text-[9px] font-semibold uppercase tracking-[0.14em] ${a.text}`}>{item.label}</div><div className="mt-1 text-[23px] font-semibold leading-none tabular-nums text-[#111]">{item.value}</div><div className="mt-1 line-clamp-2 text-[9px] text-[#6B7280]">{item.sub}</div></a> })}
-                        </div>
-                        {(bestSeason || worstSeason) && <div className="mt-2 grid grid-cols-2 gap-2"><div className="rounded-xl bg-white px-3 py-3"><div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#1E8E3E]">Best Season</div><div className="mt-1 text-[22px] font-semibold text-[#111]">{bestSeason ? `${parseNumber(bestSeason.RS_W)}–${parseNumber(bestSeason.RS_L)}` : '—'}</div><div className="mt-1 text-[9px] text-[#6B7280]">{bestSeason ? `${bestSeason.Season} · ${Math.round(parseNumber(bestSeason.RS_PF))} pts` : '—'}</div></div><div className="rounded-xl bg-white px-3 py-3"><div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#D01F2D]">Worst Season</div><div className="mt-1 text-[22px] font-semibold text-[#111]">{worstSeason ? `${parseNumber(worstSeason.RS_W)}–${parseNumber(worstSeason.RS_L)}` : '—'}</div><div className="mt-1 text-[9px] text-[#6B7280]">{worstSeason ? `${worstSeason.Season} · ${Math.round(parseNumber(worstSeason.RS_PF))} pts` : '—'}</div></div></div>}
-                      </div>
-                      <div className={`${mobileTeamView === 'games' ? 'block' : 'hidden'} lg:block`}><GameLogCard /></div>
-                      <div className={`${mobileTeamView === 'players' ? 'block' : 'hidden'} lg:block`}><PlayerArchiveCard /></div>
-                    </div>
-                    <div className="mt-2 space-y-2 lg:mt-0">
-                      <div className={`${mobileTeamView === 'h2h' ? 'block' : 'hidden'} lg:block`}><HeadToHeadCard /></div>
-                      <div className="hidden lg:block overflow-hidden rounded-xl bg-white"><SectionHeader eyebrow="League records" title="At a glance" meta="all-time" icon={Trophy} /><div className="grid grid-cols-2 gap-px bg-[#EEF0F2]"><div className="bg-white p-3"><div className="text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">PR #1</div><div className="mt-1 text-[18px] font-semibold text-[#111]">{pr1Weeks}</div></div><div className="bg-white p-3"><div className="text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">200+</div><div className="mt-1 text-[18px] font-semibold text-[#111]">{games200}</div></div><div className="bg-white p-3"><div className="text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">High scorer</div><div className="mt-1 text-[18px] font-semibold text-[#111]">{topScoringWeeks}</div></div><div className="bg-white p-3"><div className="text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">Playoff W</div><div className="mt-1 text-[18px] font-semibold text-[#111]">{poWins}</div></div></div></div>
-                      <div className="hidden lg:block overflow-hidden rounded-xl bg-white"><SectionHeader eyebrow="Roster leaders" title="Franchise players" meta="all-time" icon={Star} />{[mostRostered.length>0?{label:'Most Apps',p:mostRostered[0]}:null,mostStarted.length>0?{label:'Most Starts',p:mostStarted[0]}:null,bestAvgPlayer?{label:'Best AVG',p:bestAvgPlayer}:null,bestScorePlayer?{label:'Best Score',p:bestScorePlayer}:null].filter(Boolean).map(item=><button key={item.label} onClick={()=>openPlayerProfile(item.p.archiveKey || `raw:${item.p.rawName}`)} className="flex w-full items-center gap-2.5 border-b border-[#F1F2F4] px-3 py-3 text-left hover:bg-[#F7F8FA]"><PlayerAvatar name={item.p.rawName} playerLookup={playerLookup} size={30}/><div className="min-w-0 flex-1"><div className="truncate text-[11px] font-semibold text-[#111]">{item.p.name}</div><div className="mt-0.5 text-[9px] text-[#6B7280]">{item.label}</div></div><div className="text-right"><div className="text-[11px] font-semibold text-[#16274F]">{item.p.count ?? (item.label==='Best AVG'?item.p.avgPts:item.p.bestPts).toFixed(2)}</div><ChevronRight className="ml-auto mt-1 h-3 w-3 text-[#A0A5AD]"/></div></button>)}</div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </section>
+          <aside className="hidden lg:block">{h2hCard}</aside>
+        </div>
         {PlayerProfile}
-      </main>
+      </>
     )
   }
 
-  return (
-    <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
-      <style>{`\n        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');\n        .mx-root { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-variant-numeric:tabular-nums; }\n      `}</style>
-      <Header />
-      <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-[12px] font-semibold text-[#6B7280]">Loading...</div>
-        ) : (
-          <>
-            <div className="mb-2 overflow-hidden rounded-xl bg-white">
-              <div className="flex items-center justify-between gap-3 px-3 py-3 sm:px-4">
-                <div className="min-w-0"><div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#D01F2D]">Tapitas League</div><div className="mt-0.5 text-[17px] font-semibold tracking-tight text-[#111] sm:text-[19px]">Franchises</div><div className="mt-0.5 text-[11px] text-[#6B7280]">The active teams, records and history of the league.</div></div>
-                <span className="flex-shrink-0 rounded-full bg-[#F4F5F7] px-2.5 py-1 text-[9px] font-medium uppercase tracking-wide text-[#6B7280]">{teams.length} current</span>
-              </div>
-            </div>
-            <TeamList teams={teams} selectTeam={selectTeam} getTeamHistory={getTeamHistory} />
-          </>
-        )}
-      </section>
-    </main>
+  // ── All franchises (standings-style table) ───────────────────────
+  const champions = historySource
+    .filter(r => isTrueFlag(r?.Champion))
+    .map(r => ({ season: String(r?.Season || '').trim(), team: String(r?.Team || '').trim() }))
+    .sort((a, b) => Number(b.season) - Number(a.season))
+
+  const teamsTable = (
+    <CardShell title="Franchises" subtitle={`All-time records of the ${teams.length} active Tapitas League teams`}>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[#EEF0F2]">
+              <th className="w-8 px-3 py-2 text-left text-[11px] font-medium text-[#6B7280] lg:pl-4">#</th>
+              <th className="px-2 py-2 text-left text-[11px] font-medium text-[#6B7280]">Team</th>
+              <th className="hidden px-2 py-2 text-right text-[11px] font-medium text-[#6B7280] sm:table-cell">Seasons</th>
+              <th className="px-2 py-2 text-right text-[11px] font-medium text-[#6B7280]">W–L</th>
+              <th className="px-2 py-2 text-right text-[11px] font-medium text-[#6B7280]">Win %</th>
+              <th className="hidden px-2 py-2 text-right text-[11px] font-medium text-[#6B7280] md:table-cell">PF</th>
+              <th className="hidden px-2 py-2 text-right text-[11px] font-medium text-[#6B7280] md:table-cell">Playoffs</th>
+              <th className="px-3 py-2 text-right text-[11px] font-medium text-[#6B7280] lg:pr-4">Titles</th>
+            </tr>
+          </thead>
+          <tbody>
+            {teams.map((team, i) => {
+              const teamHistory = getTeamHistory(team.team)
+              const teamTitles = teamHistory.filter(r => isTrueFlag(r?.Champion)).length
+              const seasonCount = new Set(teamHistory.map(r => String(r?.Season || '').trim()).filter(Boolean)).size
+              return (
+                <tr key={team.team} onClick={() => selectTeam(team)} className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
+                  <td className="px-3 py-3 text-[13px] font-semibold tabular-nums text-[#111] lg:pl-4">{i + 1}</td>
+                  <td className="px-2 py-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <TeamAvatar name={team.team} size="xs" />
+                      <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">
+                        <span className="sm:hidden">{shortName(team.team)}</span>
+                        <span className="hidden sm:inline">{team.team}</span>
+                      </span>
+                    </div>
+                  </td>
+                  <td className="hidden px-2 py-3 text-right text-[13px] tabular-nums text-[#3F4757] sm:table-cell">{seasonCount}</td>
+                  <td className="px-2 py-3 text-right text-[13px] font-semibold tabular-nums text-[#111]">{parseNumber(team.W)}–{parseNumber(team.L)}</td>
+                  <td className="px-2 py-3 text-right text-[13px] tabular-nums text-[#3F4757]">{String(team?.['W%'] || '').trim()}</td>
+                  <td className="hidden px-2 py-3 text-right text-[13px] tabular-nums text-[#3F4757] md:table-cell">{Math.round(parseNumber(team.PF)).toLocaleString()}</td>
+                  <td className="hidden px-2 py-3 text-right text-[13px] tabular-nums text-[#3F4757] md:table-cell">{parseNumber(team['Playoff Apps'])}</td>
+                  <td className={`px-3 py-3 text-right text-[13px] font-semibold tabular-nums lg:pr-4 ${teamTitles ? 'text-[#B8860B]' : 'text-[#9CA3AF]'}`}>{teamTitles ? `🏆 ${teamTitles}` : '0'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </CardShell>
+  )
+
+  const championsCard = champions.length > 0 && (
+    <CardShell title="Champions" subtitle="Every Tapitas League title" sidebar>
+      <div className="py-1 lg:py-2">
+        {champions.map(c => {
+          const current = teams.find(t => normalizeTeamName(t.team) === normalizeTeamName(c.team))
+          return (
+            <StatRow
+              key={`${c.season}-${c.team}`}
+              onClick={current ? () => selectTeam(current) : undefined}
+              left={<TeamAvatar name={c.team} size="xs" />}
+              title={c.team}
+              value={c.season}
+              valueClass="text-[#6B7280]"
+            />
+          )
+        })}
+      </div>
+    </CardShell>
+  )
+
+  return renderShell(
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
+      <div className="min-w-0">{teamsTable}</div>
+      <aside>{championsCard}</aside>
+    </div>
   )
 }
 

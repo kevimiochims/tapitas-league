@@ -1,25 +1,13 @@
 'use client'
 
-import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Bebas_Neue } from 'next/font/google'
-import {
-  Activity,
-  Flame,
-  Swords
-} from 'lucide-react'
-import Header from '../components/Header'
+import { ChevronDown, ChevronLeft, Flame, Swords } from 'lucide-react'
+import { PageShell, CardShell, FilterPill, ToggleChip, Tag, TeamLogo } from '../components/ui'
 
 const SHEET_ID =
   '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
-
-const bebas = Bebas_Neue({
-  subsets: ['latin'],
-  weight: '400'
-})
 
 /* =====================================================
 UTILS
@@ -256,22 +244,12 @@ function parseBiggestWin(value) {
 BADGE
 ===================================================== */
 
-function HeatBadge({ heat }) {
-  const colors = {
-    LEGENDARY: 'bg-[#F5C518] text-[#0A0A0A] border-[#0A0A0A]',
-    ELITE: 'bg-[#16274F] text-white border-[#0A0A0A]',
-    HIGH: 'bg-[#D01F2D] text-white border-[#0A0A0A]',
-    MEDIUM: 'bg-white text-[#3F4757] border-[#0A0A0A]',
-    LOW: 'bg-[#F7F6F2] text-[#6B7280] border-[#0A0A0A]/30'
-  }
-
-  return (
-    <div
-      className={`border-2 px-3 py-1.5 text-[10px] font-black tracking-[0.3em] ${colors[heat]}`}
-    >
-      {heat}
-    </div>
-  )
+function HeatBadge({ heat, large = false }) {
+  const tone = { LEGENDARY: 'gold', ELITE: 'navy', HIGH: 'red' }[heat]
+  const label = { LEGENDARY: '🔥 Legendary', ELITE: 'Elite', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' }[heat] || heat
+  return large
+    ? <span className={`inline-flex rounded-full px-2.5 py-1 text-[12px] font-semibold ${{ gold: 'bg-[#FFF2B8] text-[#6B5A00]', navy: 'bg-[#EEF3FF] text-[#16274F]', red: 'bg-[#FDECEE] text-[#B3171F]' }[tone] || 'bg-[#F1F2F4] text-[#4B5563]'}`}>{label} rivalry</span>
+    : <Tag tone={tone}>{label}</Tag>
 }
 
 function flipRivalry(r) {
@@ -653,25 +631,6 @@ export default function RivalriesPage() {
     ? parseBiggestWin(selected.biggestB)
     : null
 
-  const titleFont = {
-    fontFamily: bebas.style.fontFamily
-  }
-
-  const TEAM_AVATARS = {
-    'howmuch': '/images/howmuch.png',
-    'i am megatron': '/images/megatron.png',
-    'moneyball': '/images/moneyball.png',
-    'ocupa e resiste': '/images/ocupa.png',
-    'oldbrady': '/images/oldbrady.png',
-    'patrolao squad': '/images/patrolao.png',
-    'pequers verde': '/images/pequers.png',
-    'peytao da massa': '/images/peytao.png',
-    'rincao settlers': '/images/rincao.png',
-    'h-lera do mahl': '/images/hlera.png',
-  }
-  const getTeamAvatar = (name) =>
-    TEAM_AVATARS[normalizeString(name)] || null
-
   /* =====================================================
   DETAIL — stat rows (padrão Spotlight)
   ===================================================== */
@@ -831,621 +790,216 @@ export default function RivalriesPage() {
 RENDER
 ===================================================== */
 
-  return (
-    <main className="min-h-screen overflow-x-hidden bg-[#F7F6F2] text-[#0A0A0A]">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-        .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
-        .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
-        .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-      `}</style>
-      {/* HEADER */}
-      <Header />
+  const selectRivalry = (r) => {
+    setSelected(r)
+    setSeasonFilter('ALL')
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
-      <section className="px-3 md:px-6 pb-20">
-        {/* HERO */}
-        <div className="relative mb-10 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-            <svg
-              className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
-              preserveAspectRatio="xMidYMid slice"
-              viewBox="0 0 900 340"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <g opacity="0.06">
-                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                  <rect key={i} x={x} y="-80" width={i % 2 === 0 ? 55 : 22} height="520" fill="#16274F" transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`} />
-                ))}
-              </g>
-              <g opacity="0.10" fill="none" stroke="#16274F" strokeWidth="1">
-                {["M380 -30 L460 85 L380 200 L300 85 Z", "M460 85 L540 200 L460 315 L380 200 Z", "M540 -30 L620 85 L540 200 L460 85 Z", "M620 85 L700 200 L620 315 L540 200 Z", "M700 -30 L780 85 L700 200 L620 85 Z", "M780 85 L860 200 L780 315 L700 200 Z"].map((d, i) => (
-                  <path key={i} d={d} />
-                ))}
-              </g>
-              <g opacity="0.05" fill="#D01F2D">
-                {["M420 30 L440 58 L420 86 L400 58 Z", "M500 120 L520 148 L500 176 L480 148 Z", "M580 30 L600 58 L580 86 L560 58 Z", "M660 120 L680 148 L660 176 L640 148 Z", "M740 30 L760 58 L740 86 L720 58 Z"].map((d, i) => (
-                  <path key={i} d={d} />
-                ))}
-              </g>
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2" strokeLinejoin="round">
-                {[520, 600, 680].map((x, i) => (
-                  <polyline key={i} points={`${x},0 ${x + 160},170 ${x},340`} />
-                ))}
-              </g>
-              <g opacity="0.08" fill="#16274F">
-                <polygon points="900,0 900,140 760,0" />
-                <polygon points="900,340 900,200 760,340" />
-              </g>
-              <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="1">
-                {[30, 50, 70].map((r) => <circle key={r} cx="870" cy="60" r={r} />)}
-              </g>
-              <g opacity="0.10" fill="#16274F">
-                {[40, 60, 80, 100].map((y) => [310, 330, 350].map((x) => (
-                  <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />
-                )))}
-              </g>
-              <g opacity="0.10" stroke="#16274F" strokeWidth="0.5">
-                {[56, 113, 226, 284].map((y) => <line key={y} x1="0" y1={y} x2="900" y2={y} />)}
-              </g>
-              <text x="790" y="310" fontFamily="'Bebas Neue', sans-serif" fontSize="340" fill="#16274F" opacity="0.04" textAnchor="middle">⚔</text>
-            </svg>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 28%, rgba(247,246,242,0.90) 48%, rgba(247,246,242,0.25) 100%)' }} />
-          </div>
+  const isSameRivalry = (r) => selected && (
+    (normalizeString(r.teamA) === normalizeString(selected.teamA) && normalizeString(r.teamB) === normalizeString(selected.teamB)) ||
+    (normalizeString(r.teamA) === normalizeString(selected.teamB) && normalizeString(r.teamB) === normalizeString(selected.teamA))
+  )
 
-          <div className="relative z-10 p-6 sm:p-8 md:p-10">
-            <div
-              className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
-            >
-              <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-white shrink-0" />
-              <span className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap" style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}>
-                Head to Head
-              </span>
-            </div>
-            <h1
-              className="leading-[0.9] tracking-[-0.02em] text-[#16274F]"
-              style={{
-                fontFamily: '"Bebas Neue", sans-serif',
-                fontSize: 'clamp(48px, 7vw, 96px)',
-              }}
-            >
-              Historic
-              <span className="text-[#D01F2D]">{' '}Rivalries</span>
-            </h1>
-            <p className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-[#3F4757] leading-relaxed" style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}>
-             Every H2H in Tapitas League history.
-            </p>
-          </div>
-        </div>
+  const selectClass = 'h-9 w-full min-w-0 cursor-pointer appearance-none rounded-full bg-[#F4F5F7] pl-3 pr-8 text-[13px] font-medium text-[#111] outline-none hover:bg-[#ECEEF1]'
 
-        {/* SELETOR DE TIMES */}
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="border-2 border-[#0A0A0A] bg-white px-5 py-4 tp-shadow-navy-sm">
-            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#6B7280]">
-              Team
-            </div>
-            <select
-              value={teamFilterA}
-              onChange={(e) => {
-                setTeamFilterA(e.target.value)
-                setSelected(null)
-              }}
-              className="w-full bg-transparent text-base font-black text-[#16274F] outline-none"
-            >
-              <option value="ALL">Select team...</option>
-              {allTeams.map((team) => (
-                <option key={team} value={team}>{team}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="border-2 border-[#0A0A0A] bg-white px-5 py-4 tp-shadow-navy-sm">
-            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#6B7280]">
-              Opponent
-            </div>
-            <select
-              value={teamFilterB}
-              onChange={(e) => {
-                setTeamFilterB(e.target.value)
-                setSelected(null)
-              }}
-              className="w-full bg-transparent text-base font-black text-[#16274F] outline-none"
-            >
-              <option value="ALL">vs opponent...</option>
-              {allTeams.map((team) => (
-                <option key={team} value={team}>{team}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* SORT */}
-        <div className="mb-6 flex gap-2">
-          {[
-            { label: 'Heat', value: 'HEAT', icon: '🔥' },
-            { label: 'Games', value: 'GAMES', icon: '📊' },
-            { label: 'Closest', value: 'CLOSEST', icon: '⚔️' }
-          ].map((item) => (
+  const listCard = (
+    <CardShell title="Rivalries" subtitle={`${rivalries.length} matchups · sorted by ${sortBy === 'HEAT' ? 'heat' : sortBy === 'GAMES' ? 'games played' : 'closest record'}`}>
+      <div className="py-1">
+        {rivalries.map((r, i) => {
+          const active = isSameRivalry(r)
+          const aLead = r.aWins > r.bWins
+          const bLead = r.bWins > r.aWins
+          return (
             <button
-              key={item.value}
-              onClick={() => setSortBy(item.value)}
-              className={`flex flex-1 items-center justify-center gap-2 border-2 px-4 py-3 text-sm font-black transition-all ${sortBy === item.value
-                ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                }`}
+              key={i}
+              type="button"
+              onClick={() => selectRivalry(r)}
+              className={`group flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors lg:px-4 ${active ? 'bg-[#EEF3FF]' : 'hover:bg-[#F7F8FA]'}`}
             >
-              <span>{item.icon}</span>
-              {item.label}
+              <div className="flex -space-x-1.5">
+                <TeamLogo name={r.teamA} size={26} />
+                <TeamLogo name={r.teamB} size={26} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{r.teamA} <span className="text-[#9CA3AF]">vs</span> {r.teamB}</div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+                  <HeatBadge heat={r.heat} />
+                  <span>{r.aWins + r.bWins} games</span>
+                </div>
+              </div>
+              <div className="flex-shrink-0 text-[14px] font-semibold tabular-nums">
+                <span className={aLead ? 'text-[#1E8E3E]' : bLead ? 'text-[#D01F2D]' : 'text-[#111]'}>{r.aWins}</span>
+                <span className="text-[#9CA3AF]">–</span>
+                <span className={bLead ? 'text-[#1E8E3E]' : aLead ? 'text-[#D01F2D]' : 'text-[#111]'}>{r.bWins}</span>
+              </div>
             </button>
-          ))}
+          )
+        })}
+        {rivalries.length === 0 && <div className="py-10 text-center text-[13px] text-[#6B7280]">No rivalries found</div>}
+      </div>
+    </CardShell>
+  )
+
+  const detail = selected && (
+    <>
+      {/* Placar histórico (mesmo padrão do placar da Matchups) */}
+      <div className="mb-2 overflow-hidden rounded-xl bg-white">
+        <div className="flex items-center justify-between px-3 pt-3 lg:px-4">
+          <button type="button" onClick={() => { setSelected(null); setTeamFilterA('ALL'); setTeamFilterB('ALL') }} className="inline-flex items-center gap-1 text-[12px] font-medium text-[#6B7280] hover:text-[#111] lg:invisible">
+            <ChevronLeft className="h-4 w-4" /> All rivalries
+          </button>
+          <HeatBadge heat={selected.heat} large />
         </div>
-
-        {/* LISTA DE RIVALIDADES */}
-        {!selected && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-            {rivalries.map((r, i) => {
-              const rWA = r.aWins
-              const rWB = r.bWins
-              const rALeads = rWA > rWB
-              const rBLeads = rWB > rWA
-              const avA = getTeamAvatar(r.teamA)
-              const avB = getTeamAvatar(r.teamB)
-
-              return (
-                <motion.button
-                  key={i}
-                  whileHover={{ scale: 1.01, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setSelected(r)}
-                  className="w-full overflow-hidden border-2 border-[#0A0A0A] bg-white text-left tp-shadow-navy-sm transition-all hover:-translate-y-[1px]"
-                >
-                  {/* header: heat + total de jogos */}
-                  <div className="flex items-center justify-between gap-2 px-5 pt-4">
-                    <HeatBadge heat={r.heat} />
-                    <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                      {rWA + rWB} jogos
-                    </div>
-                  </div>
-
-                  {/* placar com avatares */}
-                  <div className="flex items-center justify-between gap-3 px-5 pb-4 pt-3">
-                    {/* Time A */}
-                    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                      {avA ? (
-                        <img src={avA} alt={r.teamA} className="h-12 w-12 flex-shrink-0 object-contain" />
-                      ) : (
-                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[10px] font-black uppercase text-white">
-                          {r.teamA.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-[#16274F]">
-                        {r.teamA}
-                      </span>
-                      <span
-                        className="text-[40px] font-black leading-none"
-                        style={{
-                          color: rALeads ? '#1E8E3E' : rBLeads ? '#D01F2D' : '#16274F',
-                          fontFamily: '"Bebas Neue", sans-serif',
-                        }}
-                      >
-                        {rWA}
-                      </span>
-                    </div>
-
-                    {/* centro */}
-                    <div className="flex flex-shrink-0 flex-col items-center gap-1 pt-5">
-                      <Swords className="h-4 w-4 text-[#6B7280]" />
-                    </div>
-
-                    {/* Time B */}
-                    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                      {avB ? (
-                        <img src={avB} alt={r.teamB} className="h-12 w-12 flex-shrink-0 object-contain" />
-                      ) : (
-                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[10px] font-black uppercase text-white">
-                          {r.teamB.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-[#16274F]">
-                        {r.teamB}
-                      </span>
-                      <span
-                        className="text-[40px] font-black leading-none"
-                        style={{
-                          color: rBLeads ? '#1E8E3E' : rALeads ? '#D01F2D' : '#16274F',
-                          fontFamily: '"Bebas Neue", sans-serif',
-                        }}
-                      >
-                        {rWB}
-                      </span>
-                    </div>
-                  </div>
-                </motion.button>
-              )
-            })}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 px-3 pb-4 pt-2">
+          <a href={`/teams?team=${encodeURIComponent(selected.teamA)}`} className="flex flex-col items-center gap-2">
+            <TeamLogo name={selected.teamA} size={48} />
+            <span className={`text-center text-[14px] font-semibold leading-tight hover:underline sm:text-[16px] ${aLeads || !bLeads ? 'text-[#111]' : 'text-[#6B7280]'}`}>{selected.teamA}</span>
+            <span className={`font-bold leading-none tabular-nums ${aLeads ? 'text-[#111]' : 'text-[#9CA3AF]'}`} style={{ fontSize: 'clamp(40px, 7vw, 56px)' }}>{wA}</span>
+          </a>
+          <div className="flex flex-col items-center gap-1 self-center">
+            <div className="text-[14px] font-semibold text-[#9CA3AF]">VS</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">all-time</div>
+            <div className="text-[11px] tabular-nums text-[#6B7280]">{wA + wB} games</div>
+          </div>
+          <a href={`/teams?team=${encodeURIComponent(selected.teamB)}`} className="flex flex-col items-center gap-2">
+            <TeamLogo name={selected.teamB} size={48} />
+            <span className={`text-center text-[14px] font-semibold leading-tight hover:underline sm:text-[16px] ${bLeads || !aLeads ? 'text-[#111]' : 'text-[#6B7280]'}`}>{selected.teamB}</span>
+            <span className={`font-bold leading-none tabular-nums ${bLeads ? 'text-[#111]' : 'text-[#9CA3AF]'}`} style={{ fontSize: 'clamp(40px, 7vw, 56px)' }}>{wB}</span>
+          </a>
+        </div>
+        {currentStreak && (
+          <div className="flex justify-center border-t border-[#EEF0F2] py-2">
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-[#6B7280]">
+              <Flame className="h-3.5 w-3.5 text-[#D01F2D]" />
+              {currentStreak.team} on a <span className="font-semibold text-[#111]">{currentStreak.result}{currentStreak.count}</span> streak
+            </span>
           </div>
         )}
+      </div>
 
-        {/* CONTEÚDO DO HEAD TO HEAD */}
-        <div className="min-w-0 flex-1 overflow-hidden">
-          {selected ? (
-            <>
-              {/* BOTÃO VOLTAR */}
-              <button
-                onClick={() => {
-                  setSelected(null)
-                  setTeamFilterA('ALL')
-                  setTeamFilterB('ALL')
-                }}
-                className="mb-4 flex items-center gap-2 border-2 border-[#0A0A0A] bg-white px-4 py-2 text-sm font-black text-[#3F4757] transition-all hover:bg-[#F7F6F2]"
-              >
-                ← Voltar
-              </button>
-
-              {/* ── CARD PRINCIPAL — padrão Spotlight ── */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45 }}
-                className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy p-3"
-              >
-                {/* header do card */}
-                <div className="mb-4 flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-4 pb-3 pt-3 sm:px-5 sm:pt-4">
-                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#D01F2D] sm:h-14 sm:w-14">
-                      <Swords className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <div
-                        className="truncate uppercase leading-none text-[#16274F]"
-                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', letterSpacing: '0.06em', fontWeight: 900 }}
-                      >
-                        Historic Rivalry
-                      </div>
-                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-[#3F4757] sm:mt-1.5 sm:text-sm">
-                        All-time H2H
-                      </div>
-                    </div>
-                  </div>
-                  <HeatBadge heat={selected.heat} />
+      {/* Comparativo */}
+      <CardShell title="Head to head" subtitle="Side by side">
+        <div className="divide-y divide-[#F1F2F4]">
+          {statRows.map(row => {
+            const sub = (text) => {
+              if (!text) return null
+              if (row.greenMargin && text.includes('·')) {
+                const [a, b] = text.split('·')
+                return <>{a.trim()} · <span className="text-[#1E8E3E]">{b.trim()}</span></>
+              }
+              return row.breakArrow ? formatRangeWithBreak(text) : text
+            }
+            return (
+              <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] items-start gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)] lg:px-4">
+                <div className="min-w-0 text-left">
+                  <div className={`whitespace-nowrap text-[18px] font-bold leading-tight tabular-nums sm:text-[20px] ${row.leftLead ? 'text-[#1E8E3E]' : 'text-[#111]'}`}>{row.left}</div>
+                  {row.subLeft && <div className="mt-0.5 text-[11px] text-[#6B7280] sm:text-[12px]">{sub(row.subLeft)}</div>}
                 </div>
-
-                {/* placar */}
-                <div className="mb-4 px-4 sm:px-5">
-                  <div className="overflow-hidden border-2 border-[#0A0A0A] bg-[#F7F6F2] p-4 tp-shadow-navy-sm">
-                    <div className="flex items-center justify-between gap-4">
-
-                      {/* Time A */}
-                      <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                        {(() => {
-                          const av = getTeamAvatar(selected.teamA)
-                          return av ? (
-                            <img src={av} alt={selected.teamA} className="h-12 w-12 flex-shrink-0 object-contain" />
-                          ) : (
-                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[10px] font-black uppercase text-white">
-                              {selected.teamA.slice(0, 2).toUpperCase()}
-                            </div>
-                          )
-                        })()}
-                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-[#16274F]">
-                          {selected.teamA}
-                        </span>
-                        <span
-                          className="text-[52px] font-black leading-none sm:text-[68px]"
-                          style={{ color: aLeads ? '#1E8E3E' : bLeads ? '#D01F2D' : '#16274F', fontFamily: '"Bebas Neue", sans-serif' }}
-                        >
-                          {wA}
-                        </span>
-                      </div>
-
-                      {/* centro */}
-                      <div className="flex flex-shrink-0 flex-col items-center gap-1">
-                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">All-Time</div>
-                        <div className="h-px w-6 bg-[#0A0A0A]/15" />
-                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Record</div>
-                      </div>
-
-                      {/* Time B */}
-                      <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                        {(() => {
-                          const av = getTeamAvatar(selected.teamB)
-                          return av ? (
-                            <img src={av} alt={selected.teamB} className="h-12 w-12 flex-shrink-0 object-contain" />
-                          ) : (
-                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[10px] font-black uppercase text-white">
-                              {selected.teamB.slice(0, 2).toUpperCase()}
-                            </div>
-                          )
-                        })()}
-                        <span className="max-w-full truncate text-center text-[11px] font-black uppercase tracking-wide text-[#16274F]">
-                          {selected.teamB}
-                        </span>
-                        <span
-                          className="text-[52px] font-black leading-none sm:text-[68px]"
-                          style={{ color: bLeads ? '#1E8E3E' : aLeads ? '#D01F2D' : '#16274F', fontFamily: '"Bebas Neue", sans-serif' }}
-                        >
-                          {wB}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* streak badge */}
-                    {currentStreak && (
-                      <div className="mt-3 flex justify-center">
-                        <div className="inline-flex items-center gap-2 border-2 border-[#0A0A0A] bg-white px-4 py-1.5">
-                          <Flame className="h-3.5 w-3.5 text-[#D01F2D]" />
-                          <span className="text-[11px] font-black text-[#3F4757]">
-                            {currentStreak.team}
-                          </span>
-                          <span className="text-[11px] font-black text-[#D01F2D]">
-                            {currentStreak.result}{currentStreak.count} streak
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* tabela de stats */}
-                <div className="space-y-4 px-4 pb-4 sm:px-5 sm:pb-5">
-                  {statRows.map((row, idx, arr) => (
-                    <div key={row.label}>
-                      <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4">
-
-                        {/* esquerda */}
-                        <div className="min-w-0 text-left">
-                          <div
-                            className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
-                            style={{
-                              fontFamily: '"Bebas Neue", sans-serif',
-                              fontWeight: 900,
-                              color: row.leftLead ? '#1E8E3E' : '#16274F',
-                            }}
-                          >
-                            {row.left}
-                          </div>
-                          {row.subLeft ? (
-                            <div className="mt-1 text-[11px] font-bold leading-snug text-[#6B7280] sm:text-[12px]">
-                              {row.greenMargin ? (
-                                <>
-                                  <span>{row.subLeft.split('·')[0].trim()}</span>
-                                  {row.subLeft.includes('·') && (
-                                    <span className="text-[#1E8E3E]"> · {row.subLeft.split('·')[1].trim()}</span>
-                                  )}
-                                </>
-                              ) : row.breakArrow ? formatRangeWithBreak(row.subLeft) : row.subLeft}
-                            </div>
-                          ) : null}
-                        </div>
-
-                        {/* label central */}
-                        <div className="w-full justify-self-center pt-1 text-center">
-                          <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-[#6B7280] sm:text-[11px]">
-                            {row.label}
-                          </div>
-                        </div>
-
-                        {/* direita */}
-                        <div className="min-w-0 text-right">
-                          <div
-                            className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
-                            style={{
-                              fontFamily: '"Bebas Neue", sans-serif',
-                              fontWeight: 900,
-                              color: row.rightLead ? '#1E8E3E' : '#16274F',
-                            }}
-                          >
-                            {row.right}
-                          </div>
-                          {row.subRight ? (
-                            <div className="mt-1 text-[11px] font-bold leading-snug text-[#6B7280] sm:text-[12px]">
-                              {row.greenMargin ? (
-                                <>
-                                  <span>{row.subRight.split('·')[0].trim()}</span>
-                                  {row.subRight.includes('·') && (
-                                    <span className="text-[#1E8E3E]"> · {row.subRight.split('·')[1].trim()}</span>
-                                  )}
-                                </>
-                              ) : row.breakArrow ? formatRangeWithBreak(row.subRight) : row.subRight}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      {idx < arr.length - 1 && (
-                        <div className="mt-4 h-px w-full bg-[#0A0A0A]/8" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* TIMELINE */}
-              <div className="mt-4 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm p-3">
-
-                {/* header */}
-                <div className="mb-3 flex items-center justify-between gap-3 border-b-2 border-[#0A0A0A]/10 px-4 pb-3 pt-3 sm:px-5">
-                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] sm:h-14 sm:w-14">
-                      <Activity className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <div
-                        className="truncate uppercase leading-none text-[#16274F]"
-                        style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', letterSpacing: '0.06em', fontWeight: 900 }}
-                      >
-                        Rivalry Timeline
-                      </div>
-                      <div className="mt-1 truncate text-[12px] font-bold tracking-[0.02em] text-[#3F4757] sm:mt-1.5 sm:text-sm">
-                        Every Chapter
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* filtros de season */}
-                <div className="px-4 pb-3 sm:px-5">
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {seasons.map((season) => (
-                      <button
-                        key={season}
-                        onClick={() => setSeasonFilter(season)}
-                        className={`whitespace-nowrap border-2 px-4 py-1.5 text-xs font-black transition-all ${seasonFilter === season
-                          ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                          : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                          }`}
-                      >
-                        {season}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* lista de jogos */}
-                <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                  <div className="overflow-hidden border-2 border-[#0A0A0A]/10 px-4 py-1 sm:px-5">
-                    {filteredHistory.map((g, i) => {
-                      const won = g.Result === 'W'
-                      const winner = won ? g.Team : g.Opponent
-                      const loser = won ? g.Opponent : g.Team
-                      const winnerScore = won ? parseNumber(g.PF) : parseNumber(g.PA)
-                      const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
-                      const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
-                      const isPlayoff = g.GameStage && g.GameStage !== 'Reg Season'
-                      const gameType = String(g.GameType || g.GameStage || '').trim()
-                      const isConsolation = g.GameStage === 'Consolation'
-                      const matchupHref = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(g.Team)}&opp=${encodeURIComponent(g.Opponent)}`
-
-                      return (
-                        <div key={i}>
-                          <a
-                            href={matchupHref}
-                            className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-start gap-2 py-4 transition-colors hover:bg-[#F7F6F2] sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] sm:gap-4"
-                          >
-                            {/* vencedor — esquerda */}
-                            <div className="min-w-0 text-left">
-                              <div
-                                className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
-                                style={{
-                                  fontFamily: '"Bebas Neue", sans-serif',
-                                  fontWeight: 900,
-                                  color: winnerIsA ? '#16274F' : '#D01F2D',
-                                }}
-                              >
-                                {winnerScore.toFixed(1)}
-                              </div>
-                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-[#6B7280] sm:text-[12px]">
-                                {winner}
-                              </div>
-                            </div>
-
-                            {/* centro — semana + badge */}
-                            <div className="w-full justify-self-center pt-1 text-center">
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.1] tracking-[0.12em] text-[#16274F] sm:text-[11px]">
-                                {g.Season}
-                              </div>
-                              <div className="whitespace-normal break-words text-[10px] font-black uppercase leading-[1.3] tracking-[0.12em] text-[#3F4757] sm:text-[11px]">
-                                Week {g.Week}
-                              </div>
-                              {isPlayoff && gameType && (() => {
-                                const isUnicornio = normalizeString(gameType).includes('unicornio') || normalizeString(gameType).includes('unicórnio')
-                                const isTapitasBowl = normalizeString(gameType).includes('tapitas bowl')
-                                const isConsolationBracket = normalizeString(gameType) === 'consolation bracket'
-
-                                const badgeClass = isUnicornio
-                                  ? 'bg-white text-[#D01F2D] border-[#0A0A0A]'
-                                  : isTapitasBowl
-                                    ? 'bg-[#F5C518] text-[#0A0A0A] border-[#0A0A0A]'
-                                    : isConsolation
-                                      ? 'bg-[#F7F6F2] text-[#6B7280] border-[#0A0A0A]/20'
-                                      : 'bg-[#16274F] text-white border-[#0A0A0A]'
-
-                                const label = isUnicornio
-                                  ? `🦄 ${gameType}`
-                                  : isTapitasBowl
-                                    ? '🏆 Tapitas Bowl'
-                                    : isConsolationBracket
-                                      ? 'Consolation'
-                                      : gameType
-
-                                return (
-                                  <div className={`mt-1 inline-block border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${badgeClass}`}>
-                                    {label}
-                                  </div>
-                                )
-                              })()}
-                            </div>
-
-                            {/* perdedor — direita */}
-                            <div className="min-w-0 text-right">
-                              <div
-                                className="whitespace-nowrap text-[22px] leading-none sm:text-[30px]"
-                                style={{
-                                  fontFamily: '"Bebas Neue", sans-serif',
-                                  fontWeight: 900,
-                                  color: '#6B7280',
-                                }}
-                              >
-                                {loserScore.toFixed(1)}
-                              </div>
-                              <div className="mt-1 truncate text-[11px] font-bold leading-snug text-[#6B7280] sm:text-[12px]">
-                                {loser}
-                              </div>
-                            </div>
-                          </a>
-
-                          {i < filteredHistory.length - 1 && (
-                            <div className="h-px w-full bg-[#0A0A0A]/8" />
-                          )}
-                        </div>
-                      )
-                    })}
-
-                    {filteredHistory.length === 0 && (
-                      <div className="py-6 text-center text-sm font-black text-[#6B7280]">
-                        No games found
-                      </div>
-                    )}
-                  </div>
+                <div className="pt-1 text-center text-[11px] font-medium text-[#6B7280] sm:text-[12px]">{row.label}</div>
+                <div className="min-w-0 text-right">
+                  <div className={`whitespace-nowrap text-[18px] font-bold leading-tight tabular-nums sm:text-[20px] ${row.rightLead ? 'text-[#1E8E3E]' : 'text-[#111]'}`}>{row.right}</div>
+                  {row.subRight && <div className="mt-0.5 text-[11px] text-[#6B7280] sm:text-[12px]">{sub(row.subRight)}</div>}
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="flex min-h-[50vh] items-center justify-center border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-              <div className="text-center">
-                <Swords className="mx-auto mb-6 h-14 w-14 text-[#6B7280]" />
-                <div style={{ fontFamily: bebas.style.fontFamily, fontSize: '64px', color: '#16274F' }}>
-                  SELECT A RIVALRY
+            )
+          })}
+        </div>
+      </CardShell>
+
+      {/* Linha do tempo */}
+      <CardShell
+        title="Rivalry timeline"
+        subtitle={`${filteredHistory.length} game${filteredHistory.length === 1 ? '' : 's'}`}
+        action={<FilterPill value={seasonFilter === 'ALL' ? 'All' : seasonFilter} onChange={v => setSeasonFilter(v === 'All' ? 'ALL' : v)} options={['All', ...seasons.filter(s => s !== 'ALL')]} label="Season" allLabel="All seasons" />}
+        withMenus
+      >
+        <div className="overflow-hidden rounded-b-xl">
+          {filteredHistory.map((g, i) => {
+            const won = g.Result === 'W'
+            const winner = won ? g.Team : g.Opponent
+            const loser = won ? g.Opponent : g.Team
+            const winnerScore = won ? parseNumber(g.PF) : parseNumber(g.PA)
+            const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
+            const isPlayoff = g.GameStage && g.GameStage !== 'Reg Season'
+            const gameType = String(g.GameType || g.GameStage || '').trim()
+            const typeKey = normalizeString(gameType)
+            const tag = !isPlayoff || !gameType ? null
+              : typeKey.includes('unicornio') ? <Tag tone="red">🦄 {gameType}</Tag>
+              : typeKey.includes('tapitas bowl') ? <Tag tone="gold">🏆 Tapitas Bowl</Tag>
+              : g.GameStage === 'Consolation' ? <Tag>{typeKey === 'consolation bracket' ? 'Consolation' : gameType}</Tag>
+              : <Tag tone="navy">{gameType}</Tag>
+            const href = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(g.Team)}&opp=${encodeURIComponent(g.Opponent)}`
+            return (
+              <a key={i} href={href} className="grid grid-cols-[84px_minmax(0,1fr)] items-center gap-3 border-b border-[#F1F2F4] px-3 py-2.5 transition-colors last:border-b-0 hover:bg-[#F7F8FA] lg:px-4">
+                <div>
+                  <div className="text-[13px] font-semibold text-[#111]">{g.Season}</div>
+                  <div className="text-[11px] text-[#6B7280]">Week {g.Week}</div>
+                  {tag && <div className="mt-1">{tag}</div>}
                 </div>
-                <p className="mt-2 text-[#6B7280]">
-                  Explore the greatest battles in league history
-                </p>
-              </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <TeamLogo name={winner} size={20} />
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#111]">{winner}</span>
+                    <span className="text-[14px] font-bold tabular-nums text-[#111]">{winnerScore.toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TeamLogo name={loser} size={20} />
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-[#6B7280]">{loser}</span>
+                    <span className="text-[14px] tabular-nums text-[#9CA3AF]">{loserScore.toFixed(1)}</span>
+                  </div>
+                </div>
+              </a>
+            )
+          })}
+          {filteredHistory.length === 0 && <div className="py-8 text-center text-[13px] text-[#6B7280]">No games found</div>}
+        </div>
+      </CardShell>
+    </>
+  )
+
+  return (
+    <PageShell>
+      {/* Seletor de times + ordenação */}
+      <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl bg-white p-2 sm:p-2.5">
+        <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <label className="relative min-w-0">
+            <span className="sr-only">Team</span>
+            <select value={teamFilterA} onChange={(e) => { setTeamFilterA(e.target.value); setSelected(null) }} className={selectClass}>
+              <option value="ALL">Any team</option>
+              {allTeams.map((team) => <option key={team} value={team}>{team}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B7280]" />
+          </label>
+          <span className="text-[12px] text-[#9CA3AF]">vs</span>
+          <label className="relative min-w-0">
+            <span className="sr-only">Opponent</span>
+            <select value={teamFilterB} onChange={(e) => { setTeamFilterB(e.target.value); setSelected(null) }} className={selectClass}>
+              <option value="ALL">Any opponent</option>
+              {allTeams.map((team) => <option key={team} value={team}>{team}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B7280]" />
+          </label>
+        </div>
+        <div className="flex gap-1.5">
+          {[['HEAT', '🔥 Heat'], ['GAMES', 'Games'], ['CLOSEST', 'Closest']].map(([value, label]) => (
+            <ToggleChip key={value} active={sortBy === value} onClick={() => setSortBy(value)}>{label}</ToggleChip>
+          ))}
+        </div>
+      </div>
+
+      <div className="lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[380px_minmax(0,1fr)] xl:gap-5">
+        <div className={selected ? 'hidden lg:block' : ''}>{listCard}</div>
+        <div className="min-w-0">
+          {detail || (
+            <div className="hidden min-h-[320px] flex-col items-center justify-center rounded-xl bg-white text-center lg:flex">
+              <Swords className="mb-3 h-8 w-8 text-[#9CA3AF]" />
+              <div className="text-[16px] font-semibold text-[#111]">Select a rivalry</div>
+              <p className="mt-1 text-[13px] text-[#6B7280]">Explore the greatest battles in league history.</p>
             </div>
           )}
         </div>
-        {/* FOOTER */}
-      </section>
-
-      <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-          <Image
-            src="/images/LogoFinalBlack.png"
-            alt="Tapitas League"
-            width={24}
-            height={24}
-            style={{ filter: 'invert(1)' }}
-            className="opacity-70"
-          />
-
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">
-            Tapitas League · Est. 2014
-          </span>
-        </div>
-      </footer>
-    </main>
+      </div>
+    </PageShell>
   )
 }

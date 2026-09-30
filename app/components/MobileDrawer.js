@@ -17,14 +17,14 @@ export default function MobileDrawer() {
 
   return (
     <>
-      {/* BARRA DO TOPO (mobile): menu à esquerda sobre o bloco vermelho do Header, slot da página à direita */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex h-14 items-center justify-between lg:hidden">
+      {/* BARRA DO TOPO (mobile): menu à esquerda sobre o bloco azul do Header, slot da página à direita */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex h-11 items-center justify-between lg:hidden">
         <button
           onClick={() => setOpen(true)}
           aria-label="Open menu"
-          className="pointer-events-auto flex h-14 w-12 items-center justify-center text-white"
+          className="pointer-events-auto flex h-11 w-11 items-center justify-center text-white"
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-5 w-5" />
         </button>
 
         <div className="pointer-events-auto flex items-center gap-2 pr-3">
@@ -44,24 +44,24 @@ export default function MobileDrawer() {
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex h-14 flex-shrink-0 items-stretch justify-between bg-[#2A2B2E]">
+        <div className="flex h-11 flex-shrink-0 items-stretch justify-between border-b border-[#E6E8EB] bg-white">
           <div
-            className="flex items-center gap-2 bg-[#D01F2D] pl-4 pr-8"
-            style={{ clipPath: 'polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%)' }}
+            className="flex items-center gap-2 bg-[#02275F] pl-4 pr-7"
+            style={{ clipPath: 'polygon(0 0, 100% 0, calc(100% - 11px) 100%, 0 100%)' }}
           >
             <Image
               src="/images/LogoFinalBlack.png"
               alt=""
-              width={30}
-              height={30}
-              className="h-7 w-7 object-contain brightness-0 invert"
+              width={28}
+              height={28}
+              className="h-6 w-6 object-contain"
             />
-            <span className="text-[17px] font-bold tracking-tight text-white">Tapitas League</span>
+            <span className="text-[15px] font-bold tracking-tight text-white">TapitasLeague</span>
           </div>
           <button
             onClick={() => setOpen(false)}
             aria-label="Close menu"
-            className="flex w-12 items-center justify-center text-white"
+            className="flex w-12 items-center justify-center text-[#3F4757]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -78,7 +78,7 @@ export default function MobileDrawer() {
                 aria-current={active ? 'page' : undefined}
                 className={`flex items-center border-b border-[#EEF0F2] border-l-4 px-4 py-3.5 text-[15px] transition-colors ${
                   active
-                    ? 'border-l-[#D01F2D] bg-[#F6F7F9] font-semibold text-[#111]'
+                    ? 'border-l-[#02275F] bg-[#F6F7F9] font-semibold text-[#02275F]'
                     : 'border-l-transparent font-medium text-[#374151] hover:bg-[#F6F7F9]'
                 }`}
               >

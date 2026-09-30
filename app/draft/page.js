@@ -4,8 +4,8 @@ import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import { useEffect, useMemo, useState, useRef, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ChevronLeft, ChevronRight, Users, Search } from 'lucide-react'
-import Header from '../components/Header'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { PageShell, CardShell, StatRow, Tabs, FilterBar, FilterPill, SearchInput, Tag, PositionBadge, TeamLogo } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 import { DRAFT_PHOTOS } from '../config/draftPhotos'
@@ -134,96 +134,6 @@ function getInitials(name) {
     )
 }
 
-function TeamSelect({ value, onChange, options, placeholder, disabled }) {
-    const [open, setOpen] = useState(false)
-    const ref = useRef(null)
-
-    useEffect(() => {
-        function handleClick(e) {
-            if (ref.current && !ref.current.contains(e.target)) {
-                setOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClick)
-        return () => document.removeEventListener('mousedown', handleClick)
-    }, [])
-
-    const selected = options.find((o) => o === value)
-
-    return (
-        <div ref={ref} className="relative flex-1 min-w-[220px]">
-            <button
-                onClick={() => !disabled && setOpen((p) => !p)}
-                disabled={disabled}
-                className={`flex w-full min-w-0 items-center justify-between gap-3 border-2 px-4 py-3 text-[12px] font-bold transition-all duration-300 ${disabled
-                    ? 'cursor-not-allowed border-[#0A0A0A]/20 bg-[#F7F6F2] text-[#6B7280]/50'
-                    : open
-                        ? 'border-[#D01F2D] bg-white text-[#16274F] tp-shadow-red-sm'
-                        : 'border-[#0A0A0A] bg-white text-[#16274F] hover:bg-[#F7F6F2]'
-                    }`}
-            >
-                <span className="block min-w-0 flex-1 truncate whitespace-nowrap text-left">
-                    {selected || placeholder}
-                </span>
-                <ChevronRight
-                    className={`h-4 w-4 flex-shrink-0 text-[#6B7280] transition-transform duration-300 ${open ? 'rotate-90 text-[#D01F2D]' : ''
-                        }`}
-                />
-            </button>
-
-            {open && (
-                <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-                    <div className="max-h-56 overflow-y-auto">
-                        {options.map((opt) => (
-                            <button
-                                key={opt}
-                                onClick={() => {
-                                    onChange(opt)
-                                    setOpen(false)
-                                }}
-                                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-[12px] font-bold transition-all duration-200 hover:bg-[#F7F6F2] ${opt === value ? 'bg-[#FDEDEE] text-[#D01F2D]' : 'text-[#3F4757]'
-                                    }`}
-                            >
-                                {opt === value && (
-                                    <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#D01F2D]" />
-                                )}
-                                <span className={opt === value ? 'ml-0' : 'ml-[14px]'}>
-                                    {opt}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    )
-}
-
-const POS_COLORS = {
-    QB: { bg: 'bg-[#D01F2D]', text: 'text-white' },
-    RB: { bg: 'bg-[#1E8E3E]', text: 'text-white' },
-    WR: { bg: 'bg-[#16274F]', text: 'text-white' },
-    TE: { bg: 'bg-[#B8860B]', text: 'text-white' },
-    K: { bg: 'bg-[#6B7280]', text: 'text-white' },
-    DEF: { bg: 'bg-[#3F4757]', text: 'text-white' },
-}
-
-function PosBadge({ pos }) {
-    const c =
-        POS_COLORS[pos] || {
-            bg: 'bg-[#6B7280]',
-            text: 'text-white',
-        }
-
-    return (
-        <span
-            className={`inline-flex items-center border-2 border-[#0A0A0A] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${c.bg} ${c.text}`}
-        >
-            {pos}
-        </span>
-    )
-}
-
 const NFL_TEAM_NAME_MAP = {
     'cardinals': 'ari', 'arizona': 'ari', 'arizona cardinals': 'ari',
     'falcons': 'atl', 'atlanta': 'atl', 'atlanta falcons': 'atl',
@@ -305,7 +215,7 @@ function PlayerAvatar({ player, pick, playerLookup, size = 'md', className = '' 
                 : 'h-10 w-10'
 
     return (
-        <div className={`${sizeClass} overflow-hidden rounded-full border-2 border-[#0A0A0A] bg-[#F7F6F2] ${className}`}>
+        <div className={`${sizeClass} flex-shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-[#E6E8EB] ${className}`}>
             {photoSrc ? (
                 <img
                     src={photoSrc}
@@ -314,7 +224,7 @@ function PlayerAvatar({ player, pick, playerLookup, size = 'md', className = '' 
                     onError={() => setPhotoFailed(true)}
                 />
             ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[#16274F] text-[11px] font-black text-white">
+                <div className="flex h-full w-full items-center justify-center bg-[#16274F] text-[11px] font-semibold text-white">
                     {String(shortName)
                         .split(' ')
                         .filter(Boolean)
@@ -328,25 +238,9 @@ function PlayerAvatar({ player, pick, playerLookup, size = 'md', className = '' 
     )
 }
 
-function TeamAvatar({ team, size = 'md', className = '' }) {
-    const avatar = getTeamAvatar(team)
-
-    const sizeClass =
-        size === 'sm'
-            ? 'h-8 w-8'
-            : size === 'lg'
-                ? 'h-14 w-14'
-                : 'h-10 w-10'
-
-    if (avatar) {
-        return <img src={avatar} alt={team} className={`${sizeClass} object-cover ${className}`} />
-    }
-
-    return (
-        <div className={`${sizeClass} flex items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-[11px] font-black text-white ${className}`}>
-            {String(team || '').slice(0, 2).toUpperCase()}
-        </div>
-    )
+function TeamAvatar({ team, size = 'md' }) {
+    const px = { xs: 20, sm: 32, md: 40, lg: 56 }[size] || 40
+    return <TeamLogo name={team} size={px} />
 }
 
 export default function DraftPage() {
@@ -454,10 +348,10 @@ export default function DraftPage() {
         setLeftSlot(
             <button
                 onClick={() => setDrawerOpen(true)}
-                className="inline-flex h-10 items-center gap-2 border-2 border-[#0A0A0A] bg-[#D01F2D] px-5 text-sm font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px]"
+                className="inline-flex h-8 items-center gap-1 rounded-full bg-[#D01F2D] pl-3.5 pr-2.5 text-[13px] font-semibold text-white"
             >
                 Summary
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5" />
             </button>
         )
         return () => setLeftSlot(null)
@@ -664,688 +558,251 @@ export default function DraftPage() {
         return notesData.filter((n) => String(n?.Season || '').trim() === season)
     }, [notesData, season])
 
+    const highlightRows = highlights ? [
+        { label: 'Best drafter', left: <TeamAvatar team={highlights.bestTeam} size="sm" />, title: highlights.bestTeam, subtitle: 'Most points from drafted players', value: highlights.bestDrafter ? `${highlights.bestDrafter.points.toFixed(1)} pts` : '—', valueClass: 'text-[#1E8E3E]' },
+        { label: 'Worst drafter', left: <TeamAvatar team={highlights.worstTeam} size="sm" />, title: highlights.worstTeam, subtitle: 'Fewest points from drafted players', value: highlights.worstDrafter ? `${highlights.worstDrafter.points.toFixed(1)} pts` : '—', valueClass: 'text-[#D01F2D]' },
+        highlights.steal && { label: 'Steal of the draft', left: <PlayerAvatar player={highlights.steal.player} pick={highlights.steal} playerLookup={playerLookup} size="sm" />, title: highlights.steal.player, subtitle: `Pick #${highlights.steal.pick} · ${highlights.steal.team}`, value: `${highlights.steal.fantasyPoints.toFixed(1)} pts`, valueClass: 'text-[#B8860B]' },
+        highlights.bust && { label: 'Biggest bust', left: <PlayerAvatar player={highlights.bust.player} pick={highlights.bust} playerLookup={playerLookup} size="sm" />, title: highlights.bust.player, subtitle: `Pick #${highlights.bust.pick} · ${highlights.bust.team}`, value: `${highlights.bust.fantasyPoints.toFixed(1)} pts` },
+    ].filter(Boolean) : []
+
     return (
-        <main className="min-h-screen bg-[#F7F6F2] text-[#0A0A0A]">
-            <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        .scroll-hide::-webkit-scrollbar { display: none; }
-        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-        .tp-shadow-red { box-shadow: 6px 6px 0 0 #D01F2D; }
-        .tp-shadow-red-sm { box-shadow: 4px 4px 0 0 #D01F2D; }
-        .tp-shadow-black { box-shadow: 5px 5px 0 0 #0A0A0A; }
-        .tp-stack-title { color: #D01F2D; }
-      `}</style>
-
-            <Header onSummaryOpen={() => setDrawerOpen(true)} />
-
-            <section className="px-3 md:px-6 pb-20">
-                <div className="relative mb-10 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
-                    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                        <svg
-                            className="absolute inset-y-0 left-1/2 -translate-x-[60%] h-full w-[140%] max-w-none"
-                            preserveAspectRatio="xMidYMid slice"
-                            viewBox="0 0 900 340"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-hidden="true"
+        <PageShell headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }} loading={loading}>
+            {/* Ano do draft (mesmo padrão do seletor de temporada/semana da Matchups) */}
+            <div className="mb-2 flex items-stretch overflow-hidden rounded-xl bg-white">
+                <span className="flex flex-shrink-0 items-center border-r border-[#EEF0F2] px-3 text-[14px] font-bold text-[#111]">Draft</span>
+                <div className="scroll-hide flex min-w-0 flex-1 overflow-x-auto">
+                    {seasons.map((s) => (
+                        <button
+                            key={s}
+                            onClick={() => setSeason(s)}
+                            className={`flex-shrink-0 border-b-2 px-3 py-3 text-[13px] tabular-nums transition-colors ${season === s ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}
                         >
-                            <g opacity="0.06">
-                                {[280, 355, 400, 475, 520, 595, 640, 715, 760, 835].map((x, i) => (
-                                    <rect
-                                        key={i}
-                                        x={x}
-                                        y="-80"
-                                        width={i % 2 === 0 ? 55 : 22}
-                                        height="520"
-                                        fill="#16274F"
-                                        transform={`rotate(-18 ${x + (i % 2 === 0 ? 27 : 11)} 170)`}
+                            {s}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-5">
+                <div className="min-w-0 lg:order-1">
+                    <div className="lg:hidden">
+                        <Tabs tabs={[['board', 'Board'], ['scores', 'Picks'], ['notes', 'Recap'], ['highlights', 'Highlights']]} value={activeTab} onChange={setActiveTab} />
+                    </div>
+                    <div className="hidden lg:block">
+                        <Tabs tabs={[['board', 'Draft Board'], ['scores', 'All Picks'], ['notes', 'Draft Recap']]} value={activeTab === 'highlights' ? 'board' : activeTab} onChange={setActiveTab} />
+                    </div>
+
+                    {(activeTab === 'board' || activeTab === 'highlights') && (
+                        <div className={activeTab === 'highlights' ? 'hidden lg:block' : ''}>
+                        <CardShell
+                            title={`Draft Board · ${season}`}
+                            subtitle={`${rounds.length} rounds · ${teams.length} teams`}
+                            action={
+                                <span className="flex flex-shrink-0 items-center gap-1.5 text-[11px] text-[#6B7280]">
+                                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#F5C518] text-[9px] font-bold text-[#111]">✓</span>
+                                    Tag eligible 2026
+                                </span>
+                            }
+                        >
+                            {/* Barra de rolagem horizontal */}
+                            <div className="px-3 pt-3 lg:px-4">
+                                <div ref={boardTrackRef} onMouseDown={handleBoardTrackClick} className="relative h-1.5 w-full cursor-pointer rounded-full bg-[#EEF0F2]">
+                                    <div
+                                        onMouseDown={handleBoardThumbPointerDown}
+                                        className="absolute top-0 h-1.5 cursor-grab rounded-full bg-[#02275F] active:cursor-grabbing"
+                                        style={{ left: `${boardThumb.left}%`, width: `${boardThumb.width}%` }}
                                     />
-                                ))}
-                            </g>
-                            <g opacity="0.10" fill="none" stroke="#16274F" strokeWidth="1">
-                                {[
-                                    'M380 -30 L460 85 L380 200 L300 85 Z',
-                                    'M460 85 L540 200 L460 315 L380 200 Z',
-                                    'M540 -30 L620 85 L540 200 L460 85 Z',
-                                    'M620 85 L700 200 L620 315 L540 200 Z',
-                                    'M700 -30 L780 85 L700 200 L620 85 Z',
-                                    'M780 85 L860 200 L780 315 L700 200 Z',
-                                ].map((d, i) => (
-                                    <path key={i} d={d} />
-                                ))}
-                            </g>
-                            <g opacity="0.05" fill="#D01F2D">
-                                {[
-                                    'M420 30 L440 58 L420 86 L400 58 Z',
-                                    'M500 120 L520 148 L500 176 L480 148 Z',
-                                    'M580 30 L600 58 L580 86 L560 58 Z',
-                                    'M660 120 L680 148 L660 176 L640 148 Z',
-                                    'M740 30 L760 58 L740 86 L720 58 Z',
-                                ].map((d, i) => (
-                                    <path key={i} d={d} />
-                                ))}
-                            </g>
-                            <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="2" strokeLinejoin="round">
-                                {[520, 600, 680].map((x, i) => (
-                                    <polyline key={i} points={`${x},0 ${x + 160},170 ${x},340`} />
-                                ))}
-                            </g>
-                            <g opacity="0.08" fill="#16274F">
-                                <polygon points="900,0 900,140 760,0" />
-                                <polygon points="900,340 900,200 760,340" />
-                            </g>
-                            <g opacity="0.08" fill="none" stroke="#16274F" strokeWidth="1">
-                                {[30, 50, 70].map((r) => (
-                                    <circle key={r} cx="870" cy="60" r={r} />
-                                ))}
-                            </g>
-                            <g opacity="0.10" fill="#16274F">
-                                {[40, 60, 80, 100].map((y) =>
-                                    [310, 330, 350].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />)
-                                )}
-                            </g>
-                            <g opacity="0.10" stroke="#16274F" strokeWidth="0.5">
-                                {[56, 113, 226, 284].map((y) => (
-                                    <line key={y} x1="0" y1={y} x2="900" y2={y} />
-                                ))}
-                            </g>
-                            <text
-                                x="790"
-                                y="310"
-                                fontFamily="'Bebas Neue', sans-serif"
-                                fontSize="340"
-                                fill="#16274F"
-                                opacity="0.04"
-                                textAnchor="middle"
-                            >
-                                D
-                            </text>
-                        </svg>
-                        <div
-                            className="absolute inset-0"
-                            style={{
-                                background:
-                                    'linear-gradient(105deg, #F7F6F2 28%, rgba(247,246,242,0.90) 48%, rgba(247,246,242,0.25) 100%)',
-                            }}
-                        />
-                    </div>
-
-                    <div className="relative z-10 p-6 sm:p-8 md:p-10">
-                        <div
-                            className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2"
-                            style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
-                        >
-                            <Users className="h-3 w-3 sm:h-4 sm:w-4 text-white shrink-0" />
-                            <span
-                                className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap"
-                                style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-                            >
-                                GM War Room
-                            </span>
-                        </div>
-
-                        <h1
-                            className="leading-[0.9] tracking-[-0.02em] text-[#16274F]"
-                            style={{
-                                fontFamily: '"Bebas Neue", sans-serif',
-                                fontSize: 'clamp(48px, 7vw, 96px)',
-                            }}
-                        >
-                            Draft
-                            <span className="tp-stack-title">{' '}Central</span>
-                        </h1>
-
-                        <p
-                            className="mt-3 sm:mt-4 max-w-xs sm:max-w-2xl text-[#3F4757] leading-relaxed"
-                            style={{ fontSize: 'clamp(14px, 1.5vw, 17px)' }}
-                        >
-                            Every pick. Every gamble.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="mb-6 overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-                    <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                        <div
-                            className="font-black uppercase tracking-[0.3em] text-[#16274F]"
-                            style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-                        >
-                            Draft Year
-                        </div>
-                    </div>
-
-                    <div className="scroll-hide flex justify-start md:justify-center gap-2 overflow-x-auto px-6 py-4">
-                        {seasons.map((s) => (
-                            <button
-                                key={s}
-                                onClick={() => setSeason(s)}
-                                className={`flex-shrink-0 border-2 px-5 py-2.5 text-sm font-black transition-all ${season === s
-                                    ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                                    : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                                    }`}
-                            >
-                                {s}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {loading ? (
-                    <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">
-                        Loading...
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-6">
-                        {photos.length > 0 && (
-                            <div className="relative overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm">
-                                <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                                    <div
-                                        className="font-black uppercase tracking-[0.3em] text-[#16274F]"
-                                        style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-                                    >
-                                        Draft Day — {season}
-                                    </div>
-                                </div>
-
-                                <div className="relative">
-                                    <div
-                                        className="relative aspect-video w-full overflow-hidden"
-                                        onTouchStart={handlePhotoTouchStart}
-                                        onTouchEnd={handlePhotoTouchEnd}
-                                        style={{ touchAction: 'pan-y' }}
-                                    >
-                                        <AnimatePresence mode="wait">
-                                            <motion.div
-                                                key={photoIdx}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.4 }}
-                                                className="absolute inset-0"
-                                            >
-                                                <Image
-                                                    src={`/images/draft/${season}/${photos[photoIdx].file}`}
-                                                    alt={photos[photoIdx].caption || ''}
-                                                    fill
-                                                    className="object-cover"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                                {photos[photoIdx].caption && (
-                                                    <div className="absolute bottom-4 left-6 right-6 text-sm font-bold text-white/80">
-                                                        {photos[photoIdx].caption}
-                                                    </div>
-                                                )}
-                                            </motion.div>
-                                        </AnimatePresence>
-
-                                        {photos.length > 1 && (
-                                            <>
-                                                <button
-                                                    onClick={prevPhoto}
-                                                    className="absolute left-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-white/90 text-[#16274F] transition-all hover:bg-white"
-                                                >
-                                                    <ChevronLeft className="h-5 w-5" />
-                                                </button>
-
-                                                <button
-                                                    onClick={nextPhoto}
-                                                    className="absolute right-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center border-2 border-[#0A0A0A] bg-white/90 text-[#16274F] transition-all hover:bg-white"
-                                                >
-                                                    <ChevronRight className="h-5 w-5" />
-                                                </button>
-
-                                                <div className="absolute bottom-4 right-6 flex gap-1.5">
-                                                    {photos.map((_, i) => (
-                                                        <button
-                                                            key={i}
-                                                            onClick={() => {
-                                                                setPhotoIdx(i)
-                                                                setPhotoTimerKey((k) => k + 1)
-                                                            }}
-                                                            className={`h-1.5 transition-all ${i === photoIdx ? 'w-6 bg-[#D01F2D]' : 'w-1.5 bg-white/60'
-                                                                }`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
-                        )}
 
-                        {highlights && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5 }}
-                                className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
-                            >
-                                <div className="border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                                    <div className="mb-3 flex items-center gap-3">
-                                        <TeamAvatar team={highlights.bestTeam} />
-                                        <div className="min-w-0">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">
-                                                Best Drafter
-                                            </div>
-                                            <div className="truncate text-lg font-black text-[#16274F] leading-tight">
-                                                {highlights.bestTeam}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {highlights.bestDrafter && (
-                                        <div className="text-xs text-[#6B7280]">
-                                            {highlights.bestDrafter.points.toFixed(1)} pts
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                                    <div className="mb-3 flex items-center gap-3">
-                                        <TeamAvatar team={highlights.worstTeam} />
-                                        <div className="min-w-0">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                                                Worst Drafter
-                                            </div>
-                                            <div className="truncate text-lg font-black text-[#16274F] leading-tight">
-                                                {highlights.worstTeam}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {highlights.worstDrafter && (
-                                        <div className="text-xs text-[#6B7280]">
-                                            {highlights.worstDrafter.points.toFixed(1)} pts
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="border-2 border-[#0A0A0A] bg-[#FFF9E5] p-5 tp-shadow-navy-sm">
-                                    <div className="mb-3 flex items-center gap-3">
-                                        <PlayerAvatar player={highlights.steal?.player} playerLookup={playerLookup} />
-                                        <div className="min-w-0">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#B8860B]">
-                                                Steal of the Draft
-                                            </div>
-                                            <div className="truncate text-lg font-black text-[#16274F] leading-tight">
-                                                {highlights.steal?.player}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="text-xs text-[#6B7280]">{highlights.steal?.team}</div>
-                                </div>
-
-                                <div className="border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy-sm">
-                                    <div className="mb-3 flex items-center gap-3">
-                                        <PlayerAvatar player={highlights.bust?.player} playerLookup={playerLookup} />
-                                        <div className="min-w-0">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                                                Biggest Bust
-                                            </div>
-                                            <div className="truncate text-lg font-black text-[#16274F] leading-tight">
-                                                {highlights.bust?.player}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="text-xs text-[#6B7280]">{highlights.bust?.team}</div>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        <div className="flex gap-2">
-                            {[
-                                { key: 'board', label: 'Draft Board' },
-                                { key: 'scores', label: 'All Picks' },
-                                { key: 'notes', label: 'Draft Recap' },
-                            ].map((tab) => (
-                                <button
-                                    key={tab.key}
-                                    onClick={() => setActiveTab(tab.key)}
-                                    className={`border-2 px-5 py-2.5 text-sm font-black transition-all ${activeTab === tab.key
-                                        ? 'border-[#0A0A0A] bg-[#D01F2D] text-white'
-                                        : 'border-[#0A0A0A] bg-white text-[#3F4757] hover:bg-[#F7F6F2]'
-                                        }`}
+                            <div ref={boardScrollRef} onScroll={updateBoardThumb} className="scroll-hide overflow-x-scroll px-2 pb-3 pt-2 lg:px-3">
+                                <div
+                                    className="grid gap-1.5"
+                                    style={{ gridTemplateColumns: `repeat(${teams.length}, 156px)`, minWidth: `${teams.length * 156}px` }}
                                 >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
+                                    {teams.map((team) => (
+                                        <div key={team} className="flex items-center gap-1.5 px-1 py-1.5">
+                                            <TeamAvatar team={team} size="xs" />
+                                            <span className="truncate text-[12px] font-semibold text-[#111]">{team}</span>
+                                        </div>
+                                    ))}
 
-                        {activeTab === 'board' && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.4 }}
-                                className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
-                            >
-                                <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                                    <div
-                                        className="font-black uppercase tracking-[0.3em] text-[#16274F]"
-                                        style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-                                    >
-                                        Draft Board — {season}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 px-6 pb-3">
-                                    <span className="inline-flex items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#F5C518] px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-[#0A0A0A]">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A]" />
-                                        Tag OK
-                                    </span>
-                                    <span className="text-[10px] font-bold text-[#6B7280]">
-                                        Jogadores elegíveis para tag em 2026
-                                    </span>
-                                </div>
-
-                                <div className="px-4 pb-3">
-                                    <div
-                                        ref={boardTrackRef}
-                                        onMouseDown={handleBoardTrackClick}
-                                        className="relative h-1.5 w-full cursor-pointer border border-[#0A0A0A]/15 bg-[#F7F6F2]"
-                                    >
-                                        <div
-                                            onMouseDown={handleBoardThumbPointerDown}
-                                            className="absolute top-0 h-1.5 cursor-grab bg-[#16274F] transition-colors hover:bg-[#0A0A0A] active:cursor-grabbing"
-                                            style={{ left: `${boardThumb.left}%`, width: `${boardThumb.width}%` }}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="pb-4 pl-4">
-                                    <div
-                                        ref={boardScrollRef}
-                                        onScroll={updateBoardThumb}
-                                        className="scroll-hide overflow-x-scroll pr-4"
-                                    >
-                                        <div
-                                            className="grid gap-y-1 gap-x-0"
-                                            style={{
-                                                gridTemplateColumns: `repeat(${teams.length}, 160px)`,
-                                                minWidth: `${teams.length * 160}px`,
-                                            }}
-                                        >
-                                            {teams.map((team) => (
-                                                <div
-                                                    key={team}
-                                                    className="flex items-center justify-center px-2 py-2 text-center text-[10px] font-black uppercase tracking-[0.15em] text-[#16274F] whitespace-nowrap"
-                                                >
-                                                    {team}
-                                                </div>
-                                            ))}
-
-                                            {boardMatrix.map((row, rIdx) => {
-                                                const round = rounds[rIdx]
-                                                return (
-                                                    <Fragment key={rIdx}>
-                                                        {row.map((picks, cIdx) => (
-                                                            <div key={cIdx} className="px-1 py-1">
-                                                                {picks.length > 0 ? (
-                                                                    <div className="flex flex-col gap-1">
-                                                                        {picks.map((pick) => {
-                                                                            const pickInRound = teams.length
-                                                                                ? ((pick.pick - 1) % teams.length) + 1
-                                                                                : pick.pick
-
-                                                                            return (
-                                                                                <div
-                                                                                    key={pick.pick}
-                                                                                    className={`relative border-2 p-2 transition-all ${pick.tagOk
-                                                                                        ? 'border-[#0A0A0A] bg-[#FFF9E5] hover:bg-[#FFF3C4]'
-                                                                                        : 'border-[#0A0A0A] bg-white hover:bg-[#F7F6F2]'
-                                                                                        }`}
-                                                                                >
-                                                                                    {pick.tagOk && (
-                                                                                        <span
-                                                                                            title="Elegível para tag em 2026"
-                                                                                            className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#0A0A0A] bg-[#F5C518] text-[8px] font-black text-[#0A0A0A]"
-                                                                                        >
-                                                                                            ✓
-                                                                                        </span>
-                                                                                    )}
-                                                                                    <div className="mb-1 flex items-center justify-between gap-1">
-                                                                                        <span className="text-[9px] font-black text-[#6B7280] whitespace-nowrap">
-                                                                                            R{round}.{String(pickInRound).padStart(2, '0')}{' '}
-                                                                                            <span className="text-[#D01F2D]">#{pick.pick}</span>
-                                                                                        </span>
-                                                                                        <PosBadge pos={pick.position} />
-                                                                                    </div>
-
-                                                                                    <div className="flex items-center gap-2 min-w-0">
-                                                                                        <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
-                                                                                        <div className="min-w-0">
-                                                                                            <div className="truncate text-xs font-black text-[#16274F] leading-tight">
-                                                                                                {pick.player}
-                                                                                            </div>
-                                                                                            <div className="truncate text-[10px] font-bold text-[#6B7280]">
-                                                                                                {pick.team}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
+                                    {boardMatrix.map((row, rIdx) => {
+                                        const round = rounds[rIdx]
+                                        return (
+                                            <Fragment key={rIdx}>
+                                                {row.map((picks, cIdx) => (
+                                                    <div key={cIdx}>
+                                                        {picks.length > 0 ? (
+                                                            <div className="flex flex-col gap-1">
+                                                                {picks.map((pick) => {
+                                                                    const pickInRound = teams.length ? ((pick.pick - 1) % teams.length) + 1 : pick.pick
+                                                                    return (
+                                                                        <div key={pick.pick} className={`relative rounded-lg p-2 ${pick.tagOk ? 'bg-[#FFF6D6]' : 'bg-[#F4F5F7]'}`}>
+                                                                            {pick.tagOk && (
+                                                                                <span title="Elegível para tag em 2026" className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#F5C518] text-[9px] font-bold text-[#111]">✓</span>
+                                                                            )}
+                                                                            <div className="mb-1.5 flex items-center gap-1.5 pr-5 text-[11px] tabular-nums text-[#6B7280]">
+                                                                                <span>{round}.{String(pickInRound).padStart(2, '0')}</span>
+                                                                                <span className="text-[#9CA3AF]">#{pick.pick}</span>
+                                                                            </div>
+                                                                            <div className="flex min-w-0 items-center gap-2">
+                                                                                <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
+                                                                                <div className="min-w-0">
+                                                                                    <div className="truncate text-[12px] font-semibold leading-tight text-[#111]">{pick.player}</div>
+                                                                                    <div className="mt-0.5"><PositionBadge position={pick.position} /></div>
                                                                                 </div>
-                                                                            )
-                                                                        })}
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="border-2 border-dashed border-[#0A0A0A]/10 bg-[#F7F6F2] p-2 h-[52px]" />
-                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    )
+                                                                })}
                                                             </div>
-                                                        ))}
-                                                    </Fragment>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
+                                                        ) : (
+                                                            <div className="h-[62px] rounded-lg border border-dashed border-[#E6E8EB]" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </Fragment>
+                                        )
+                                    })}
                                 </div>
-                            </motion.div>
-                        )}
+                            </div>
+                        </CardShell>
+                        </div>
+                    )}
 
-                        {activeTab === 'scores' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}
-                                className="overflow-hidden border-2 border-[#0A0A0A] bg-white tp-shadow-navy-sm"
-                            >
-                                <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                                    <div
-                                        className="font-black uppercase tracking-[0.3em] text-[#16274F]"
-                                        style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
-                                    >
-                                        All Picks — {season}
-                                    </div>
-                                </div>
-
-                                <div className="border-b-2 border-[#0A0A0A]/10 px-6 py-4">
-                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                                        <div className="relative">
-                                            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
-                                            <input
-                                                type="text"
-                                                value={playerNameFilter}
-                                                onChange={(e) => setPlayerNameFilter(e.target.value)}
-                                                placeholder="Buscar jogador..."
-                                                className="w-full border-2 border-[#0A0A0A] bg-white py-3 pl-11 pr-4 text-[12px] font-bold text-[#16274F] placeholder:text-[#6B7280] transition-all focus:border-[#D01F2D] focus:outline-none"
-                                            />
-                                        </div>
-
-                                        <TeamSelect
-                                            value={teamFilter}
-                                            onChange={setTeamFilter}
-                                            options={['All Teams', ...teams]}
-                                            placeholder="Filtrar por time"
-                                        />
-
-                                        <TeamSelect
-                                            value={positionFilter}
-                                            onChange={setPositionFilter}
-                                            options={['All Positions', ...positions]}
-                                            placeholder="Filtrar por posição"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b-2 border-[#0A0A0A]/10">
-                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                                                    Pick
-                                                </th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                                                    Round
-                                                </th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                                                    Team
-                                                </th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                                                    Player
-                                                </th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                                                    Pos
-                                                </th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {filteredSeasonPicks.map((pick, i) => (
-                                                <tr
-                                                    key={`${pick.pick}-${i}`}
-                                                    className="border-b border-[#0A0A0A]/8 hover:bg-[#F7F6F2] transition-all"
-                                                >
-                                                    <td className="px-6 py-3 text-sm font-black text-[#D01F2D]">#{pick.pick}</td>
-                                                    <td className="px-6 py-3 text-sm font-bold text-[#6B7280]">R{pick.round}</td>
-                                                    <td className="px-6 py-3">
-                                                        <div className="flex items-center gap-2 min-w-0">
-                                                            <TeamAvatar team={pick.team} size="sm" className="flex-shrink-0" />
-                                                            <span className="truncate text-sm font-black text-[#16274F]">{pick.team}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-3">
-                                                        <div className="flex items-center gap-3 min-w-0">
-                                                            <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} className="flex-shrink-0" />
-                                                            <div className="truncate text-sm font-bold text-[#3F4757]">{pick.player}</div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-3">
-                                                        <PosBadge pos={pick.position} />
-                                                    </td>
-                                                </tr>
+                    {activeTab === 'scores' && (
+                        <CardShell title={`All Picks · ${season}`} subtitle={`${filteredSeasonPicks.length} of ${seasonPicks.length} picks`} withMenus>
+                            <FilterBar>
+                                <FilterPill value={teamFilter === 'All Teams' ? 'All' : teamFilter} onChange={v => setTeamFilter(v === 'All' ? 'All Teams' : v)} options={['All', ...teams]} label="Team" allLabel="All teams" />
+                                <FilterPill value={positionFilter === 'All Positions' ? 'All' : positionFilter} onChange={v => setPositionFilter(v === 'All' ? 'All Positions' : v)} options={['All', ...positions]} label="Position" allLabel="All positions" />
+                                <SearchInput value={playerNameFilter} onChange={setPlayerNameFilter} placeholder="Buscar jogador…" />
+                            </FilterBar>
+                            <div className="overflow-x-auto rounded-b-xl">
+                                <table className="w-full min-w-[520px]">
+                                    <thead>
+                                        <tr className="border-b border-[#EEF0F2]">
+                                            {['Pick', 'Round', 'Player', 'Pos', 'Team'].map(h => (
+                                                <th key={h} className="px-3 py-2 text-left text-[11px] font-medium text-[#6B7280] lg:px-4">{h}</th>
                                             ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredSeasonPicks.map((pick, i) => (
+                                            <tr key={`${pick.pick}-${i}`} className={`border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] ${pick.tagOk ? 'bg-[#FFFBEA]' : ''}`}>
+                                                <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums text-[#111] lg:px-4">#{pick.pick}</td>
+                                                <td className="px-3 py-2.5 text-[13px] tabular-nums text-[#6B7280] lg:px-4">R{pick.round}</td>
+                                                <td className="px-3 py-2.5 lg:px-4">
+                                                    <div className="flex min-w-0 items-center gap-2.5">
+                                                        <PlayerAvatar pick={pick} player={pick.player} playerLookup={playerLookup} size="sm" />
+                                                        <span className="truncate text-[13px] font-medium text-[#111]">{pick.player}</span>
+                                                        {pick.tagOk && <Tag tone="gold">Tag OK</Tag>}
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2.5 lg:px-4"><PositionBadge position={pick.position} /></td>
+                                                <td className="px-3 py-2.5 lg:px-4">
+                                                    <div className="flex min-w-0 items-center gap-2">
+                                                        <TeamAvatar team={pick.team} size="xs" />
+                                                        <span className="truncate text-[13px] text-[#3F4757]">{pick.team}</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {filteredSeasonPicks.length === 0 && (
+                                            <tr><td colSpan={5} className="py-10 text-center text-[13px] text-[#6B7280]">Nenhum jogador encontrado com os filtros atuais.</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardShell>
+                    )}
 
-                                            {filteredSeasonPicks.length === 0 && (
-                                                <tr>
-                                                    <td colSpan={5} className="px-6 py-10 text-center text-sm font-bold text-[#6B7280]">
-                                                        Nenhum jogador encontrado com os filtros atuais.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {activeTab === 'notes' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}
-                            >
-                                {notes.length === 0 ? (
-                                    <div className="flex items-center justify-center border-2 border-[#0A0A0A] bg-white py-20 tp-shadow-navy-sm">
-                                        <div className="text-center font-bold text-[#6B7280]">
-                                            Nenhuma nota para {season}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="border-2 border-[#0A0A0A] bg-white p-6 md:p-8 tp-shadow-navy-sm">
-                                        <div className="mb-5 flex items-center gap-3">
-                                            <Sparkles className="h-5 w-5 text-[#D01F2D]" />
-                                            <div className="text-sm font-black uppercase tracking-[0.25em] text-[#16274F]">
-                                                Draft Recap
-                                            </div>
-                                        </div>
-
-                                        <article className="prose max-w-none prose-headings:text-[#16274F] prose-p:text-[#3F4757] prose-strong:text-[#16274F] prose-li:text-[#3F4757]">
-                                            <ReactMarkdown
-                                                components={{
-                                                    h1: ({ children }) => (
-                                                        <h1 className="text-2xl font-black text-[#16274F] mb-4 mt-6 leading-tight">
-                                                            {children}
-                                                        </h1>
-                                                    ),
-                                                    h2: ({ children }) => (
-                                                        <h2 className="text-xl font-black text-[#16274F] mb-3 mt-5 leading-tight">
-                                                            {children}
-                                                        </h2>
-                                                    ),
-                                                    h3: ({ children }) => (
-                                                        <h3 className="text-lg font-black text-[#16274F] mb-2 mt-4">
-                                                            {children}
-                                                        </h3>
-                                                    ),
-                                                    p: ({ children }) => (
-                                                        <p className="text-[#3F4757] mb-3 leading-relaxed text-justify">
-                                                            {children}
-                                                        </p>
-                                                    ),
-                                                    strong: ({ children }) => (
-                                                        <strong className="text-[#16274F] font-black">{children}</strong>
-                                                    ),
-                                                    em: ({ children }) => (
-                                                        <em className="text-[#D01F2D] not-italic font-bold">{children}</em>
-                                                    ),
-                                                    ul: ({ children }) => (
-                                                        <ul className="list-disc list-inside mb-3 text-[#3F4757] space-y-1">
-                                                            {children}
-                                                        </ul>
-                                                    ),
-                                                    ol: ({ children }) => (
-                                                        <ol className="list-decimal list-inside mb-3 text-[#3F4757] space-y-1">
-                                                            {children}
-                                                        </ol>
-                                                    ),
-                                                    li: ({ children }) => <li className="text-[#3F4757]">{children}</li>,
-                                                    hr: () => <hr className="border-[#0A0A0A]/10 my-4" />,
-                                                    blockquote: ({ children }) => (
-                                                        <blockquote className="border-l-4 border-[#D01F2D] pl-4 my-3 text-[#3F4757] italic">
-                                                            {children}
-                                                        </blockquote>
-                                                    ),
-                                                }}
-                                            >
-                                                {String(notes[0]?.Note || '').trim()}
-                                            </ReactMarkdown>
-                                        </article>
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-                    </div>
-                )}
-            </section>
-
-            <footer className="w-full border-t-4 border-[#D01F2D] bg-[#16274F]">
-                <div className="mx-auto flex max-w-[1920px] items-center justify-center gap-3 px-5 py-6 sm:px-8 lg:px-12">
-                    <Image
-                        src="/images/LogoFinalBlack.png"
-                        alt="Tapitas League"
-                        width={24}
-                        height={24}
-                        style={{ filter: 'invert(1)' }}
-                        className="opacity-70"
-                    />
-                    <span className="text-xs font-black uppercase tracking-[0.3em] text-white/70">
-                        Tapitas League · Est. 2014
-                    </span>
+                    {activeTab === 'notes' && (
+                        <CardShell title={`Draft Recap · ${season}`}>
+                            {notes.length === 0 ? (
+                                <div className="py-16 text-center text-[13px] text-[#6B7280]">Nenhuma nota para {season}</div>
+                            ) : (
+                                <article className="mx-auto max-w-[760px] px-4 py-5 text-[15px] sm:px-6">
+                                    <ReactMarkdown
+                                        components={{
+                                            h1: ({ children }) => <h1 className="mb-3 mt-5 text-[22px] font-bold leading-tight text-[#111]">{children}</h1>,
+                                            h2: ({ children }) => <h2 className="mb-2 mt-5 text-[18px] font-bold leading-tight text-[#111]">{children}</h2>,
+                                            h3: ({ children }) => <h3 className="mb-2 mt-4 text-[16px] font-bold text-[#111]">{children}</h3>,
+                                            p: ({ children }) => <p className="mb-3 leading-[1.7] text-[#2F3542]">{children}</p>,
+                                            strong: ({ children }) => <strong className="font-semibold text-[#111]">{children}</strong>,
+                                            em: ({ children }) => <em className="font-semibold not-italic text-[#02275F]">{children}</em>,
+                                            ul: ({ children }) => <ul className="mb-3 list-disc space-y-1 pl-5 text-[#2F3542]">{children}</ul>,
+                                            ol: ({ children }) => <ol className="mb-3 list-decimal space-y-1 pl-5 text-[#2F3542]">{children}</ol>,
+                                            li: ({ children }) => <li className="leading-[1.7]">{children}</li>,
+                                            hr: () => <hr className="my-5 border-[#E6E8EB]" />,
+                                            blockquote: ({ children }) => <blockquote className="my-3 border-l-4 border-[#02275F] bg-[#F6F7F9] py-2 pl-4 pr-3 text-[#3F4757]">{children}</blockquote>,
+                                        }}
+                                    >
+                                        {String(notes[0]?.Note || '').trim()}
+                                    </ReactMarkdown>
+                                </article>
+                            )}
+                        </CardShell>
+                    )}
                 </div>
-            </footer>
+                {/* Lateral: destaques + fotos (no mobile vira a aba Highlights) */}
+                <aside className={`${activeTab === 'highlights' ? 'block' : 'hidden'} lg:order-2 lg:block`}>
+                    {highlightRows.length > 0 && (
+                        <CardShell title="Draft highlights" subtitle={`${season} · based on the season's fantasy points`} sidebar>
+                            <div className="py-1 lg:py-2">
+                                {highlightRows.map(row => (
+                                    <StatRow key={row.label} left={row.left} eyebrow={row.label} title={row.title} subtitle={row.subtitle} value={row.value} valueClass={row.valueClass} />
+                                ))}
+                            </div>
+                        </CardShell>
+                    )}
 
-            <SummaryDrawer
-                open={drawerOpen}
-                onClose={() => setDrawerOpen(false)}
-                allSeasons={allSeasons}
-            />
-        </main>
+                    {photos.length > 0 && (
+                        <CardShell title="Draft day" subtitle={`${season} · ${photos.length} photo${photos.length === 1 ? '' : 's'}`} sidebar>
+                            <div
+                                className="relative aspect-video w-full overflow-hidden bg-[#111]"
+                                onTouchStart={handlePhotoTouchStart}
+                                onTouchEnd={handlePhotoTouchEnd}
+                                style={{ touchAction: 'pan-y' }}
+                            >
+                                <AnimatePresence mode="wait">
+                                    <motion.div key={photoIdx} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="absolute inset-0">
+                                        <Image src={`/images/draft/${season}/${photos[photoIdx].file}`} alt={photos[photoIdx].caption || ''} fill className="object-cover" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                        {photos[photoIdx].caption && (
+                                            <div className="absolute bottom-3 left-3 right-16 text-[12px] font-medium text-white/90">{photos[photoIdx].caption}</div>
+                                        )}
+                                    </motion.div>
+                                </AnimatePresence>
+
+                                {photos.length > 1 && (
+                                    <>
+                                        <button onClick={prevPhoto} aria-label="Previous photo" className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#111] hover:bg-white">
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </button>
+                                        <button onClick={nextPhoto} aria-label="Next photo" className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#111] hover:bg-white">
+                                            <ChevronRight className="h-4 w-4" />
+                                        </button>
+                                        <div className="absolute bottom-3 right-3 flex gap-1">
+                                            {photos.map((_, i) => (
+                                                <button
+                                                    key={i}
+                                                    aria-label={`Photo ${i + 1}`}
+                                                    onClick={() => { setPhotoIdx(i); setPhotoTimerKey((k) => k + 1) }}
+                                                    className={`h-1.5 rounded-full transition-all ${i === photoIdx ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </CardShell>
+                    )}
+                </aside>
+
+            </div>
+
+            <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={allSeasons} />
+        </PageShell>
     )
 }

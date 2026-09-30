@@ -260,7 +260,7 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
       }`}>
 
         {/* HEADER */}
-        <div className="sticky top-0 z-10 flex h-14 items-center justify-between bg-[#2A2B2E] pl-4 pr-1">
+        <div className="sticky top-0 z-10 flex h-14 items-center justify-between bg-[#02275F] pl-4 pr-1">
           <div className="flex min-w-0 items-center gap-3">
             <h2 className="text-[15px] font-bold text-white">Season Summary</h2>
             <label className="relative">
