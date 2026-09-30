@@ -578,10 +578,13 @@ function MatchupsPageContent() {
 
   useEffect(() => {
     async function load() {
-      const [data, cacheRows] = await Promise.all([
+      const [sheetData, cacheRows, sleeperRows] = await Promise.all([
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
         safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
+        // Semana em andamento e semanas futuras da temporada atual (Sleeper)
+        safeFetch('/api/league/sleeper-rows'),
       ])
+      const data = [...sheetData, ...sleeperRows]
       setGames(data)
       setPlayerLookup(buildPlayerLookup(cacheRows))
 
@@ -979,6 +982,11 @@ function MatchupsPageContent() {
   const teamPF = selected ? parseNumber(selected?.PF) : 0
   const teamPA = selected ? parseNumber(selected?.PA) : 0
   const teamWon = selected ? String(selected?.Result || '').trim().toUpperCase() === 'W' : false
+  // Semanas vindas do Sleeper: em andamento (live) ou futuras (upcoming)
+  const matchStatus = String(selected?.Status || '').trim()
+  const undecided = matchStatus === 'live' || matchStatus === 'upcoming'
+  const teamBold = undecided || teamWon
+  const oppBold = undecided || !teamWon
 
   const starters = selected ? extractPlayers(selected, 'S') : []
   const bench = selected ? extractPlayers(selected, 'B') : []
@@ -1401,11 +1409,11 @@ function MatchupsPageContent() {
                         <div className="flex flex-col items-center gap-2">
                           <TeamAvatar name={teamName} className="h-10 w-10 rounded-lg" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(teamName)}`}
-                            className={`text-center font-semibold leading-tight hover:underline ${teamWon ? 'text-[#111]' : 'text-[#6B7280]'}`}
+                            className={`text-center font-semibold leading-tight hover:underline ${teamBold ? 'text-[#111]' : 'text-[#6B7280]'}`}
                             style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
                             {teamName}
                           </a>
-                          <div className={`font-bold leading-none ${teamWon ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
+                          <div className={`font-bold leading-none ${teamBold ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
                             isHistoricTeamScore(teamPF) ? 'text-[#B8860B]' : ''
                             }`}
                             style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(32px, 6vw, 44px)' }}>
@@ -1439,7 +1447,12 @@ function MatchupsPageContent() {
                             {Math.abs(teamPF - teamPA).toFixed(2)}
                           </div>
                           <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">margin</div>
-                          {teamWon ? (
+                          {undecided ? (
+                            <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${matchStatus === 'live' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
+                              {matchStatus === 'live' && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" />}
+                              {matchStatus === 'live' ? 'Live' : 'Upcoming'}
+                            </div>
+                          ) : teamWon ? (
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">← WIN</div>
                           ) : (
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">WIN →</div>
@@ -1450,11 +1463,11 @@ function MatchupsPageContent() {
                         <div className="flex flex-col items-center gap-2">
                           <TeamAvatar name={oppName} className="h-10 w-10 rounded-lg" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(oppName)}`}
-                            className={`text-center font-semibold leading-tight hover:underline ${!teamWon ? 'text-[#111]' : 'text-[#6B7280]'}`}
+                            className={`text-center font-semibold leading-tight hover:underline ${oppBold ? 'text-[#111]' : 'text-[#6B7280]'}`}
                             style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
                             {oppName}
                           </a>
-                          <div className={`font-bold leading-none ${!teamWon ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
+                          <div className={`font-bold leading-none ${oppBold ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
                             isHistoricTeamScore(teamPA) ? 'text-[#B8860B]' : ''
                             }`}
                             style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(32px, 6vw, 44px)' }}>

@@ -1,14 +1,17 @@
 import { getScoreboard } from '@/app/lib/espn'
 import { getKickoffWeather } from '@/app/lib/weather'
 import { getLeagueRosters, rosterIndex } from '@/app/lib/leagueRosters'
-import { getSleeperPlayers } from '@/app/lib/sleeper'
+import { getSleeperPlayers, getNflState } from '@/app/lib/sleeper'
 import { cdnHeaders } from '@/app/lib/cache'
 
-// Jogos da rodada da NFL + clima no estádio + jogadores da liga em campo
-export async function GET() {
+// Jogos de uma rodada da NFL (?week=, padrão: a atual) + clima no estádio +
+// jogadores da liga em campo
+export async function GET(request) {
+  const requested = Number(new URL(request.url).searchParams.get('week')) || null
   let board
   try {
-    board = await getScoreboard()
+    const state = requested ? await getNflState().catch(() => null) : null
+    board = await getScoreboard({ week: requested && requested >= 1 && requested <= 23 ? requested : null, season: state?.season })
   } catch (err) {
     console.error('[api/nfl/scoreboard]', err)
     return Response.json({ error: 'Failed to load scoreboard' }, { status: 502 })

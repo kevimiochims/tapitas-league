@@ -47,6 +47,14 @@ export function getLeagueStatus() {
       }),
     }))
 
-    return { season, seasonType: state.seasonType, week, byeTeams: byeNow, nextWeekByeTeams: byeNext, teams }
+    // As duas próximas semanas (a partir da atual) que têm times de folga
+    const lastWeek = Math.max(0, ...schedule.map(g => g.week))
+    const upcomingByes = []
+    for (let w = week || 0; week && w <= lastWeek && upcomingByes.length < 2; w++) {
+      const byeTeams = byeTeamsForWeek(schedule, w)
+      if (byeTeams.length) upcomingByes.push({ week: w, teams: byeTeams })
+    }
+
+    return { season, seasonType: state.seasonType, week, byeTeams: byeNow, nextWeekByeTeams: byeNext, upcomingByes, teams }
   })
 }

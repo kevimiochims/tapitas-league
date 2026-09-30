@@ -4,7 +4,7 @@
 // Mantém cards, filtros e etiquetas iguais em todas as páginas.
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Check, Trophy } from 'lucide-react'
+import { ChevronDown, ChevronRight, Check, Trophy } from 'lucide-react'
 import Header from './Header'
 
 // ── Estrutura da página ─────────────────────────────────────────────
@@ -211,14 +211,20 @@ export function StatRow({ left, eyebrow, title, subtitle, value, valueClass = 't
 }
 
 // Número em destaque (rótulo em cima, valor, detalhe embaixo).
-export function StatTile({ label, value, sub, valueClass = 'text-[#111]' }) {
-  return (
-    <div className="min-w-0 bg-white px-3 py-3 sm:px-4">
-      <div className="truncate text-[11px] text-[#6B7280]">{label}</div>
+// Com `href`, o número vira link para a página relacionada.
+export function StatTile({ label, value, sub, valueClass = 'text-[#111]', href }) {
+  const inner = (
+    <>
+      <div className="flex items-center justify-between gap-1 truncate text-[11px] text-[#6B7280]">
+        <span className="truncate">{label}</span>
+        {href && <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 text-[#9CA3AF] transition-colors group-hover:text-[#D01F2D]" />}
+      </div>
       <div className={`mt-1 whitespace-nowrap text-[20px] font-bold leading-none tabular-nums sm:text-[22px] ${valueClass}`}>{value}</div>
       {sub && <div className="mt-1 truncate text-[11px] text-[#6B7280]">{sub}</div>}
-    </div>
+    </>
   )
+  if (href) return <a href={href} className="group block min-w-0 bg-white px-3 py-3 transition-colors hover:bg-[#F7F8FA] sm:px-4">{inner}</a>
+  return <div className="min-w-0 bg-white px-3 py-3 sm:px-4">{inner}</div>
 }
 
 // Grade de StatTiles separadas por linhas finas.
@@ -519,6 +525,25 @@ const TEAM_IMAGES = {
   'peytao da massa': '/images/peytao.png',
   'rincao settlers': '/images/rincao.png',
   'h-lera do mahl': '/images/hlera.png',
+}
+
+// Siglas de três letras das franquias (placares compactos)
+const TEAM_ABBR = {
+  'howmuch': 'HOW',
+  'i am megatron': 'MEG',
+  'moneyball': 'MNY',
+  'ocupa e resiste': 'OCU',
+  'oldbrady': 'OLD',
+  'patrolao squad': 'PAT',
+  'pequers verde': 'PEQ',
+  'peytao da massa': 'PEY',
+  'rincao settlers': 'RIN',
+  'h-lera do mahl': 'HLE',
+}
+
+export function getTeamAbbr(name) {
+  const key = normalizeTeamKey(name)
+  return TEAM_ABBR[key] || key.replace(/[^a-z]/g, '').slice(0, 3).toUpperCase() || '—'
 }
 
 export function normalizeTeamKey(value) {

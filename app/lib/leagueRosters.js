@@ -79,7 +79,7 @@ function getSheetRosters() {
 }
 
 // Nome do jogador como aparece na planilha (ex.: "J. Allen"), para o Player Profile
-async function getSheetNames() {
+export async function getSheetNames() {
   const rows = await getSheetRows('_PLAYER_CACHE').catch(() => [])
   const map = new Map()
   rows.forEach(r => {
@@ -131,6 +131,7 @@ async function getSleeperRosters(sheetRosters) {
     const season = sheetRosters[0]?.season || null
     return {
       team,
+      rosterId: r?.roster_id ?? null,
       season,
       week: null,
       source: 'sleeper',

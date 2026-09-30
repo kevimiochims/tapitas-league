@@ -63,7 +63,7 @@ export default function RosterAlertsCard({ onOpenPlayer }) {
   const injured = (data?.teams || []).reduce((n, t) => n + t.players.filter(p => p.injury && p.starter).length, 0)
   const byes = (data?.teams || []).reduce((n, t) => n + t.players.filter(p => p.byeThisWeek).length, 0)
   const subtitle = data?.week
-    ? `NFL week ${data.week} · ${injured} injured starter${injured === 1 ? '' : 's'} · ${byes} on bye`
+    ? `NFL week ${data.week} · ${injured} injured starter${injured === 1 ? '' : 's'}${byes ? ` · ${byes} on bye` : ''}`
     : `${injured} injured starter${injured === 1 ? '' : 's'}`
 
   return (

@@ -12,7 +12,7 @@ import { useDrawer } from './context/DrawerContext'
 import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
-import NflScoreStrip from './components/nfl/NflScoreStrip'
+import ScoreStrip from './components/nfl/ScoreStrip'
 import RosterAlertsCard from './components/nfl/RosterAlertsCard'
 import TrendingCard from './components/nfl/TrendingCard'
 import LeagueNewsCard from './components/nfl/LeagueNewsCard'
@@ -38,6 +38,13 @@ async function fetchSleeperPlayers() {
   return SLEEPER_PLAYERS_PROMISE
 }
 
+
+// "Alvin Kamara" → "A. Kamara" (formato dos nomes no GAME_FACTS_ALL)
+function abbreviatePlayerName(name, pos) {
+  const parts = String(name || '').trim().split(/\s+/)
+  if (pos === 'DEF' || parts.length < 2) return String(name || '').trim()
+  return `${parts[0][0]}. ${parts.slice(1).join(' ')}`
+}
 
 function normalizeString(value) {
   return String(value || '')
@@ -727,7 +734,7 @@ export default function TapitasLeagueHomepage() {
   const closePerformer = () => setSelectedPerformer(null)
   // Jogador aberto a partir dos cards da NFL (lesões, trending)
   const [selectedNflPlayer, setSelectedNflPlayer] = useState(null)
-  const openNflPlayer = (p, fantasyTeam) => setSelectedNflPlayer({ ...p, fantasyTeam })
+  const openNflPlayer = p => p && setSelectedNflPlayer(p)
   const [selectedDraftRound, setSelectedDraftRound] = useState(1)
   const [selectedMatchupKey, setSelectedMatchupKey] = useState('')
   const [prPage, setPrPage] = useState(0)
@@ -1853,32 +1860,6 @@ export default function TapitasLeagueHomepage() {
   const heatTone = { Legendary: 'gold', Elite: 'navy', High: 'red' }
 
   // ── Blocos ──────────────────────────────────────────────────────────
-  const scoreboardStrip = visibleMatchups.length > 0 && (
-    <div className="relative z-20 flex items-stretch border-b border-[#E6E8EB] bg-white">
-      <div className="flex w-[5.75rem] flex-shrink-0 flex-col items-start justify-center gap-0.5 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
-        <span className="pl-1 text-[12px] font-bold text-[#111]">{currentSeason}</span>
-        <FilterPill value={selectedMatchupKey} onChange={setSelectedMatchupKey} options={matchupOptions.map(o => o.key)} displayOption={key => `Week ${matchupOptions.find(o => o.key === key)?.week ?? ''}`} label="Week" neutral hideLabel />
-      </div>
-      <div className="scroll-hide flex min-w-0 flex-1 gap-1.5 overflow-x-auto p-2">
-        {visibleMatchups.map((m, i) => {
-          const teamWon = m.score > m.oppScore
-          const href = `/matchups?season=${encodeURIComponent(m.season)}&week=${encodeURIComponent(m.week)}&team=${encodeURIComponent(m.team)}&opp=${encodeURIComponent(m.opp)}`
-          return (
-            <a key={i} href={href} className="w-[10.5rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2.5 py-2 transition-colors hover:bg-[#ECEEF1]">
-              {m.gameType && m.gameType !== 'Regular Season' && m.gameType !== 'Reg Season' && <div className="mb-0.5 text-[10px] font-medium text-[#6B7280]">{m.gameType}</div>}
-              {[[m.team, m.score, teamWon], [m.opp, m.oppScore, !teamWon]].map(([name, score, won]) => (
-                <div key={name} className="flex items-center gap-1.5 text-[13px] leading-5">
-                  <TeamLogo name={name} size={16} />
-                  <span className={`min-w-0 flex-1 truncate ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{name}</span>
-                  <span className={`tabular-nums ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{score.toFixed(2)}</span>
-                </div>
-              ))}
-            </a>
-          )
-        })}
-      </div>
-    </div>
-  )
 
   const slide = slides[currentSlide] || slides[0]
   const heroCard = (
@@ -1913,10 +1894,10 @@ export default function TapitasLeagueHomepage() {
   const numbersCard = (
     <div className="mb-2 overflow-hidden rounded-xl">
       <StatGrid className="grid-cols-2 sm:grid-cols-4">
-        <StatTile label="Franchises" value={leagueStats.franchises || '—'} sub="Active teams" />
-        <StatTile label="Seasons" value={leagueStats.seasons || '—'} sub={leagueStats.seasonRange || '—'} />
-        <StatTile label="Games played" value={leagueStats.games ? leagueStats.games.toLocaleString() : '—'} sub="All stages" />
-        <StatTile label="Highest score" value={leagueStats.highestScore ? leagueStats.highestScore.toFixed(2) : '—'} sub={leagueStats.highestScoreTeam || '—'} valueClass="text-[#1E8E3E]" />
+        <StatTile href="/teams" label="Franchises" value={leagueStats.franchises || '—'} sub="Active teams" />
+        <StatTile href="/history" label="Seasons" value={leagueStats.seasons || '—'} sub={leagueStats.seasonRange || '—'} />
+        <StatTile href="/stats?tab=games" label="Games played" value={leagueStats.games ? leagueStats.games.toLocaleString() : '—'} sub="All stages" />
+        <StatTile href="/records?tab=games" label="Highest score" value={leagueStats.highestScore ? leagueStats.highestScore.toFixed(2) : '—'} sub={leagueStats.highestScoreTeam || '—'} valueClass="text-[#1E8E3E]" />
       </StatGrid>
     </div>
   )
@@ -1987,23 +1968,36 @@ export default function TapitasLeagueHomepage() {
   const weekCard = weekHighlights && (
     <CardShell title={`Week ${selectedMatchupOption?.week} highlights`} subtitle={`${currentSeason} · ${visibleMatchups.length} matchups`} action={<Link href={matchupLink(visibleMatchups[0])} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All matchups</Link>}>
       <div className="flex items-center gap-1.5 px-3 pb-2 pt-3 text-[12px] font-semibold text-[#111] lg:px-4"><Swords className="h-3.5 w-3.5 text-[#6B7280]" />Games of the week</div>
-      <div className="mx-3 grid grid-cols-3 gap-px overflow-hidden rounded-lg bg-[#EEF0F2] ring-1 ring-[#EEF0F2] lg:mx-4">
+      {/* Mesmo estilo do Top Performance (página Players): o destaque em azul */}
+      <div className="grid grid-cols-1 gap-2 px-3 md:grid-cols-3 lg:px-4">
         {[
-          { label: 'Top score', m: weekHighlights.topScore, big: weekHighlights.topScore.high.toFixed(2), bigClass: 'text-[#1E8E3E]', team: weekHighlights.topScore.score >= weekHighlights.topScore.oppScore ? weekHighlights.topScore.team : weekHighlights.topScore.opp },
-          { label: 'Biggest win', m: weekHighlights.blowout, big: `+${weekHighlights.blowout.margin.toFixed(2)}`, bigClass: 'text-[#111]', team: weekHighlights.blowout.winner },
-          { label: 'Closest game', m: weekHighlights.closest, big: weekHighlights.closest.margin.toFixed(2), bigClass: 'text-[#D01F2D]', team: weekHighlights.closest.winner },
-        ].map(({ label, m, big, bigClass, team }) => (
-          <Link key={label} href={matchupLink(m)} className="group min-w-0 bg-white px-2.5 py-3 transition-colors hover:bg-[#F7F8FA] sm:px-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate text-[11px] text-[#6B7280]">{label}</span>
-              <span className="hidden sm:block"><TeamLogo name={team} size={22} /></span>
-            </div>
-            <div className={`mt-1 text-[19px] font-bold leading-none tabular-nums sm:text-[24px] ${bigClass}`}>{big}</div>
-            <div className="mt-1.5 truncate text-[12px] text-[#3F4757] group-hover:text-[#D01F2D]">
-              <span className="font-semibold text-[#111]">{m.winner}</span><span className="hidden sm:inline"> {m.high.toFixed(1)}–{m.low.toFixed(1)} {m.loser}</span>
-            </div>
-          </Link>
-        ))}
+          { label: 'Top score', m: weekHighlights.topScore, value: weekHighlights.topScore.high.toFixed(2), unit: 'pts', Icon: Flame, ring: 'bg-[#B8860B]' },
+          { label: 'Biggest win', m: weekHighlights.blowout, value: `+${weekHighlights.blowout.margin.toFixed(2)}`, unit: 'margin', Icon: TrendingUp, ring: 'bg-[#1E8E3E]' },
+          { label: 'Closest game', m: weekHighlights.closest, value: weekHighlights.closest.margin.toFixed(2), unit: 'margin', Icon: Target, ring: 'bg-[#D01F2D]' },
+        ].map(({ label, m, value, unit, Icon, ring }, i) => {
+          const featured = i === 0
+          return (
+            <Link
+              key={label}
+              href={matchupLink(m)}
+              className={`group relative flex items-center gap-3 overflow-hidden rounded-xl p-3.5 transition-shadow hover:shadow-md ${featured ? 'bg-[#02275F] text-white' : 'bg-[#F4F5F7] text-[#111]'}`}
+            >
+              <Icon className={`pointer-events-none absolute -right-2 -top-2 h-20 w-20 ${featured ? 'text-white/[0.07]' : 'text-[#02275F]/[0.06]'}`} strokeWidth={2.5} />
+              <span className={`flex-shrink-0 rounded-full p-0.5 ${featured ? 'bg-[#B8860B]' : ring}`}>
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white"><TeamLogo name={m.winner} size={40} /></span>
+              </span>
+              <div className="relative min-w-0 flex-1">
+                <div className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${featured ? 'text-[#E8C766]' : 'text-[#6B7280]'}`}>{label}</div>
+                <div className="mt-0.5 flex items-baseline gap-1">
+                  <span className="text-[26px] font-bold leading-none tabular-nums">{value}</span>
+                  <span className={`text-[11px] ${featured ? 'text-white/70' : 'text-[#6B7280]'}`}>{unit}</span>
+                </div>
+                <div className={`mt-1 truncate text-[12px] font-semibold ${featured ? '' : 'group-hover:text-[#D01F2D]'}`}>{m.winner}</div>
+                <div className={`truncate text-[11px] tabular-nums ${featured ? 'text-white/75' : 'text-[#6B7280]'}`}>{m.high.toFixed(1)}–{m.low.toFixed(1)} vs {m.loser}</div>
+              </div>
+            </Link>
+          )
+        })}
       </div>
       {weekPerformers.length > 0 && (
         <>
@@ -2231,7 +2225,10 @@ export default function TapitasLeagueHomepage() {
     <PageShell
       loading={leagueLoading || prLoading}
       headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}
-      topBar={<><NflScoreStrip />{scoreboardStrip}</>}
+      topBar={<ScoreStrip onTapitasWeek={week => {
+        const opt = matchupOptions.find(o => Number(o.week) === week && String(o.season) === String(currentSeason))
+        if (opt) setSelectedMatchupKey(opt.key)
+      }} />}
     >
       <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[320px_minmax(0,1fr)_340px] xl:gap-5">
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
@@ -2275,12 +2272,11 @@ export default function TapitasLeagueHomepage() {
       {selectedNflPlayer && (
         <PlayerProfileModal
           key={`nfl-${selectedNflPlayer.id || selectedNflPlayer.name}`}
-          rawName={selectedNflPlayer.sheetName || selectedNflPlayer.name}
+          rawName={selectedNflPlayer.sheetName || abbreviatePlayerName(selectedNflPlayer.name, selectedNflPlayer.pos)}
           displayName={selectedNflPlayer.name}
           position={selectedNflPlayer.pos}
           playerId={selectedNflPlayer.id}
           games={gameFactsData}
-          initialTeams={selectedNflPlayer.fantasyTeam ? [selectedNflPlayer.fantasyTeam] : undefined}
           onClose={() => setSelectedNflPlayer(null)}
         />
       )}

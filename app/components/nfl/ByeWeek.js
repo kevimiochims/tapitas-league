@@ -15,9 +15,9 @@ function ByeTeams({ teams }) {
   )
 }
 
-function FranchiseByes({ teams, flag }) {
+function FranchiseByes({ teams, byeTeams }) {
   const rows = teams
-    .map(t => ({ team: t.team, players: t.players.filter(p => p[flag]).sort((a, b) => Number(b.starter) - Number(a.starter)) }))
+    .map(t => ({ team: t.team, players: t.players.filter(p => p.nflTeam && byeTeams.includes(p.nflTeam)).sort((a, b) => Number(b.starter) - Number(a.starter)) }))
     .filter(r => r.players.length)
     .sort((a, b) => b.players.filter(p => p.starter).length - a.players.filter(p => p.starter).length)
   if (!rows.length) return <div className="px-3 pb-3 text-[12px] text-[#6B7280] lg:px-4">No Tapitas players affected.</div>
@@ -48,24 +48,23 @@ function FranchiseByes({ teams, flag }) {
   )
 }
 
-// Folgas (bye) desta semana e da próxima, com os jogadores afetados em cada franquia
+// Próximas semanas com folga (bye) e os jogadores afetados em cada franquia.
+// Semanas sem folga não aparecem; no fim da temporada avisa que acabaram.
 export function ByeWeekContent({ data }) {
-  const teams = data?.teams || []
-  const now = data?.byeTeams || []
-  const next = data?.nextWeekByeTeams || []
   if (!data?.week) return <EmptyNote>Byes show up during the NFL regular season.</EmptyNote>
+  const weeks = data.upcomingByes || []
+  if (!weeks.length) return <EmptyNote>No more byes this season.</EmptyNote>
   return (
     <>
-      <div className="px-3 pb-2 pt-3 lg:px-4">
-        <div className="mb-1.5 text-[11px] font-medium text-[#6B7280]">Week {data.week}</div>
-        {now.length ? <ByeTeams teams={now} /> : <div className="text-[12px] text-[#6B7280]">No byes this week — every NFL team plays.</div>}
-      </div>
-      {now.length > 0 && <FranchiseByes teams={teams} flag="byeThisWeek" />}
-      <div className="border-t border-[#F1F2F4] px-3 pb-2 pt-3 lg:px-4">
-        <div className="mb-1.5 text-[11px] font-medium text-[#6B7280]">Next: week {data.week + 1}</div>
-        {next.length ? <ByeTeams teams={next} /> : <div className="text-[12px] text-[#6B7280]">No byes next week.</div>}
-      </div>
-      {next.length > 0 && <FranchiseByes teams={teams} flag="byeNextWeek" />}
+      {weeks.map((w, i) => (
+        <div key={w.week} className={i ? 'border-t border-[#F1F2F4]' : ''}>
+          <div className="px-3 pb-2 pt-3 lg:px-4">
+            <div className="mb-1.5 text-[11px] font-medium text-[#6B7280]">{w.week === data.week ? `This week · week ${w.week}` : `Week ${w.week}`}</div>
+            <ByeTeams teams={w.teams} />
+          </div>
+          <FranchiseByes teams={data.teams || []} byeTeams={w.teams} />
+        </div>
+      ))}
     </>
   )
 }

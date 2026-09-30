@@ -1,15 +1,30 @@
 import { getPlayerNews } from '@/app/lib/espn'
 import { getSleeperPlayers } from '@/app/lib/sleeper'
 import { cdnHeaders } from '@/app/lib/cache'
+import { getRssNews, matchNewsToPlayers } from '@/app/lib/rssNews'
 
-// Últimas manchetes de um jogador (ID do Sleeper → ID da ESPN)
+// Últimas manchetes de um jogador: ESPN (pelo ID) + RSS de outros sites (pelo nome)
 export async function GET(request) {
   const id = new URL(request.url).searchParams.get('id')
   if (!id || !/^[A-Za-z0-9]+$/.test(id)) return Response.json({ error: 'Missing player id' }, { status: 400 })
   try {
     const players = await getSleeperPlayers()
-    const espnId = players.get(id)?.espnId
-    const news = espnId ? await getPlayerNews(espnId) : []
+    const info = players.get(id)
+    const [espn, rss] = await Promise.all([
+      info?.espnId ? getPlayerNews(info.espnId).catch(() => []) : [],
+      info ? getRssNews().then(items => matchNewsToPlayers(items, [info])).catch(() => []) : [],
+    ])
+    const seen = new Set()
+    const news = [...espn, ...rss]
+      .filter(n => {
+        const key = String(n.headline).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80)
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      .map(({ athleteIds, player, ...n }) => n)
+      .sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0))
+      .slice(0, 12)
     return Response.json({ news }, { headers: cdnHeaders(1800) })
   } catch (err) {
     console.error('[api/nfl/player-news]', err)

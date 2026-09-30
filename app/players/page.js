@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronLeft, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
 import { PageShell, PageBar, BarTab, LeaderCard, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
+import LeagueNewsCard from '../components/nfl/LeagueNewsCard'
 
 const BASE_URL = '/api/sheet'
 
@@ -448,6 +449,13 @@ function formatSeasonList(seasons) {
   return parts.join(' ')
 }
 
+// "Alvin Kamara" → "A. Kamara" (formato dos nomes no GAME_FACTS_ALL)
+function abbreviateName(name, pos) {
+  const parts = String(name || '').trim().split(/\s+/)
+  if (pos === 'DEF' || parts.length < 2) return String(name || '').trim()
+  return `${parts[0][0]}. ${parts.slice(1).join(' ')}`
+}
+
 export default function PlayersPage() {
   const router = useRouter()
   const [games, setGames] = useState([]), [playerLookup, setPlayerLookup] = useState(new Map()), [loading, setLoading] = useState(true)
@@ -458,6 +466,7 @@ export default function PlayersPage() {
   const [minApps, setMinApps] = useState('')
   const [sort, setSort] = useState({ key: 'appearances', dir: 'desc' })
   const [archiveView, setArchiveView] = useState('consolidated')
+  const [newsPlayer, setNewsPlayer] = useState(null)
   const [performanceSort, setPerformanceSort] = useState({ key: 'pts', dir: 'desc' })
   const [performanceIncludeDoubleWeeks, setPerformanceIncludeDoubleWeeks] = useState(false)
   const [performancePage, setPerformancePage] = useState(0)
@@ -766,7 +775,11 @@ export default function PlayersPage() {
       <PageBar title="Players">
         <BarTab active={archiveView === 'consolidated'} onClick={() => setArchiveView('consolidated')}>Player Archive</BarTab>
         <BarTab active={archiveView === 'performances'} onClick={() => setArchiveView('performances')}>Top Performances</BarTab>
+        <BarTab active={archiveView === 'news'} onClick={() => setArchiveView('news')}>Player News</BarTab>
       </PageBar>
+
+      {/* Notícias dos jogadores da liga (ESPN, RotoWire, RotoBaller, FantasyPros…) */}
+      {archiveView === 'news' && <LeagueNewsCard sidebar={false} initialLimit={20} onOpenPlayer={p => p && setNewsPlayer(p)} />}
 
       {/* Líderes do recorte atual (respeitam os filtros da tabela) */}
       {archiveView === 'consolidated' && filtered.length > 0 && (
@@ -857,7 +870,7 @@ export default function PlayersPage() {
         </>
       )}
 
-      <CardShell
+      {archiveView !== 'news' && <CardShell
         title={archiveView === 'consolidated' ? `${filtered.length} players` : `${performanceRows.length} performances`}
         subtitle={hasFilters ? `Stats scoped to ${scopeLabel}` : scopeLabel}
         action={hasFilters && <button type="button" onClick={clearFilters} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">Clear filters</button>}
@@ -992,7 +1005,19 @@ export default function PlayersPage() {
             <Pager page={performancePage} totalPages={performanceTotalPages} total={performanceRows.length} pageSize={performancePageSize} onPrev={() => goPerformancePage(-1)} onNext={() => goPerformancePage(1)} />
           </div>
         )}
-      </CardShell>
+      </CardShell>}
+
+      {newsPlayer && (
+        <PlayerProfileModal
+          key={`news-${newsPlayer.id}`}
+          rawName={newsPlayer.sheetName || abbreviateName(newsPlayer.name, newsPlayer.pos)}
+          displayName={newsPlayer.name}
+          position={newsPlayer.pos}
+          playerId={newsPlayer.id}
+          games={games}
+          onClose={() => setNewsPlayer(null)}
+        />
+      )}
 
       {selected && <PlayerProfileModal key={selected.identityKey} rawName={selected.rawName} displayName={selected.name} position={selected.position} playerId={getPlayerId(selected.rawName, playerLookup)} games={games} onClose={closeProfile} />}
     </PageShell>

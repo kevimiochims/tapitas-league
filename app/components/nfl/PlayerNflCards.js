@@ -1,7 +1,7 @@
 'use client'
 
 import { ExternalLink } from 'lucide-react'
-import { usePlayerNews, usePlayerAdvanced } from './useNflData'
+import { usePlayerNews } from './useNflData'
 
 function Card({ title, subtitle, children }) {
   return (
@@ -35,13 +35,13 @@ export function PlayerNewsCard({ playerId, emptyText }) {
   const { data, loading, error } = usePlayerNews(playerId)
   const news = data?.news || []
   if (!playerId || error || (!loading && !news.length)) {
-    return emptyText ? <Card title="Latest news" subtitle="Headlines from ESPN"><Empty>{emptyText}</Empty></Card> : null
+    return emptyText ? <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more"><Empty>{emptyText}</Empty></Card> : null
   }
   return (
-    <Card title="Latest news" subtitle="Headlines from ESPN">
+    <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more">
       {loading ? <div className="px-3 py-4 text-[13px] text-[#6B7280] sm:px-4">Loading…</div> : (
         <div className="divide-y divide-[#F1F2F4]">
-          {news.slice(0, 5).map(n => {
+          {news.slice(0, 10).map(n => {
             const Tag = n.url ? 'a' : 'div'
             return (
               <Tag key={n.id} {...(n.url ? { href: n.url, target: '_blank', rel: 'noopener noreferrer' } : {})} className="group block px-3 py-2.5 transition-colors hover:bg-[#F7F8FA] sm:px-4">
@@ -50,77 +50,15 @@ export function PlayerNewsCard({ playerId, emptyText }) {
                   {n.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#9CA3AF]" />}
                 </div>
                 {n.description && <div className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-[#6B7280]">{n.description}</div>}
-                {n.published && <div className="mt-1 text-[11px] text-[#9CA3AF]">{timeAgo(n.published)}</div>}
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[#9CA3AF]">
+                  {n.source && <span className="font-semibold text-[#6B7280]">{n.source}</span>}
+                  {n.source && n.published && <span>·</span>}
+                  {n.published && <span>{timeAgo(n.published)}</span>}
+                </div>
               </Tag>
             )
           })}
         </div>
-      )}
-    </Card>
-  )
-}
-
-const fmtPct = v => (v == null ? '—' : `${Math.round(v)}%`)
-const fmtNum = v => (v == null ? '—' : String(Math.round(v)))
-
-// Uso do jogador na NFL: snaps, participação nos alvos e red zone
-export function PlayerAdvancedCard({ playerId, position, emptyText }) {
-  const { data, loading, error } = usePlayerAdvanced(playerId)
-  const pos = String(position || '').toUpperCase()
-  const weeks = (data?.weeks || []).filter(w => w.snapPct != null || w.targetShare != null || w.rzTargets != null || w.rzCarries != null)
-  if (!playerId || pos === 'DEF' || pos === 'K' || error || (!loading && !weeks.length)) {
-    return emptyText ? <Card title="NFL usage" subtitle="Snaps, target share and red zone"><Empty>{emptyText}</Empty></Card> : null
-  }
-  const s = data?.summary || {}
-  const isQb = pos === 'QB'
-
-  const tiles = [
-    ['Snap share', fmtPct(s.snapPct), 'avg per game'],
-    isQb ? ['RZ passes', fmtNum(s.rzPasses), 'season total'] : ['Target share', fmtPct(s.targetShare), `${fmtNum(s.targets)} targets`],
-    isQb ? ['RZ carries', fmtNum(s.rzCarries), 'season total'] : ['Air yards share', fmtPct(s.airYardsShare), 'avg per game'],
-    ['Red zone', isQb ? fmtNum((s.rzPasses || 0) + (s.rzCarries || 0)) : fmtNum((s.rzTargets || 0) + (s.rzCarries || 0)), isQb ? 'passes + carries' : 'targets + carries'],
-  ]
-
-  return (
-    <Card title="NFL usage" subtitle={`${data?.season || ''} season · snaps and target share via nflverse, red zone via Sleeper`}>
-      {loading ? <div className="px-3 py-4 text-[13px] text-[#6B7280] sm:px-4">Loading…</div> : (
-        <>
-          <div className="grid grid-cols-2 gap-px border-b border-[#F1F2F4] bg-[#F1F2F4] sm:grid-cols-4">
-            {tiles.map(([label, value, sub]) => (
-              <div key={label} className="min-w-0 bg-white px-3 py-3 sm:px-4">
-                <div className="truncate text-[11px] text-[#6B7280]">{label}</div>
-                <div className="mt-1 text-[20px] font-bold leading-none tabular-nums text-[#111]">{value}</div>
-                <div className="mt-1 truncate text-[11px] text-[#6B7280]">{sub}</div>
-              </div>
-            ))}
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[480px] text-[12px]">
-              <thead>
-                <tr className="text-left text-[11px] text-[#6B7280]">
-                  <th className="px-3 py-2 font-medium sm:px-4">Week</th>
-                  <th className="px-2 py-2 text-right font-medium">Snaps</th>
-                  <th className="px-2 py-2 text-right font-medium">Snap %</th>
-                  <th className="px-2 py-2 text-right font-medium">Targets</th>
-                  <th className="px-2 py-2 text-right font-medium">Tgt share</th>
-                  <th className="px-3 py-2 text-right font-medium sm:px-4">RZ opps</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...weeks].reverse().map(w => (
-                  <tr key={`${w.seasonType}-${w.week}`} className="border-t border-[#F1F2F4] tabular-nums text-[#111]">
-                    <td className="px-3 py-2 sm:px-4">{w.seasonType === 'REG' ? `Wk ${w.week}` : `${w.seasonType} ${w.week}`}{w.opponent ? <span className="ml-1 text-[#9CA3AF]">vs {w.opponent}</span> : null}</td>
-                    <td className="px-2 py-2 text-right">{fmtNum(w.snaps)}</td>
-                    <td className="px-2 py-2 text-right">{fmtPct(w.snapPct)}</td>
-                    <td className="px-2 py-2 text-right">{fmtNum(w.targets)}</td>
-                    <td className="px-2 py-2 text-right">{fmtPct(w.targetShare)}</td>
-                    <td className="px-3 py-2 text-right sm:px-4">{w.rzTargets == null && w.rzCarries == null && w.rzPasses == null ? '—' : (w.rzTargets || 0) + (w.rzCarries || 0) + (isQb ? (w.rzPasses || 0) : 0)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
       )}
     </Card>
   )

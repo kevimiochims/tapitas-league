@@ -15,9 +15,9 @@ function timeAgo(iso) {
 }
 
 // Últimas notícias da ESPN sobre jogadores dos elencos da liga
-export default function LeagueNewsCard({ onOpenPlayer }) {
+export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar = true }) {
   const [state, setState] = useState({ news: [], loading: true, failed: false })
-  const [limit, setLimit] = useState(6)
+  const [limit, setLimit] = useState(initialLimit)
 
   useEffect(() => {
     let cancelled = false
@@ -32,7 +32,7 @@ export default function LeagueNewsCard({ onOpenPlayer }) {
   const news = state.news
 
   return (
-    <CardShell title="Player news" subtitle="Latest ESPN headlines on Tapitas players" sidebar>
+    <CardShell title="Player news" subtitle="Latest headlines on Tapitas players" sidebar={sidebar}>
       {state.loading ? <div className="py-2"><SkeletonRows rows={4} /></div> : news.length === 0 ? <EmptyNote>No recent news on Tapitas players.</EmptyNote> : (
         <div className="py-1">
           {news.slice(0, limit).map(n => (
@@ -48,7 +48,7 @@ export default function LeagueNewsCard({ onOpenPlayer }) {
                   <button type="button" onClick={() => onOpenPlayer?.(n.player, n.player?.fantasyTeam)} className="truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
                   <PositionBadge position={n.player?.pos} />
                   {n.player?.fantasyTeam && <TeamLogo name={n.player.fantasyTeam} size={14} />}
-                  {n.published && <span className="ml-auto flex-shrink-0">{timeAgo(n.published)}</span>}
+                  <span className="ml-auto flex-shrink-0">{[n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')}</span>
                 </div>
               </div>
             </div>

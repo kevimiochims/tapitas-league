@@ -5,9 +5,15 @@ const SITE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl'
 
 // Placar da rodada atual da NFL (API pública da ESPN, a mesma do site deles).
 // Cache curto porque os placares mudam durante os jogos.
-export function getScoreboard() {
-  return cached('espn:scoreboard', 30, async () => {
-    const data = await fetchJson(`${SITE}/scoreboard`)
+// `week`: semana da NFL (1–18 temporada regular; 19+ = playoffs). Sem semana,
+// a ESPN devolve a rodada atual.
+export function getScoreboard({ week, season } = {}) {
+  const w = Number(week) || null
+  const query = w
+    ? `?seasontype=${w > 18 ? 3 : 2}&week=${w > 18 ? w - 18 : w}${season ? `&dates=${season}` : ''}`
+    : ''
+  return cached(`espn:scoreboard:${w || 'current'}:${season || ''}`, 30, async () => {
+    const data = await fetchJson(`${SITE}/scoreboard${query}`)
     const games = (data?.events || []).map(event => {
       const comp = event?.competitions?.[0] || {}
       const side = homeAway => {
@@ -41,7 +47,7 @@ export function getScoreboard() {
     return {
       season: data?.season?.year ? String(data.season.year) : null,
       seasonType: data?.season?.type ?? null,
-      week: data?.week?.number ?? null,
+      week: data?.week?.number != null ? (data?.season?.type === 3 ? data.week.number + 18 : data.week.number) : w,
       games,
     }
   })
@@ -92,6 +98,7 @@ function mapNews(data) {
     url: a?.links?.web?.href || a?.link?.href || null,
     image: a?.images?.[0]?.url || null,
     athleteIds: athleteIds(a),
+    source: 'ESPN',
   })).filter(a => a.headline)
 }
 

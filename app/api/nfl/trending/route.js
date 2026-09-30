@@ -1,15 +1,16 @@
 import { getTrending, getSleeperPlayers } from '@/app/lib/sleeper'
-import { getLeagueRosters, rosterIndex } from '@/app/lib/leagueRosters'
+import { getLeagueRosters, rosterIndex, getSheetNames } from '@/app/lib/leagueRosters'
 import { cdnHeaders } from '@/app/lib/cache'
 
 // Mais adicionados e mais cortados no Sleeper nas últimas 24h
 export async function GET() {
   try {
-    const [adds, drops, players, rosters] = await Promise.all([
+    const [adds, drops, players, rosters, sheetNames] = await Promise.all([
       getTrending('add'),
       getTrending('drop'),
       getSleeperPlayers(),
       getLeagueRosters().catch(() => []),
+      getSheetNames().catch(() => new Map()),
     ])
     const owners = rosterIndex(rosters)
     const enrich = list => list.map(r => {
@@ -18,6 +19,7 @@ export async function GET() {
         id: r.id,
         count: r.count,
         name: info?.name || r.id,
+        sheetName: sheetNames.get(r.id) || null,
         pos: info?.pos || null,
         nflTeam: info?.team || null,
         injury: info?.injuryStatus || null,
