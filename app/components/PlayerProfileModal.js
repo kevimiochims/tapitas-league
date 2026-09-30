@@ -5,6 +5,7 @@
 // números do jogador naquela semana e o retrospecto contra aquele adversário.
 
 import { useEffect, useRef, useState } from 'react'
+import { PlayerNewsCard, PlayerAdvancedCard } from './nfl/PlayerNflCards'
 import { ChevronDown, Check } from 'lucide-react'
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -801,6 +802,10 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
             </div>
           </ProfileCard>
           )}
+
+          {/* NFL: uso do jogador e últimas notícias */}
+          {tab === 'career' && <PlayerAdvancedCard playerId={playerId} position={pos} />}
+          {tab === 'career' && <PlayerNewsCard playerId={playerId} />}
 
           {/* Game log */}
           {tab === 'career' && (

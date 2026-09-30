@@ -12,6 +12,11 @@ import { useDrawer } from './context/DrawerContext'
 import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
+import NflScoreStrip from './components/nfl/NflScoreStrip'
+import InjuryReportCard from './components/nfl/InjuryReportCard'
+import ByeWeekCard from './components/nfl/ByeWeekCard'
+import TrendingCard from './components/nfl/TrendingCard'
+import WeatherWatchCard from './components/nfl/WeatherWatchCard'
 import { SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, StatGrid, StatTile, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
 
 
@@ -729,6 +734,9 @@ export default function TapitasLeagueHomepage() {
   const [mobileTableTab, setMobileTableTab] = useState('pr')
   const [mobileLeagueTab, setMobileLeagueTab] = useState('leaders')
   const closePerformer = () => setSelectedPerformer(null)
+  // Jogador aberto a partir dos cards da NFL (lesões, trending)
+  const [selectedNflPlayer, setSelectedNflPlayer] = useState(null)
+  const openNflPlayer = (p, fantasyTeam) => setSelectedNflPlayer({ ...p, fantasyTeam })
   const [selectedDraftRound, setSelectedDraftRound] = useState(1)
   const [selectedMatchupKey, setSelectedMatchupKey] = useState('')
   const [prPage, setPrPage] = useState(0)
@@ -2263,6 +2271,7 @@ export default function TapitasLeagueHomepage() {
   return (
     <PageShell loading={leagueLoading || prLoading} headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
       {scoreboardStrip}
+      <NflScoreStrip />
 
       <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
@@ -2275,8 +2284,12 @@ export default function TapitasLeagueHomepage() {
           {numbersCard}
           {weekCard}
           <div className="lg:hidden">{mobileTableCard}</div>
+          <InjuryReportCard onOpenPlayer={openNflPlayer} />
+          <WeatherWatchCard />
           {rivalryCard}
           {newsCard}
+          <ByeWeekCard />
+          <TrendingCard onOpenPlayer={openNflPlayer} />
           {draftCard}
           <div className="lg:hidden">{mobileLeagueCard}</div>
         </div>
@@ -2301,6 +2314,19 @@ export default function TapitasLeagueHomepage() {
           initialTeams={[selectedPerformer.team]}
           matchup={{ season: selectedPerformer.season, week: selectedPerformer.week, team: selectedPerformer.team, opponent: selectedPerformer.opponent }}
           onClose={closePerformer}
+        />
+      )}
+
+      {selectedNflPlayer && (
+        <PlayerProfileModal
+          key={`nfl-${selectedNflPlayer.id || selectedNflPlayer.name}`}
+          rawName={selectedNflPlayer.sheetName || selectedNflPlayer.name}
+          displayName={selectedNflPlayer.name}
+          position={selectedNflPlayer.pos}
+          playerId={selectedNflPlayer.id}
+          games={gameFactsData}
+          initialTeams={selectedNflPlayer.fantasyTeam ? [selectedNflPlayer.fantasyTeam] : undefined}
+          onClose={() => setSelectedNflPlayer(null)}
         />
       )}
 

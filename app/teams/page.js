@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, ChevronLeft, ChevronDown, Check, Skull, Zap, Filter, Users } from 'lucide-react'
 import Header from '../components/Header'
 import PlayerProfileModal from '../components/PlayerProfileModal'
+import TeamNflNotice from '../components/nfl/TeamNflNotice'
 import { PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
@@ -1683,6 +1684,7 @@ export default function TeamsPage() {
       <>
         {teamStrip}
         {heroCard}
+        <TeamNflNotice team={selected.team} onOpenPlayer={p => p.sheetName && openPlayerProfile(`raw:${p.sheetName}`)} />
 
         {/* Abas (só no mobile/tablet — no desktop os cards ficam nas laterais) */}
         <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">
