@@ -169,6 +169,16 @@ function getOrdinalRankLabel(value, allValues) {
   return `${rank}${suffix} all-time`
 }
 
+function getAscendingOrdinalRankLabel(value, allValues) {
+  if (!Number.isFinite(Number(value))) return null
+  const valid = allValues.filter(v => Number.isFinite(Number(v)))
+  if (!valid.some(v => Number(v) === Number(value))) return null
+  const rank = valid.filter(v => Number(v) < Number(value)).length + 1
+  if (rank === 1) return '1st all-time'
+  const suffix = (rank % 100 >= 11 && rank % 100 <= 13) ? 'th' : (['th', 'st', 'nd', 'rd'][rank % 10] || 'th')
+  return `${rank}${suffix} all-time`
+}
+
 function TeamAvatar({ name, size = 'md' }) {
   const img = getTeamImage(name)
   const sizes = { xs: 22, sm: 40, md: 64, lg: 96, xl: 128 }
@@ -423,7 +433,7 @@ function Select({ value, onChange, options, placeholder, disabled }) {
   )
 }
 
-function CompactCheckFilter({ value, onChange, options, label, multiple = false, displayOption }) {
+function CompactCheckFilter({ value, onChange, options, label, multiple = false, displayOption, neutral = false }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -446,10 +456,10 @@ function CompactCheckFilter({ value, onChange, options, label, multiple = false,
       <button
         type="button"
         onClick={() => setOpen(p => !p)}
-        className={`flex min-h-9 w-full items-center justify-between gap-2 border-2 bg-white px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.12em] transition-all ${open ? 'border-[#D01F2D] shadow-[2px_2px_0_#D01F2D]' : 'border-[#16274F]/20 hover:border-[#16274F]/50'} ${activeCount ? 'text-[#D01F2D]' : 'text-[#16274F]'}`}
+        className={`flex min-h-9 w-full items-center justify-between gap-2 border-2 bg-white px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.12em] transition-all ${open ? (neutral ? 'border-[#16274F] shadow-[2px_2px_0_#16274F]' : 'border-[#D01F2D] shadow-[2px_2px_0_#D01F2D]') : 'border-[#16274F]/20 hover:border-[#16274F]/50'} ${activeCount && !neutral ? 'text-[#D01F2D]' : 'text-[#16274F]'}`}
       >
         <span className="truncate">{display}</span>
-        <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center border text-[9px] transition-transform ${open ? 'rotate-180 border-[#D01F2D] text-[#D01F2D]' : 'border-[#16274F]/30 text-[#6B7280]'}`}>⌄</span>
+        <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center border text-[9px] transition-transform ${open ? (neutral ? 'rotate-180 border-[#16274F] text-[#16274F]' : 'rotate-180 border-[#D01F2D] text-[#D01F2D]') : 'border-[#16274F]/30 text-[#6B7280]'}`}>⌄</span>
       </button>
       {open && (
         <div className="absolute left-0 top-[calc(100%+5px)] z-[70] w-[220px] overflow-hidden border-2 border-[#16274F] bg-white shadow-[4px_4px_0_#16274F]">
@@ -879,22 +889,182 @@ export default function TeamsPage() {
     return map
   }, [games])
 
-  // Highest single-week regular-season score for each franchise.
-  // Double weeks are excluded from both the record and the ranking.
+  // Highest single-week score for each franchise.
+  // Double weeks are excluded, but regular-season, playoff and consolation
+  // games are all eligible as long as the matchup is a single week.
   const getTeamWeeklyMax = (teamName) => {
     let max = 0
     const seen = new Set()
     games.forEach(g => {
       if (normalizeTeamName(g?.Team) !== normalizeTeamName(teamName)) return
-      if (String(g?.GameStage || '').trim() !== 'Reg Season') return
       if (isDoubleWeek(g)) return
-      const key = `${String(g?.Season || '').trim()}|${String(g?.Week || '').trim()}`
+
+      const season = String(g?.Season || '').trim()
+      const week = String(g?.Week || '').trim()
+      const stage = String(g?.GameStage || '').trim()
+      const opponent = normalizeTeamName(g?.Opponent)
+      if (!season || !week) return
+
+      // Deduplicate the mirrored GAME_FACTS_ALL rows while still allowing
+      // different single-week stages/opponents to remain distinct if they exist.
+      const key = `${season}|${week}|${stage}|${opponent}`
       if (seen.has(key)) return
       seen.add(key)
       max = Math.max(max, parseWeeklyPoints(g?.PF))
     })
     return max
   }
+
+  // All single-week team scores, deduplicated to one row per franchise +
+  // season + week + matchup. Used to rank Best/Worst Week within all-time
+  // history. All-time rankings use current franchises only.
+  // IMPORTANT: do NOT restrict this to Reg Season. Playoff and Consolation
+  // games count as long as they are not double weeks.
+  const allTimeWeeklyScores = useMemo(() => {
+    const currentTeamKeys = new Set(
+      allTime
+        .map(r => normalizeTeamName(r?.Team))
+        .filter(Boolean)
+    )
+    const scores = []
+    const seen = new Set()
+    games.forEach(g => {
+      if (isDoubleWeek(g)) return
+
+      const team = normalizeTeamName(g?.Team)
+      const season = String(g?.Season || '').trim()
+      const week = String(g?.Week || '').trim()
+      const stage = String(g?.GameStage || '').trim()
+      const opponent = normalizeTeamName(g?.Opponent)
+      if (!team || !currentTeamKeys.has(team) || !season || !week) return
+
+      const key = `${team}|${season}|${week}|${stage}|${opponent}`
+      if (seen.has(key)) return
+      seen.add(key)
+      scores.push(parseWeeklyPoints(g?.PF))
+    })
+    return scores
+  }, [allTime, games])
+
+  // Best/Worst single-week score with its occurrence.
+  // Double weeks are excluded, but all game stages are eligible.
+  const getTeamWeeklyRecord = (teamName, mode = 'max') => {
+    let record = null
+    const seen = new Set()
+    games.forEach(g => {
+      if (normalizeTeamName(g?.Team) !== normalizeTeamName(teamName)) return
+      if (isDoubleWeek(g)) return
+
+      const season = String(g?.Season || '').trim()
+      const week = String(g?.Week || '').trim()
+      const stage = String(g?.GameStage || '').trim()
+      const opponent = normalizeTeamName(g?.Opponent)
+      if (!season || !week) return
+
+      // Deduplicate the mirrored rows without excluding playoff/consolation.
+      const key = `${season}|${week}|${stage}|${opponent}`
+      if (seen.has(key)) return
+      seen.add(key)
+
+      const points = parseWeeklyPoints(g?.PF)
+      const candidate = { points, season, week, stage, opponent }
+      if (!record || (mode === 'min' ? points < record.points : points > record.points)) {
+        record = candidate
+      }
+    })
+    return record
+  }
+
+  // Longest winning/losing streaks for this franchise, using real GAME_FACTS_ALL
+  // results across the full chronological history (all game stages).
+  const getTeamStreakRecords = (teamName) => {
+    const teamGames = games
+      .filter(g => normalizeTeamName(g?.Team) === normalizeTeamName(teamName))
+      .map(g => ({
+        season: String(g?.Season || '').trim(),
+        seasonNum: parseNumber(g?.Season || 0),
+        week: String(g?.Week || '').trim(),
+        weekNum: parseFloat(String(g?.Week || '0').replace(/[^0-9.]/g, '')) || 0,
+        result: String(g?.Result || '').trim().toUpperCase(),
+      }))
+      .filter(g => g.result === 'W' || g.result === 'L')
+      .sort((a, b) => a.seasonNum - b.seasonNum || a.weekNum - b.weekNum)
+
+    let bestW = 0
+    let bestL = 0
+    let currentResult = ''
+    let currentLength = 0
+    let currentStartSeason = null
+    let currentSeason = null
+    const winningRanges = []
+    const losingRanges = []
+
+    const formatRange = (startSeason, endSeason) => {
+      if (!startSeason || !endSeason) return ''
+      const start = String(startSeason).slice(-2)
+      const end = String(endSeason).slice(-2)
+      return startSeason === endSeason ? `'${start}` : `'${start}-'${end}`
+    }
+
+    const recordRun = () => {
+      if (currentLength <= 0 || !currentStartSeason || !currentSeason) return
+
+      if (currentResult === 'W') {
+        if (currentLength > bestW) {
+          bestW = currentLength
+          winningRanges.length = 0
+          winningRanges.push(formatRange(currentStartSeason, currentSeason))
+        } else if (currentLength === bestW) {
+          winningRanges.push(formatRange(currentStartSeason, currentSeason))
+        }
+      }
+
+      if (currentResult === 'L') {
+        if (currentLength > bestL) {
+          bestL = currentLength
+          losingRanges.length = 0
+          losingRanges.push(formatRange(currentStartSeason, currentSeason))
+        } else if (currentLength === bestL) {
+          losingRanges.push(formatRange(currentStartSeason, currentSeason))
+        }
+      }
+    }
+
+    teamGames.forEach(g => {
+      if (g.result === currentResult) {
+        currentLength += 1
+        currentSeason = g.season
+      } else {
+        recordRun()
+        currentResult = g.result
+        currentLength = 1
+        currentStartSeason = g.season
+        currentSeason = g.season
+      }
+    })
+    recordRun()
+
+    return {
+      bestW,
+      bestL,
+      bestWYearRanges: winningRanges.filter(Boolean),
+      bestLYearRanges: losingRanges.filter(Boolean),
+    }
+  }
+
+  // League-wide streak lengths for current franchises only. TEAM_ALL_TIME
+  // defines the active/current franchise set used by this page's all-time records.
+  const leagueStreakLengths = useMemo(() => {
+    const bestW = []
+    const bestL = []
+    teams.forEach(t => {
+      const record = getTeamStreakRecords(t.team)
+      if (record.bestW > 0) bestW.push(record.bestW)
+      if (record.bestL > 0) bestL.push(record.bestL)
+    })
+    return { bestW, bestL }
+  }, [teams, games])
+
 
   // Number of regular-season single weeks in which the franchise was the
   // league's highest scorer. Ties for highest PF count for each tied team.
@@ -1093,6 +1263,24 @@ export default function TeamsPage() {
     const pr1Weeks = getTeamPR1Weeks(selected.team)
     const weeklyMax = getTeamWeeklyMax(selected.team)
     const topScoringWeeks = getTeamTopScoringWeeks(selected.team)
+    const weeklyBestRecord = getTeamWeeklyRecord(selected.team, 'max')
+    const weeklyWorstRecord = getTeamWeeklyRecord(selected.team, 'min')
+    const streakRecords = getTeamStreakRecords(selected.team)
+
+    // The matchup page should open the first row of the exact confrontation
+    // from the recorded week, already selected.
+    const findWeeklyMatchupRow = record => {
+      if (!record) return null
+      return games.find(g =>
+        normalizeTeamName(g?.Team) === normalizeTeamName(selected.team) &&
+        String(g?.Season || '').trim() === String(record.season).trim() &&
+        String(g?.Week || '').trim() === String(record.week).trim()
+      ) || null
+    }
+    const weeklyBestGame = findWeeklyMatchupRow(weeklyBestRecord)
+    const weeklyWorstGame = findWeeklyMatchupRow(weeklyWorstRecord)
+    const weeklyBestHref = weeklyBestGame ? canonicalMatchupHref(weeklyBestGame, games) : '/matchups'
+    const weeklyWorstHref = weeklyWorstGame ? canonicalMatchupHref(weeklyWorstGame, games) : '/matchups'
 
     // ── Build rank-aware subtitles ──────────────────────────────────
     const fmtYears = (rows) => rows.map(r => `'${String(r.Season).slice(-2)}`).join(', ')
@@ -1142,6 +1330,16 @@ export default function TeamsPage() {
     const pr1Rank = leagueStats ? getOrdinalRankLabel(pr1Weeks, allValuesFor('pr1Weeks')) : null
     const weeklyMaxRank = leagueStats ? getOrdinalRankLabel(weeklyMax, allValuesFor('weeklyMax')) : null
     const topScoringWeeksRank = leagueStats ? getOrdinalRankLabel(topScoringWeeks, allValuesFor('topScoringWeeks')) : null
+    const weeklyBestRank = weeklyBestRecord ? getOrdinalRankLabel(weeklyBestRecord.points, allTimeWeeklyScores) : null
+    const weeklyWorstRank = weeklyWorstRecord ? getAscendingOrdinalRankLabel(weeklyWorstRecord.points, allTimeWeeklyScores) : null
+    const bestStreakRank = streakRecords.bestW ? getOrdinalRankLabel(streakRecords.bestW, leagueStreakLengths.bestW) : null
+    const worstStreakRank = streakRecords.bestL ? getOrdinalRankLabel(streakRecords.bestL, leagueStreakLengths.bestL) : null
+    const bestStreakSub = streakRecords.bestWYearRanges.length
+      ? `${streakRecords.bestWYearRanges.join(', ')}${bestStreakRank ? ` · ${bestStreakRank}` : ''}`
+      : '—'
+    const worstStreakSub = streakRecords.bestLYearRanges.length
+      ? `${streakRecords.bestLYearRanges.join(', ')}${worstStreakRank ? ` · ${worstStreakRank}` : ''}`
+      : '—'
 
     // ── Most Rostered / Most Started player ─────────────────────────
     const { mostRostered, mostStarted } = getMostRosteredPlayers(selected.team)
@@ -1249,6 +1447,13 @@ export default function TeamsPage() {
         return { ...p, avgPts: validApps ? p.avgTotal / validApps : 0 }
       })
       .sort((a, b) => b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))
+
+    // Player Archive already calculates AVG Pts and Best Pts for every player
+    // who wore the franchise jersey. These leaders feed the team record cards.
+    const bestAvgPlayer = [...playerArchive]
+      .sort((a, b) => b.avgPts - a.avgPts || b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))[0] || null
+    const bestScorePlayer = [...playerArchive]
+      .sort((a, b) => b.bestPts - a.bestPts || b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))[0] || null
 
     const playerPositionOptions = ['All', ...Array.from(new Set(playerArchive.map(p => p.position).filter(Boolean))).sort()]
     const playerSeasonOptions = ['All', ...Array.from(new Set(playerArchive.flatMap(p => Array.from(p.seasons)).filter(Boolean))).sort((a, b) => Number(b) - Number(a))]
@@ -1432,14 +1637,14 @@ export default function TeamsPage() {
         <Header />
 
 
-        <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+        <section className="px-3 pb-20 md:px-6">
           <button onClick={showAllTeams}
             className="mb-8 border-2 border-[#0A0A0A] bg-white px-4 py-2 text-sm font-bold text-[#3F4757] hover:bg-[#F7F6F2] transition-all">
             ← All Teams
           </button>
 
           {/* Team Hero */}
-          <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy" style={{ minHeight: '260px' }}>
+          <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
             <div className="absolute inset-0 overflow-hidden">
               <svg width="100%" height="100%" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <g opacity="0.06">
@@ -1505,12 +1710,14 @@ export default function TeamsPage() {
               [Target, 'RS Wins', parseNumber(selected.RS_W), rsWinsRank || 'regular season', 'green'],
               [TrendingDown, 'RS Losses', parseNumber(selected.RS_L), rsLossesRank || 'regular season', 'red'],
               [Flame, 'Total Points', Math.round(parseNumber(selected.PF)).toLocaleString(), totalPointsRank || 'all-time', 'navy'],
-              [Target, 'Weekly Points Record', Number(weeklyMax).toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(Number(weeklyMax)) ? 0 : 1, maximumFractionDigits: 1 }), weeklyMaxRank || 'single weeks only', 'navy'],
+              [Target, 'Best Week', Number(weeklyBestRecord?.points ?? weeklyMax).toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(Number(weeklyBestRecord?.points ?? weeklyMax)) ? 0 : 1, maximumFractionDigits: 1 }), weeklyBestRecord ? `${weeklyBestRecord.season} · Week ${weeklyBestRecord.week}${weeklyBestRank ? ` · ${weeklyBestRank}` : ''}` : (weeklyMaxRank || 'single weeks only'), 'navy', weeklyBestHref],
+              [TrendingDown, 'Worst Week', weeklyWorstRecord ? Number(weeklyWorstRecord.points).toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(Number(weeklyWorstRecord.points)) ? 0 : 1, maximumFractionDigits: 1 }) : '—', weeklyWorstRecord ? `${weeklyWorstRecord.season} · Week ${weeklyWorstRecord.week}${weeklyWorstRank ? ` · ${weeklyWorstRank}` : ''}` : 'single weeks only', 'red', weeklyWorstHref],
               [Zap, '200+ Pt Games', games200, games200Rank || 'single weeks only', 'gold'],
-              [TrendingUp, 'Weeks at #1 (PR)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
-              [Star, 'Weeks as #1 Scorer', topScoringWeeks, topScoringWeeksRank || 'regular season', 'gold'],
-              [Skull, 'Unicorns', unicorns.length, unicornsSub, 'red'],
-            ].map(([Icon, label, value, sub, accent]) => {
+              [TrendingUp, 'Power Ranking #1 (RS)', pr1Weeks, pr1Rank || 'power rankings', 'gold'],
+              [Star, 'High Scorer (RS)', topScoringWeeks, topScoringWeeksRank || 'regular season', 'gold'],
+              [Flame, 'Best Streak', streakRecords.bestW ? `W${streakRecords.bestW}` : '—', bestStreakSub, 'green', '/records'],
+              [TrendingDown, 'Worst Streak', streakRecords.bestL ? `L${streakRecords.bestL}` : '—', worstStreakSub, 'red', '/records'],
+            ].map(([Icon, label, value, sub, accent, href = '/records']) => {
               const colors = {
                 gold: { text: 'text-[#B8860B]', iconBg: 'bg-[#F5C518] text-[#0A0A0A]' },
                 navy: { text: 'text-[#16274F]', iconBg: 'bg-[#16274F] text-white' },
@@ -1521,94 +1728,114 @@ export default function TeamsPage() {
               return (
                 <Link
                   key={label}
-                  href="/records"
-                  className="block border-2 border-[#0A0A0A] bg-white p-3.5 lg:p-3 tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]"
-                  aria-label={`Open ${label} records`}
+                  href={href}
+                  className="block h-full border-2 border-[#0A0A0A] bg-white p-3.5 tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2] lg:p-3" 
+                  aria-label={label === 'Best Week' || label === 'Worst Week' ? `Open ${label} matchup` : `Open ${label} records`}
                 >
-                  <div className={`mb-3 flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] ${c.iconBg}`}>
+                  <div className={`mb-3 flex h-8 w-8 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] ${c.iconBg}`}>
                     <Icon className="h-4 w-4" />
                   </div>
-                  <div className={`mb-1 text-[9px] font-black uppercase tracking-[0.2em] ${c.text}`}>{label}</div>
-                  <div className={`font-black leading-none ${c.text}`} style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(22px, 2.6vw, 36px)' }}>
-                    {value}
+
+                  <div
+                    className={`mb-1 text-[9px] font-black uppercase tracking-[0.2em] ${c.text}`}
+                  >
+                    {label === 'Best Streak' ? <>Best Streak</> : label === 'Worst Streak' ? <>Worst Streak</> : label}
                   </div>
-                  <div className="mt-1 text-[11px] font-bold text-[#6B7280]">{sub}</div>
+
+                  <div>
+                    <div className={`font-black leading-none ${c.text}`} style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(22px, 2.6vw, 36px)' }}>
+                      {value}
+                    </div>
+                    <div className="mt-1 text-[11px] font-bold text-[#6B7280]">{sub}</div>
+                  </div>
                 </Link>
               )
             })}
 
-            {/* Player record cards stay in the same stats sequence */}
-            {mostRostered.length > 0 && (
-              <button type="button" onClick={() => { openPlayerProfile(`raw:${mostRostered[0].rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 xl:p-2.5 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
-                <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_104px]">
-                  <div className="min-w-0">
-                    <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#16274F] text-white">
-                      <Users className="h-4 w-4" />
-                    </div>
-                    <div className="mt-3">
-                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#16274F]">Most Rostered</div>
-                      <div className="font-black leading-none text-[#16274F]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostRostered[0].count}</div>
-                    </div>
-                  </div>
-                  <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
-                    <div className="flex items-center justify-end pl-3">
-                      {mostRostered.map((player, index) => (
-                        <div key={player.rawName} className={index === 0 ? '' : '-ml-7'} style={{ zIndex: mostRostered.length - index }}>
-                          <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={68} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="col-span-2 min-w-0">
-                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                      {mostRostered.map((player, index) => (
-                        <React.Fragment key={player.rawName}>
-                          {index > 0 && <span className="text-sm font-black text-[#6B7280]">&amp;</span>}
-                          <div className="min-w-0 text-sm font-black text-[#16274F]">{player.name}</div>
-                          {player.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(player.position)}`}>{player.position}</span>}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </button>
-            )}
+            {/* Player record cards — same visual logic as the standard stat cards */}
+            {[
+              mostRostered.length > 0 ? {
+                key: 'Most Apps',
+                href: () => openPlayerProfile(`raw:${mostRostered[0].rawName}`),
+                Icon: Users,
+                accent: 'navy',
+                value: mostRostered[0].count,
+                player: mostRostered[0],
+              } : null,
+              mostStarted.length > 0 ? {
+                key: 'Most Starts',
+                href: () => openPlayerProfile(`raw:${mostStarted[0].rawName}`),
+                Icon: Star,
+                accent: 'green',
+                value: mostStarted[0].count,
+                player: mostStarted[0],
+              } : null,
+              bestAvgPlayer ? {
+                key: 'Best AVG',
+                href: () => openPlayerProfile(bestAvgPlayer.archiveKey),
+                Icon: TrendingUp,
+                accent: 'navy',
+                value: bestAvgPlayer.avgPts.toFixed(2),
+                player: bestAvgPlayer,
+              } : null,
+              bestScorePlayer ? {
+                key: 'Best Score',
+                href: () => openPlayerProfile(bestScorePlayer.archiveKey),
+                Icon: Trophy,
+                accent: 'gold',
+                value: bestScorePlayer.bestPts.toFixed(2),
+                player: bestScorePlayer,
+              } : null,
+            ].filter(Boolean).map(({ key, href, Icon, accent, value, player }) => {
+              const colors = {
+                gold: { text: 'text-[#B8860B]', iconBg: 'bg-[#F5C518] text-[#0A0A0A]' },
+                navy: { text: 'text-[#16274F]', iconBg: 'bg-[#16274F] text-white' },
+                green: { text: 'text-[#1E8E3E]', iconBg: 'bg-[#1E8E3E] text-white' },
+              }
+              const c = colors[accent]
 
-            {mostStarted.length > 0 && (
-              <button type="button" onClick={() => { openPlayerProfile(`raw:${mostStarted[0].rawName}`) }} className="relative block w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-4 xl:p-2.5 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2]">
-                <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_104px]">
-                  <div className="min-w-0">
-                    <div className="flex h-8 w-8 items-center justify-center border-2 border-[#0A0A0A] bg-[#1E8E3E] text-white">
-                      <Star className="h-4 w-4" />
-                    </div>
-                    <div className="mt-3">
-                      <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#1E8E3E]">Most Started</div>
-                      <div className="font-black leading-none text-[#1E8E3E]" style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(34px, 4vw, 48px)' }}>{mostStarted[0].count}</div>
-                    </div>
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={href}
+                  className="relative block h-full w-full overflow-hidden border-2 border-[#0A0A0A] bg-white p-3.5 text-left tp-shadow-navy-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F7F6F2] lg:p-3"
+                >
+                  <div className={`mb-3 flex h-8 w-8 flex-shrink-0 items-center justify-center border-2 border-[#0A0A0A] ${c.iconBg}`}>
+                    <Icon className="h-4 w-4" />
                   </div>
-                  <div className="flex h-full min-h-[68px] items-start justify-end sm:min-h-[96px]">
-                    <div className="flex items-center justify-end pl-3">
-                      {mostStarted.map((player, index) => (
-                        <div key={player.rawName} className={index === 0 ? '' : '-ml-7'} style={{ zIndex: mostStarted.length - index }}>
-                          <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={68} />
-                        </div>
-                      ))}
-                    </div>
+
+                  <div className={`mb-1 text-[9px] font-black uppercase tracking-[0.2em] ${c.text}`}>
+                    {key}
                   </div>
-                  <div className="col-span-2 min-w-0">
-                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                      {mostStarted.map((player, index) => (
-                        <React.Fragment key={player.rawName}>
-                          {index > 0 && <span className="text-sm font-black text-[#6B7280]">&amp;</span>}
-                          <div className="min-w-0 text-sm font-black text-[#16274F]">{player.name}</div>
-                          {player.position && <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(player.position)}`}>{player.position}</span>}
-                        </React.Fragment>
-                      ))}
-                    </div>
+
+                  <div
+                    className={`font-black leading-none ${c.text}`}
+                    style={{
+                      fontFamily: '"Bebas Neue", sans-serif',
+                      fontSize: 'clamp(22px, 2.6vw, 36px)',
+                    }}
+                  >
+                    {value}
                   </div>
-                </div>
-              </button>
-            )}
+
+                  <div className="mt-1 flex min-w-0 items-center gap-2 pr-[76px]">
+                    <span className="min-w-0 truncate text-[11px] font-bold text-[#3F4757]">
+                      {player.name}
+                    </span>
+                    {player.position && (
+                      <span className={`inline-flex flex-shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${getPositionBadgeClasses(player.position)}`}>
+                        {player.position}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="pointer-events-none absolute right-3.5 top-3.5 lg:right-3 lg:top-3">
+                    <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={68} />
+                  </div>
+                </button>
+              )
+            })}
 
           </div>
 
@@ -1899,7 +2126,7 @@ export default function TeamsPage() {
                   <CompactCheckFilter value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
                 </div>
                 <div className="w-full lg:w-40">
-                  <CompactCheckFilter value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} label="Sort by" />
+                  <CompactCheckFilter value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} label="Sort by" neutral />
                 </div>
                 <div className="w-full lg:w-32">
                   <CompactCheckFilter value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} label="Season" />
@@ -2171,10 +2398,10 @@ export default function TeamsPage() {
 
       <Header />
 
-      <section className="mx-auto max-w-[1680px] px-6 pb-24 pt-4">
+      <section className="px-3 pb-20 md:px-6">
 
         {/* Hero */}
-        <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy" style={{ minHeight: '240px' }}>
+        <div className="relative mb-8 overflow-hidden border-2 border-[#0A0A0A] tp-shadow-navy">
           <div className="absolute inset-0 overflow-hidden">
             <svg width="100%" height="100%" viewBox="0 0 900 240" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <g opacity="0.06">
@@ -2193,20 +2420,32 @@ export default function TeamsPage() {
             </svg>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg, #F7F6F2 28%, rgba(247,246,242,0.9) 48%, rgba(247,246,242,0.15) 100%)' }} />
           </div>
-          <div className="relative z-10 p-10 md:p-14">
+          <div className="relative z-10 p-6 sm:p-8 md:p-10">
             <div
-              className="mb-4 inline-flex items-center gap-2 bg-[#D01F2D] px-4 py-2"
+              className="mb-4 inline-flex items-center gap-1.5 sm:gap-2 bg-[#D01F2D] px-3 py-1.5 sm:px-4 sm:py-2"
               style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0% 100%)' }}
             >
-              <Swords className="h-4 w-4 text-white" />
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-white">All Franchises</span>
+              <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-white shrink-0" />
+              <span
+                className="font-black uppercase tracking-[0.25em] text-white whitespace-nowrap"
+                style={{ fontSize: 'clamp(10px, 1.2vw, 12px)' }}
+              >
+                All Franchises
+              </span>
             </div>
-            <h1 className="leading-[0.88] text-[#16274F]"
-              style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(48px, 7vw, 88px)', letterSpacing: '0.02em' }}>
-              <span style={{ display: 'block' }}>THE</span>
-              <span className="text-[#D01F2D]" style={{ display: 'block' }}>FRANCHISES</span>
+            <h1
+              className="leading-[0.9] tracking-[-0.02em] text-[#16274F] whitespace-nowrap"
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: 'clamp(48px, 7vw, 96px)',
+              }}
+            >
+              THE <span className="text-[#D01F2D]">FRANCHISES</span>
             </h1>
-            <p className="mt-4 max-w-xl text-sm font-semibold text-[#6B7280] sm:text-base">
+            <p
+              className="mt-3 sm:mt-4 max-w-xs sm:max-w-lg text-[#3F4757]"
+              style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+            >
               The teams, rivalries and legacies that built Tapitas League.
             </p>
           </div>
