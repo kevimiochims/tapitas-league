@@ -19,7 +19,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-[#EDEEF0] text-[#111]">
+      <body className="bg-white text-[#111]">
         <DrawerProvider>
           <MobileDrawer />
           {children}

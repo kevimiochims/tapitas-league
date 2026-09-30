@@ -5,14 +5,14 @@ import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
   Swords, Stars, Activity, Radar, Target, Medal, Clock3, ScrollText,
   TrendingUp, Landmark, Newspaper, Laugh, FileText, BarChart2,
-  Users, BookOpen, Zap, TrendingDown, Minus, Hash, ChevronDown,
+  Users, BookOpen, Zap, TrendingDown, Minus, Hash, ChevronDown, Star,
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import { useDrawer } from './context/DrawerContext'
 import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
-import { SummaryButton, Segmented, PageShell, CardShell, StatRow, StatGrid, StatTile, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
+import { SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, StatGrid, StatTile, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
 
 
 // Same Sleeper player source used by the Teams Player Profile.
@@ -625,6 +625,9 @@ function topNTeams(arr, getter, n = 3) {
   return tied.slice(0, n)
 }
 
+// Vagas de playoff na liga (linha tracejada na classificação da Home)
+const PLAYOFF_SPOTS = 6
+
 const QUICK_NAV = [
   { label: 'Stats', href: '/stats', icon: BarChart2, accent: '#16274F' },
   { label: 'Matchups', href: '/matchups', icon: Swords, accent: '#D01F2D' },
@@ -695,8 +698,8 @@ export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
   const [leagueLoading, setLeagueLoading] = useState(true)
   const [h2hData, setH2hData] = useState([])
-  const [selectedTeamA, setSelectedTeamA] = useState('Howmuch')
-  const [selectedTeamB, setSelectedTeamB] = useState('Patrolao Squad')
+  const [selectedTeamA, setSelectedTeamA] = useState('')
+  const [selectedTeamB, setSelectedTeamB] = useState('')
   const [sortCategory, setSortCategory] = useState('Win Streak')
   const [sortSub, setSortSub] = useState('Total')
   const [standingsPage, setStandingsPage] = useState(0)
@@ -1862,8 +1865,8 @@ export default function TapitasLeagueHomepage() {
   // ── Blocos ──────────────────────────────────────────────────────────
   const scoreboardStrip = visibleMatchups.length > 0 && (
     <div className="relative z-20 mb-2 flex items-stretch rounded-xl bg-white">
-      <div className="flex flex-shrink-0 items-center gap-2 border-r border-[#EEF0F2] pl-3 pr-2">
-        <span className="text-[13px] font-bold text-[#111]">{currentSeason}</span>
+      <div className="flex flex-shrink-0 flex-col items-start justify-center gap-0.5 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
+        <span className="pl-1 text-[12px] font-bold text-[#111]">{currentSeason}</span>
         <FilterPill value={selectedMatchupKey} onChange={setSelectedMatchupKey} options={matchupOptions.map(o => o.key)} displayOption={key => `Week ${matchupOptions.find(o => o.key === key)?.week ?? ''}`} label="Week" neutral hideLabel />
       </div>
       <div className="scroll-hide flex min-w-0 flex-1 gap-1.5 overflow-x-auto p-2">
@@ -1976,15 +1979,31 @@ export default function TapitasLeagueHomepage() {
 
   const matchupLink = m => `/matchups?season=${encodeURIComponent(m.season)}&week=${encodeURIComponent(m.week)}&team=${encodeURIComponent(m.team)}&opp=${encodeURIComponent(m.opp)}`
 
+  // Rivalry da Home: começa com um confronto da semana exibida no placar,
+  // sorteado a cada visita (o usuário pode trocar pelos seletores).
+  useEffect(() => {
+    if (selectedTeamA || !visibleMatchups.length || !h2hData.length) return
+    const hasRow = (a, b) => h2hData.some(r => {
+      const keys = Object.keys(r)
+      return normalizeString(r[keys[0]]) === normalizeString(a) && normalizeString(r[keys[1]]) === normalizeString(b)
+    })
+    const pick = visibleMatchups[Math.floor(Math.random() * visibleMatchups.length)]
+    if (hasRow(pick.team, pick.opp)) { setSelectedTeamA(pick.team); setSelectedTeamB(pick.opp) }
+    else if (hasRow(pick.opp, pick.team)) { setSelectedTeamA(pick.opp); setSelectedTeamB(pick.team) }
+  }, [visibleMatchups, h2hData, selectedTeamA])
+
+  // Destaques da semana: jogos em destaque + melhores jogadores no mesmo card,
+  // em duas seções com título próprio.
   const weekCard = weekHighlights && (
     <CardShell title={`Week ${selectedMatchupOption?.week} highlights`} subtitle={`${currentSeason} · ${visibleMatchups.length} matchups`} action={<Link href={matchupLink(visibleMatchups[0])} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All matchups</Link>}>
-      <div className="grid grid-cols-3 gap-px bg-[#EEF0F2]">
+      <div className="flex items-center gap-1.5 px-3 pb-2 pt-3 text-[12px] font-semibold text-[#111] lg:px-4"><Swords className="h-3.5 w-3.5 text-[#6B7280]" />Games of the week</div>
+      <div className="mx-3 grid grid-cols-3 gap-px overflow-hidden rounded-lg bg-[#EEF0F2] ring-1 ring-[#EEF0F2] lg:mx-4">
         {[
           { label: 'Top score', m: weekHighlights.topScore, big: weekHighlights.topScore.high.toFixed(2), bigClass: 'text-[#1E8E3E]', team: weekHighlights.topScore.score >= weekHighlights.topScore.oppScore ? weekHighlights.topScore.team : weekHighlights.topScore.opp },
           { label: 'Biggest win', m: weekHighlights.blowout, big: `+${weekHighlights.blowout.margin.toFixed(2)}`, bigClass: 'text-[#111]', team: weekHighlights.blowout.winner },
           { label: 'Closest game', m: weekHighlights.closest, big: weekHighlights.closest.margin.toFixed(2), bigClass: 'text-[#D01F2D]', team: weekHighlights.closest.winner },
         ].map(({ label, m, big, bigClass, team }) => (
-          <Link key={label} href={matchupLink(m)} className="group min-w-0 bg-white px-2.5 py-3 transition-colors hover:bg-[#F7F8FA] sm:px-3 lg:px-4">
+          <Link key={label} href={matchupLink(m)} className="group min-w-0 bg-white px-2.5 py-3 transition-colors hover:bg-[#F7F8FA] sm:px-3">
             <div className="flex items-center justify-between gap-2">
               <span className="truncate text-[11px] text-[#6B7280]">{label}</span>
               <span className="hidden sm:block"><TeamLogo name={team} size={22} /></span>
@@ -1996,25 +2015,18 @@ export default function TapitasLeagueHomepage() {
           </Link>
         ))}
       </div>
-    </CardShell>
-  )
-
-  const performersCard = weekPerformers.length > 0 && (
-    <CardShell title="Top performers" subtitle={`Week ${selectedMatchupOption?.week} · best starters of the week`}>
-      <div className="scroll-hide flex gap-2 overflow-x-auto p-3 lg:p-4">
-        {weekPerformers.map((p, i) => {
-          const data = findPlayerData(p.name)
-          return (
-            <PerformerTile
-              key={`${p.name}-${p.team}`}
-              rank={i + 1}
-              performer={p}
-              data={data}
-              onOpen={() => setSelectedPerformer({ ...p, data })}
-            />
-          )
-        })}
-      </div>
+      {weekPerformers.length > 0 && (
+        <>
+          <div className="flex items-center gap-1.5 px-3 pb-2 pt-4 text-[12px] font-semibold text-[#111] lg:px-4"><Star className="h-3.5 w-3.5 text-[#6B7280]" />Top performers<span className="font-normal text-[#6B7280]">· best starters</span></div>
+          <div className="scroll-hide flex gap-2 overflow-x-auto px-3 pb-3 lg:px-4 lg:pb-4">
+            {weekPerformers.map((p, i) => {
+              const data = findPlayerData(p.name)
+              return <PerformerTile key={`${p.name}-${p.team}`} rank={i + 1} performer={p} data={data} onOpen={() => setSelectedPerformer({ ...p, data })} />
+            })}
+          </div>
+        </>
+      )}
+      {weekPerformers.length === 0 && <div className="h-3" />}
     </CardShell>
   )
 
@@ -2098,70 +2110,18 @@ export default function TapitasLeagueHomepage() {
   })() : []
 
   const rivalryCard = (
-    <section className="mb-2 overflow-hidden rounded-xl bg-white">
-      {/* Pôster */}
-      <div className="relative text-white">
-        <div className="absolute inset-0 bg-[#02275F]" />
-        <div className="absolute inset-0 bg-[#C8102E]" style={{ clipPath: 'polygon(56% 0, 100% 0, 100% 100%, 44% 100%)' }} />
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 14px)' }} />
-
-        <div className="relative flex items-center justify-between px-3 pt-3 lg:px-4">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80">Rivalry spotlight</span>
-          {selectedRivalry && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold">{selectedRivalry.heat} rivalry</span>}
-        </div>
-
-        <div className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 pb-5 pt-3 lg:px-4">
-          <div className="flex min-w-0 flex-col items-center gap-2">
-            <FilterPill value={selectedTeamA || 'Team'} onChange={v => { setSelectedTeamA(v); setSelectedTeamB('') }} options={allTeams} label="Team" neutral hideLabel tone="dark" />
-            {selectedRivalry && (
-              <Link href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="flex flex-col items-center gap-1.5">
-                <span className="rounded-full bg-white p-1.5 shadow-lg"><TeamLogo name={selectedRivalry.teamA} size={52} /></span>
-                <span className="text-[56px] font-bold leading-none tabular-nums">{selectedRivalry.winsA}</span>
-              </Link>
-            )}
-          </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[15px] font-black italic text-[#111] shadow-lg">VS</div>
-          <div className="flex min-w-0 flex-col items-center gap-2">
-            <FilterPill value={selectedTeamB || 'Opponent'} onChange={setSelectedTeamB} options={teamsForB} label="Opponent" neutral hideLabel tone="dark" align="right" />
-            {selectedRivalry && (
-              <Link href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="flex flex-col items-center gap-1.5">
-                <span className="rounded-full bg-white p-1.5 shadow-lg"><TeamLogo name={selectedRivalry.teamB} size={52} /></span>
-                <span className="text-[56px] font-bold leading-none tabular-nums">{selectedRivalry.winsB}</span>
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Tale of the tape */}
+    <section className="mb-2 rounded-xl bg-white">
+      <VersusPoster
+        label="Rivalry spotlight"
+        badge={selectedRivalry ? `${selectedRivalry.heat} rivalry` : null}
+        left={selectedRivalry ? { team: selectedRivalry.teamA, value: selectedRivalry.winsA } : null}
+        right={selectedRivalry ? { team: selectedRivalry.teamB, value: selectedRivalry.winsB } : null}
+        leftControl={<FilterPill value={selectedTeamA || 'Team'} onChange={v => { setSelectedTeamA(v); setSelectedTeamB('') }} options={allTeams} label="Team" neutral hideLabel tone="dark" />}
+        rightControl={<FilterPill value={selectedTeamB || 'Opponent'} onChange={setSelectedTeamB} options={teamsForB} label="Opponent" neutral hideLabel tone="dark" align="right" />}
+      />
       {selectedRivalry ? (
         <>
-          <div className="px-3 pt-3 lg:px-4">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">
-              <span className="text-[#02275F]">{selectedRivalry.teamA}</span>
-              <span>Tale of the tape</span>
-              <span className="text-[#C8102E]">{selectedRivalry.teamB}</span>
-            </div>
-          </div>
-          <div className="space-y-3 px-3 py-3 lg:px-4">
-            {rivalryRows.map(row => {
-              const total = row.shareA + row.shareB
-              const pctA = total > 0 ? (row.shareA / total) * 100 : 50
-              return (
-                <div key={row.label}>
-                  <div className="flex items-baseline justify-between text-[14px] font-bold tabular-nums">
-                    <span className={row.shareA >= row.shareB && total > 0 ? 'text-[#02275F]' : 'text-[#9CA3AF]'}>{row.a}</span>
-                    <span className="text-[11px] font-medium text-[#6B7280]">{row.label}</span>
-                    <span className={row.shareB >= row.shareA && total > 0 ? 'text-[#C8102E]' : 'text-[#9CA3AF]'}>{row.b}</span>
-                  </div>
-                  <div className="mt-1 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
-                    <div className="rounded-l-full bg-[#02275F]" style={{ width: `${pctA}%`, opacity: total > 0 ? 1 : 0.15 }} />
-                    <div className="flex-1 rounded-r-full bg-[#C8102E]" style={{ opacity: total > 0 ? 1 : 0.15 }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <TaleOfTape leftName={selectedRivalry.teamA} rightName={selectedRivalry.teamB} rows={rivalryRows} />
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#EEF0F2] px-3 py-2.5 lg:px-4">
             <span className="text-[12px] text-[#6B7280]">
               Last meeting <span className="font-semibold tabular-nums text-[#111]">{selectedRivalry.lastMeeting.score}</span>{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}
@@ -2199,7 +2159,7 @@ export default function TapitasLeagueHomepage() {
       </div>
       <div className="pb-1 lg:pb-2">
         {currentStandings.map((row, i) => (
-          <Link key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`} className={`group grid grid-cols-[20px_minmax(0,1fr)_44px_44px] items-center gap-2 px-3 py-1.5 transition-colors hover:bg-black/[0.03] lg:px-4 ${i === 3 && !isFinalStandings ? 'border-b border-dashed border-[#D6D9DE]' : ''}`}>
+          <Link key={row.team} href={`/teams?team=${encodeURIComponent(row.team)}`} className={`group grid grid-cols-[20px_minmax(0,1fr)_44px_44px] items-center gap-2 px-3 py-1.5 transition-colors hover:bg-black/[0.03] lg:px-4 ${i === PLAYOFF_SPOTS - 1 && !isFinalStandings ? 'border-b border-dashed border-[#D6D9DE]' : ''}`}>
             <span className={`text-[13px] font-bold tabular-nums ${i === 0 ? 'text-[#B8860B]' : 'text-[#111]'}`}>{row.standing || i + 1}</span>
             <span className="flex min-w-0 items-center gap-2"><TeamLogo name={row.team} size={20} /><span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{row.team}</span></span>
             <span className="text-right text-[13px] font-semibold tabular-nums text-[#111]">{row.w}–{row.l}</span>
@@ -2269,7 +2229,7 @@ export default function TapitasLeagueHomepage() {
   // Desktop: cards separados nas colunas laterais.
   const powerCard = <CardShell title="Power Rankings" subtitle={`${currentSeason} · latest week`} sidebar action={cardLink('/powerrankings', 'Full')}>{powerList}</CardShell>
   const standingsCard = currentStandings.length > 0 && <CardShell title="Standings" subtitle={standingsSubtitle} sidebar action={cardLink('/stats', 'Stats')}>{standingsList}</CardShell>
-  const leadersCard = <CardShell title="Franchise leaders" subtitle="All-time" sidebar withMenus>{leadersFilters}{leadersList}</CardShell>
+  const leadersCard = <CardShell title="Franchise leaders" subtitle="All-time" sidebar withMenus action={cardLink('/records', 'Records')}>{leadersFilters}{leadersList}</CardShell>
   const championsCard = championsData.length > 0 && <CardShell title="Champions wall" subtitle="Every Tapitas League title" sidebar action={cardLink('/history', 'History')}>{championsList}</CardShell>
   const recordsCard = <CardShell title="All-time records" subtitle="Best of the best" sidebar action={cardLink('/records', 'Record book')}>{recordsList}</CardShell>
 
@@ -2305,7 +2265,7 @@ export default function TapitasLeagueHomepage() {
       {scoreboardStrip}
 
       <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
-        <aside className="hidden lg:block">
+        <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
           {powerCard}
           {standingsCard}
         </aside>
@@ -2314,7 +2274,6 @@ export default function TapitasLeagueHomepage() {
           {heroCard}
           {numbersCard}
           {weekCard}
-          {performersCard}
           <div className="lg:hidden">{mobileTableCard}</div>
           {rivalryCard}
           {newsCard}
@@ -2322,7 +2281,7 @@ export default function TapitasLeagueHomepage() {
           <div className="lg:hidden">{mobileLeagueCard}</div>
         </div>
 
-        <aside className="hidden lg:block">
+        <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
           {leadersCard}
           {championsCard}
           {recordsCard}

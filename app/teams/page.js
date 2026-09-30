@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, ChevronLeft, ChevronDown, Check, Skull, Zap, Filter, Users } from 'lucide-react'
 import Header from '../components/Header'
 import PlayerProfileModal from '../components/PlayerProfileModal'
-import { PageSkeleton, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
+import { PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -410,6 +410,7 @@ export default function TeamsPage() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [mobileTeamView, setMobileTeamView] = useState('overview')
+  const [teamsSort, setTeamsSort] = useState('wins')
   const gameLogRef = useRef(null)
 
   // ── Game Log filters ─────────────────────────────────────────────
@@ -1493,50 +1494,42 @@ export default function TeamsPage() {
     )
 
     // ── Main column ────────────────────────────────────────────────
+    // Temporadas em lista compacta (coluna da direita): clicar filtra o Game Log.
     const seasonHistoryCard = (
-      <CardShell title="Season History" subtitle={`${teamSeasons} seasons · tap a season to filter the game log`}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#EEF0F2]">
-                {[['Season', 'left', ''], ['Reg. season', 'left', ''], ['Overall', 'left', 'hidden sm:table-cell'], ['PF', 'right', 'hidden sm:table-cell'], ['Finish', 'right', ''], ['Result', 'left', '']].map(([h, align, visibility]) => (
-                  <th key={h} className={`px-3 py-2 text-[11px] font-medium text-[#6B7280] lg:px-4 ${align === 'right' ? 'text-right' : 'text-left'} ${visibility}`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {teamH.map(r => {
-                const isChamp = isTrueFlag(r?.Champion)
-                const isFinal = isTrueFlag(r?.Reached_Final)
-                const isPlayoff = isTrueFlag(r?.Made_Playoffs)
-                const standing = parseNumber(r.Standing)
-                return (
-                  <tr
-                    key={r.Season}
-                    onClick={() => {
-                      setLogSeason(String(r.Season)); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false)
-                      setMobileTeamView('games')
-                      requestAnimationFrame(() => gameLogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-                    }}
-                    className={`cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] ${isChamp ? 'bg-[#FFFBEA]' : ''}`}
-                  >
-                    <td className="px-3 py-2.5 text-[13px] font-semibold text-[#111] lg:px-4">{r.Season}</td>
-                    <td className="px-3 py-2.5 text-[13px] tabular-nums text-[#3F4757] lg:px-4">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</td>
-                    <td className="hidden px-3 py-2.5 text-[13px] tabular-nums text-[#3F4757] sm:table-cell lg:px-4">{parseNumber(r.W)}–{parseNumber(r.L)}</td>
-                    <td className="hidden px-3 py-2.5 text-right text-[13px] tabular-nums text-[#3F4757] sm:table-cell lg:px-4">{Math.round(parseNumber(r.RS_PF)).toLocaleString()}</td>
-                    <td className="px-3 py-2.5 text-right text-[13px] tabular-nums text-[#3F4757] lg:px-4">{standing > 0 ? `#${standing}` : '—'}</td>
-                    <td className="px-3 py-2.5 lg:px-4">
-                      {isChamp ? <Tag tone="gold">🏆 Champion</Tag>
-                        : isFinal ? <Tag tone="navy">Final</Tag>
-                        : isPlayoff ? <Tag>Playoffs</Tag>
-                        : standing > 0 ? <span className="text-[12px] text-[#9CA3AF]">Missed playoffs</span>
-                        : <span className="text-[12px] text-[#9CA3AF]">In progress</span>}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      <CardShell title="Season History" subtitle={`${teamSeasons} seasons · tap to filter the game log`} sidebar action={logSeason !== 'All' ? <button type="button" onClick={() => setLogSeason('All')} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All</button> : null}>
+        <div className="py-1 lg:py-2">
+          {teamH.map(r => {
+            const isChamp = isTrueFlag(r?.Champion)
+            const isFinal = isTrueFlag(r?.Reached_Final)
+            const isPlayoff = isTrueFlag(r?.Made_Playoffs)
+            const standing = parseNumber(r.Standing)
+            const active = logSeason === String(r.Season)
+            return (
+              <button
+                key={r.Season}
+                type="button"
+                onClick={() => {
+                  setLogSeason(active ? 'All' : String(r.Season)); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false)
+                  setMobileTeamView('games')
+                  requestAnimationFrame(() => gameLogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+                }}
+                className={`group grid w-full grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 text-left transition-colors lg:px-4 ${active ? 'bg-[#EEF3FF]' : 'hover:bg-black/[0.03]'}`}
+              >
+                <span className={`text-[13px] font-bold tabular-nums ${active ? 'text-[#02275F]' : 'text-[#111]'}`}>{r.Season}</span>
+                <span className="min-w-0 truncate text-[12px] text-[#6B7280]">
+                  <span className="font-semibold tabular-nums text-[#111]">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</span>
+                  {standing > 0 ? ` · #${standing}` : ''} · {Math.round(parseNumber(r.RS_PF)).toLocaleString()} pts
+                </span>
+                <span className="flex-shrink-0">
+                  {isChamp ? <Tag tone="gold">🏆 Champ</Tag>
+                    : isFinal ? <Tag tone="navy">Final</Tag>
+                    : isPlayoff ? <Tag>Playoffs</Tag>
+                    : standing > 0 ? <span className="text-[11px] text-[#9CA3AF]">—</span>
+                    : <Tag tone="green">Live</Tag>}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </CardShell>
     )
@@ -1700,27 +1693,28 @@ export default function TeamsPage() {
           ))}
         </div>
 
-        {/* Grid: records | history + log + players | head to head */}
+        {/* Grid: records + jogadores | game log + archive | temporadas + head to head */}
         <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
-          <aside className="hidden lg:block">
+          <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
             {recordsCard}
             {playersCard}
           </aside>
 
           <div className="min-w-0">
-            <div className={`${mobileTeamView === 'overview' ? 'block' : 'hidden'} lg:block`}>
+            <div className={`${mobileTeamView === 'overview' ? 'block' : 'hidden'} lg:hidden`}>
               {seasonHistoryCard}
-              <div className="lg:hidden">
-                {recordsCard}
-                {playersCard}
-              </div>
+              {recordsCard}
+              {playersCard}
             </div>
             <div className={`${mobileTeamView === 'games' ? 'block' : 'hidden'} lg:block`}>{gameLogCard}</div>
             <div className={`${mobileTeamView === 'players' ? 'block' : 'hidden'} lg:block`}>{playerArchiveCard}</div>
             <div className={`${mobileTeamView === 'h2h' ? 'block' : 'hidden'} lg:hidden`}>{h2hCard}</div>
           </div>
 
-          <aside className="hidden lg:block">{h2hCard}</aside>
+          <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
+            {seasonHistoryCard}
+            {h2hCard}
+          </aside>
         </div>
         {PlayerProfile}
       </>
@@ -1733,52 +1727,96 @@ export default function TeamsPage() {
     .map(r => ({ season: String(r?.Season || '').trim(), team: String(r?.Team || '').trim() }))
     .sort((a, b) => Number(b.season) - Number(a.season))
 
-  const teamsTable = (
-    <CardShell title="Franchises" subtitle={`All-time records of the ${teams.length} active Tapitas League teams`}>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-[#EEF0F2]">
-              <th className="w-8 px-3 py-2 text-left text-[11px] font-medium text-[#6B7280] lg:pl-4">#</th>
-              <th className="px-2 py-2 text-left text-[11px] font-medium text-[#6B7280]">Team</th>
-              <th className="hidden px-2 py-2 text-right text-[11px] font-medium text-[#6B7280] sm:table-cell">Seasons</th>
-              <th className="px-2 py-2 text-right text-[11px] font-medium text-[#6B7280]">W–L</th>
-              <th className="px-2 py-2 text-right text-[11px] font-medium text-[#6B7280]">Win %</th>
-              <th className="hidden px-2 py-2 text-right text-[11px] font-medium text-[#6B7280] md:table-cell">PF</th>
-              <th className="hidden px-2 py-2 text-right text-[11px] font-medium text-[#6B7280] md:table-cell">Playoffs</th>
-              <th className="px-3 py-2 text-right text-[11px] font-medium text-[#6B7280] lg:pr-4">Titles</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teams.map((team, i) => {
-              const teamHistory = getTeamHistory(team.team)
-              const teamTitles = teamHistory.filter(r => isTrueFlag(r?.Champion)).length
-              const seasonCount = new Set(teamHistory.map(r => String(r?.Season || '').trim()).filter(Boolean)).size
-              return (
-                <tr key={team.team} onClick={() => selectTeam(team)} className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
-                  <td className="px-3 py-3 text-[13px] font-semibold tabular-nums text-[#111] lg:pl-4">{i + 1}</td>
-                  <td className="px-2 py-3">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <TeamAvatar name={team.team} size="xs" />
-                      <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">
-                        <span className="sm:hidden">{shortName(team.team)}</span>
-                        <span className="hidden sm:inline">{team.team}</span>
-                      </span>
-                    </div>
-                  </td>
-                  <td className="hidden px-2 py-3 text-right text-[13px] tabular-nums text-[#3F4757] sm:table-cell">{seasonCount}</td>
-                  <td className="px-2 py-3 text-right text-[13px] font-semibold tabular-nums text-[#111]">{parseNumber(team.W)}–{parseNumber(team.L)}</td>
-                  <td className="px-2 py-3 text-right text-[13px] tabular-nums text-[#3F4757]">{String(team?.['W%'] || '').trim()}</td>
-                  <td className="hidden px-2 py-3 text-right text-[13px] tabular-nums text-[#3F4757] md:table-cell">{Math.round(parseNumber(team.PF)).toLocaleString()}</td>
-                  <td className="hidden px-2 py-3 text-right text-[13px] tabular-nums text-[#3F4757] md:table-cell">{parseNumber(team['Playoff Apps'])}</td>
-                  <td className={`px-3 py-3 text-right text-[13px] font-semibold tabular-nums lg:pr-4 ${teamTitles ? 'text-[#B8860B]' : 'text-[#9CA3AF]'}`}>{teamTitles ? `🏆 ${teamTitles}` : '0'}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </CardShell>
+  // Cards das franquias com a trajetória (vitórias na temporada regular por ano).
+  const franchiseCards = teams.map((team, i) => {
+    const teamHistory = getTeamHistory(team.team)
+    const seasonsAsc = [...teamHistory].sort((x, y) => Number(x.Season) - Number(y.Season))
+    const titles = teamHistory.filter(r => isTrueFlag(r?.Champion))
+    const finals = teamHistory.filter(r => isTrueFlag(r?.Reached_Final) && !isTrueFlag(r?.Champion)).length
+    const latest = teamHistory[0] || null
+    const completed = seasonsAsc.filter(r => parseNumber(r?.Standing) > 0)
+    const avgWins = completed.length ? completed.reduce((sum, r) => sum + parseNumber(r.RS_W), 0) / completed.length : 0
+    const lastCompleted = completed[completed.length - 1] || null
+    return { team, seasonsAsc, titles, finals, latest, avgWins, lastCompleted, winsRank: i + 1 }
+  })
+  const maxSeasonWins = Math.max(1, ...franchiseCards.flatMap(c => c.seasonsAsc.map(r => parseNumber(r.RS_W))))
+  const sortedCards = [...franchiseCards].sort((a, b) =>
+    teamsSort === 'titles' ? (b.titles.length - a.titles.length) || (parseNumber(b.team.W) - parseNumber(a.team.W))
+      : teamsSort === 'name' ? a.team.team.localeCompare(b.team.team)
+        : parseNumber(b.team.W) - parseNumber(a.team.W)
+  )
+
+  const Trajectory = ({ seasons }) => {
+    const W = 260, H = 64, padX = 8, padT = 12, padB = 6
+    if (!seasons.length) return <div className="h-16" />
+    const step = seasons.length > 1 ? (W - padX * 2) / (seasons.length - 1) : 0
+    const pts = seasons.map((r, i) => ({
+      x: seasons.length > 1 ? padX + step * i : W / 2,
+      y: padT + (1 - parseNumber(r.RS_W) / maxSeasonWins) * (H - padT - padB),
+      wins: parseNumber(r.RS_W),
+      season: String(r.Season),
+      champ: isTrueFlag(r?.Champion),
+      final: isTrueFlag(r?.Reached_Final),
+    }))
+    const line = pts.map(p => `${p.x},${p.y}`).join(' ')
+    const area = `${pts[0].x},${H - padB} ${line} ${pts[pts.length - 1].x},${H - padB}`
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className="block h-16 w-full" preserveAspectRatio="none" role="img">
+        <polygon points={area} fill="#02275F" opacity="0.07" />
+        <polyline points={line} fill="none" stroke="#02275F" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        {pts.map(p => (
+          <circle key={p.season} cx={p.x} cy={p.y} r={p.champ ? 4.5 : 3} fill={p.champ ? '#B8860B' : p.final ? '#02275F' : '#fff'} stroke={p.champ ? '#fff' : '#02275F'} strokeWidth="1.5" vectorEffect="non-scaling-stroke">
+            <title>{`${p.season}: ${p.wins} wins${p.champ ? ' · Champion' : p.final ? ' · Final' : ''}`}</title>
+          </circle>
+        ))}
+      </svg>
+    )
+  }
+
+  const teamsGrid = (
+    <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      {sortedCards.map(({ team, seasonsAsc, titles, finals, latest, avgWins, lastCompleted, winsRank }) => {
+        const latestWins = latest ? parseNumber(latest.RS_W) : 0
+        const latestStanding = latest ? parseNumber(latest.Standing) : 0
+        const trendUp = lastCompleted ? parseNumber(lastCompleted.RS_W) >= avgWins : true
+        return (
+          <button key={team.team} type="button" onClick={() => selectTeam(team)} className="group flex flex-col rounded-xl bg-white p-3 text-left transition-shadow hover:shadow-md lg:p-4">
+            <div className="flex items-center gap-3">
+              <TeamAvatar name={team.team} size="sm" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[15px] font-bold text-[#111] group-hover:text-[#D01F2D]">{team.team}</div>
+                <div className="text-[12px] text-[#6B7280]"><span className="font-semibold tabular-nums text-[#111]">{parseNumber(team.W)}–{parseNumber(team.L)}</span> · {String(team?.['W%'] || '').trim()} · #{winsRank} in wins</div>
+              </div>
+            </div>
+
+            {/* Estante de troféus */}
+            <div className="mt-3 flex min-h-[22px] flex-wrap items-center gap-1">
+              {titles.map(t => <span key={t.Season} title={`Champion ${t.Season}`} className="inline-flex items-center gap-0.5 rounded-full bg-[#FFF2B8] px-1.5 py-0.5 text-[10px] font-semibold text-[#6B5A00]">🏆 {String(t.Season).slice(2)}</span>)}
+              {finals > 0 && <span className="rounded-full bg-[#EEF3FF] px-1.5 py-0.5 text-[10px] font-semibold text-[#02275F]">{finals} final{finals > 1 ? 's' : ''}</span>}
+              {titles.length === 0 && finals === 0 && <span className="text-[11px] text-[#9CA3AF]">Trophy shelf still empty</span>}
+            </div>
+
+            {/* Trajetória */}
+            <div className="mt-2">
+              <Trajectory seasons={seasonsAsc} />
+              <div className="mt-1 flex justify-between text-[10px] text-[#9CA3AF]">
+                <span>{seasonsAsc[0] ? `'${String(seasonsAsc[0].Season).slice(2)}` : ''}</span>
+                <span>regular-season wins</span>
+                <span>{seasonsAsc.length ? `'${String(seasonsAsc[seasonsAsc.length - 1].Season).slice(2)}` : ''}</span>
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between border-t border-[#F1F2F4] pt-2.5 text-[12px]">
+              <span className="text-[#6B7280]">{latest?.Season} · <span className="font-semibold tabular-nums text-[#111]">{latestWins}–{latest ? parseNumber(latest.RS_L) : 0}</span>{latestStanding > 0 ? ` · #${latestStanding}` : ' · live'}</span>
+              <span className={`flex items-center gap-0.5 font-semibold ${trendUp ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>
+                {trendUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                {lastCompleted ? `'${String(lastCompleted.Season).slice(2)} ` : ''}{trendUp ? 'above' : 'below'} avg
+              </span>
+            </div>
+          </button>
+        )
+      })}
+    </div>
   )
 
   const championsCard = champions.length > 0 && (
@@ -1802,10 +1840,16 @@ export default function TeamsPage() {
   )
 
   return renderShell(
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
-      <div className="min-w-0">{teamsTable}</div>
-      <aside>{championsCard}</aside>
-    </div>
+    <>
+      <PageBar title="Teams">
+        {[['wins', 'Most wins'], ['titles', 'Most titles'], ['name', 'A–Z']].map(([key, label]) => (
+          <BarTab key={key} active={teamsSort === key} onClick={() => setTeamsSort(key)}>{label}</BarTab>
+        ))}
+      </PageBar>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
+        <div className="min-w-0">{teamsGrid}</div>
+        <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC]">{championsCard}</aside>
+      </div>
+    </>
   )
 }
-

@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  /* Fundo cinza claro das páginas (também aparece no "arrasto" do celular) */
-  --background: #EDEEF0;
+  /* Fundo fora da página (aparece no "arrasto" do celular): branco, como o header */
+  --background: #FFFFFF;
   --foreground: #111111;
 }
 
 html,
 body {
-  background-color: #EDEEF0;
+  background-color: #FFFFFF;
 }
 
 body {
@@ -16,3 +16,4 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+

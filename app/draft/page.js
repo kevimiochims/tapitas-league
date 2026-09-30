@@ -576,17 +576,34 @@ export default function DraftPage() {
                 </div>
             </div>
 
-            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-5">
-                <div className="min-w-0 lg:order-1">
-                    <div className="lg:hidden">
-                        <Tabs tabs={[['board', 'Board'], ['scores', 'Picks'], ['notes', 'Recap'], ['highlights', 'Highlights']]} value={activeTab} onChange={setActiveTab} />
-                    </div>
-                    <div className="hidden lg:block">
-                        <Tabs tabs={[['board', 'Draft Board'], ['scores', 'All Picks'], ['notes', 'Draft Recap']]} value={activeTab === 'highlights' ? 'board' : activeTab} onChange={setActiveTab} />
-                    </div>
+            {/* Destaques do draft: 4 cards em linha, largura total */}
+            {highlightRows.length > 0 && (
+                <div className="mb-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                    {highlightRows.map(row => (
+                        <div key={row.label} className="min-w-0 rounded-xl bg-white p-3 lg:p-4">
+                            <div className="text-[11px] font-medium text-[#6B7280]">{row.label}</div>
+                            <div className="mt-2 flex min-w-0 items-center gap-2.5">
+                                {row.left}
+                                <div className="min-w-0">
+                                    <div className="truncate text-[13px] font-semibold leading-tight text-[#111]">{row.title}</div>
+                                    <div className="truncate text-[11px] text-[#6B7280]">{row.subtitle}</div>
+                                </div>
+                            </div>
+                            <div className={`mt-2 text-[20px] font-bold leading-none tabular-nums ${row.valueClass || 'text-[#111]'}`}>{row.value}</div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
-                    {(activeTab === 'board' || activeTab === 'highlights') && (
-                        <div className={activeTab === 'highlights' ? 'hidden lg:block' : ''}>
+            <div className="min-w-0">
+                    <Tabs
+                        tabs={[['board', 'Draft Board'], ['scores', 'All Picks'], ['notes', 'Recap'], ...(photos.length > 0 ? [['photos', 'Draft Day']] : [])]}
+                        value={activeTab}
+                        onChange={setActiveTab}
+                    />
+
+                    {activeTab === 'board' && (
+                        <div>
                         <CardShell
                             title={`Draft Board · ${season}`}
                             subtitle={`${rounds.length} rounds · ${teams.length} teams`}
@@ -737,23 +754,10 @@ export default function DraftPage() {
                             )}
                         </CardShell>
                     )}
-                </div>
-                {/* Lateral: destaques + fotos (no mobile vira a aba Highlights) */}
-                <aside className={`${activeTab === 'highlights' ? 'block' : 'hidden'} lg:order-2 lg:block`}>
-                    {highlightRows.length > 0 && (
-                        <CardShell title="Draft highlights" subtitle={`${season} · based on the season's fantasy points`} sidebar>
-                            <div className="py-1 lg:py-2">
-                                {highlightRows.map(row => (
-                                    <StatRow key={row.label} left={row.left} eyebrow={row.label} title={row.title} subtitle={row.subtitle} value={row.value} valueClass={row.valueClass} />
-                                ))}
-                            </div>
-                        </CardShell>
-                    )}
-
-                    {photos.length > 0 && (
-                        <CardShell title="Draft day" subtitle={`${season} · ${photos.length} photo${photos.length === 1 ? '' : 's'}`} sidebar>
+                    {activeTab === 'photos' && photos.length > 0 && (
+                        <CardShell title="Draft day" subtitle={`${season} · ${photos.length} photo${photos.length === 1 ? '' : 's'}`} >
                             <div
-                                className="relative aspect-video w-full overflow-hidden bg-[#111]"
+                                className="relative aspect-video max-h-[70vh] w-full overflow-hidden bg-[#111]"
                                 onTouchStart={handlePhotoTouchStart}
                                 onTouchEnd={handlePhotoTouchEnd}
                                 style={{ touchAction: 'pan-y' }}
@@ -791,7 +795,6 @@ export default function DraftPage() {
                             </div>
                         </CardShell>
                     )}
-                </aside>
 
             </div>
 

@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { Trophy } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-import { PageShell, CardShell, CardGroup, StatRow, Tag, ResultBadge, TeamLogo } from '../components/ui'
+import { PageShell, CardShell, CardGroup, StatRow, Tag, ResultBadge, TeamLogo, Segmented, Tabs } from '../components/ui'
+import PlayerProfileModal from '../components/PlayerProfileModal'
 
 const BASE_URL = '/api/sheet'
 
@@ -97,6 +98,50 @@ function teamHref(name) {
   return `/teams?team=${encodeURIComponent(String(name || '').trim())}`
 }
 
+
+// Jogadores escalados num jogo (titulares e reservas) do GAME_FACTS_ALL.
+function extractPlayerAppearances(game, max = 13) {
+  const list = []
+  for (let i = 1; i <= max; i++) {
+    const starter = game?.[`S${i}_Name`]
+    if (starter && starter !== '--empty--' && String(starter).trim()) list.push({ name: String(starter).trim(), status: 'Starter', pts: parseNumber(game?.[`S${i}_Pts`]) })
+    const bench = game?.[`B${i}_Name`]
+    if (bench && bench !== '--empty--' && String(bench).trim()) list.push({ name: String(bench).trim(), status: 'Bench', pts: parseNumber(game?.[`B${i}_Pts`]) })
+  }
+  return list
+}
+
+function normalizePlayerKey(value) {
+  return normalizeString(value).replace(/\./g, '').replace(/\s+/g, ' ').trim()
+}
+
+// _PLAYER_CACHE → busca por nome curto ("J. Allen") ou completo.
+function buildPlayerLookup(rows) {
+  const map = new Map()
+  rows.forEach(row => {
+    const playerId = String(row?.player_id || '').trim()
+    if (!playerId) return
+    const entry = { playerId, name: String(row?.name || '').trim(), pos: String(row?.position || row?.pos || '').trim().toUpperCase() }
+    ;[row?.name, row?.full_name].filter(Boolean).forEach(v => {
+      const key = normalizePlayerKey(v)
+      if (key && !map.has(key)) map.set(key, entry)
+    })
+  })
+  return map
+}
+
+function PlayerPhoto({ playerId, name, size = 28 }) {
+  const [failed, setFailed] = useState(false)
+  const initials = String(name || '?').split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
+  return (
+    <span className="flex flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-[10px] font-semibold text-[#16274F] ring-1 ring-[#E6E8EB]" style={{ width: size, height: size }}>
+      {playerId && !failed
+        ? <img src={`https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg`} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+        : initials}
+    </span>
+  )
+}
+
 async function safeFetch(url) {
   try {
     const res = await fetch(url)
@@ -113,12 +158,18 @@ export default function HistoryPage() {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [openSeason, setOpenSeason] = useState(null)
+  const [view, setView] = useState('champion')
+  const [playerLookup, setPlayerLookup] = useState(new Map())
+  const [profile, setProfile] = useState(null)
+  const closeProfile = () => setProfile(null)
   useEffect(() => {
     async function load() {
-      const [data, historyData] = await Promise.all([
+      const [data, historyData, playerCache] = await Promise.all([
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
         safeFetch(`${BASE_URL}/TEAM_HISTORY_RAW`),
+        safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
       ])
+      setPlayerLookup(buildPlayerLookup(playerCache))
 
       setGames(data)
       setHistory(historyData)
@@ -240,6 +291,7 @@ export default function HistoryPage() {
           score: parseNumber(getField(g, 'PF', 'pf')),
 
           oppScore: parseNumber(getField(g, 'PA', 'pa')),
+          href: matchupHref(g),
         }))
 
       const playoffGames =
@@ -257,6 +309,7 @@ export default function HistoryPage() {
 
             oppScore: parseNumber(getField(g, 'PA', 'pa')),
             gameType: g?.GameType,
+            href: matchupHref(g),
           }))
 
       const half = Math.ceil(
@@ -316,6 +369,53 @@ export default function HistoryPage() {
       const unicornLoser = unicornGames.find(g => getResult(g) === 'L')
 
       const unicorn = unicornLoser ? getTeam(unicornLoser) || null : null
+
+      const mapTeamGame = g => ({
+        result: getResult(g),
+        opp: getOpponent(g),
+        week: getField(g, 'Week', 'week'),
+        score: parseNumber(getField(g, 'PF', 'pf')),
+        oppScore: parseNumber(getField(g, 'PA', 'pa')),
+        gameType: g?.GameType,
+        href: matchupHref(g),
+      })
+      const unicornGamesAll = seasonGames
+        .filter(g => unicorn && getTeam(g) === unicorn)
+        .sort((a, b) => parseFloat(getField(a, 'Week', 'week') || 0) - parseFloat(getField(b, 'Week', 'week') || 0))
+      const unicornRegGames = unicornGamesAll.filter(g => !getStage(g) || getStage(g) === 'reg season').map(mapTeamGame)
+      const unicornConsolationGames = unicornGamesAll.filter(g => getStage(g) === 'consolation').map(mapTeamGame)
+
+      // Classificação final (TEAM_HISTORY_RAW): vice pelo jogo da final,
+      // terceiro pela coluna Standing.
+      const seasonRows = history.filter(r => String(r?.Season || '').trim() === season)
+      const rowFor = team => seasonRows.find(r => normalizeString(r?.Team) === normalizeString(team))
+      const thirdRow = seasonRows.find(r => parseNumber(r?.Standing) === 3)
+      const standingLine = team => {
+        const r = rowFor(team)
+        return r ? `${parseNumber(r?.W)}–${parseNumber(r?.L)} overall` : ''
+      }
+
+      // Jogadores: maior total, maior média (mín. 6 jogos como titular) e
+      // melhor jogo individual da temporada. Rodada dupla conta metade.
+      const playerMap = new Map()
+      let bestPlayerGame = null
+      seasonGames.forEach(g => {
+        const team = getTeam(g)
+        const double = String(getField(g, 'Week', 'week')).includes('-')
+        extractPlayerAppearances(g).forEach(a => {
+          if (a.status !== 'Starter') return
+          const pts = double ? a.pts / 2 : a.pts
+          const key = `${a.name}|${team}`
+          if (!playerMap.has(key)) playerMap.set(key, { name: a.name, team, total: 0, starts: 0 })
+          const p = playerMap.get(key)
+          p.total += pts
+          p.starts += 1
+          if (!double && (!bestPlayerGame || a.pts > bestPlayerGame.pts)) bestPlayerGame = { name: a.name, team, pts: a.pts, opp: getOpponent(g), week: getField(g, 'Week', 'week'), href: matchupHref(g) }
+        })
+      })
+      const playerList = Array.from(playerMap.values())
+      const topScorer = [...playerList].sort((a, b) => b.total - a.total)[0] || null
+      const topAverage = [...playerList].filter(p => p.starts >= 6).sort((a, b) => b.total / b.starts - a.total / a.starts)[0] || null
 
       // HIGHEST SCORE
       const highestScoreGame = [...seasonGames].sort(
@@ -390,6 +490,20 @@ export default function HistoryPage() {
         championshipScore,
         championshipOpponentScore,
         championshipFinalGame: finalsWinner,
+        unicornGame: unicornLoser || null,
+        unicornOpponent: unicornLoser ? getOpponent(unicornLoser) : null,
+        unicornScore: unicornLoser ? parseNumber(getField(unicornLoser, 'PF', 'pf')) : null,
+        unicornOpponentScore: unicornLoser ? parseNumber(getField(unicornLoser, 'PA', 'pa')) : null,
+        unicornRegGames,
+        unicornConsolationGames,
+        runnerUp: getOpponent(finalsWinner) || null,
+        runnerUpLine: standingLine(getOpponent(finalsWinner)),
+        championLine: standingLine(champion),
+        third: thirdRow ? String(thirdRow?.Team || '').trim() : null,
+        thirdLine: thirdRow ? `${parseNumber(thirdRow?.W)}–${parseNumber(thirdRow?.L)} overall` : '',
+        topScorer,
+        topAverage,
+        bestPlayerGame,
         regGames,
         playoffGames,
         regCol1,
@@ -407,82 +521,92 @@ export default function HistoryPage() {
     return `${rows.filter(g => getResult(g) === 'W').length}–${rows.filter(g => getResult(g) === 'L').length}`
   }
 
+  const selectSeason = (season, nextView = 'champion') => { setOpenSeason(season); setView(nextView) }
+  const playerInfo = name => playerLookup.get(normalizePlayerKey(name)) || null
+
+  // Jogo de uma campanha: clicável, abre o confronto na Matchups.
   const RunGame = ({ g, highlight }) => (
-    <div className={`flex min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 ${highlight ? 'bg-[#FFF6D6]' : 'bg-[#F4F5F7]'}`}>
+    <Link href={g.href || '/matchups'} className={`group flex min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 transition-colors ${highlight ? 'bg-[#FFF6D6] hover:bg-[#FFEFB8]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
       <ResultBadge result={g.result} />
       <TeamLogo name={g.opp} size={20} />
       <div className="min-w-0">
-        <div className="truncate text-[12px] font-medium text-[#111]">vs {g.opp}</div>
+        <div className="truncate text-[12px] font-medium text-[#111] group-hover:text-[#D01F2D]">vs {g.opp}</div>
         <div className="text-[11px] tabular-nums text-[#6B7280]">Wk {g.week || '—'} · {Number(g.score).toFixed(1)}–{Number(g.oppScore).toFixed(1)}</div>
+      </div>
+    </Link>
+  )
+
+  const RunSection = ({ label, games: list, highlightFinal }) => list.length > 0 && (
+    <div>
+      <div className="mb-2 text-[12px] font-medium text-[#6B7280]">{label} · {list.filter(g => g.result === 'W').length}–{list.filter(g => g.result === 'L').length}</div>
+      <div className="grid grid-cols-1 gap-1.5 min-[420px]:grid-cols-2 md:grid-cols-3">
+        {list.map((g, i) => <RunGame key={i} g={g} highlight={highlightFinal && highlightFinal(g)} />)}
       </div>
     </div>
   )
 
-  const finalCard = selected && (
-    <Link href={matchupHref(selected.championshipFinalGame)} className="group mb-2 block overflow-hidden rounded-xl bg-white">
+  // Placar de um jogo decisivo (final ou jogo do unicórnio).
+  const Scoreboard = ({ href, badge, left, right, leftTag, rightTag, winnerLeft = true }) => (
+    <Link href={href} className="group mb-2 block overflow-hidden rounded-xl bg-white">
       <div className="px-3 py-4 sm:py-5">
-        <div className="mb-3 flex justify-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF2B8] px-3 py-1 text-[12px] font-medium text-[#6B5A00]">
-            <Trophy className="h-3.5 w-3.5" /> {selected.season} · Tapitas Bowl
-          </span>
-        </div>
+        <div className="mb-3 flex justify-center">{badge}</div>
         <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
-          <div className="flex flex-col items-center gap-2">
-            <TeamLogo name={selected.champion} size={48} />
-            <div className="text-center text-[14px] font-semibold leading-tight text-[#111] sm:text-[16px]">{selected.champion || '—'}</div>
-            <div className="font-bold leading-none tabular-nums text-[#111]" style={{ fontSize: 'clamp(30px, 5vw, 44px)' }}>{selected.championshipScore?.toFixed(2) ?? '—'}</div>
-            <Tag tone="gold">🏆 Champion</Tag>
-          </div>
-          <div className="flex flex-col items-center gap-1 self-center">
-            <div className="text-[14px] font-semibold text-[#9CA3AF]">VS</div>
-            <div className="text-[11px] font-bold tabular-nums text-[#6B7280]">
-              {Number.isFinite(selected.championshipScore) && Number.isFinite(selected.championshipOpponentScore) ? Math.abs(selected.championshipScore - selected.championshipOpponentScore).toFixed(2) : '—'}
+          {[[left, leftTag, winnerLeft], null, [right, rightTag, !winnerLeft]].map((cfg, i) => cfg ? (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <TeamLogo name={cfg[0].team} size={48} />
+              <div className={`text-center text-[14px] font-semibold leading-tight sm:text-[16px] ${cfg[2] ? 'text-[#111]' : 'text-[#6B7280]'}`}>{cfg[0].team || '—'}</div>
+              <div className={`font-bold leading-none tabular-nums ${cfg[2] ? 'text-[#111]' : 'text-[#9CA3AF]'}`} style={{ fontSize: 'clamp(30px, 5vw, 44px)' }}>{Number.isFinite(cfg[0].score) ? cfg[0].score.toFixed(2) : '—'}</div>
+              {cfg[1]}
             </div>
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">margin</div>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <TeamLogo name={selected.championshipOpponent} size={48} />
-            <div className="text-center text-[14px] font-semibold leading-tight text-[#6B7280] sm:text-[16px]">{selected.championshipOpponent || '—'}</div>
-            <div className="font-bold leading-none tabular-nums text-[#9CA3AF]" style={{ fontSize: 'clamp(30px, 5vw, 44px)' }}>{selected.championshipOpponentScore?.toFixed(2) ?? '—'}</div>
-            <Tag>Runner-up</Tag>
-          </div>
+          ) : (
+            <div key={i} className="flex flex-col items-center gap-1 self-center">
+              <div className="text-[14px] font-semibold text-[#9CA3AF]">VS</div>
+              <div className="text-[11px] font-bold tabular-nums text-[#6B7280]">{Number.isFinite(left.score) && Number.isFinite(right.score) ? Math.abs(left.score - right.score).toFixed(2) : '—'}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">margin</div>
+            </div>
+          ))}
         </div>
       </div>
-      <div className="border-t border-[#EEF0F2] py-2 text-center text-[12px] font-medium text-[#D01F2D] group-hover:underline">Open the final</div>
+      <div className="border-t border-[#EEF0F2] py-2 text-center text-[12px] font-medium text-[#D01F2D] group-hover:underline">Open the game</div>
     </Link>
   )
 
-  const awardsCard = selected && (
-    <CardShell title="Season awards" subtitle={`${selected.season} season`} sidebar>
-      <CardGroup label="Standings" first>
-        <StatRow href={teamHref(selected.champion)} left={<TeamLogo name={selected.champion} size={28} />} eyebrow="🏆 Champion" title={selected.champion || '—'} subtitle={`Reg. season ${selected.championRecord?.wins ?? 0}–${selected.championRecord?.losses ?? 0} · Playoffs ${selected.playoffGames.filter(g => g?.result === 'W').length}–${selected.playoffGames.filter(g => g?.result === 'L').length} · ${(selected.avgPF ?? 0).toFixed(1)} pts/wk`} />
-        <StatRow href={teamHref(selected.unicorn)} left={<TeamLogo name={selected.unicorn} size={28} />} eyebrow="🦄 Unicorn" title={selected.unicorn || '—'} subtitle={`Reg. season ${stageRecord(selected.unicorn, 'reg season')} · Consolation ${stageRecord(selected.unicorn, 'consolation')}`} />
-      </CardGroup>
-      <CardGroup label="Single games">
-        <StatRow href={matchupHref(selected.highestScoreGame)} left={<TeamLogo name={getTeam(selected.highestScoreGame)} size={28} />} eyebrow="Highest score" title={getTeam(selected.highestScoreGame) || '—'} subtitle={`vs ${getOpponent(selected.highestScoreGame) || '—'} · Wk ${getField(selected.highestScoreGame, 'Week', 'week') || '—'}`} value={parseNumber(getField(selected.highestScoreGame, 'PF', 'pf')).toFixed(2)} valueClass="text-[#1E8E3E]" />
-        <StatRow href={matchupHref(selected.worstPFGame)} left={<TeamLogo name={getTeam(selected.worstPFGame)} size={28} />} eyebrow="Lowest score" title={getTeam(selected.worstPFGame) || '—'} subtitle={`vs ${getOpponent(selected.worstPFGame) || '—'} · Wk ${getField(selected.worstPFGame, 'Week', 'week') || '—'}`} value={parseNumber(getField(selected.worstPFGame, 'PF', 'pf')).toFixed(2)} valueClass="text-[#D01F2D]" />
-        <StatRow href={matchupHref(selected.closestGame)} left={<TeamLogo name={getTeam(selected.closestGame)} size={28} />} eyebrow="Closest game" title={`${getTeam(selected.closestGame) || '—'} vs ${getOpponent(selected.closestGame) || '—'}`} subtitle={`${gameScore(selected.closestGame)} · Wk ${getField(selected.closestGame, 'Week', 'week') || '—'}`} value={gameMargin(selected.closestGame)} />
-        <StatRow href={matchupHref(selected.biggestBlowout)} left={<TeamLogo name={getTeam(selected.biggestBlowout)} size={28} />} eyebrow="Biggest win" title={`${getTeam(selected.biggestBlowout) || '—'} vs ${getOpponent(selected.biggestBlowout) || '—'}`} subtitle={`${gameScore(selected.biggestBlowout)} · Wk ${getField(selected.biggestBlowout, 'Week', 'week') || '—'}`} value={`+${gameMargin(selected.biggestBlowout)}`} />
-      </CardGroup>
-      <div className="h-2 lg:h-3" />
-    </CardShell>
+  const finalCard = selected && (
+    <Scoreboard
+      href={matchupHref(selected.championshipFinalGame)}
+      badge={<span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF2B8] px-3 py-1 text-[12px] font-medium text-[#6B5A00]"><Trophy className="h-3.5 w-3.5" /> {selected.season} · Tapitas Bowl</span>}
+      left={{ team: selected.champion, score: selected.championshipScore }}
+      right={{ team: selected.championshipOpponent, score: selected.championshipOpponentScore }}
+      leftTag={<Tag tone="gold">🏆 Champion</Tag>}
+      rightTag={<Tag>Runner-up</Tag>}
+    />
+  )
+
+  const unicornCard = selected && selected.unicornGame && (
+    <Scoreboard
+      href={matchupHref(selected.unicornGame)}
+      badge={<span className="inline-flex items-center gap-1.5 rounded-full bg-[#F3E8FF] px-3 py-1 text-[12px] font-medium text-[#6B21A8]">🦄 {selected.season} · Unicorn game</span>}
+      left={{ team: selected.unicornOpponent, score: selected.unicornOpponentScore }}
+      right={{ team: selected.unicorn, score: selected.unicornScore }}
+      leftTag={<Tag tone="green">Escaped</Tag>}
+      rightTag={<Tag tone="red">🦄 Unicorn</Tag>}
+    />
   )
 
   const runCard = selected && (
-    <CardShell title="Championship run" subtitle={`${selected.champion || '—'} · full campaign`}>
+    <CardShell title="Championship run" subtitle={`${selected.champion || '—'} · full campaign · tap a game to open it`}>
       <div className="space-y-4 p-3 lg:p-4">
-        <div>
-          <div className="mb-2 text-[12px] font-medium text-[#6B7280]">Regular season · {selected.championRecord?.wins ?? 0}–{selected.championRecord?.losses ?? 0}</div>
-          <div className="grid grid-cols-1 gap-1.5 min-[420px]:grid-cols-2 md:grid-cols-3">
-            {selected.regGames.map((g, index) => <RunGame key={`rs-${index}`} g={g} />)}
-          </div>
-        </div>
-        <div>
-          <div className="mb-2 text-[12px] font-medium text-[#6B7280]">Playoffs · {selected.playoffGames.filter(g => g?.result === 'W').length}–{selected.playoffGames.filter(g => g?.result === 'L').length}</div>
-          <div className="grid grid-cols-1 gap-1.5 min-[420px]:grid-cols-2 md:grid-cols-3">
-            {selected.playoffGames.map((g, index) => <RunGame key={`po-${index}`} g={g} highlight={getGameType(g) === 'tapitas bowl'} />)}
-          </div>
-        </div>
+        <RunSection label="Regular season" games={selected.regGames} />
+        <RunSection label="Playoffs" games={selected.playoffGames} highlightFinal={g => getGameType(g) === 'tapitas bowl'} />
+      </div>
+    </CardShell>
+  )
+
+  const unicornRunCard = selected && selected.unicorn && (
+    <CardShell title="Unicorn run" subtitle={`${selected.unicorn} · the road to the bottom · tap a game to open it`}>
+      <div className="space-y-4 p-3 lg:p-4">
+        <RunSection label="Regular season" games={selected.unicornRegGames} />
+        <RunSection label="Consolation" games={selected.unicornConsolationGames} highlightFinal={g => ['unicórnio', 'unicornio', 'unicorn'].includes(normalizeString(g.gameType))} />
       </div>
     </CardShell>
   )
@@ -506,20 +630,65 @@ export default function HistoryPage() {
     </CardShell>
   )
 
+  const playerRow = (label, p, value, onClick) => p && (
+    <StatRow
+      onClick={onClick}
+      left={<PlayerPhoto playerId={playerInfo(p.name)?.playerId} name={p.name} />}
+      eyebrow={label}
+      title={p.name}
+      subtitle={p.team}
+      value={value}
+    />
+  )
+
+  const awardsCard = selected && (
+    <CardShell title="Season awards" subtitle={`${selected.season} season`} sidebar>
+      <CardGroup label="Final standings" first>
+        <StatRow href={teamHref(selected.champion)} left={<TeamLogo name={selected.champion} size={28} />} eyebrow="🏆 Champion" title={selected.champion || '—'} subtitle={`Reg. season ${selected.championRecord?.wins ?? 0}–${selected.championRecord?.losses ?? 0} · Playoffs ${selected.playoffGames.filter(g => g?.result === 'W').length}–${selected.playoffGames.filter(g => g?.result === 'L').length}`} />
+        {selected.runnerUp && <StatRow href={teamHref(selected.runnerUp)} left={<TeamLogo name={selected.runnerUp} size={28} />} eyebrow="🥈 Runner-up" title={selected.runnerUp} subtitle={selected.runnerUpLine} />}
+        {selected.third && <StatRow href={teamHref(selected.third)} left={<TeamLogo name={selected.third} size={28} />} eyebrow="🥉 Third place" title={selected.third} subtitle={selected.thirdLine} />}
+        <StatRow onClick={() => setView('unicorn')} left={<TeamLogo name={selected.unicorn} size={28} />} eyebrow="🦄 Unicorn" title={selected.unicorn || '—'} subtitle={`Reg. season ${stageRecord(selected.unicorn, 'reg season')} · Consolation ${stageRecord(selected.unicorn, 'consolation')}`} />
+      </CardGroup>
+      <CardGroup label="Player dominance">
+        {playerRow('Most points', selected.topScorer, selected.topScorer?.total.toFixed(1), () => setProfile({ name: selected.topScorer.name, team: selected.topScorer.team }))}
+        {playerRow('Best average (6+ starts)', selected.topAverage, selected.topAverage ? (selected.topAverage.total / selected.topAverage.starts).toFixed(2) : null, () => setProfile({ name: selected.topAverage.name, team: selected.topAverage.team }))}
+        {selected.bestPlayerGame && (
+          <StatRow href={selected.bestPlayerGame.href} left={<PlayerPhoto playerId={playerInfo(selected.bestPlayerGame.name)?.playerId} name={selected.bestPlayerGame.name} />} eyebrow="Best single game" title={selected.bestPlayerGame.name} subtitle={`${selected.bestPlayerGame.team} vs ${selected.bestPlayerGame.opp} · Wk ${selected.bestPlayerGame.week}`} value={selected.bestPlayerGame.pts.toFixed(2)} valueClass="text-[#1E8E3E]" />
+        )}
+      </CardGroup>
+      <CardGroup label="Single games">
+        <StatRow href={matchupHref(selected.highestScoreGame)} left={<TeamLogo name={getTeam(selected.highestScoreGame)} size={28} />} eyebrow="Highest score" title={getTeam(selected.highestScoreGame) || '—'} subtitle={`vs ${getOpponent(selected.highestScoreGame) || '—'} · Wk ${getField(selected.highestScoreGame, 'Week', 'week') || '—'}`} value={parseNumber(getField(selected.highestScoreGame, 'PF', 'pf')).toFixed(2)} valueClass="text-[#1E8E3E]" />
+        <StatRow href={matchupHref(selected.worstPFGame)} left={<TeamLogo name={getTeam(selected.worstPFGame)} size={28} />} eyebrow="Lowest score" title={getTeam(selected.worstPFGame) || '—'} subtitle={`vs ${getOpponent(selected.worstPFGame) || '—'} · Wk ${getField(selected.worstPFGame, 'Week', 'week') || '—'}`} value={parseNumber(getField(selected.worstPFGame, 'PF', 'pf')).toFixed(2)} valueClass="text-[#D01F2D]" />
+        <StatRow href={matchupHref(selected.closestGame)} left={<TeamLogo name={getTeam(selected.closestGame)} size={28} />} eyebrow="Closest game" title={`${getTeam(selected.closestGame) || '—'} vs ${getOpponent(selected.closestGame) || '—'}`} subtitle={`${gameScore(selected.closestGame)} · Wk ${getField(selected.closestGame, 'Week', 'week') || '—'}`} value={gameMargin(selected.closestGame)} />
+        <StatRow href={matchupHref(selected.biggestBlowout)} left={<TeamLogo name={getTeam(selected.biggestBlowout)} size={28} />} eyebrow="Biggest win" title={`${getTeam(selected.biggestBlowout) || '—'} vs ${getOpponent(selected.biggestBlowout) || '—'}`} subtitle={`${gameScore(selected.biggestBlowout)} · Wk ${getField(selected.biggestBlowout, 'Week', 'week') || '—'}`} value={`+${gameMargin(selected.biggestBlowout)}`} />
+      </CardGroup>
+      <div className="h-2 lg:h-3" />
+    </CardShell>
+  )
+
+  const listRow = (s, team, isActive, onClick) => (
+    <StatRow
+      key={s.season}
+      onClick={onClick}
+      left={<TeamLogo name={team} size={24} />}
+      title={team || '—'}
+      value={s.season}
+      valueClass={isActive ? 'text-[#D01F2D]' : 'text-[#6B7280]'}
+    />
+  )
+
   const championsCard = (
     <CardShell title="Champions" subtitle="Every Tapitas League title" sidebar>
       <div className="py-1 lg:py-2">
-        {seasonData.map(s => (
-          <StatRow
-            key={s.season}
-            onClick={() => setOpenSeason(s.season)}
-            left={<TeamLogo name={s.champion} size={24} />}
-            title={s.champion || '—'}
-            subtitle={s.unicorn ? `🦄 ${s.unicorn}` : undefined}
-            value={s.season}
-            valueClass={s.season === selected?.season ? 'text-[#D01F2D]' : 'text-[#6B7280]'}
-          />
-        ))}
+        {seasonData.map(s => listRow(s, s.champion, view === 'champion' && s.season === selected?.season, () => selectSeason(s.season, 'champion')))}
+      </div>
+    </CardShell>
+  )
+
+  const unicornsCard = (
+    <CardShell title="Unicorns 🦄" subtitle="The last of every season" sidebar>
+      <div className="py-1 lg:py-2">
+        {seasonData.filter(s => s.unicorn).map(s => listRow(s, s.unicorn, view === 'unicorn' && s.season === selected?.season, () => selectSeason(s.season, 'unicorn')))}
       </div>
     </CardShell>
   )
@@ -547,19 +716,41 @@ export default function HistoryPage() {
                 </button>
               ))}
             </div>
+            <div className="hidden flex-shrink-0 items-center border-l border-[#EEF0F2] px-2 sm:flex">
+              <Segmented options={[['champion', '🏆 Champion'], ['unicorn', '🦄 Unicorn']]} value={view} onChange={setView} />
+            </div>
+          </div>
+          <div className="mb-2 sm:hidden">
+            <Tabs tabs={[['champion', '🏆 Champion story'], ['unicorn', '🦄 Unicorn story']]} value={view} onChange={setView} />
           </div>
 
           <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
-            <aside className="hidden lg:block">{championsCard}</aside>
+            <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
+              {championsCard}
+              {unicornsCard}
+            </aside>
             <div className="min-w-0">
-              {finalCard}
+              {view === 'unicorn' ? unicornCard : finalCard}
               <div className="lg:hidden">{awardsCard}</div>
-              {runCard}
+              {view === 'unicorn' ? unicornRunCard : runCard}
               {recapCard}
             </div>
-            <aside className="hidden lg:block">{awardsCard}</aside>
+            <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{awardsCard}</aside>
           </div>
         </>
+      )}
+
+      {profile && (
+        <PlayerProfileModal
+          key={`${profile.name}|${profile.team}`}
+          rawName={profile.name}
+          displayName={profile.name}
+          position={playerInfo(profile.name)?.pos}
+          playerId={playerInfo(profile.name)?.playerId}
+          games={games}
+          initialTeams={[profile.team]}
+          onClose={closeProfile}
+        />
       )}
     </PageShell>
   )

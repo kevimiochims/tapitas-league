@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
-import { SummaryButton, PageShell, PageTitle, Tabs, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
+import { SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -77,6 +77,68 @@ async function safeFetch(url) {
 }
 
 
+// ── Gráficos do painel (SVG simples, sem biblioteca) ─────────────────
+
+// Barras horizontais com escudo do time.
+function HBarChart({ rows, format = v => v, highlightTop = true, center = null }) {
+  const max = Math.max(...rows.map(r => Math.abs(r.value)), 1)
+  const span = center === null ? max : Math.max(...rows.map(r => Math.abs(r.value - center)), 1)
+  return (
+    <div className="space-y-1.5 px-3 py-3 lg:px-4">
+      {rows.map((r, i) => {
+        const positive = center === null || r.value >= center
+        const width = center === null ? (r.value / max) * 100 : (Math.abs(r.value - center) / span) * 50
+        return (
+          <a key={r.team} href={`/teams?team=${encodeURIComponent(r.team)}`} className="group grid grid-cols-[112px_minmax(0,1fr)_56px] items-center gap-2 sm:grid-cols-[150px_minmax(0,1fr)_60px]">
+            <span className="flex min-w-0 items-center gap-1.5">
+              <TeamLogo name={r.team} size={18} />
+              <span className="truncate text-[12px] font-medium text-[#111] group-hover:text-[#D01F2D]">{r.team}</span>
+            </span>
+            <span className="relative h-4 rounded bg-[#F1F2F4]">
+              {center !== null && <span className="absolute inset-y-0 left-1/2 w-px bg-[#C4C7CC]" />}
+              <span
+                className={`absolute inset-y-0 rounded ${center !== null ? (positive ? 'bg-[#1E8E3E]' : 'bg-[#D01F2D]') : highlightTop && i === 0 ? 'bg-[#B8860B]' : 'bg-[#02275F]'}`}
+                style={center === null ? { left: 0, width: `${width}%` } : positive ? { left: '50%', width: `${width}%` } : { right: '50%', width: `${width}%` }}
+              />
+            </span>
+            <span className="text-right text-[12px] font-semibold tabular-nums text-[#111]">{format(r.value)}</span>
+          </a>
+        )
+      })}
+    </div>
+  )
+}
+
+// Colunas verticais com rótulo embaixo e valor em cima.
+function ColumnChart({ data, format = v => v, height = 180, width = 640, accentIndex = -1, line = null }) {
+  const W = width, H = height, padB = 26, padT = 20, padX = 8
+  const max = Math.max(...data.map(d => d.value), ...(line ? data.map(d => d[line.key] || 0) : []), 1)
+  const bw = (W - padX * 2) / data.length
+  const y = v => padT + (1 - v / max) * (H - padT - padB)
+  const linePoints = line ? data.map((d, i) => `${padX + bw * i + bw / 2},${y(d[line.key] || 0)}`).join(' ') : ''
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" role="img">
+      {data.map((d, i) => {
+        const x = padX + bw * i + bw * 0.18
+        const w = bw * 0.64
+        return (
+          <g key={d.label}>
+            <rect x={x} y={y(d.value)} width={w} height={H - padB - y(d.value)} rx="3" fill={i === accentIndex ? '#B8860B' : '#02275F'} opacity={i === accentIndex ? 1 : 0.9} />
+            <text x={x + w / 2} y={y(d.value) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="#111">{format(d.value)}</text>
+            <text x={x + w / 2} y={H - 8} textAnchor="middle" fontSize="11" fill="#6B7280">{d.label}</text>
+          </g>
+        )
+      })}
+      {line && (
+        <>
+          <polyline points={linePoints} fill="none" stroke="#D01F2D" strokeWidth="2" strokeLinejoin="round" />
+          {data.map((d, i) => <circle key={i} cx={padX + bw * i + bw / 2} cy={y(d[line.key] || 0)} r="3" fill="#D01F2D" />)}
+        </>
+      )}
+    </svg>
+  )
+}
+
 function WinChart({ data, chartStats }) {
   const [isMobile, setIsMobile] = useState(false)
 
@@ -146,7 +208,7 @@ export default function StatsPage() {
   const [historyData, setHistoryData] = useState([])
   const [gamesData, setGamesData] = useState([])
   const [loading, setLoading] = useState(true)
-  const [section, setSection] = useState('standings')
+  const [section, setSection] = useState('overview')
   const [tab, setTab] = useState('Overall')
   const [season, setSeason] = useState('All-Time')
   const [chartTeam, setChartTeam] = useState('Moneyball')
@@ -696,6 +758,88 @@ export default function StatsPage() {
   }
 
 
+  // ── Painel (aba Overview) ───────────────────────────────────────────
+  const overview = useMemo(() => {
+    const current = new Set(allTimeData.map(r => normalizeString(r?.Team || r?.team)))
+    const singleWeek = g => !String(g?.Week || '').includes('-')
+    const rows = gamesData.filter(g => parseNumber(g?.PF) > 0 && singleWeek(g))
+
+    // Pontos por jogo e distribuição de placares (só semanas simples)
+    const perTeam = {}
+    const bins = {}
+    rows.forEach(g => {
+      const team = String(g?.Team || '').trim()
+      const pf = parseNumber(g?.PF)
+      if (current.has(normalizeString(team))) {
+        perTeam[team] = perTeam[team] || { pts: 0, games: 0 }
+        perTeam[team].pts += pf
+        perTeam[team].games += 1
+      }
+      const bin = Math.floor(pf / 20) * 20
+      bins[bin] = (bins[bin] || 0) + 1
+    })
+    const ppg = Object.entries(perTeam).map(([team, v]) => ({ team, value: v.pts / v.games })).sort((a, b) => b.value - a.value)
+    const distribution = Object.entries(bins).map(([bin, count]) => ({ label: `${bin}`, value: count })).sort((a, b) => Number(a.label) - Number(b.label))
+
+    // Pontuação média e máxima da liga por temporada
+    const bySeason = {}
+    rows.forEach(g => {
+      const s = String(g?.Season || '').trim()
+      bySeason[s] = bySeason[s] || { pts: 0, games: 0, max: 0 }
+      bySeason[s].pts += parseNumber(g?.PF)
+      bySeason[s].games += 1
+      bySeason[s].max = Math.max(bySeason[s].max, parseNumber(g?.PF))
+    })
+    const seasonScoring = Object.entries(bySeason).sort((a, b) => Number(a[0]) - Number(b[0])).map(([s, v]) => ({ label: `'${s.slice(2)}`, value: v.pts / v.games, max: v.max }))
+
+    const winPct = allTimeData.map(r => ({ team: String(r?.Team || r?.team || '').trim(), value: parseNumber(String(r?.['W%'] || '0').replace('%', '')) / (String(r?.['W%'] || '').includes('%') ? 1 : 1) }))
+      .filter(r => r.team).sort((a, b) => b.value - a.value)
+    const titles = allTimeData.map(r => ({ team: String(r?.Team || r?.team || '').trim(), value: parseNumber(r?.Titles || 0) })).filter(r => r.team && r.value > 0).sort((a, b) => b.value - a.value)
+    const playoffApps = allTimeData.map(r => ({ team: String(r?.Team || r?.team || '').trim(), value: parseNumber(r?.['Playoff Apps'] || 0) })).filter(r => r.team).sort((a, b) => b.value - a.value)
+
+    const allScores = rows.map(g => parseNumber(g?.PF))
+    const leagueAvg = allScores.length ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0
+    const games = new Set(gamesData.map(g => `${g?.Season}|${g?.Week}|${[g?.Team, g?.Opponent].sort().join('|')}`)).size
+    return { ppg, distribution, seasonScoring, winPct, titles, playoffApps, leagueAvg, maxScore: Math.max(0, ...allScores), games, over200: allScores.filter(v => v >= 200).length }
+  }, [allTimeData, gamesData])
+
+  const overviewTab = (
+    <>
+      <StatGrid className="mb-2 grid-cols-2 overflow-hidden rounded-xl sm:grid-cols-4">
+        <StatTile label="Matchups played" value={overview.games.toLocaleString()} sub="All stages" />
+        <StatTile label="League average" value={overview.leagueAvg.toFixed(1)} sub="Points per team per week" />
+        <StatTile label="Highest score ever" value={overview.maxScore.toFixed(2)} sub="Single week" valueClass="text-[#1E8E3E]" />
+        <StatTile label="200+ games" value={overview.over200} sub="Single weeks" valueClass="text-[#B8860B]" />
+      </StatGrid>
+
+      <div className="grid gap-2 lg:grid-cols-2">
+        <CardShell title="Scoring by season" subtitle="Average points per team per week · red line = highest score" className="lg:col-span-2">
+          <div className="px-2 pb-2 pt-3 lg:px-3">
+            <ColumnChart data={overview.seasonScoring} width={1200} height={220} format={v => v.toFixed(0)} line={{ key: 'max' }} accentIndex={overview.seasonScoring.reduce((best, d, i, arr) => d.value > arr[best].value ? i : best, 0)} />
+          </div>
+        </CardShell>
+
+        <CardShell title="Points per game" subtitle="All-time · single weeks">
+          <HBarChart rows={overview.ppg} format={v => v.toFixed(1)} />
+        </CardShell>
+
+        <CardShell title="Win % all-time" subtitle="Green above .500 · red below">
+          <HBarChart rows={overview.winPct} format={v => `${v.toFixed(1)}%`} center={50} />
+        </CardShell>
+
+        <CardShell title="Score distribution" subtitle="How many weekly scores fall in each 20-point range">
+          <div className="px-2 pb-2 pt-3 lg:px-3">
+            <ColumnChart data={overview.distribution} height={200} accentIndex={overview.distribution.reduce((best, d, i, arr) => d.value > arr[best].value ? i : best, 0)} />
+          </div>
+        </CardShell>
+
+        <CardShell title="Playoff appearances" subtitle={`All-time${overview.titles.length ? ` · ${overview.titles.reduce((a, t) => a + t.value, 0)} titles handed out` : ''}`}>
+          <HBarChart rows={overview.playoffApps} />
+        </CardShell>
+      </div>
+    </>
+  )
+
   const multi = (state, setter, opts, label, displayOption) => (
     <MultiFilterPill
       value={state.length ? state : ['All']}
@@ -713,9 +857,13 @@ export default function StatsPage() {
 
   return (
     <PageShell headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
-      <PageTitle title="League Stats" subtitle="Every team, every season, every stat." />
+      <PageBar title="Stats">
+        {[['overview', 'Overview'], ['standings', 'Standings'], ['evolution', 'Team Evolution'], ['games', 'Game Log']].map(([key, label]) => (
+          <BarTab key={key} active={section === key} onClick={() => setSection(key)}>{label}</BarTab>
+        ))}
+      </PageBar>
 
-      <Tabs tabs={[['standings', 'Standings'], ['evolution', 'Team Evolution'], ['games', 'Game Log']]} value={section} onChange={setSection} />
+      {section === 'overview' && (loading ? <LoadingState rows={8} /> : overviewTab)}
 
       {section === 'standings' && (
         <CardShell

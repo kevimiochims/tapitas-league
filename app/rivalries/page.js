@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, ChevronLeft, Flame, Swords } from 'lucide-react'
-import { PageShell, CardShell, FilterPill, ToggleChip, Tag, TeamLogo } from '../components/ui'
+import { PageShell, PageBar, BarTab, CardShell, FilterPill, Tag, TeamLogo, VersusPoster, TaleOfTape } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -289,6 +289,9 @@ export default function RivalriesPage() {
   const [seasonFilter, setSeasonFilter] =
     useState('ALL')
 
+  const [initialPair, setInitialPair] = useState(null)
+  const [loadFailed, setLoadFailed] = useState(false)
+
   /* =====================================================
   LOAD
   ===================================================== */
@@ -307,6 +310,7 @@ export default function RivalriesPage() {
         ])
 
       setH2hData(h2h)
+      if (!h2h.length) setLoadFailed(true)
 
       setGamesData(games)
     }
@@ -318,8 +322,7 @@ export default function RivalriesPage() {
       const params = new URLSearchParams(window.location.search)
       const paramA = params.get('teamA')
       const paramB = params.get('teamB')
-      if (paramA) setTeamFilterA(paramA)
-      if (paramB) setTeamFilterB(paramB)
+      if (paramA && paramB) setInitialPair([paramA, paramB])
     }
   }, [])
 
@@ -492,18 +495,18 @@ export default function RivalriesPage() {
   AUTO SELECT
   ===================================================== */
 
+  // Seleção inicial: par vindo da URL (ex.: link da página Teams) ou, no
+  // desktop, a rivalidade do topo da lista.
   useEffect(() => {
-    if (rivalries.length === 1) {
-      const r = rivalries[0]
-
-      const needsFlip =
-        teamFilterA !== 'ALL' && r.teamA !== teamFilterA
-
-      setSelected(needsFlip ? flipRivalry(r) : r)
-    } else {
-      setSelected(null)
+    if (!rivalries.length || selected) return
+    if (initialPair) {
+      const [a, b] = initialPair
+      const match = rivalries.find(r => [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(a)) && [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(b)))
+      setInitialPair(null)
+      if (match) { setSelected(normalizeString(match.teamA) === normalizeString(a) ? match : flipRivalry(match)); return }
     }
-  }, [teamFilterA, teamFilterB, rivalries])
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) setSelected(rivalries[0])
+  }, [rivalries, selected, initialPair])
 
   /* =====================================================
   HISTORY
@@ -584,13 +587,11 @@ export default function RivalriesPage() {
     )
   ]
 
-  const filteredHistory =
-    seasonFilter === 'ALL'
-      ? history
-      : history.filter(
-        (g) =>
-          g.Season === seasonFilter
-      )
+  // Linha do tempo: do jogo mais recente para o mais antigo.
+  const weekStart = w => parseFloat(String(w || '0').split('-')[0]) || 0
+  const filteredHistory = (seasonFilter === 'ALL' ? history : history.filter(g => g.Season === seasonFilter))
+    .slice()
+    .sort((a, b) => (Number(b.Season) - Number(a.Season)) || (weekStart(b.Week) - weekStart(a.Week)))
 
   /* =====================================================
   PARSED
@@ -708,7 +709,7 @@ export default function RivalriesPage() {
     const a = Number(scoreA)
     const b = Number(scoreB)
     if (!Number.isFinite(a) || !Number.isFinite(b)) return ''
-    return `+${Math.abs(a - b).toFixed(1).replace('.', ',')} pts`
+    return `+${Math.abs(a - b).toFixed(1).replace('.', ',')}`
   }
 
   const formatRangeWithBreak = (text) => {
@@ -739,10 +740,12 @@ export default function RivalriesPage() {
     },
     {
       label: 'Biggest Win',
-      left: biggestA ? `${biggestA.scoreA}–${biggestA.scoreB}` : '—',
-      right: biggestB ? `${biggestB.scoreA}–${biggestB.scoreB}` : '—',
-      subLeft: biggestA ? `${biggestA.season} W${biggestA.week} · ${formatMarginText(biggestA.scoreA, biggestA.scoreB)}` : '',
-      subRight: biggestB ? `${biggestB.season} W${biggestB.week} · ${formatMarginText(biggestB.scoreA, biggestB.scoreB)}` : '',
+      left: biggestA ? formatMarginText(biggestA.scoreA, biggestA.scoreB) : '—',
+      right: biggestB ? formatMarginText(biggestB.scoreA, biggestB.scoreB) : '—',
+      shareLeft: biggestA ? Math.abs(Number(biggestA.scoreA) - Number(biggestA.scoreB)) : 0,
+      shareRight: biggestB ? Math.abs(Number(biggestB.scoreA) - Number(biggestB.scoreB)) : 0,
+      subLeft: biggestA ? `${biggestA.season} W${biggestA.week} · ${biggestA.scoreA}–${biggestA.scoreB}` : '',
+      subRight: biggestB ? `${biggestB.season} W${biggestB.week} · ${biggestB.scoreA}–${biggestB.scoreB}` : '',
       leftLead: false,
       rightLead: false,
       breakArrow: false,
@@ -750,8 +753,10 @@ export default function RivalriesPage() {
     },
     {
       label: 'Best Streak',
-      left: bestA?.count ? `${bestA.result}${bestA.count}` : '—',
-      right: bestB?.count ? `${bestB.result}${bestB.count}` : '—',
+      left: bestA?.count ? `${bestA.count} W` : '—',
+      right: bestB?.count ? `${bestB.count} W` : '—',
+      shareLeft: Math.max(bestStreakLeftScore ?? 0, 0),
+      shareRight: Math.max(bestStreakRightScore ?? 0, 0),
       subLeft: bestA?.start ? `${bestA.start}${bestA.end ? ` → ${bestA.end}` : ''}` : '',
       subRight: bestB?.start ? `${bestB.start}${bestB.end ? ` → ${bestB.end}` : ''}` : '',
       leftLead: leftBestStreakLead,
@@ -787,21 +792,41 @@ export default function RivalriesPage() {
 RENDER
 ===================================================== */
 
+  const isSameRivalry = (r) => selected && (
+    (normalizeString(r.teamA) === normalizeString(selected.teamA) && normalizeString(r.teamB) === normalizeString(selected.teamB)) ||
+    (normalizeString(r.teamA) === normalizeString(selected.teamB) && normalizeString(r.teamB) === normalizeString(selected.teamA))
+  )
+
+  // Seleciona o confronto entre dois times (com `a` sempre à esquerda).
+  const pickPair = (a, b) => {
+    const pool = rivalries.filter(r => [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(a)))
+    const match = pool.find(r => [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(b))) || pool[0]
+    if (!match) return
+    setSelected(normalizeString(match.teamA) === normalizeString(a) ? match : flipRivalry(match))
+    setSeasonFilter('ALL')
+  }
+
   const selectRivalry = (r) => {
     setSelected(r)
     setSeasonFilter('ALL')
     if (typeof window !== 'undefined' && window.innerWidth < 1024) window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const isSameRivalry = (r) => selected && (
-    (normalizeString(r.teamA) === normalizeString(selected.teamA) && normalizeString(r.teamB) === normalizeString(selected.teamB)) ||
-    (normalizeString(r.teamA) === normalizeString(selected.teamB) && normalizeString(r.teamB) === normalizeString(selected.teamA))
+  const opponentsOfA = selected
+    ? rivalries.flatMap(r => normalizeString(r.teamA) === normalizeString(selected.teamA) ? [r.teamB] : normalizeString(r.teamB) === normalizeString(selected.teamA) ? [r.teamA] : []).sort()
+    : []
+
+  const heatLevel = heat => heatRank[heat] || 1
+  const HeatMeter = ({ heat }) => (
+    <span className="flex items-center gap-0.5" title={`${heat} rivalry`}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <span key={n} className={`h-2.5 w-1 rounded-full ${n <= heatLevel(heat) ? (heatLevel(heat) >= 4 ? 'bg-[#D01F2D]' : heatLevel(heat) === 3 ? 'bg-[#F59E0B]' : 'bg-[#9CA3AF]') : 'bg-[#E6E8EB]'}`} />
+      ))}
+    </span>
   )
 
-  const selectClass = 'h-9 w-full min-w-0 cursor-pointer appearance-none rounded-full bg-[#F4F5F7] pl-3 pr-8 text-[13px] font-medium text-[#111] outline-none hover:bg-[#ECEEF1]'
-
   const listCard = (
-    <CardShell title="Rivalries" subtitle={`${rivalries.length} matchups · sorted by ${sortBy === 'HEAT' ? 'heat' : sortBy === 'GAMES' ? 'games played' : 'closest record'}`}>
+    <CardShell title="Rivalries" subtitle={`${rivalries.length} matchups · sorted by ${sortBy === 'HEAT' ? 'heat' : sortBy === 'GAMES' ? 'games played' : 'closest record'}`} sidebar>
       <div className="py-1">
         {rivalries.map((r, i) => {
           const active = isSameRivalry(r)
@@ -812,7 +837,7 @@ RENDER
               key={i}
               type="button"
               onClick={() => selectRivalry(r)}
-              className={`group flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors lg:px-4 ${active ? 'bg-[#EEF3FF]' : 'hover:bg-[#F7F8FA]'}`}
+              className={`group flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors lg:px-4 ${active ? 'bg-white shadow-[inset_3px_0_0_#02275F]' : 'hover:bg-black/[0.03]'}`}
             >
               <div className="flex -space-x-1.5">
                 <TeamLogo name={r.teamA} size={26} />
@@ -820,8 +845,8 @@ RENDER
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{r.teamA} <span className="text-[#9CA3AF]">vs</span> {r.teamB}</div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#6B7280]">
-                  <HeatBadge heat={r.heat} />
+                <div className="mt-1 flex items-center gap-2 text-[11px] text-[#6B7280]">
+                  <HeatMeter heat={r.heat} />
                   <span>{r.aWins + r.bWins} games</span>
                 </div>
               </div>
@@ -838,76 +863,52 @@ RENDER
     </CardShell>
   )
 
+  const taleRows = selected ? [
+    { label: 'All-time wins', a: wA, b: wB, shareA: wA, shareB: wB },
+    ...statRows.map(row => {
+      const numA = parseNumber(String(row.left).replace(/[^\d.,-]/g, ''))
+      const numB = parseNumber(String(row.right).replace(/[^\d.,-]/g, ''))
+      const counts = row.label === 'Playoff Record'
+      return {
+        label: row.label,
+        a: row.left,
+        b: row.right,
+        shareA: row.shareLeft ?? (counts ? numA : row.leftLead ? 1 : 0),
+        shareB: row.shareRight ?? (counts ? numB : row.rightLead ? 1 : 0),
+        subA: row.subLeft,
+        subB: row.subRight,
+      }
+    }),
+  ] : []
+
+  const heatLabel = selected ? `${{ LEGENDARY: '🔥 Legendary', ELITE: 'Elite', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' }[selected.heat] || selected.heat} rivalry` : ''
+
   const detail = selected && (
     <>
-      {/* Placar histórico (mesmo padrão do placar da Matchups) */}
-      <div className="mb-2 overflow-hidden rounded-xl bg-white">
-        <div className="flex items-center justify-between px-3 pt-3 lg:px-4">
-          <button type="button" onClick={() => { setSelected(null); setTeamFilterA('ALL'); setTeamFilterB('ALL') }} className="inline-flex items-center gap-1 text-[12px] font-medium text-[#6B7280] hover:text-[#111] lg:invisible">
-            <ChevronLeft className="h-4 w-4" /> All rivalries
-          </button>
-          <HeatBadge heat={selected.heat} large />
-        </div>
-        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 px-3 pb-4 pt-2">
-          <a href={`/teams?team=${encodeURIComponent(selected.teamA)}`} className="flex flex-col items-center gap-2">
-            <TeamLogo name={selected.teamA} size={48} />
-            <span className={`text-center text-[14px] font-semibold leading-tight hover:underline sm:text-[16px] ${aLeads || !bLeads ? 'text-[#111]' : 'text-[#6B7280]'}`}>{selected.teamA}</span>
-            <span className={`font-bold leading-none tabular-nums ${aLeads ? 'text-[#111]' : 'text-[#9CA3AF]'}`} style={{ fontSize: 'clamp(40px, 7vw, 56px)' }}>{wA}</span>
-          </a>
-          <div className="flex flex-col items-center gap-1 self-center">
-            <div className="text-[14px] font-semibold text-[#9CA3AF]">VS</div>
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">all-time</div>
-            <div className="text-[11px] tabular-nums text-[#6B7280]">{wA + wB} games</div>
-          </div>
-          <a href={`/teams?team=${encodeURIComponent(selected.teamB)}`} className="flex flex-col items-center gap-2">
-            <TeamLogo name={selected.teamB} size={48} />
-            <span className={`text-center text-[14px] font-semibold leading-tight hover:underline sm:text-[16px] ${bLeads || !aLeads ? 'text-[#111]' : 'text-[#6B7280]'}`}>{selected.teamB}</span>
-            <span className={`font-bold leading-none tabular-nums ${bLeads ? 'text-[#111]' : 'text-[#9CA3AF]'}`} style={{ fontSize: 'clamp(40px, 7vw, 56px)' }}>{wB}</span>
-          </a>
-        </div>
+      <section className="mb-2 rounded-xl bg-white">
+        <VersusPoster
+          label="Head to head · all-time"
+          badge={heatLabel}
+          left={{ team: selected.teamA, value: wA }}
+          right={{ team: selected.teamB, value: wB }}
+          leftControl={<FilterPill value={selected.teamA} onChange={v => pickPair(v, selected.teamB)} options={allTeams} label="Team" neutral hideLabel tone="dark" />}
+          rightControl={<FilterPill value={selected.teamB} onChange={v => pickPair(selected.teamA, v)} options={opponentsOfA} label="Opponent" neutral hideLabel tone="dark" align="right" />}
+        />
+        <TaleOfTape leftName={selected.teamA} rightName={selected.teamB} rows={taleRows} />
         {currentStreak && (
-          <div className="flex justify-center border-t border-[#EEF0F2] py-2">
+          <div className="flex items-center justify-between gap-2 border-t border-[#EEF0F2] px-3 py-2.5 lg:px-4">
             <span className="inline-flex items-center gap-1.5 text-[12px] text-[#6B7280]">
-              <Flame className="h-3.5 w-3.5 text-[#D01F2D]" />
+              <Flame className={`h-3.5 w-3.5 ${streakTeamIsA ? 'text-[#02275F]' : 'text-[#C8102E]'}`} />
               {currentStreak.team} on a <span className="font-semibold text-[#111]">{currentStreak.result}{currentStreak.count}</span> streak
             </span>
+            <button type="button" onClick={() => setSelected(null)} className="text-[12px] font-medium text-[#6B7280] hover:text-[#111] lg:hidden">All rivalries</button>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Comparativo */}
-      <CardShell title="Head to head" subtitle="Side by side">
-        <div className="divide-y divide-[#F1F2F4]">
-          {statRows.map(row => {
-            const sub = (text) => {
-              if (!text) return null
-              if (row.greenMargin && text.includes('·')) {
-                const [a, b] = text.split('·')
-                return <>{a.trim()} · <span className="text-[#1E8E3E]">{b.trim()}</span></>
-              }
-              return row.breakArrow ? formatRangeWithBreak(text) : text
-            }
-            return (
-              <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] items-start gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)] lg:px-4">
-                <div className="min-w-0 text-left">
-                  <div className={`whitespace-nowrap text-[18px] font-bold leading-tight tabular-nums sm:text-[20px] ${row.leftLead ? 'text-[#1E8E3E]' : 'text-[#111]'}`}>{row.left}</div>
-                  {row.subLeft && <div className="mt-0.5 text-[11px] text-[#6B7280] sm:text-[12px]">{sub(row.subLeft)}</div>}
-                </div>
-                <div className="pt-1 text-center text-[11px] font-medium text-[#6B7280] sm:text-[12px]">{row.label}</div>
-                <div className="min-w-0 text-right">
-                  <div className={`whitespace-nowrap text-[18px] font-bold leading-tight tabular-nums sm:text-[20px] ${row.rightLead ? 'text-[#1E8E3E]' : 'text-[#111]'}`}>{row.right}</div>
-                  {row.subRight && <div className="mt-0.5 text-[11px] text-[#6B7280] sm:text-[12px]">{sub(row.subRight)}</div>}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </CardShell>
-
-      {/* Linha do tempo */}
       <CardShell
         title="Rivalry timeline"
-        subtitle={`${filteredHistory.length} game${filteredHistory.length === 1 ? '' : 's'}`}
+        subtitle={`${filteredHistory.length} game${filteredHistory.length === 1 ? '' : 's'} · newest first`}
         action={<FilterPill value={seasonFilter === 'ALL' ? 'All' : seasonFilter} onChange={v => setSeasonFilter(v === 'All' ? 'ALL' : v)} options={['All', ...seasons.filter(s => s !== 'ALL')]} label="Season" allLabel="All seasons" />}
         withMenus
       >
@@ -918,6 +919,7 @@ RENDER
             const loser = won ? g.Opponent : g.Team
             const winnerScore = won ? parseNumber(g.PF) : parseNumber(g.PA)
             const loserScore = won ? parseNumber(g.PA) : parseNumber(g.PF)
+            const winnerIsA = normalizeString(winner) === normalizeString(selected.teamA)
             const isPlayoff = g.GameStage && g.GameStage !== 'Reg Season'
             const gameType = String(g.GameType || g.GameStage || '').trim()
             const typeKey = normalizeString(gameType)
@@ -928,7 +930,8 @@ RENDER
               : <Tag tone="navy">{gameType}</Tag>
             const href = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(g.Team)}&opp=${encodeURIComponent(g.Opponent)}`
             return (
-              <a key={i} href={href} className="grid grid-cols-[84px_minmax(0,1fr)] items-center gap-3 border-b border-[#F1F2F4] px-3 py-2.5 transition-colors last:border-b-0 hover:bg-[#F7F8FA] lg:px-4">
+              <a key={i} href={href} className="grid grid-cols-[6px_84px_minmax(0,1fr)] items-center gap-3 border-b border-[#F1F2F4] py-2.5 pr-3 transition-colors last:border-b-0 hover:bg-[#F7F8FA] lg:pr-4">
+                <span className={`h-full min-h-[40px] w-[3px] rounded-r ${winnerIsA ? 'bg-[#02275F]' : 'bg-[#C8102E]'}`} />
                 <div>
                   <div className="text-[13px] font-semibold text-[#111]">{g.Season}</div>
                   <div className="text-[11px] text-[#6B7280]">Week {g.Week}</div>
@@ -956,37 +959,15 @@ RENDER
   )
 
   return (
-    <PageShell>
-      {/* Seletor de times + ordenação */}
-      <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl bg-white p-2 sm:p-2.5">
-        <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <label className="relative min-w-0">
-            <span className="sr-only">Team</span>
-            <select value={teamFilterA} onChange={(e) => { setTeamFilterA(e.target.value); setSelected(null) }} className={selectClass}>
-              <option value="ALL">Any team</option>
-              {allTeams.map((team) => <option key={team} value={team}>{team}</option>)}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B7280]" />
-          </label>
-          <span className="text-[12px] text-[#9CA3AF]">vs</span>
-          <label className="relative min-w-0">
-            <span className="sr-only">Opponent</span>
-            <select value={teamFilterB} onChange={(e) => { setTeamFilterB(e.target.value); setSelected(null) }} className={selectClass}>
-              <option value="ALL">Any opponent</option>
-              {allTeams.map((team) => <option key={team} value={team}>{team}</option>)}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B7280]" />
-          </label>
-        </div>
-        <div className="flex gap-1.5">
-          {[['HEAT', '🔥 Heat'], ['GAMES', 'Games'], ['CLOSEST', 'Closest']].map(([value, label]) => (
-            <ToggleChip key={value} active={sortBy === value} onClick={() => setSortBy(value)}>{label}</ToggleChip>
-          ))}
-        </div>
-      </div>
+    <PageShell loading={!h2hData.length && !loadFailed}>
+      <PageBar title="Rivalries">
+        {[['HEAT', '🔥 Heat'], ['GAMES', 'Most games'], ['CLOSEST', 'Closest']].map(([value, label]) => (
+          <BarTab key={value} active={sortBy === value} onClick={() => setSortBy(value)}>{label}</BarTab>
+        ))}
+      </PageBar>
 
-      <div className="lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[380px_minmax(0,1fr)] xl:gap-5">
-        <div className={selected ? 'hidden lg:block' : ''}>{listCard}</div>
+      <div className="lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-5">
+        <aside className={`lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] ${selected ? 'hidden lg:block' : ''}`}>{listCard}</aside>
         <div className="min-w-0">
           {detail || (
             <div className="hidden min-h-[320px] flex-col items-center justify-center rounded-xl bg-white text-center lg:flex">

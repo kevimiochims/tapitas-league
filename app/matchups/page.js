@@ -1336,7 +1336,7 @@ function MatchupsPageContent() {
 
             {/* Grid: recap | matchup | power ranking */}
             <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
-              <aside className="hidden lg:block">{recapCard}</aside>
+              <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{recapCard}</aside>
 
               <div className="min-w-0">
                 {/* Painéis no mobile/tablet */}
@@ -1726,7 +1726,7 @@ function MatchupsPageContent() {
             )}
               </div>
 
-              <aside className="hidden lg:block">{powerCard}</aside>
+              <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{powerCard}</aside>
             </div>
           </>
         )}

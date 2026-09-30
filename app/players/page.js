@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronLeft, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
-import { PageShell, PageTitle, Tabs, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
+import { PageShell, PageBar, BarTab, LeaderCard, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 
 const BASE_URL = '/api/sheet'
@@ -687,6 +687,20 @@ export default function PlayersPage() {
     return sorted
   }, [games, gameAppearances, players, playerLookup, search, position, teamFilter, season, performanceSort, performanceIncludeDoubleWeeks])
 
+  // Vitrine do Top Performances: pódio e melhor jogo por posição (sempre por pontos, respeitando os filtros)
+  const performanceShowcase = useMemo(() => {
+    const byPts = [...performanceRows].sort((a, b) => b.pts - a.pts)
+    const bestOf = (filter) => byPts.find(filter) || null
+    return {
+      podium: byPts.slice(0, 3),
+      max: byPts[0]?.pts || 0,
+      positions: [
+        ...['QB', 'RB', 'WR', 'TE', 'K'].map(pos => ({ label: pos, row: bestOf(r => r.position === pos) })),
+        { label: 'Bench', row: bestOf(r => r.status && r.status !== 'Starter') },
+      ],
+    }
+  }, [performanceRows])
+
   const consolidatedPageSize = 15
   const consolidatedTotalPages = Math.max(1, Math.ceil(filtered.length / consolidatedPageSize))
   const visibleConsolidatedRows = useMemo(() => {
@@ -749,13 +763,99 @@ export default function PlayersPage() {
 
   return (
     <PageShell loading={loading}>
-      <PageTitle title="Players" subtitle="Every player who has left a mark on the Tapitas League." />
+      <PageBar title="Players">
+        <BarTab active={archiveView === 'consolidated'} onClick={() => setArchiveView('consolidated')}>Player Archive</BarTab>
+        <BarTab active={archiveView === 'performances'} onClick={() => setArchiveView('performances')}>Top Performances</BarTab>
+      </PageBar>
 
-      <Tabs
-        tabs={[['consolidated', 'Player Archive'], ['performances', 'Top Performances']]}
-        value={archiveView}
-        onChange={setArchiveView}
-      />
+      {/* Líderes do recorte atual (respeitam os filtros da tabela) */}
+      {archiveView === 'consolidated' && filtered.length > 0 && (
+        <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { title: 'Most appearances', icon: Users, accent: 'bg-[#EEF3FF] text-[#02275F]', list: [...filtered].sort((a, b) => b.appearances - a.appearances), value: p => p.appearances },
+            { title: 'Best average (10+ apps)', icon: TrendingUp, accent: 'bg-[#E8F5EC] text-[#1E8E3E]', list: [...filtered].filter(p => p.appearances >= 10).sort((a, b) => b.avg - a.avg), value: p => p.avg.toFixed(2) },
+            { title: 'Best single game', icon: Flame, accent: 'bg-[#FFF2B8] text-[#8D6A00]', list: [...filtered].sort((a, b) => b.best - a.best), value: p => p.best.toFixed(2) },
+            { title: 'Most starts', icon: Star, accent: 'bg-[#FDECEE] text-[#D01F2D]', list: [...filtered].sort((a, b) => b.starts - a.starts), value: p => p.starts },
+          ].map(card => {
+            const [first, ...rest] = card.list.slice(0, 5)
+            return (
+              <LeaderCard
+                key={card.title}
+                title={card.title}
+                icon={card.icon}
+                accentClass={card.accent}
+                leader={first && {
+                  avatar: <PlayerAvatar name={first.rawName} playerLookup={playerLookup} size={44} />,
+                  name: first.name,
+                  badge: <PositionBadge position={first.position} />,
+                  sub: `${first.appearances} apps · ${formatSeasonList(Array.from(first.seasons))}`,
+                  value: card.value(first),
+                  onClick: () => setSelected(first),
+                }}
+                others={rest.map(p => ({ key: p.identityKey, avatar: <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={22} />, name: p.name, value: card.value(p), onClick: () => setSelected(p) }))}
+              />
+            )
+          })}
+        </div>
+      )}
+
+      {archiveView === 'performances' && performanceShowcase.podium.length > 0 && (
+        <>
+          <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+            {performanceShowcase.podium.map((g, i) => {
+              const first = i === 0
+              return (
+                <a
+                  key={`${g.identityKey}-${g.season}-${g.week}-${i}`}
+                  href={g.href}
+                  className={`group relative flex items-center gap-4 overflow-hidden rounded-xl p-4 transition-shadow hover:shadow-md ${first ? 'bg-[#02275F] text-white' : 'bg-white text-[#111]'}`}
+                >
+                  <span className={`absolute right-3 top-2 text-[64px] font-black italic leading-none tabular-nums ${first ? 'text-white/10' : 'text-[#02275F]/[0.06]'}`}>{i + 1}</span>
+                  <div className={`flex-shrink-0 rounded-full p-0.5 ${first ? 'bg-[#B8860B]' : i === 1 ? 'bg-[#C0C4CC]' : 'bg-[#C98A55]'}`}>
+                    <PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={first ? 76 : 64} />
+                  </div>
+                  <div className="relative min-w-0 flex-1">
+                    <div className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${first ? 'text-[#E8C766]' : 'text-[#6B7280]'}`}>{first ? 'Top performance' : `#${i + 1} performance`}</div>
+                    <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                      <span className={`truncate text-[15px] font-semibold ${first ? '' : 'group-hover:text-[#D01F2D]'}`}>{g.name}</span>
+                      <PositionBadge position={g.position} />
+                    </div>
+                    <div className="mt-1 flex items-baseline gap-1">
+                      <span className="text-[32px] font-bold leading-none tabular-nums">{g.pts.toFixed(2)}</span>
+                      <span className={`text-[12px] ${first ? 'text-white/70' : 'text-[#6B7280]'}`}>pts</span>
+                    </div>
+                    <div className={`mt-1.5 flex min-w-0 items-center gap-1.5 text-[12px] ${first ? 'text-white/80' : 'text-[#6B7280]'}`}>
+                      <TeamLogo name={g.team} size={16} />
+                      <span className="truncate">{shortName(g.team)} vs {shortName(g.opponent)} · {g.season} W{g.week}</span>
+                    </div>
+                  </div>
+                </a>
+              )
+            })}
+          </div>
+
+          <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+            {performanceShowcase.positions.map(({ label, row }) => (
+              <a key={label} href={row?.href} className="group flex flex-col rounded-xl bg-white p-3 transition-shadow hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">Best {label}</span>
+                  {label === 'Bench' ? <Tag>Bench</Tag> : <PositionBadge position={label} />}
+                </div>
+                {row ? (
+                  <div className="mt-2.5 flex items-center gap-2.5">
+                    <PlayerAvatar name={row.rawName} playerLookup={playerLookup} size={40} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{row.name}</div>
+                      <div className="truncate text-[11px] text-[#6B7280]">{row.season} W{row.week} · {shortName(row.team)}</div>
+                    </div>
+                    <span className="flex-shrink-0 text-[18px] font-bold tabular-nums text-[#111]">{row.pts.toFixed(1)}</span>
+                  </div>
+                ) : <div className="mt-2.5 py-2 text-[12px] text-[#9CA3AF]">No data</div>}
+              </a>
+            ))}
+          </div>
+        </>
+      )}
 
       <CardShell
         title={archiveView === 'consolidated' ? `${filtered.length} players` : `${performanceRows.length} performances`}
@@ -790,6 +890,7 @@ export default function PlayersPage() {
               <table className="w-full min-w-[760px]">
                 <thead>
                   <tr className="border-b border-[#EEF0F2]">
+                    <th className={`${th} w-10`}>#</th>
                     <th className={th}>Player</th>
                     <th className={th}>Franchises</th>
                     {[['Apps', 'appearances'], ['Starts', 'starts'], ['Avg pts', 'avg'], ['Best', 'best']].map(([label, key]) => (
@@ -801,8 +902,9 @@ export default function PlayersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleConsolidatedRows.map(p => (
+                  {visibleConsolidatedRows.map((p, i) => (
                     <tr key={p.identityKey} onClick={() => setSelected(p)} className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
+                      <td className={`${td} text-[13px] font-semibold tabular-nums text-[#9CA3AF]`}>{consolidatedPage * consolidatedPageSize + i + 1}</td>
                       <td className={td}>
                         <div className="flex min-w-0 items-center gap-2.5">
                           <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={34} />
@@ -823,7 +925,7 @@ export default function PlayersPage() {
                       <td className={`${td} whitespace-nowrap text-[12px] text-[#6B7280]`}>{formatSeasonList(Array.from(p.seasons))}</td>
                     </tr>
                   ))}
-                  {filtered.length === 0 && <tr><td colSpan="7" className="py-12 text-center text-[13px] text-[#6B7280]">No players found</td></tr>}
+                  {filtered.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-[13px] text-[#6B7280]">No players found</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -835,6 +937,7 @@ export default function PlayersPage() {
               <table className="w-full min-w-[820px]">
                 <thead>
                   <tr className="border-b border-[#EEF0F2]">
+                    <th className={`${th} w-10`}>#</th>
                     <th className={th}>Player</th>
                     <th className={th}><SortHeader label="Season" active={performanceSort.key === 'season'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('season')} /></th>
                     <th className={th}><SortHeader label="Week" active={performanceSort.key === 'week'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('week')} /></th>
@@ -854,6 +957,7 @@ export default function PlayersPage() {
                       tabIndex={0}
                       className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] focus:bg-[#F7F8FA] focus:outline-none"
                     >
+                      <td className={`${td} text-[13px] font-semibold tabular-nums text-[#9CA3AF]`}>{performancePage * performancePageSize + i + 1}</td>
                       <td className={td}>
                         <div className="flex min-w-0 items-center gap-2.5">
                           <PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={34} />
@@ -872,13 +976,16 @@ export default function PlayersPage() {
                       </td>
                       <td className={`${td} whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-[#111]`}>
                         {g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1"><Tag>DW</Tag></span>}
+                        <div className="ml-auto mt-1 h-1 w-20 overflow-hidden rounded-full bg-[#EEF0F2]">
+                          <div className="ml-auto h-full rounded-full bg-[#02275F]" style={{ width: `${performanceShowcase.max > 0 ? Math.max(0, g.pts) / performanceShowcase.max * 100 : 0}%` }} />
+                        </div>
                       </td>
                       <td className={td}><Tag tone={g.status === 'Starter' ? 'green' : undefined}>{g.status}</Tag></td>
                       <td className={td}><ResultBadge result={g.result} /></td>
                       <td className={`${td} text-[12px] text-[#6B7280]`}>{g.stage || '—'}</td>
                     </tr>
                   ))}
-                  {performanceRows.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-[13px] text-[#6B7280]">No performances found</td></tr>}
+                  {performanceRows.length === 0 && <tr><td colSpan="9" className="py-12 text-center text-[13px] text-[#6B7280]">No performances found</td></tr>}
                 </tbody>
               </table>
             </div>

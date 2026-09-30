@@ -117,6 +117,31 @@ export function PageTitle({ title, subtitle, right }) {
   )
 }
 
+// Barra da página: nome à esquerda + controles da página (temporadas, abas,
+// categorias) + ações à direita. Todas as páginas começam com ela.
+export function PageBar({ title, children, right, className = '' }) {
+  return (
+    <div className={`relative z-20 mb-2 flex items-stretch rounded-xl bg-white ${className}`}>
+      {title && <h1 className="flex flex-shrink-0 items-center border-r border-[#EEF0F2] px-3 text-[14px] font-bold text-[#111]">{title}</h1>}
+      <div className="scroll-hide flex min-w-0 flex-1 items-stretch overflow-x-auto">{children}</div>
+      {right && <div className="flex flex-shrink-0 items-center gap-1.5 border-l border-[#EEF0F2] px-2">{right}</div>}
+    </div>
+  )
+}
+
+// Item da PageBar (sublinhado vermelho quando ativo).
+export function BarTab({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 text-[13px] tabular-nums transition-colors ${active ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}
+    >
+      {children}
+    </button>
+  )
+}
+
 // ── Cards ───────────────────────────────────────────────────────────
 // `withMenus`: cards com dropdowns não podem cortar o overflow, então o
 // corpo arredonda os próprios cantos de baixo.
@@ -494,6 +519,132 @@ export function TeamLogo({ name, size = 22 }) {
   return (
     <div className="flex flex-shrink-0 items-center justify-center rounded-full bg-[#16274F] font-semibold text-white" style={{ width: size, height: size, fontSize: Math.max(8, size * 0.34) }}>
       {initials}
+    </div>
+  )
+}
+
+
+// ── Versus (rivalidades) ────────────────────────────────────────────
+// Pôster dividido na diagonal: time da esquerda no azul da marca, time da
+// direita no vermelho do logo.
+export function VersusPoster({ label, badge, left, right, leftControl, rightControl }) {
+  const side = (t, control) => (
+    <div className="flex min-w-0 flex-col items-center gap-2">
+      {control}
+      {t?.team && (
+        <a href={t.href || `/teams?team=${encodeURIComponent(t.team)}`} className="flex min-w-0 flex-col items-center gap-1.5">
+          <span className="rounded-full bg-white p-1.5 shadow-lg"><TeamLogo name={t.team} size={52} /></span>
+          {!control && <span className="max-w-full truncate text-center text-[13px] font-semibold">{t.team}</span>}
+          <span className="text-[56px] font-bold leading-none tabular-nums">{t.value}</span>
+        </a>
+      )}
+    </div>
+  )
+  return (
+    <div className="relative z-10 text-white">
+      {/* Fundo recortado à parte para que os menus dos seletores possam sair do pôster */}
+      <div className="absolute inset-0 overflow-hidden rounded-t-xl">
+        <div className="absolute inset-0 bg-[#02275F]" />
+        <div className="absolute inset-0 bg-[#C8102E]" style={{ clipPath: 'polygon(56% 0, 100% 0, 100% 100%, 44% 100%)' }} />
+        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 14px)' }} />
+      </div>
+      <div className="relative flex items-center justify-between gap-2 px-3 pt-3 lg:px-4">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80">{label}</span>
+        {badge && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold">{badge}</span>}
+      </div>
+      <div className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 pb-5 pt-3 lg:px-4">
+        {side(left, leftControl)}
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[15px] font-black italic text-[#111] shadow-lg">VS</div>
+        {side(right, rightControl)}
+      </div>
+    </div>
+  )
+}
+
+// "Tale of the tape": comparação lado a lado com barra nas cores do pôster.
+// rows: { label, a, b, shareA, shareB, subA, subB }
+export function TaleOfTape({ leftName, rightName, rows }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2 px-3 pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7280] lg:px-4">
+        <span className="truncate text-[#02275F]">{leftName}</span>
+        <span className="flex-shrink-0">Tale of the tape</span>
+        <span className="truncate text-right text-[#C8102E]">{rightName}</span>
+      </div>
+      <div className="space-y-3 px-3 py-3 lg:px-4">
+        {rows.map(row => {
+          const total = (row.shareA || 0) + (row.shareB || 0)
+          const pctA = total > 0 ? (row.shareA / total) * 100 : 50
+          return (
+            <div key={row.label}>
+              <div className="flex items-baseline justify-between gap-2 text-[14px] font-bold tabular-nums">
+                <span className={total > 0 && row.shareA >= row.shareB ? 'text-[#02275F]' : 'text-[#9CA3AF]'}>{row.a}</span>
+                <span className="text-center text-[11px] font-medium text-[#6B7280]">{row.label}</span>
+                <span className={total > 0 && row.shareB >= row.shareA ? 'text-[#C8102E]' : 'text-[#9CA3AF]'}>{row.b}</span>
+              </div>
+              <div className="mt-1 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
+                {total > 0 ? (
+                  <>
+                    <div className="rounded-l-full bg-[#02275F]" style={{ width: `${pctA}%` }} />
+                    <div className="flex-1 rounded-r-full bg-[#C8102E]" />
+                  </>
+                ) : <div className="flex-1 rounded-full bg-[#E6E8EB]" />}
+              </div>
+              {(row.subA || row.subB) && (
+                <div className="mt-1 flex justify-between gap-2 text-[11px] text-[#6B7280]">
+                  <span className="truncate">{row.subA}</span>
+                  <span className="truncate text-right">{row.subB}</span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Card de líderes (estilo "stat leaders") ─────────────────────────
+// Líder em destaque + 2º ao 5º em lista compacta.
+// entry: { key, avatar, name, badge, sub, value, href, onClick }
+export function LeaderCard({ title, icon: Icon, accentClass = 'bg-[#EEF3FF] text-[#02275F]', leader, others = [], className = '' }) {
+  const Wrap = ({ entry, className: cls, children }) => entry?.href
+    ? <a href={entry.href} className={cls}>{children}</a>
+    : entry?.onClick ? <button type="button" onClick={entry.onClick} className={`w-full text-left ${cls}`}>{children}</button>
+      : <div className={cls}>{children}</div>
+  return (
+    <div className={`flex flex-col overflow-hidden rounded-xl bg-white ${className}`}>
+      <div className="flex items-center gap-2 px-3 pt-3 sm:px-4">
+        {Icon && <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${accentClass}`}><Icon className="h-3.5 w-3.5" /></span>}
+        <span className="text-[13px] font-semibold leading-tight text-[#111]">{title}</span>
+      </div>
+      {leader ? (
+        <Wrap entry={leader} className="group flex items-center gap-3 px-3 pb-3 pt-3 transition-colors hover:bg-[#F7F8FA] sm:px-4">
+          <span className="flex-shrink-0">{leader.avatar}</span>
+          <span className="min-w-0 flex-1">
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate text-[14px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{leader.name}</span>
+              {leader.badge}
+            </span>
+            {leader.sub && <span className="mt-0.5 block truncate text-[11px] text-[#6B7280]">{leader.sub}</span>}
+          </span>
+          <span className="flex-shrink-0 text-[26px] font-bold leading-none tabular-nums text-[#111]">{leader.value}</span>
+        </Wrap>
+      ) : (
+        <div className="px-3 py-6 text-center text-[12px] text-[#9CA3AF] sm:px-4">No data</div>
+      )}
+      {others.length > 0 && (
+        <div className="mt-auto border-t border-[#F1F2F4]">
+          {others.map((o, i) => (
+            <Wrap key={o.key || i} entry={o} className="group flex items-center gap-2 px-3 py-1.5 transition-colors hover:bg-[#F7F8FA] sm:px-4">
+              <span className="w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums text-[#9CA3AF]">{i + 2}</span>
+              {o.avatar}
+              <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[#3F4757] group-hover:text-[#D01F2D]">{o.name}</span>
+              <span className="flex-shrink-0 text-[12px] font-semibold tabular-nums text-[#111]">{o.value}</span>
+            </Wrap>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

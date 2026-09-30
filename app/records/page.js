@@ -1,9 +1,9 @@
 'use client'
 import Link from 'next/link'
-import { PageShell, PageTitle, LoadingState, TeamLogo, PositionBadge as UiPositionBadge } from '../components/ui'
+import { PageShell, PageBar, BarTab, LeaderCard, LoadingState, TeamLogo, PositionBadge as UiPositionBadge } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Flame, Swords, Activity, Users, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull } from 'lucide-react'
+import { Trophy, Flame, Swords, Activity, Users, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull, RotateCw } from 'lucide-react'
 
 const BASE_URL = '/api/sheet'
 
@@ -212,100 +212,127 @@ const RECORD_ACCENTS = {
   slate: 'bg-[#F1F2F4] text-[#3F4757]',
 }
 
-function RecordCard({ label, value, sub, sub2, sub2Href, subHref, subItems, accent, icon: Icon, top5, wide, team, player }) {
-  const [expanded, setExpanded] = useState(false)
-  const accentClass = RECORD_ACCENTS[accent] || RECORD_ACCENTS.slate
+// Card de recorde no formato "stat leaders": líder em destaque e 2º–5º embaixo.
+// Raridade da carta conforme o tipo de recorde.
+const RARITY = {
+  gold: { name: 'Legendary', symbol: '★', frame: 'linear-gradient(135deg, #F5C518 0%, #B8860B 55%, #F5D76E 100%)', text: 'text-[#8D6A00]' },
+  cyan: { name: 'Epic', symbol: '●', frame: 'linear-gradient(135deg, #02275F 0%, #3B5B9A 60%, #02275F 100%)', text: 'text-[#02275F]' },
+  purple: { name: 'Epic', symbol: '●', frame: 'linear-gradient(135deg, #02275F 0%, #3B5B9A 60%, #02275F 100%)', text: 'text-[#02275F]' },
+  emerald: { name: 'Rare', symbol: '◆', frame: 'linear-gradient(135deg, #C9CED6 0%, #7C8594 55%, #DDE1E7 100%)', text: 'text-[#4B5563]' },
+  orange: { name: 'Rare', symbol: '◆', frame: 'linear-gradient(135deg, #C9CED6 0%, #7C8594 55%, #DDE1E7 100%)', text: 'text-[#4B5563]' },
+  red: { name: 'Infamous', symbol: '✕', frame: 'linear-gradient(135deg, #D01F2D 0%, #7A0F1D 60%, #D01F2D 100%)', text: 'text-[#B3171F]' },
+  slate: { name: 'Infamous', symbol: '✕', frame: 'linear-gradient(135deg, #D01F2D 0%, #7A0F1D 60%, #D01F2D 100%)', text: 'text-[#B3171F]' },
+}
+
+// Carta colecionável: frente com o detentor do recorde, verso com o top 5.
+function RecordCard({ label, value, sub, sub2, subHref, sub2Href, subItems, accent, icon: Icon, top5, team, player }) {
+  const [flipped, setFlipped] = useState(false)
+  const rarity = RARITY[accent] || RARITY.slate
   const subArr = Array.isArray(sub) ? sub.filter(Boolean) : sub ? [sub] : []
   const teamArr = Array.isArray(team) ? team.filter(Boolean) : team ? [team] : []
   const hasPlayers = Array.isArray(player) && player.length > 0
+  const items = Array.isArray(subItems) && subItems.length > 0 ? subItems : null
+  const holders = hasPlayers ? player.slice(0, 3) : teamArr.slice(0, 3)
+
+  const holderName = items ? items.map(i => i.text).join(', ') : subArr.join(', ') || '—'
+  const holderMeta = (items ? items.map(i => i.meta).filter(Boolean).join(' · ') : '') || (label === 'Most Rostered' || label === 'Most Started' ? '' : sub2 || '')
+  const holderBadge = items && items.length === 1 && items[0].position ? <PositionBadge position={items[0].position} /> : null
+  const holderHref = items?.[0]?.href || subHref || sub2Href || (teamArr.length === 1 ? teamHref(teamArr[0]) : undefined)
+  const rows = Array.isArray(top5) ? top5.slice(0, 5) : []
+  const canFlip = rows.length > 1
+  const bigSize = holders.length > 1 ? 52 : 72
+
+  const face = 'absolute inset-0 rounded-[14px] p-[5px] [backface-visibility:hidden]'
+  const toggle = () => { if (canFlip) setFlipped(f => !f) }
+  const stop = e => e.stopPropagation()
 
   return (
-    <div className={`flex flex-col overflow-hidden rounded-xl bg-white ${wide ? 'sm:col-span-2' : ''}`}>
-      <div className="flex min-h-[148px] flex-1 flex-col p-3 sm:p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            {Icon && <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${accentClass}`}><Icon className="h-3.5 w-3.5" /></span>}
-            <span className="text-[13px] font-semibold leading-tight text-[#111]">{label}</span>
+    <div
+      className={`h-[268px] [perspective:1200px] ${canFlip ? 'cursor-pointer' : ''}`}
+      onClick={toggle}
+      onKeyDown={e => { if (canFlip && (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); toggle() } }}
+      role={canFlip ? 'button' : undefined}
+      tabIndex={canFlip ? 0 : undefined}
+      aria-label={canFlip ? `${label}: show top 5` : undefined}
+    >
+      <div
+        className="relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d]"
+        style={{ transform: flipped ? 'rotateY(180deg)' : 'none' }}
+      >
+        {/* Frente */}
+        <div className={face} style={{ background: rarity.frame }}>
+          <div className="flex h-full flex-col rounded-[10px] bg-white px-3 pb-3 pt-2.5 text-center">
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] font-bold tracking-[0.14em] ${rarity.text}`}>{rarity.symbol} {rarity.name.toUpperCase()}</span>
+              {Icon && <Icon className={`h-3.5 w-3.5 ${rarity.text}`} />}
+            </div>
+            <div className="flex flex-1 flex-col items-center justify-center">
+              <div className="flex justify-center -space-x-3">
+                {holders.length === 0 && <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#F4F5F7] text-[#9CA3AF]">—</span>}
+                {holders.map((h, i) => hasPlayers
+                  ? <span key={i} className="rounded-full bg-white p-0.5 shadow"><PlayerPhotoLarge playerId={h.playerId} name={h.name} size={bigSize} /></span>
+                  : <span key={i} className="rounded-full bg-white p-1 shadow"><TeamLogo name={h} size={bigSize - 8} /></span>)}
+              </div>
+              {holderHref
+                ? <a href={holderHref} onClick={stop} className="mt-2 flex max-w-full items-center justify-center gap-1.5 text-[13px] font-semibold leading-tight text-[#111] hover:text-[#D01F2D]"><span className="line-clamp-2">{holderName}</span>{holderBadge}</a>
+                : <div className="mt-2 flex max-w-full items-center justify-center gap-1.5 text-[13px] font-semibold leading-tight text-[#111]"><span className="line-clamp-2">{holderName}</span>{holderBadge}</div>}
+              {holderMeta && <div className="mt-0.5 max-w-full truncate text-[11px] text-[#6B7280]">{holderMeta}</div>}
+              <div className="mt-3 text-[32px] font-bold leading-none tabular-nums tracking-tight text-[#111]">{value ?? '—'}</div>
+              <div className="mt-1 text-[12px] font-medium text-[#6B7280]">{label}</div>
+            </div>
+            {canFlip && (
+              <div className="inline-flex items-center justify-center gap-1 text-[10px] font-medium text-[#9CA3AF]">
+                <RotateCw className="h-3 w-3" /> Tap for top 5
+              </div>
+            )}
           </div>
-          {hasPlayers ? (
-            <div className="flex flex-shrink-0 -space-x-2">
-              {player.map((item, i) => <PlayerAvatar key={`${item.playerId || item.name}-${i}`} playerId={item.playerId} name={item.name} size="md" />)}
-            </div>
-          ) : teamArr.length > 0 && (
-            <div className="flex flex-shrink-0 -space-x-2">
-              {teamArr.map((teamName, i) => (
-                <Link key={`${teamName}-${i}`} href={teamHref(teamName)} aria-label={`Open ${teamName}`}><TeamAvatar team={teamName} size="md" /></Link>
-              ))}
-            </div>
-          )}
         </div>
 
-        <div className="mt-3 text-[32px] font-bold leading-none tabular-nums tracking-tight text-[#111] sm:text-[36px]">{value ?? '—'}</div>
-
-        {(subArr.length > 0 || (Array.isArray(subItems) && subItems.length > 0) || sub2) && (
-          <div className="mt-auto pt-2.5">
-            {Array.isArray(subItems) && subItems.length > 0
-              ? subItems.map((item, i) => {
-                  const content = (
-                    <>
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        <span className="min-w-0 truncate">{item?.text || ''}</span>
-                        {item?.position && <PositionBadge position={item.position} />}
-                      </span>
-                      {item?.meta && <span className="mt-0.5 block truncate text-[11px] font-normal text-[#6B7280]">{item.meta}</span>}
-                    </>
-                  )
-                  return item?.href
-                    ? <Link key={i} href={item.href} className="block text-[13px] font-medium leading-tight text-[#111] hover:text-[#D01F2D]">{content}</Link>
-                    : <div key={i} className="text-[13px] font-medium leading-tight text-[#111]">{content}</div>
-                })
-              : subArr.map((text, i) => subHref
-                  ? <Link key={i} href={subHref} className="block text-[13px] font-medium leading-tight text-[#111] hover:text-[#D01F2D]">{text}</Link>
-                  : <div key={i} className="text-[13px] font-medium leading-tight text-[#111]">{text}</div>)}
-            {sub2 && !(label === 'Most Rostered' || label === 'Most Started') && (sub2Href
-              ? <Link href={sub2Href} className="mt-0.5 block text-[11px] text-[#6B7280] hover:text-[#D01F2D]">{sub2}</Link>
-              : <div className="mt-0.5 text-[11px] text-[#6B7280]">{sub2}</div>)}
-          </div>
-        )}
-      </div>
-
-      {top5 && top5.length > 1 && (
-        <div className="border-t border-[#EEF0F2]">
-          <button onClick={() => setExpanded(e => !e)} className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] font-medium text-[#6B7280] transition-colors hover:bg-[#F7F8FA] hover:text-[#111] sm:px-4">
-            {expanded ? 'Hide top 5' : 'Show top 5'}
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-          {expanded && (
-            <div className="border-t border-[#F1F2F4]">
-              {top5.slice(0, 5).map((item, i) => {
+        {/* Verso */}
+        <div className={face} style={{ background: rarity.frame, transform: 'rotateY(180deg)' }}>
+          <div className="flex h-full flex-col rounded-[10px] bg-white">
+            <div className="flex items-center justify-between px-3 pb-2 pt-2.5">
+              <span className="truncate text-[12px] font-semibold text-[#111]">{label}</span>
+              <RotateCw className="h-3 w-3 flex-shrink-0 text-[#9CA3AF]" />
+            </div>
+            <div className="flex-1 border-t border-[#F1F2F4]">
+              {rows.map((item, i) => {
                 const labelText = Array.isArray(item.label) ? item.label.join(', ') : item.label
                 const isPlayer = Boolean(item.playerId || item.position)
                 const showAvatar = !Array.isArray(item.label) && !String(labelText).includes(' vs ')
-                const rowContent = (
+                const content = (
                   <>
-                    <span className={`w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums ${i === 0 ? 'text-[#111]' : 'text-[#9CA3AF]'}`}>{i + 1}</span>
+                    <span className={`w-4 flex-shrink-0 text-[12px] font-bold tabular-nums ${i === 0 ? rarity.text : 'text-[#9CA3AF]'}`}>{i + 1}</span>
                     {showAvatar && (isPlayer ? <PlayerAvatar playerId={item.playerId} name={labelText} size="sm" /> : <TeamAvatar team={item.team || labelText} size="sm" />)}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <span className="truncate text-[13px] font-medium leading-tight text-[#111]">{labelText}</span>
-                        {isPlayer && <PositionBadge position={item.position} />}
-                      </div>
-                      {item.meta && <div className="truncate text-[11px] text-[#6B7280]">{item.meta}</div>}
-                      {item.sub && <div className="truncate text-[11px] text-[#6B7280]">{item.sub}</div>}
-                    </div>
-                    <span className="flex-shrink-0 text-[13px] font-semibold tabular-nums text-[#111]">{item.value}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12px] font-medium text-[#111]">{labelText}</span>
+                      {(item.meta || item.sub) && <span className="block truncate text-[10px] text-[#6B7280]">{item.meta || item.sub}</span>}
+                    </span>
+                    <span className="flex-shrink-0 text-[12px] font-semibold tabular-nums text-[#111]">{item.value}</span>
                   </>
                 )
-                const cls = 'flex items-center gap-2 border-b border-[#F1F2F4] px-3 py-2 last:border-b-0 sm:px-4'
                 return item.href
-                  ? <Link href={item.href} key={i} className={`${cls} transition-colors hover:bg-[#F7F8FA]`}>{rowContent}</Link>
-                  : <div key={i} className={cls}>{rowContent}</div>
+                  ? <a key={i} href={item.href} onClick={stop} className="flex items-center gap-2 border-b border-[#F4F5F7] px-3 py-1 last:border-b-0 hover:bg-[#F7F8FA]">{content}</a>
+                  : <div key={i} className="flex items-center gap-2 border-b border-[#F4F5F7] px-3 py-1 last:border-b-0">{content}</div>
               })}
             </div>
-          )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
+  )
+}
+
+function PlayerPhotoLarge({ playerId, name, size }) {
+  const [failed, setFailed] = useState(false)
+  const id = String(playerId || '').trim()
+  const initials = String(name || '?').split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
+  return (
+    <span className="flex items-center justify-center overflow-hidden rounded-full bg-[#F4F5F7] font-semibold text-[#16274F]" style={{ width: size, height: size, fontSize: size * 0.3 }}>
+      {id && !failed
+        ? <img src={`https://sleepercdn.com/content/nfl/players/${encodeURIComponent(id)}.jpg`} alt={name} className="h-full w-full object-cover" style={{ objectPosition: '50% 20%' }} onError={() => setFailed(true)} />
+        : initials}
+    </span>
   )
 }
 
@@ -313,7 +340,7 @@ function RecordSection({ title, children }) {
   return (
     <section className="mb-4">
       <h2 className="mb-2 px-1 text-[15px] font-bold text-[#111]">{title}</h2>
-      <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-5">
         {children}
       </div>
     </section>
@@ -517,26 +544,34 @@ export default function RecordsPage() {
       }
     })
 
-    // Weekly High Scorer — Reg Season only
-    // For each (Season, Week), find the team with the highest PF.
-    // Group all RS games by season+week, find max PF per group, count per team.
+    // Weekly High Scorer — Reg Season only (same rule as the Teams page)
+    // For each regular-season single week, the highest PF among ALL teams
+    // (former franchises included) wins the week; ties credit every tied team.
+    // Only afterwards are the results limited to current franchises.
     const weeklyHighMap = {}
     const weeklyHighYears = {}
-    const rsByWeek = {}
+    const rsWeeks = {}
     games.forEach(g => {
       if (String(g?.GameStage || '').trim() !== 'Reg Season') return
+      if (isDoubleWeek(g)) return
       const season = String(g?.Season || '').trim()
       const week = String(g?.Week || '').trim()
       const team = String(g?.Team || '').trim()
-      if (!currentTeams.has(normalizeTeamName(team))) return
-      const pf = parseNumber(g?.PF)
-      if (!season || !week || !team || pf <= 0) return
+      if (!season || !week || !team) return
       const key = `${season}|${week}`
-      if (!rsByWeek[key] || pf > rsByWeek[key].pf) {
-        rsByWeek[key] = { season, week, team, pf }
-      }
+      if (!rsWeeks[key]) rsWeeks[key] = { season, max: -Infinity, teams: new Map() }
+      const pf = parseNumber(g?.PF)
+      rsWeeks[key].teams.set(normalizeTeamName(team), { team, pf })
+      rsWeeks[key].max = Math.max(rsWeeks[key].max, pf)
     })
-    Object.values(rsByWeek).forEach(({ season, team }) => {
+    const rsByWeek = Object.values(rsWeeks).flatMap(({ season, max, teams }) =>
+      max > 0
+        ? Array.from(teams.values())
+          .filter(t => t.pf === max && currentTeams.has(normalizeTeamName(t.team)))
+          .map(t => ({ season, team: t.team }))
+        : []
+    )
+    rsByWeek.forEach(({ season, team }) => {
       weeklyHighMap[team] = (weeklyHighMap[team] || 0) + 1
       if (!weeklyHighYears[team]) weeklyHighYears[team] = {}
       weeklyHighYears[team][season] = (weeklyHighYears[team][season] || 0) + 1
@@ -557,7 +592,7 @@ export default function RecordsPage() {
     // Filter variants for 2021+ and 2023+
     const weeklyHighMap21 = {}, weeklyHighYears21 = {}
     const weeklyHighMap23 = {}, weeklyHighYears23 = {}
-    Object.values(rsByWeek).forEach(({ season, team }) => {
+    rsByWeek.forEach(({ season, team }) => {
       if (Number(season) >= 2021) {
         weeklyHighMap21[team] = (weeklyHighMap21[team] || 0) + 1
         if (!weeklyHighYears21[team]) weeklyHighYears21[team] = {}
@@ -1681,20 +1716,14 @@ export default function RecordsPage() {
 
   return (
     <PageShell headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
-      <PageTitle title="Record Book" subtitle="The numbers that define glory, rivalry and heartbreak." />
-
-      <div className="scroll-hide mb-2 flex overflow-x-auto rounded-xl bg-white">
+      <PageBar title="Record Book">
         {TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-[13px] transition-colors sm:flex-1 sm:justify-center ${tab === t.key ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}
-          >
+          <BarTab key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
             <t.Icon className="h-3.5 w-3.5" />
             {t.label}
-          </button>
+          </BarTab>
         ))}
-      </div>
+      </PageBar>
 
         {loading ? (
           <LoadingState />
