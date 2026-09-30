@@ -12,7 +12,7 @@ import { useDrawer } from './context/DrawerContext'
 import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
-import { PageShell, CardShell, StatRow, StatGrid, StatTile, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
+import { SummaryButton, Segmented, PageShell, CardShell, StatRow, StatGrid, StatTile, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
 
 
 // Same Sleeper player source used by the Teams Player Profile.
@@ -33,23 +33,6 @@ async function fetchSleeperPlayers() {
   }
   return SLEEPER_PLAYERS_PROMISE
 }
-
-
-const FALLBACK_TEAMS = [
-  {
-    team: 'Moneyball',
-    wins: 112,
-    losses: 54,
-    pf: 2145,
-  },
-  {
-    team: 'Peytão da Massa',
-    wins: 106,
-    losses: 60,
-    pf: 2088,
-  },
-]
-
 
 
 function normalizeString(value) {
@@ -383,6 +366,38 @@ function DraftPickTile({ pick, playerLookup, onOpenPlayer }) {
 }
 
 
+function PerformerTile({ rank, performer, data, onOpen }) {
+  const [photoFailed, setPhotoFailed] = useState(false)
+  const pos = String(data?.pos || '').toUpperCase()
+  const isDefense = pos === 'DEF'
+  const photoSrc = !photoFailed
+    ? (isDefense ? getNFLTeamLogo(performer.name) : (data?.playerId ? `https://sleepercdn.com/content/nfl/players/${data.playerId}.jpg` : null))
+    : null
+  const initials = String(performer.name).split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
+
+  return (
+    <button type="button" onClick={onOpen} className="group w-[112px] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 pb-2.5 pt-3 text-center transition-colors hover:bg-[#ECEEF1]">
+      <div className="relative mx-auto h-[64px] w-[64px]">
+        <div className="h-full w-full overflow-hidden rounded-full bg-white ring-1 ring-[#E6E8EB]">
+          {photoSrc
+            ? <img src={photoSrc} alt={performer.name} className={`h-full w-full ${isDefense ? 'object-contain p-2' : 'object-cover'}`} onError={() => setPhotoFailed(true)} />
+            : <div className="flex h-full w-full items-center justify-center bg-[#16274F] text-[14px] font-semibold text-white">{initials}</div>}
+        </div>
+        <span className={`absolute -left-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums ${rank === 1 ? 'bg-[#F5C518] text-[#111]' : 'bg-[#111] text-white'}`}>{rank}</span>
+      </div>
+      <div className="mt-2 text-[20px] font-bold leading-none tabular-nums text-[#111]">{performer.pts.toFixed(1)}</div>
+      <div className="mt-1 flex items-center justify-center gap-1">
+        <span className="truncate text-[12px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{data?.shortName || performer.name}</span>
+        {pos && <UiPositionBadge position={pos} />}
+      </div>
+      <div className="mt-0.5 flex items-center justify-center gap-1 text-[11px] text-[#6B7280]">
+        <TeamLogo name={performer.team} size={14} />
+        <span className="truncate">{performer.team}</span>
+      </div>
+    </button>
+  )
+}
+
 function buildSeasonRanges(years) {
   if (!years || years.length === 0) return ''
 
@@ -679,6 +694,7 @@ function getPrLeaderMessage(row) {
 
 export default function TapitasLeagueHomepage() {
   const [rawData, setRawData] = useState([])
+  const [leagueLoading, setLeagueLoading] = useState(true)
   const [h2hData, setH2hData] = useState([])
   const [selectedTeamA, setSelectedTeamA] = useState('Howmuch')
   const [selectedTeamB, setSelectedTeamB] = useState('Patrolao Squad')
@@ -707,6 +723,10 @@ export default function TapitasLeagueHomepage() {
   const [playerLookup, setPlayerLookup] = useState(new Map())
   const [selectedDraftPlayer, setSelectedDraftPlayer] = useState(null)
   const closeDraftPlayer = () => setSelectedDraftPlayer(null)
+  const [selectedPerformer, setSelectedPerformer] = useState(null)
+  const [mobileTableTab, setMobileTableTab] = useState('pr')
+  const [mobileLeagueTab, setMobileLeagueTab] = useState('leaders')
+  const closePerformer = () => setSelectedPerformer(null)
   const [selectedDraftRound, setSelectedDraftRound] = useState(1)
   const [selectedMatchupKey, setSelectedMatchupKey] = useState('')
   const [prPage, setPrPage] = useState(0)
@@ -871,13 +891,7 @@ export default function TapitasLeagueHomepage() {
 
   useEffect(() => {
     setLeftSlot(
-      <button
-        onClick={() => setDrawerOpen(true)}
-        className="inline-flex h-8 items-center gap-1 rounded-full bg-[#D01F2D] pl-3.5 pr-2.5 text-[13px] font-semibold text-white"
-      >
-        Summary
-        <ChevronRight className="h-4 w-4" />
-      </button>
+      <SummaryButton onClick={() => setDrawerOpen(true)} compact />
     )
     // limpa ao sair da página
     return () => setLeftSlot(null)
@@ -1106,6 +1120,8 @@ export default function TapitasLeagueHomepage() {
         }
       } catch (error) {
         console.error(error)
+      } finally {
+        if (mounted) setLeagueLoading(false)
       }
     }
     loadLeagueData()
@@ -1364,8 +1380,7 @@ export default function TapitasLeagueHomepage() {
 
   const standings = useMemo(() => {
     const base =
-      Array.isArray(rawData) && rawData.length > 0
-        ? rawData : FALLBACK_TEAMS
+      Array.isArray(rawData) ? rawData : []
 
     const mapped = base.map(normalizeTeam)
 
@@ -1849,16 +1864,10 @@ export default function TapitasLeagueHomepage() {
 
   // ── Blocos ──────────────────────────────────────────────────────────
   const scoreboardStrip = visibleMatchups.length > 0 && (
-    <div className="mb-2 flex items-stretch overflow-hidden rounded-xl bg-white">
-      <div className="flex flex-shrink-0 flex-col justify-center border-r border-[#EEF0F2] px-3">
-        <span className="text-[11px] text-[#6B7280]">{currentSeason}</span>
-        <label className="relative flex items-center">
-          <span className="sr-only">Week</span>
-          <select value={selectedMatchupKey} onChange={e => setSelectedMatchupKey(e.target.value)} className="cursor-pointer appearance-none bg-transparent pr-4 text-[14px] font-bold text-[#111] outline-none">
-            {matchupOptions.map(o => <option key={o.key} value={o.key}>Week {o.week}</option>)}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-0 h-3.5 w-3.5 text-[#6B7280]" />
-        </label>
+    <div className="relative z-20 mb-2 flex items-stretch rounded-xl bg-white">
+      <div className="flex flex-shrink-0 items-center gap-2 border-r border-[#EEF0F2] pl-3 pr-2">
+        <span className="text-[13px] font-bold text-[#111]">{currentSeason}</span>
+        <FilterPill value={selectedMatchupKey} onChange={setSelectedMatchupKey} options={matchupOptions.map(o => o.key)} displayOption={key => `Week ${matchupOptions.find(o => o.key === key)?.week ?? ''}`} label="Week" neutral hideLabel />
       </div>
       <div className="scroll-hide flex min-w-0 flex-1 gap-1.5 overflow-x-auto p-2">
         {visibleMatchups.map((m, i) => {
@@ -1922,14 +1931,94 @@ export default function TapitasLeagueHomepage() {
     </div>
   )
 
-  const quickNav = (
-    <div className="scroll-hide mb-2 flex gap-1.5 overflow-x-auto rounded-xl bg-white p-2">
-      {QUICK_NAV.map(({ label, href, icon: Icon }) => (
-        <Link key={href} href={href} className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-full bg-[#F4F5F7] px-3 text-[12px] font-medium text-[#3F4757] transition-colors hover:bg-[#ECEEF1] hover:text-[#111]">
-          <Icon className="h-3.5 w-3.5 text-[#6B7280]" />{label}
-        </Link>
-      ))}
-    </div>
+  // ── Semana em destaque (dados do placar do topo) ────────────────────
+  // Busca de jogador também pelo formato abreviado "J. Allen" usado no GAME_FACTS_ALL.
+  const abbreviatedLookup = useMemo(() => {
+    const map = new Map()
+    playerLookup.forEach(entry => {
+      const parts = String(entry.fullName || '').split(/\s+/).filter(Boolean)
+      if (parts.length < 2) return
+      const key = normalizePlayerKey(`${parts[0][0]}. ${parts[parts.length - 1]}`)
+      if (key && !map.has(key)) map.set(key, entry)
+    })
+    return map
+  }, [playerLookup])
+
+  const findPlayerData = (name) => getPlayerDataByFullName(name, playerLookup) || abbreviatedLookup.get(normalizePlayerKey(name)) || null
+
+  const weekHighlights = useMemo(() => {
+    if (!visibleMatchups.length) return null
+    const withMargin = visibleMatchups.map(m => ({ ...m, margin: Math.abs(m.score - m.oppScore), winner: m.score >= m.oppScore ? m.team : m.opp, loser: m.score >= m.oppScore ? m.opp : m.team, high: Math.max(m.score, m.oppScore), low: Math.min(m.score, m.oppScore) }))
+    const topScore = [...withMargin].sort((a, b) => b.high - a.high)[0]
+    const blowout = [...withMargin].sort((a, b) => b.margin - a.margin)[0]
+    const closest = [...withMargin].sort((a, b) => a.margin - b.margin)[0]
+    return { topScore, blowout, closest }
+  }, [visibleMatchups])
+
+  const weekPerformers = useMemo(() => {
+    if (!selectedMatchupOption) return []
+    const rows = (gameFactsData || []).filter(g =>
+      Number(g?.Season) === Number(selectedMatchupOption.season) &&
+      Number(String(g?.Week || '').replace(/[^0-9]/g, '')) === Number(selectedMatchupOption.week)
+    )
+    const seen = new Set()
+    const list = []
+    rows.forEach(g => {
+      const team = String(g?.Team || '').trim()
+      const opponent = String(g?.Opponent || '').trim()
+      extractPlayerAppearances(g).forEach(a => {
+        if (a.status !== 'Starter') return
+        const key = `${a.name}|${team}`
+        if (seen.has(key)) return
+        seen.add(key)
+        list.push({ name: a.name, pts: a.pts, team, opponent, season: String(g?.Season || '').trim(), week: String(g?.Week || '').trim() })
+      })
+    })
+    return list.sort((a, b) => b.pts - a.pts).slice(0, 10)
+  }, [gameFactsData, selectedMatchupOption])
+
+  const matchupLink = m => `/matchups?season=${encodeURIComponent(m.season)}&week=${encodeURIComponent(m.week)}&team=${encodeURIComponent(m.team)}&opp=${encodeURIComponent(m.opp)}`
+
+  const weekCard = weekHighlights && (
+    <CardShell title={`Week ${selectedMatchupOption?.week} highlights`} subtitle={`${currentSeason} · ${visibleMatchups.length} matchups`} action={<Link href={matchupLink(visibleMatchups[0])} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All matchups</Link>}>
+      <div className="grid grid-cols-3 gap-px bg-[#EEF0F2]">
+        {[
+          { label: 'Top score', m: weekHighlights.topScore, big: weekHighlights.topScore.high.toFixed(2), bigClass: 'text-[#1E8E3E]', team: weekHighlights.topScore.score >= weekHighlights.topScore.oppScore ? weekHighlights.topScore.team : weekHighlights.topScore.opp },
+          { label: 'Biggest win', m: weekHighlights.blowout, big: `+${weekHighlights.blowout.margin.toFixed(2)}`, bigClass: 'text-[#111]', team: weekHighlights.blowout.winner },
+          { label: 'Closest game', m: weekHighlights.closest, big: weekHighlights.closest.margin.toFixed(2), bigClass: 'text-[#D01F2D]', team: weekHighlights.closest.winner },
+        ].map(({ label, m, big, bigClass, team }) => (
+          <Link key={label} href={matchupLink(m)} className="group min-w-0 bg-white px-2.5 py-3 transition-colors hover:bg-[#F7F8FA] sm:px-3 lg:px-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-[11px] text-[#6B7280]">{label}</span>
+              <span className="hidden sm:block"><TeamLogo name={team} size={22} /></span>
+            </div>
+            <div className={`mt-1 text-[19px] font-bold leading-none tabular-nums sm:text-[24px] ${bigClass}`}>{big}</div>
+            <div className="mt-1.5 truncate text-[12px] text-[#3F4757] group-hover:text-[#D01F2D]">
+              <span className="font-semibold text-[#111]">{m.winner}</span><span className="hidden sm:inline"> {m.high.toFixed(1)}–{m.low.toFixed(1)} {m.loser}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </CardShell>
+  )
+
+  const performersCard = weekPerformers.length > 0 && (
+    <CardShell title="Top performers" subtitle={`Week ${selectedMatchupOption?.week} · best starters of the week`}>
+      <div className="scroll-hide flex gap-2 overflow-x-auto p-3 lg:p-4">
+        {weekPerformers.map((p, i) => {
+          const data = findPlayerData(p.name)
+          return (
+            <PerformerTile
+              key={`${p.name}-${p.team}`}
+              rank={i + 1}
+              performer={p}
+              data={data}
+              onOpen={() => setSelectedPerformer({ ...p, data })}
+            />
+          )
+        })}
+      </div>
+    </CardShell>
   )
 
   const newsCard = (
@@ -1992,81 +2081,122 @@ export default function TapitasLeagueHomepage() {
     </CardShell>
   )
 
+  // ── Listas (usadas nos cards do desktop e nos cards com abas do mobile) ──
+  const rankBadge = (n, gold) => <span className={`w-5 text-center text-[13px] font-bold tabular-nums ${gold ? 'text-[#B8860B]' : 'text-[#111]'}`}>{n}</span>
+  const cardLink = (href, label) => <Link href={href} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">{label}</Link>
+
+  // ── Rivalry spotlight: pôster "versus" dividido na diagonal ─────────
+  // Time A no azul da marca, time B no vermelho do logo; embaixo o
+  // "tale of the tape" com barras nas mesmas cores.
+  const toNumber = v => parseFloat(String(v ?? '0').replace(',', '.')) || 0
+  const rivalryRows = selectedRivalry ? (() => {
+    const [poA, poB] = selectedRivalry.playoffRecord.split('-').map(toNumber)
+    const marginA = toNumber(selectedRivalry.avgMargin)
+    return [
+      { label: 'All-time wins', a: selectedRivalry.winsA, b: selectedRivalry.winsB, shareA: selectedRivalry.winsA, shareB: selectedRivalry.winsB },
+      { label: 'Playoff wins', a: poA, b: poB, shareA: poA, shareB: poB },
+      { label: 'Avg margin', a: `${marginA > 0 ? '+' : ''}${marginA.toFixed(2)}`, b: `${marginA < 0 ? '+' : ''}${(-marginA).toFixed(2)}`, shareA: Math.max(marginA, 0), shareB: Math.max(-marginA, 0) },
+      { label: 'Current streak', a: selectedRivalry.streakA, b: selectedRivalry.streakB, shareA: selectedRivalry.streakWinner === 'A' ? 1 : 0, shareB: selectedRivalry.streakWinner === 'B' ? 1 : 0 },
+    ]
+  })() : []
+
   const rivalryCard = (
-    <CardShell title="Rivalry spotlight" subtitle="Pick any two franchises" withMenus>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-[#EEF0F2] px-3 py-2.5 lg:px-4">
-        {[[selectedTeamA, v => { setSelectedTeamA(v); setSelectedTeamB('') }, allTeams, 'Team'], null, [selectedTeamB, setSelectedTeamB, teamsForB, 'Opponent']].map((cfg, i) => cfg ? (
-          <label key={i} className="relative min-w-0">
-            <span className="sr-only">{cfg[3]}</span>
-            <select value={cfg[0]} onChange={e => cfg[1](e.target.value)} className="h-9 w-full min-w-0 cursor-pointer appearance-none rounded-full bg-[#F4F5F7] pl-3 pr-8 text-[13px] font-medium text-[#111] outline-none hover:bg-[#ECEEF1]">
-              <option value="">{cfg[3]}…</option>
-              {cfg[2].map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B7280]" />
-          </label>
-        ) : <span key={i} className="text-[12px] text-[#9CA3AF]">vs</span>)}
+    <section className="mb-2 overflow-hidden rounded-xl bg-white">
+      {/* Pôster */}
+      <div className="relative text-white">
+        <div className="absolute inset-0 bg-[#02275F]" />
+        <div className="absolute inset-0 bg-[#C8102E]" style={{ clipPath: 'polygon(56% 0, 100% 0, 100% 100%, 44% 100%)' }} />
+        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 14px)' }} />
+
+        <div className="relative flex items-center justify-between px-3 pt-3 lg:px-4">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80">Rivalry spotlight</span>
+          {selectedRivalry && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold">{selectedRivalry.heat} rivalry</span>}
+        </div>
+
+        <div className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 pb-5 pt-3 lg:px-4">
+          <div className="flex min-w-0 flex-col items-center gap-2">
+            <FilterPill value={selectedTeamA || 'Team'} onChange={v => { setSelectedTeamA(v); setSelectedTeamB('') }} options={allTeams} label="Team" neutral hideLabel tone="dark" />
+            {selectedRivalry && (
+              <Link href={`/teams?team=${encodeURIComponent(selectedRivalry.teamA)}`} className="flex flex-col items-center gap-1.5">
+                <span className="rounded-full bg-white p-1.5 shadow-lg"><TeamLogo name={selectedRivalry.teamA} size={52} /></span>
+                <span className="text-[56px] font-bold leading-none tabular-nums">{selectedRivalry.winsA}</span>
+              </Link>
+            )}
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[15px] font-black italic text-[#111] shadow-lg">VS</div>
+          <div className="flex min-w-0 flex-col items-center gap-2">
+            <FilterPill value={selectedTeamB || 'Opponent'} onChange={setSelectedTeamB} options={teamsForB} label="Opponent" neutral hideLabel tone="dark" align="right" />
+            {selectedRivalry && (
+              <Link href={`/teams?team=${encodeURIComponent(selectedRivalry.teamB)}`} className="flex flex-col items-center gap-1.5">
+                <span className="rounded-full bg-white p-1.5 shadow-lg"><TeamLogo name={selectedRivalry.teamB} size={52} /></span>
+                <span className="text-[56px] font-bold leading-none tabular-nums">{selectedRivalry.winsB}</span>
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Tale of the tape */}
       {selectedRivalry ? (
         <>
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-4">
-            {[[selectedRivalry.teamA, selectedRivalry.winsA, selectedRivalry.winsA > selectedRivalry.winsB], null, [selectedRivalry.teamB, selectedRivalry.winsB, selectedRivalry.winsB > selectedRivalry.winsA]].map((cfg, i) => cfg ? (
-              <Link key={i} href={`/teams?team=${encodeURIComponent(cfg[0])}`} className="flex flex-col items-center gap-1.5">
-                <TeamLogo name={cfg[0]} size={40} />
-                <span className="text-center text-[13px] font-semibold leading-tight text-[#111] hover:underline">{cfg[0]}</span>
-                <span className={`text-[36px] font-bold leading-none tabular-nums ${cfg[2] ? 'text-[#111]' : 'text-[#9CA3AF]'}`}>{cfg[1]}</span>
-              </Link>
-            ) : (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <span className="text-[13px] font-semibold text-[#9CA3AF]">VS</span>
-                <Tag tone={heatTone[selectedRivalry.heat]}>{selectedRivalry.heat}</Tag>
-              </div>
-            ))}
-          </div>
-          <div className="divide-y divide-[#F1F2F4] border-t border-[#EEF0F2]">
-            {[
-              ['Playoff record', selectedRivalry.playoffRecord.split('-')[0], selectedRivalry.playoffRecord.split('-')[1]],
-              ['Current streak', selectedRivalry.streakA, selectedRivalry.streakB],
-              ['Avg margin', selectedRivalry.avgMargin, (-(parseFloat(String(selectedRivalry.avgMargin || '0').replace(',', '.')) || 0)).toFixed(2).replace('.', ',')],
-            ].map(([label, a, b]) => (
-              <div key={label} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2 text-[14px] font-semibold tabular-nums text-[#111] lg:px-4">
-                <span>{a}</span>
-                <span className="text-center text-[11px] font-medium text-[#6B7280]">{label}</span>
-                <span className="text-right">{b}</span>
-              </div>
-            ))}
-            <div className="px-3 py-2 text-center text-[12px] text-[#6B7280] lg:px-4">
-              Last meeting <span className="font-semibold tabular-nums text-[#111]">{selectedRivalry.lastMeeting.score}</span>{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}
+          <div className="px-3 pt-3 lg:px-4">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">
+              <span className="text-[#02275F]">{selectedRivalry.teamA}</span>
+              <span>Tale of the tape</span>
+              <span className="text-[#C8102E]">{selectedRivalry.teamB}</span>
             </div>
           </div>
-          <div className="border-t border-[#EEF0F2] py-2 text-center">
-            <Link href={`/rivalries?teamA=${encodeURIComponent(selectedRivalry.teamA)}&teamB=${encodeURIComponent(selectedRivalry.teamB)}`} className="text-[12px] font-medium text-[#D01F2D] hover:underline">Open full rivalry</Link>
+          <div className="space-y-3 px-3 py-3 lg:px-4">
+            {rivalryRows.map(row => {
+              const total = row.shareA + row.shareB
+              const pctA = total > 0 ? (row.shareA / total) * 100 : 50
+              return (
+                <div key={row.label}>
+                  <div className="flex items-baseline justify-between text-[14px] font-bold tabular-nums">
+                    <span className={row.shareA >= row.shareB && total > 0 ? 'text-[#02275F]' : 'text-[#9CA3AF]'}>{row.a}</span>
+                    <span className="text-[11px] font-medium text-[#6B7280]">{row.label}</span>
+                    <span className={row.shareB >= row.shareA && total > 0 ? 'text-[#C8102E]' : 'text-[#9CA3AF]'}>{row.b}</span>
+                  </div>
+                  <div className="mt-1 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
+                    <div className="rounded-l-full bg-[#02275F]" style={{ width: `${pctA}%`, opacity: total > 0 ? 1 : 0.15 }} />
+                    <div className="flex-1 rounded-r-full bg-[#C8102E]" style={{ opacity: total > 0 ? 1 : 0.15 }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#EEF0F2] px-3 py-2.5 lg:px-4">
+            <span className="text-[12px] text-[#6B7280]">
+              Last meeting <span className="font-semibold tabular-nums text-[#111]">{selectedRivalry.lastMeeting.score}</span>{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}
+            </span>
+            {cardLink(`/rivalries?teamA=${encodeURIComponent(selectedRivalry.teamA)}&teamB=${encodeURIComponent(selectedRivalry.teamB)}`, 'Full rivalry')}
           </div>
         </>
       ) : (
-        <div className="py-10 text-center text-[13px] text-[#6B7280]">Choose two franchises to compare</div>
+        <div className="py-8 text-center text-[13px] text-[#6B7280]">Choose two franchises to compare</div>
       )}
-    </CardShell>
+    </section>
   )
 
-  const powerCard = (
-    <CardShell title="Power Rankings" subtitle={`${currentSeason} · latest week`} sidebar action={<Link href="/powerrankings" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">Full</Link>}>
-      <div className="py-1 lg:py-2">
-        {prLoading ? <LoadingState /> : prData.map(row => (
-          <StatRow
-            key={row.team}
-            href={`/teams?team=${encodeURIComponent(row.team)}`}
-            left={<span className="flex items-center gap-2"><span className={`w-5 text-center text-[13px] font-bold tabular-nums ${row.rank === 1 ? 'text-[#B8860B]' : 'text-[#111]'}`}>{row.rank}</span><TeamLogo name={row.team} size={22} /></span>}
-            title={row.team}
-            value={row.delta > 0 ? `▲ ${row.delta}` : row.delta < 0 ? `▼ ${Math.abs(row.delta)}` : '–'}
-            valueClass={row.delta > 0 ? 'text-[11px] text-[#1E8E3E]' : row.delta < 0 ? 'text-[11px] text-[#D01F2D]' : 'text-[11px] text-[#9CA3AF]'}
-          />
-        ))}
-      </div>
-    </CardShell>
+
+  const powerList = (
+    <div className="py-1 lg:py-2">
+      {prLoading ? <LoadingState /> : prData.map(row => (
+        <StatRow
+          key={row.team}
+          href={`/teams?team=${encodeURIComponent(row.team)}`}
+          left={<span className="flex items-center gap-2">{rankBadge(row.rank, row.rank === 1)}<TeamLogo name={row.team} size={22} /></span>}
+          title={row.team}
+          value={row.delta > 0 ? `▲ ${row.delta}` : row.delta < 0 ? `▼ ${Math.abs(row.delta)}` : '–'}
+          valueClass={row.delta > 0 ? 'text-[11px] text-[#1E8E3E]' : row.delta < 0 ? 'text-[11px] text-[#D01F2D]' : 'text-[11px] text-[#9CA3AF]'}
+        />
+      ))}
+    </div>
   )
 
-  const standingsCard = currentStandings.length > 0 && (
-    <CardShell title="Standings" subtitle={`${currentSeason} · ${isFinalStandings ? 'final' : currentWeekLabel ? `through week ${currentWeekLabel}` : 'regular season'}`} sidebar action={<Link href="/stats" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">Stats</Link>}>
+  const standingsSubtitle = `${currentSeason} · ${isFinalStandings ? 'final' : currentWeekLabel ? `through week ${currentWeekLabel}` : 'regular season'}`
+  const standingsList = (
+    <>
       <div className="grid grid-cols-[20px_minmax(0,1fr)_44px_44px] gap-2 px-3 pb-1 pt-2 text-[11px] text-[#6B7280] lg:px-4">
         <span>#</span><span>Team</span><span className="text-right">W–L</span><span className="text-right">PF</span>
       </div>
@@ -2081,70 +2211,100 @@ export default function TapitasLeagueHomepage() {
         ))}
       </div>
       {!isFinalStandings && <div className="px-3 pb-2 text-[11px] text-[#9CA3AF] lg:px-4">Dashed line = playoff cut</div>}
-    </CardShell>
+    </>
   )
 
-  const leadersCard = (
-    <CardShell title="Franchise leaders" subtitle="All-time" sidebar withMenus>
-      <div className="flex flex-wrap gap-1.5 px-3 pt-2.5 lg:px-4">
-        <FilterPill value={sortCategory} onChange={setSortCategory} options={SORT_OPTIONS.map(o => o.label)} label="Stat" neutral />
-        {sortCat.subs.length > 1 && <FilterPill value={sortSubOpt.label} onChange={setSortSub} options={sortCat.subs.map(s => s.label)} label="Scope" neutral />}
-      </div>
-      <div className="py-1 lg:py-2">
-        {standings.slice(0, 10).map((t, i) => (
+  const leadersFilters = (
+    <div className="flex flex-wrap gap-1.5 px-3 pt-2.5 lg:px-4">
+      <FilterPill value={sortCategory} onChange={setSortCategory} options={SORT_OPTIONS.map(o => o.label)} label="Stat" neutral hideLabel />
+      {sortCat.subs.length > 1 && <FilterPill value={sortSubOpt.label} onChange={setSortSub} options={sortCat.subs.map(s => s.label)} label="Scope" neutral hideLabel />}
+    </div>
+  )
+  const leadersList = (
+    <div className="py-1 lg:py-2">
+      {standings.slice(0, 10).map((t, i) => (
+        <StatRow
+          key={t.team}
+          href={`/teams?team=${encodeURIComponent(t.team)}`}
+          left={<span className="flex items-center gap-2">{rankBadge(i + 1, i === 0)}<TeamLogo name={t.team} size={22} /></span>}
+          title={t.team}
+          value={formatLeaderValue(valueForSub(t, sortSubOpt.key))}
+        />
+      ))}
+    </div>
+  )
+
+  const championsList = (
+    <div className="py-1 lg:py-2">
+      {championsData.map(c => (
+        <StatRow
+          key={`${c.season}-${c.team}`}
+          href={`/teams?team=${encodeURIComponent(c.team)}`}
+          left={<TeamLogo name={c.team} size={24} />}
+          title={c.team}
+          subtitle={c.regGames?.length ? `${c.regGames.filter(g => g.result === 'W').length}–${c.regGames.filter(g => g.result === 'L').length} reg. season` : undefined}
+          value={c.season}
+          valueClass="text-[#6B7280]"
+        />
+      ))}
+    </div>
+  )
+
+  const recordsList = (
+    <div className="py-1 lg:py-2">
+      {recordItems.map(item => {
+        const leaders = topNTeams(standings, item.getter, 3)
+        if (!leaders.length) return null
+        return (
           <StatRow
-            key={t.team}
-            href={`/teams?team=${encodeURIComponent(t.team)}`}
-            left={<span className="flex items-center gap-2"><span className={`w-5 text-center text-[13px] font-bold tabular-nums ${i === 0 ? 'text-[#B8860B]' : 'text-[#111]'}`}>{i + 1}</span><TeamLogo name={t.team} size={22} /></span>}
-            title={t.team}
-            value={formatLeaderValue(valueForSub(t, sortSubOpt.key))}
+            key={item.label}
+            href="/records"
+            left={<div className="flex -space-x-1.5">{leaders.map(t => <TeamLogo key={t.team} name={t.team} size={24} />)}</div>}
+            eyebrow={item.label}
+            title={leaders.map(t => t.team).join(', ')}
+            value={item.format(item.getter(leaders[0]))}
           />
-        ))}
-      </div>
+        )
+      })}
+    </div>
+  )
+
+  // Desktop: cards separados nas colunas laterais.
+  const powerCard = <CardShell title="Power Rankings" subtitle={`${currentSeason} · latest week`} sidebar action={cardLink('/powerrankings', 'Full')}>{powerList}</CardShell>
+  const standingsCard = currentStandings.length > 0 && <CardShell title="Standings" subtitle={standingsSubtitle} sidebar action={cardLink('/stats', 'Stats')}>{standingsList}</CardShell>
+  const leadersCard = <CardShell title="Franchise leaders" subtitle="All-time" sidebar withMenus>{leadersFilters}{leadersList}</CardShell>
+  const championsCard = championsData.length > 0 && <CardShell title="Champions wall" subtitle="Every Tapitas League title" sidebar action={cardLink('/history', 'History')}>{championsList}</CardShell>
+  const recordsCard = <CardShell title="All-time records" subtitle="Best of the best" sidebar action={cardLink('/records', 'Record book')}>{recordsList}</CardShell>
+
+  // Mobile: um card com abas no lugar de várias listas iguais em sequência.
+  const mobileTableCard = (
+    <CardShell
+      title={mobileTableTab === 'pr' ? 'Power Rankings' : 'Standings'}
+      subtitle={mobileTableTab === 'pr' ? `${currentSeason} · latest week` : standingsSubtitle}
+      action={<Segmented options={[['pr', 'Rankings'], ['standings', 'Standings']]} value={mobileTableTab} onChange={setMobileTableTab} />}
+    >
+      {mobileTableTab === 'pr' ? powerList : standingsList}
+      <div className="border-t border-[#EEF0F2] py-2 text-center">{mobileTableTab === 'pr' ? cardLink('/powerrankings', 'Full power rankings') : cardLink('/stats', 'Full standings')}</div>
     </CardShell>
   )
 
-  const championsCard = championsData.length > 0 && (
-    <CardShell title="Champions wall" subtitle="Every Tapitas League title" sidebar action={<Link href="/history" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">History</Link>}>
-      <div className="py-1 lg:py-2">
-        {championsData.map(c => (
-          <StatRow
-            key={`${c.season}-${c.team}`}
-            href={`/teams?team=${encodeURIComponent(c.team)}`}
-            left={<TeamLogo name={c.team} size={24} />}
-            title={c.team}
-            subtitle={c.regGames?.length ? `${c.regGames.filter(g => g.result === 'W').length}–${c.regGames.filter(g => g.result === 'L').length} reg. season` : undefined}
-            value={c.season}
-            valueClass="text-[#6B7280]"
-          />
-        ))}
+  const mobileLeagueCard = (
+    <CardShell
+      title={{ leaders: 'Franchise leaders', champions: 'Champions wall', records: 'All-time records' }[mobileLeagueTab]}
+      subtitle={{ leaders: 'All-time', champions: 'Every Tapitas League title', records: 'Best of the best' }[mobileLeagueTab]}
+      withMenus
+    >
+      <div className="px-3 pt-2.5">
+        <Segmented options={[['leaders', 'Leaders'], ['champions', 'Champions'], ['records', 'Records']]} value={mobileLeagueTab} onChange={setMobileLeagueTab} />
       </div>
-    </CardShell>
-  )
-
-  const recordsCard = (
-    <CardShell title="All-time records" subtitle="Best of the best" sidebar action={<Link href="/records" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">Record book</Link>}>
-      <div className="py-1 lg:py-2">
-        {recordItems.map(item => {
-          const leaders = topNTeams(standings, item.getter, 3)
-          if (!leaders.length) return null
-          return (
-            <StatRow
-              key={item.label}
-              href="/records"
-              left={<div className="flex -space-x-1.5">{leaders.map(t => <TeamLogo key={t.team} name={t.team} size={24} />)}</div>}
-              eyebrow={item.label}
-              title={leaders.map(t => t.team).join(', ')}
-              value={item.format(item.getter(leaders[0]))}
-            />
-          )
-        })}
-      </div>
+      {mobileLeagueTab === 'leaders' && <>{leadersFilters}{leadersList}</>}
+      {mobileLeagueTab === 'champions' && championsList}
+      {mobileLeagueTab === 'records' && recordsList}
     </CardShell>
   )
 
   return (
-    <PageShell headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
+    <PageShell loading={leagueLoading || prLoading} headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
       {scoreboardStrip}
 
       <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
@@ -2156,17 +2316,16 @@ export default function TapitasLeagueHomepage() {
         <div className="min-w-0">
           {heroCard}
           {numbersCard}
-          {quickNav}
-          {newsCard}
-          <div className="lg:hidden">
-            {powerCard}
-            {standingsCard}
-          </div>
-          {draftCard}
+          {weekCard}
+          {performersCard}
+          <div className="lg:hidden">{mobileTableCard}</div>
           {rivalryCard}
+          {newsCard}
+          {draftCard}
+          <div className="lg:hidden">{mobileLeagueCard}</div>
         </div>
 
-        <aside>
+        <aside className="hidden lg:block">
           {leadersCard}
           {championsCard}
           {recordsCard}
@@ -2174,6 +2333,20 @@ export default function TapitasLeagueHomepage() {
       </div>
 
       <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={leagueStats.allSeasons} />
+
+      {selectedPerformer && (
+        <PlayerProfileModal
+          key={`${selectedPerformer.name}|${selectedPerformer.team}`}
+          rawName={selectedPerformer.name}
+          displayName={selectedPerformer.data?.shortName || selectedPerformer.name}
+          position={selectedPerformer.data?.pos}
+          playerId={selectedPerformer.data?.playerId}
+          games={gameFactsData}
+          initialTeams={[selectedPerformer.team]}
+          matchup={{ season: selectedPerformer.season, week: selectedPerformer.week, team: selectedPerformer.team, opponent: selectedPerformer.opponent }}
+          onClose={closePerformer}
+        />
+      )}
 
       {selectedDraftPlayer && (
         <PlayerProfileModal

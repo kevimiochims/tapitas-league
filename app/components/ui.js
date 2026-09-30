@@ -4,7 +4,7 @@
 // Mantém cards, filtros e etiquetas iguais em todas as páginas.
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Check } from 'lucide-react'
+import { ChevronDown, Check, Trophy } from 'lucide-react'
 import Header from './Header'
 
 // ── Estrutura da página ─────────────────────────────────────────────
@@ -19,20 +19,89 @@ export function PageShell({ children, loading = false, headerProps }) {
       `}</style>
       <Header {...headerProps} />
       <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
-        {loading ? <LoadingState /> : children}
+        {loading ? <PageSkeleton /> : children}
       </section>
-      <footer className="border-t border-[#E6E8EB] bg-white">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-center gap-2 px-4 py-4 text-[12px] text-[#6B7280]">
-          <img src="/images/LogoFinalBlack.png" alt="" className="h-5 w-5 object-contain" />
-          <span>Tapitas League · Est. 2014</span>
-        </div>
-      </footer>
     </main>
   )
 }
 
-export function LoadingState({ label = 'Loading...' }) {
-  return <div className="flex items-center justify-center py-20 text-[13px] font-semibold text-[#6B7280]">{label}</div>
+// Botão "Season summary" (header no desktop, barra do topo no mobile).
+export function SummaryButton({ onClick, compact = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D6DCE8] bg-white px-3 text-[13px] font-semibold text-[#02275F] transition-colors hover:border-[#02275F] hover:bg-[#EEF3FF]"
+    >
+      <Trophy className="h-3.5 w-3.5 text-[#B8860B]" />
+      {compact ? 'Summary' : 'Season summary'}
+    </button>
+  )
+}
+
+// ── Carregamento (skeleton) ─────────────────────────────────────────
+// Blocos cinza pulsando no formato do conteúdo, no lugar de "Loading...".
+export function Skeleton({ className = '' }) {
+  return <div className={`animate-pulse bg-[#E6E8EB] ${className.includes('rounded') ? '' : 'rounded-md'} ${className}`} />
+}
+
+export function SkeletonRows({ rows = 6, avatar = true }) {
+  return (
+    <div className="space-y-3 px-3 py-3 lg:px-4" aria-hidden="true">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3">
+          {avatar && <Skeleton className="h-7 w-7 flex-shrink-0 rounded-full" />}
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-3" />
+            <Skeleton className={`h-2.5 ${i % 3 === 0 ? 'w-1/2' : i % 3 === 1 ? 'w-2/3' : 'w-2/5'}`} />
+          </div>
+          <Skeleton className="h-3 w-10 flex-shrink-0" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Carregamento dentro de um card.
+export function LoadingState({ label = 'Loading', rows = 5 }) {
+  return (
+    <div role="status" aria-label={label}>
+      <SkeletonRows rows={rows} />
+    </div>
+  )
+}
+
+function SkeletonCard({ rows = 6, tall = false }) {
+  return (
+    <div className="mb-2 overflow-hidden rounded-xl bg-white">
+      <div className="space-y-2 px-3 pb-3 pt-4 lg:px-4">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-3 w-1/4" />
+      </div>
+      <div className="mx-3 border-t border-[#EEF0F2] lg:mx-4" />
+      {tall ? <div className="p-3 lg:p-4"><Skeleton className="h-[220px] w-full rounded-lg" /></div> : <SkeletonRows rows={rows} />}
+    </div>
+  )
+}
+
+// Página inteira carregando: faixa do topo + layout em 3 colunas.
+export function PageSkeleton() {
+  return (
+    <div role="status" aria-label="Loading">
+      <div className="mb-2 flex items-center gap-2 rounded-xl bg-white p-2">
+        <Skeleton className="h-9 w-20 flex-shrink-0" />
+        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-11 w-[10.5rem] flex-shrink-0 rounded-lg" />)}
+      </div>
+      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
+        <div className="hidden lg:block"><SkeletonCard rows={8} /></div>
+        <div className="min-w-0">
+          <SkeletonCard tall />
+          <SkeletonCard rows={5} />
+        </div>
+        <div className="hidden lg:block"><SkeletonCard rows={8} /></div>
+      </div>
+    </div>
+  )
 }
 
 // Título de página discreto (quando a página precisa de um cabeçalho próprio).
@@ -133,6 +202,24 @@ export function Tabs({ tabs, value, onChange, className = '' }) {
   )
 }
 
+// Controle segmentado (troca de visão dentro de um card).
+export function Segmented({ options, value, onChange }) {
+  return (
+    <div className="inline-flex flex-shrink-0 rounded-full bg-[#F1F2F4] p-0.5">
+      {options.map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onChange(key)}
+          className={`h-7 whitespace-nowrap rounded-full px-3 text-[12px] transition-colors ${value === key ? 'bg-white font-semibold text-[#111] shadow-sm' : 'text-[#6B7280] hover:text-[#111]'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ── Filtros ─────────────────────────────────────────────────────────
 function useClickOutside(onOutside) {
   const ref = useRef(null)
@@ -144,25 +231,34 @@ function useClickOutside(onOutside) {
   return ref
 }
 
-export function FilterPill({ value, onChange, options, label, displayOption, neutral = false, allLabel }) {
+// `neutral`: sempre mostra o valor escolhido (seletor), sem destacar em azul.
+// `hideLabel`: mostra só o valor ("Week 3") em vez de "Label: valor".
+// `tone="dark"`: versão para fundos escuros (cards estilo hero).
+export function FilterPill({ value, onChange, options, label, displayOption, neutral = false, hideLabel = false, allLabel, tone = 'light', align = 'left' }) {
   const [open, setOpen] = useState(false)
   const ref = useClickOutside(() => setOpen(false))
   const format = displayOption || (opt => opt)
   const active = !neutral && value !== 'All'
-  const display = neutral ? `${label}: ${format(value)}` : active ? format(value) : label
+  const display = neutral ? (hideLabel ? format(value) : `${label}: ${format(value)}`) : active ? format(value) : label
+  const dark = tone === 'dark'
+  const buttonClass = dark
+    ? 'bg-white/10 font-semibold text-white hover:bg-white/20'
+    : active ? 'bg-[#02275F] font-semibold text-white'
+      : neutral ? 'bg-[#F4F5F7] font-semibold text-[#111] hover:bg-[#ECEEF1]'
+      : 'bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]'
 
   return (
-    <div ref={ref} className="relative flex-shrink-0">
+    <div ref={ref} className="relative min-w-0 flex-shrink-0">
       <button
         type="button"
         onClick={() => setOpen(p => !p)}
-        className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] transition-colors ${active ? 'bg-[#02275F] font-semibold text-white' : 'bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]'}`}
+        className={`inline-flex h-8 max-w-full items-center gap-1.5 rounded-full px-3 text-[12px] transition-colors ${buttonClass}`}
       >
         <span className="max-w-[160px] truncate">{display}</span>
-        <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${active ? 'text-white/70' : 'text-[#6B7280]'}`} />
+        <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${dark || active ? 'text-white/70' : 'text-[#6B7280]'}`} />
       </button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-[70] w-[210px] overflow-hidden rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5">
+        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-[calc(100%+4px)] z-[70] w-[210px] overflow-hidden rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5`}>
           <div className="max-h-64 overflow-y-auto">
             {options.map(opt => (
               <button

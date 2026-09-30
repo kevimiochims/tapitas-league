@@ -7,6 +7,7 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import Header from '../components/Header'
 import SharedPlayerProfile from '../components/PlayerProfileModal'
+import { PageShell, PageSkeleton } from '../components/ui'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -1222,7 +1223,7 @@ function MatchupsPageContent() {
       <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">Loading...</div>
+          <PageSkeleton />
         ) : (
           <>
             {/* Temporada + semana (uma linha só) */}
@@ -1758,16 +1759,7 @@ function MatchupsPageContent() {
 export default function MatchupsPage() {
   return (
     <Suspense
-      fallback={
-        <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
-          <Header />
-          <section className="px-3 md:px-6 mx-auto">
-            <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">
-              Loading...
-            </div>
-          </section>
-        </main>
-      }
+      fallback={<PageShell loading />}
     >
       <MatchupsPageContent />
     </Suspense>

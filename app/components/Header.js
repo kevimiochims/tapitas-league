@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { NAV_LINKS } from '../config/navigation'
-import { ChevronRight } from 'lucide-react'
+import { SummaryButton } from './ui'
 
 const SUMMARY_PAGES = ['/', '/standings', '/powerrankings', '/draft', '/records']
 
@@ -55,13 +55,7 @@ export default function Header({ rightSlot, onSummaryOpen }) {
 
         <div className="ml-auto hidden shrink-0 items-center gap-2 pl-2 pr-4 lg:flex xl:pr-6">
           {showSummary && onSummaryOpen && (
-            <button
-              onClick={onSummaryOpen}
-              className="inline-flex h-8 items-center gap-1 rounded-full bg-[#D01F2D] pl-3.5 pr-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#B91A27]"
-            >
-              Summary
-              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-            </button>
+            <SummaryButton onClick={onSummaryOpen} />
           )}
           {rightSlot && rightSlot}
         </div>

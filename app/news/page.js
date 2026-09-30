@@ -85,7 +85,7 @@ export default function NewsPage() {
       </div>
 
       {loading ? (
-        <LoadingState label="Carregando..." />
+        <LoadingState label="Carregando" rows={6} />
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-white py-20">
           <Laugh className="h-8 w-8 text-[#9CA3AF]" />

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, ChevronLeft, ChevronDown, Check, Skull, Zap, Filter, Users } from 'lucide-react'
 import Header from '../components/Header'
 import PlayerProfileModal from '../components/PlayerProfileModal'
-import { FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
+import { PageSkeleton, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -1064,7 +1064,7 @@ export default function TeamsPage() {
       <Header />
       <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-[13px] font-semibold text-[#6B7280]">Loading...</div>
+          <PageSkeleton />
         ) : content}
       </section>
     </main>

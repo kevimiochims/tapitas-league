@@ -1,20 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #16274F;
-  --foreground: #16274F;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #16274F;
-    --foreground: #16274F;
-  }
+  /* Fundo cinza claro das páginas (também aparece no "arrasto" do celular) */
+  --background: #EDEEF0;
+  --foreground: #111111;
 }
 
 html,
 body {
-  background-color: #F7F6F2;
+  background-color: #EDEEF0;
 }
 
 body {

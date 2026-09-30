@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import { useEffect, useMemo, useState, useRef, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { PageShell, CardShell, StatRow, Tabs, FilterBar, FilterPill, SearchInput, Tag, PositionBadge, TeamLogo } from '../components/ui'
+import { SummaryButton, PageShell, CardShell, StatRow, Tabs, FilterBar, FilterPill, SearchInput, Tag, PositionBadge, TeamLogo } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 import { DRAFT_PHOTOS } from '../config/draftPhotos'
@@ -346,13 +346,7 @@ export default function DraftPage() {
 
     useEffect(() => {
         setLeftSlot(
-            <button
-                onClick={() => setDrawerOpen(true)}
-                className="inline-flex h-8 items-center gap-1 rounded-full bg-[#D01F2D] pl-3.5 pr-2.5 text-[13px] font-semibold text-white"
-            >
-                Summary
-                <ChevronRight className="h-3.5 w-3.5" />
-            </button>
+            <SummaryButton onClick={() => setDrawerOpen(true)} compact />
         )
         return () => setLeftSlot(null)
     }, [setLeftSlot])

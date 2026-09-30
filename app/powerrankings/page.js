@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Star,
 } from 'lucide-react'
-import { PageShell, CardShell, CardGroup, StatRow, ResultBadge, StreakBadge, TeamLogo } from '../components/ui'
+import { SummaryButton, PageShell, CardShell, CardGroup, StatRow, ResultBadge, StreakBadge, TeamLogo } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -244,13 +244,7 @@ function PowerRankingsPageContent() {
 
   useEffect(() => {
     setLeftSlot(
-      <button
-        onClick={() => setDrawerOpen(true)}
-        className="inline-flex h-8 items-center gap-1 rounded-full bg-[#D01F2D] pl-3.5 pr-2.5 text-[13px] font-semibold text-white"
-      >
-        Summary
-        <ChevronRight className="h-4 w-4" />
-      </button>
+      <SummaryButton onClick={() => setDrawerOpen(true)} compact />
     )
     return () => setLeftSlot(null)
   }, [])

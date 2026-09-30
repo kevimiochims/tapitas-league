@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
-import { PageShell, PageTitle, Tabs, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
+import { SummaryButton, PageShell, PageTitle, Tabs, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -201,13 +201,7 @@ export default function StatsPage() {
 
   useEffect(() => {
     setLeftSlot(
-      <button
-        onClick={() => setDrawerOpen(true)}
-        className="inline-flex h-8 items-center gap-1 rounded-full bg-[#D01F2D] pl-3.5 pr-2.5 text-[13px] font-semibold text-white"
-      >
-        Summary
-        <ChevronRight className="h-4 w-4" />
-      </button>
+      <SummaryButton onClick={() => setDrawerOpen(true)} compact />
     )
     return () => setLeftSlot(null)
   }, [])
