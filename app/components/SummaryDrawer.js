@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronRight, X } from 'lucide-react'
+import { ChevronDown, X } from 'lucide-react'
 
 const SHEET_ID = '1-dBrTduiDzy_FBxyY3K-1kiDvs1bWENlOIXk9Pn9imA'
 const BASE_URL = `https://opensheet.elk.sh/${SHEET_ID}`
@@ -39,13 +39,13 @@ function TeamAvatar({ team, size = 'h-8 w-8' }) {
       <img
         src={avatar}
         alt={team}
-        className={`${size} flex-shrink-0 rounded-[12px] object-cover`}
+        className={`${size} flex-shrink-0 rounded-lg object-cover`}
       />
     )
   }
 
   return (
-    <div className={`flex ${size} flex-shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/8 text-[10px] font-black text-[#16274F]`}>
+    <div className={`flex ${size} flex-shrink-0 items-center justify-center rounded-lg bg-[#EEF0F2] text-[10px] font-semibold text-[#4B5563]`}>
       {String(team || '').slice(0, 2).toUpperCase()}
     </div>
   )
@@ -67,6 +67,32 @@ async function safeSheetFetch(url) {
   } catch {
     return []
   }
+}
+
+const teamOf = r => r?.Team || r?.team
+
+function SummaryCard({ title, children }) {
+  return (
+    <section className="mb-2 overflow-hidden rounded-xl bg-white">
+      <h3 className="px-4 pb-2 pt-4 text-[15px] font-bold leading-tight text-[#111]">{title}</h3>
+      <div className="mx-4 border-t border-[#E6E8EB]" />
+      <div className="divide-y divide-[#F1F2F4]">{children}</div>
+    </section>
+  )
+}
+
+function SummaryRow({ team, label, sub, value, size = 'h-8 w-8', strong = false }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <TeamAvatar team={team} size={size} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[11px] text-[#6B7280]">{label}</div>
+        <div className={`truncate text-[14px] leading-tight text-[#111] ${strong ? 'font-bold' : 'font-medium'}`}>{team}</div>
+        {sub && <div className="truncate text-[12px] text-[#6B7280]">{sub}</div>}
+      </div>
+      {value && <div className="flex-shrink-0 text-[14px] font-semibold tabular-nums text-[#111]">{value}</div>}
+    </div>
+  )
 }
 
 export default function SummaryDrawer({ open, onClose, allSeasons }) {
@@ -213,234 +239,127 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
     loadSummary()
   }, [open, selectedSeason])
 
+  const s = seasonSummary
+  const wl = (r, w = 'RS_W', l = 'RS_L') => `${parseNumber(r?.[w])}–${parseNumber(r?.[l])}`
+  const seasonOptions = (playedSeasons.length > 0 ? playedSeasons : (allSeasons || [])).slice().sort((a, b) => b - a)
+  const gameSub = g => `vs ${g.opponent} · Week ${g.week}`
+
   return (
     <>
       {/* OVERLAY */}
       {open && (
         <div
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-[#16274F]/55 backdrop-blur-[2px]"
+          className="fixed inset-0 z-40 bg-black/50"
         />
       )}
 
       {/* DRAWER */}
-      <div className={`fixed right-0 top-0 z-50 h-full w-full max-w-lg overflow-y-auto border-l-4 border-[#0A0A0A] bg-[#F7F6F2] transition-transform duration-300 ${
+      <div className={`fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-[#EDEEF0] shadow-xl transition-transform duration-300 ${
         open ? 'translate-x-0' : 'translate-x-full'
       }`}>
 
         {/* HEADER */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b-2 border-[#0A0A0A] bg-[#16274F] px-5 py-4 sm:px-6">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#B8C0D0]">
-              Season Summary
-            </div>
-              <div className="flex items-center gap-3 mt-1">
-              <div className="text-xl font-black text-white">
-                Season{' '}
-                <select
-                  value={selectedSeason || ''}
-                  onChange={(e) => setSelectedSeason(e.target.value)}
-                  className="border-2 border-[#0A0A0A] bg-[#F7F6F2] px-3 py-1 text-sm font-black text-[#16274F] outline-none"
-                >
-                  {(playedSeasons.length > 0 ? playedSeasons : (allSeasons || []))
-                    .slice()
-                    .sort((a, b) => b - a)
-                    .map((season) => (
-                      <option key={season} value={season} className="bg-[#F7F6F2]">
-                        {season}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              {seasonSummary && !seasonSummary.champion && (
-                <span className="border-2 border-[#0A0A0A] bg-[#F5C518] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#0A0A0A]">
-                  In Progress
-                </span>
-              )}
-            </div>
+        <div className="sticky top-0 z-10 flex h-14 items-center justify-between bg-[#2A2B2E] pl-4 pr-1">
+          <div className="flex min-w-0 items-center gap-3">
+            <h2 className="text-[15px] font-bold text-white">Season Summary</h2>
+            <label className="relative">
+              <span className="sr-only">Season</span>
+              <select
+                value={selectedSeason || ''}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+                className="cursor-pointer appearance-none rounded-full bg-white/10 py-1 pl-3 pr-7 text-[13px] font-semibold text-white outline-none hover:bg-white/15"
+              >
+                {seasonOptions.map((season) => (
+                  <option key={season} value={season} className="text-[#111]">
+                    {season}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/70" />
+            </label>
+            {s && !s.champion && (
+              <span className="rounded bg-[#F5C518] px-1.5 py-0.5 text-[10px] font-semibold text-[#111]">
+                In progress
+              </span>
+            )}
           </div>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center text-white transition-opacity hover:opacity-70"
+            aria-label="Close"
+            className="flex h-12 w-12 flex-shrink-0 items-center justify-center text-white transition-opacity hover:opacity-70"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* CONTEÚDO */}
-        <div className="p-4 sm:p-6">
-          {!seasonSummary ? (
-            <div className="flex items-center justify-center py-20 text-[#6B7280] font-bold">
-              Loading...
-            </div>
+        <div className="p-2">
+          {!s ? (
+            <div className="py-20 text-center text-[13px] text-[#6B7280]">Loading...</div>
           ) : (
-            <div className="flex flex-col gap-6">
-
-              {!seasonSummary.champion && (
-                <div className="border-2 border-[#0A0A0A] bg-[#FFF9E5] p-4 tp-shadow-navy-sm">
-                  <div className="text-xs font-black uppercase tracking-[0.2em] text-[#0A0A0A] mb-1">⏳ Temporada em andamento</div>
-                  <div className="text-xs text-[#6B7280]">Dados parciais. Champion, Finalist e Unicórnio só aparecem quando a temporada terminar.</div>
+            <>
+              {!s.champion && (
+                <div className="mb-2 rounded-xl bg-[#FFF9E5] px-4 py-3">
+                  <div className="mb-0.5 text-[13px] font-semibold text-[#111]">⏳ Temporada em andamento</div>
+                  <div className="text-[12px] text-[#6B7280]">Dados parciais. Champion, Finalist e Unicórnio só aparecem quando a temporada terminar.</div>
                 </div>
               )}
 
-              {seasonSummary.champion && (
-                <div className="border-2 border-[#0A0A0A] bg-white p-5 tp-shadow-navy">
-                  <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#D01F2D]">🏆 Champion</div>
-                  <div className="mt-2 flex items-center gap-3">
-                    <TeamAvatar team={seasonSummary.champion.Team || seasonSummary.champion.team} size="h-12 w-12" />
-                    <div className="min-w-0">
-                      <div className="truncate text-2xl font-black text-[#16274F]">{seasonSummary.champion.Team || seasonSummary.champion.team}</div>
-                      <div className="mt-1 text-sm text-[#3F4757]">
-                        {parseNumber(seasonSummary.champion.RS_W)}–{parseNumber(seasonSummary.champion.RS_L)} reg season
-                        {' • '}
-                        {parseNumber(seasonSummary.champion.PO_W)}–{parseNumber(seasonSummary.champion.PO_L)} playoffs
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {s.champion && (
+                <SummaryCard title="Final standings">
+                  <SummaryRow
+                    team={teamOf(s.champion)} label="🏆 Champion" size="h-10 w-10" strong
+                    sub={`${wl(s.champion)} reg season • ${wl(s.champion, 'PO_W', 'PO_L')} playoffs`}
+                  />
+                  {s.finalist && (
+                    <SummaryRow
+                      team={teamOf(s.finalist)} label="🥈 2nd place" size="h-10 w-10"
+                      sub={`${wl(s.finalist)} reg season • ${wl(s.finalist, 'PO_W', 'PO_L')} playoffs`}
+                    />
+                  )}
+                  {s.unicorn && (
+                    <SummaryRow
+                      team={teamOf(s.unicorn)} label="🦄 Unicórnio" size="h-10 w-10"
+                      sub={`${wl(s.unicorn)} reg season`}
+                    />
+                  )}
+                </SummaryCard>
               )}
 
-              {seasonSummary.finalist && (
-                <div className="border-2 border-[#0A0A0A]/20 bg-white p-5 tp-shadow-navy-sm">
-                  <div className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]">🥈 2nd Place</div>
-                  <div className="mt-2 flex items-center gap-3">
-                    <TeamAvatar team={seasonSummary.finalist.Team || seasonSummary.finalist.team} size="h-10 w-10" />
-                    <div className="min-w-0">
-                      <div className="truncate text-xl font-black text-[#16274F]">{seasonSummary.finalist.Team || seasonSummary.finalist.team}</div>
-                      <div className="mt-1 text-sm text-[#3F4757]">
-                        {parseNumber(seasonSummary.finalist.RS_W)}–{parseNumber(seasonSummary.finalist.RS_L)} reg season
-                        {' • '}
-                        {parseNumber(seasonSummary.finalist.PO_W)}–{parseNumber(seasonSummary.finalist.PO_L)} playoffs
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <SummaryCard title="Regular season">
+                {s.bestRecord && <SummaryRow team={teamOf(s.bestRecord)} label="🚀 Best record" value={wl(s.bestRecord)} />}
+                {s.worstRecord && <SummaryRow team={teamOf(s.worstRecord)} label="💩 Worst record" value={wl(s.worstRecord)} />}
+                {s.highestScorer && <SummaryRow team={teamOf(s.highestScorer)} label="💯 Top scorer" value={`${Math.round(parseNumber(s.highestScorer.RS_PF))} pts`} />}
+                {s.lowestScorer && <SummaryRow team={teamOf(s.lowestScorer)} label="😵‍💫 Lowest scorer" value={`${Math.round(parseNumber(s.lowestScorer.RS_PF))} pts`} />}
+              </SummaryCard>
 
-              <div className="grid grid-cols-2 gap-3">
-                {seasonSummary.bestRecord && (
-                  <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">🚀 Best Record</div>
-                    <div className="flex items-center gap-2">
-                      <TeamAvatar team={seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team} size="h-7 w-7" />
-                      <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.bestRecord.Team || seasonSummary.bestRecord.team}</div>
-                    </div>
-                    <span className="text-sm text-[#16274F]">{parseNumber(seasonSummary.bestRecord.RS_W)}–{parseNumber(seasonSummary.bestRecord.RS_L)}</span>
-                    <span className="text-sm text-[#3F4757]"> (reg season)</span>
-                  </div>
+              <SummaryCard title="Notable games">
+                {s.highestGame && (
+                  <SummaryRow team={s.highestGame.team} label="🔥 Highest score" sub={gameSub(s.highestGame)} value={s.highestGame.score.toFixed(2)} />
                 )}
-                {seasonSummary.worstRecord && (
-                  <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">💩 Worst Record</div>
-                    <div className="flex items-center gap-2">
-                      <TeamAvatar team={seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team} size="h-7 w-7" />
-                      <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.worstRecord.Team || seasonSummary.worstRecord.team}</div>
-                    </div>
-                    <span className="text-sm text-[#D01F2D]">{parseNumber(seasonSummary.worstRecord.RS_W)}–{parseNumber(seasonSummary.worstRecord.RS_L)}</span>
-                    <span className="text-sm text-[#3F4757]"> (reg season)</span>
-                  </div>
+                {s.closestGame && (
+                  <SummaryRow
+                    team={s.closestGame.team} label="⚔️ Closest game"
+                    sub={`${gameSub(s.closestGame)} · margin ${s.closestGame.margin.toFixed(2)}`}
+                    value={`${s.closestGame.score.toFixed(2)}–${s.closestGame.opp.toFixed(2)}`}
+                  />
                 )}
-                {seasonSummary.highestScorer && (
-                  <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">💯 Top Scorer</div>
-                    <div className="flex items-center gap-2">
-                      <TeamAvatar team={seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team} size="h-7 w-7" />
-                      <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.highestScorer.Team || seasonSummary.highestScorer.team}</div>
-                    </div>
-                    <span className="text-sm text-[#16274F]">{Math.round(parseNumber(seasonSummary.highestScorer.RS_PF))} pts</span>
-                    <span className="text-sm text-[#3F4757]"> (reg season)</span>
-                  </div>
+                {s.biggestWin && (
+                  <SummaryRow
+                    team={s.biggestWin.team} label="💥 Biggest win"
+                    sub={`${gameSub(s.biggestWin)} · margin ${s.biggestWin.margin.toFixed(2)}`}
+                    value={`${s.biggestWin.score.toFixed(2)}–${s.biggestWin.opp.toFixed(2)}`}
+                  />
                 )}
-                {seasonSummary.lowestScorer && (
-                  <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                    <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">😵‍💫 Lowest Scorer</div>
-                    <div className="flex items-center gap-2">
-                      <TeamAvatar team={seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team} size="h-7 w-7" />
-                      <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.lowestScorer.Team || seasonSummary.lowestScorer.team}</div>
-                    </div>
-                    <span className="text-sm text-[#D01F2D]">{Math.round(parseNumber(seasonSummary.lowestScorer.RS_PF))} pts</span>
-                    <span className="text-sm text-[#3F4757]"> (reg season)</span>
-                  </div>
+                {s.lowestGame && (
+                  <SummaryRow team={s.lowestGame.team} label="😬 Lowest score" sub={gameSub(s.lowestGame)} value={s.lowestGame.score.toFixed(2)} />
                 )}
-              </div>
-
-              {seasonSummary.unicorn && seasonSummary.champion && (
-                <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                  <div className="mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">🦄 Unicórnio</div>
-                  <div className="mt-2 flex items-center gap-3">
-                    <TeamAvatar team={seasonSummary.unicorn.Team || seasonSummary.unicorn.team} size="h-9 w-9" />
-                    <div className="min-w-0">
-                      <div className="truncate text-xl font-black text-[#16274F]">{seasonSummary.unicorn.Team || seasonSummary.unicorn.team}</div>
-                      <div className="text-sm text-[#3F4757]">
-                        {parseNumber(seasonSummary.unicorn.RS_W)}–{parseNumber(seasonSummary.unicorn.RS_L)} reg season
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-1 flex items-center gap-3 border-t-2 border-[#0A0A0A]/10 pt-5">
-                <span className="h-2.5 w-2.5 bg-[#D01F2D]" />
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#6B7280]">Notable Games</div>
-              </div>
-
-              {seasonSummary.highestGame && (
-                <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                  <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">🔥 Highest Score</div>
-                  <div className="flex items-center gap-2">
-                    <TeamAvatar team={seasonSummary.highestGame.team} size="h-7 w-7" />
-                    <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.highestGame.team}</div>
-                  </div>
-                  <div className="text-sm text-[#16274F]">{seasonSummary.highestGame.score.toFixed(2)} pts</div>
-                  <div className="text-xs text-[#6B7280]">vs {seasonSummary.highestGame.opponent} · Week {seasonSummary.highestGame.week}</div>
-                </div>
-              )}
-
-              {seasonSummary.closestGame && (
-                <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                  <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">⚔️ Closest Game</div>
-                  <div className="flex items-center gap-2">
-                    <TeamAvatar team={seasonSummary.closestGame.team} size="h-7 w-7" />
-                    <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.closestGame.team}</div>
-                  </div>
-                  <div className="text-sm text-[#16274F]">{seasonSummary.closestGame.score.toFixed(2)} vs {seasonSummary.closestGame.opp.toFixed(2)}</div>
-                  <div className="text-xs text-[#6B7280]">vs {seasonSummary.closestGame.opponent} · Week {seasonSummary.closestGame.week} · Margin: {seasonSummary.closestGame.margin.toFixed(2)}</div>
-                </div>
-              )}
-
-              {seasonSummary.biggestWin && (
-                <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                  <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">💥 Biggest Win</div>
-                  <div className="flex items-center gap-2">
-                    <TeamAvatar team={seasonSummary.biggestWin.team} size="h-7 w-7" />
-                    <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.biggestWin.team}</div>
-                  </div>
-                  <div className="text-sm text-[#16274F]">{seasonSummary.biggestWin.score.toFixed(2)} vs {seasonSummary.biggestWin.opp.toFixed(2)}</div>
-                  <div className="text-xs text-[#6B7280]">vs {seasonSummary.biggestWin.opponent} · Week {seasonSummary.biggestWin.week} · Margin: {seasonSummary.biggestWin.margin.toFixed(2)}</div>
-                </div>
-              )}
-
-              {seasonSummary.lowestGame && (
-                <div className="border-2 border-[#0A0A0A]/15 bg-white p-4">
-                  <div className="mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6B7280]">😬 Lowest Score</div>
-                  <div className="flex items-center gap-2">
-                    <TeamAvatar team={seasonSummary.lowestGame.team} size="h-7 w-7" />
-                    <div className="min-w-0 truncate text-lg font-black text-[#16274F]">{seasonSummary.lowestGame.team}</div>
-                  </div>
-                  <div className="text-sm text-[#D01F2D]">{seasonSummary.lowestGame.score.toFixed(2)} pts</div>
-                  <div className="text-xs text-[#6B7280]">vs {seasonSummary.lowestGame.opponent} · Week {seasonSummary.lowestGame.week}</div>
-                </div>
-              )}
-
-            </div>
+              </SummaryCard>
+            </>
           )}
         </div>
       </div>
-
-      <style>{`
-        .tp-shadow-navy { box-shadow: 6px 6px 0 0 #16274F; }
-        .tp-shadow-navy-sm { box-shadow: 4px 4px 0 0 #16274F; }
-      `}</style>
     </>
   )
 }

@@ -12,32 +12,39 @@ export default function Header({ rightSlot, onSummaryOpen }) {
   const showSummary = SUMMARY_PAGES.includes(pathname)
 
   return (
-    <header className="relative z-30 mb-5 w-full border-b-4 border-[#D01F2D] bg-[#16274F]">
-      <div className="mx-auto flex min-h-[70px] max-w-[1920px] items-center justify-between gap-2 px-3 sm:px-5 lg:px-6 xl:px-8 2xl:px-12">
-        <a href="/" className="flex min-w-0 shrink-0 items-center gap-1.5 xl:gap-2">
+    <header className="relative z-30 mb-2 w-full bg-[#2A2B2E]">
+      <div className="flex h-14 items-stretch">
+        {/* Bloco vermelho com a marca. No mobile, o botão do menu (MobileDrawer) fica sobre a área da esquerda. */}
+        <a
+          href="/"
+          aria-label="Tapitas League"
+          className="flex shrink-0 items-center gap-2 bg-[#D01F2D] pl-14 pr-8 lg:pl-6"
+          style={{ clipPath: 'polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%)' }}
+        >
           <Image
             src="/images/LogoFinalBlack.png"
-            alt="Tapitas League"
+            alt=""
             width={34}
             height={34}
-            className="h-7 w-7 shrink-0 object-contain sm:h-8 sm:w-8"
+            className="h-7 w-7 shrink-0 object-contain brightness-0 invert"
           />
-          <span className="whitespace-nowrap text-[18px] font-black tracking-[-0.045em] text-white sm:text-[20px] xl:text-[22px] 2xl:text-[23px]">
-            Tapitas<span className="text-[#D01F2D]">League</span>
+          <span className="whitespace-nowrap text-[17px] font-bold tracking-tight text-white sm:text-[18px]">
+            Tapitas League
           </span>
         </a>
 
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0 lg:flex">
+        <nav className="hidden min-w-0 flex-1 items-stretch overflow-x-auto pl-2 lg:flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV_LINKS.map(({ label, href }) => {
             const isActive = pathname === href
             return (
               <a
                 key={href}
                 href={href}
-                className={`relative whitespace-nowrap px-1.5 py-2 text-[12px] font-black transition-colors duration-200 sm:px-2 sm:text-[13px] lg:px-1.5 lg:text-[13px] xl:px-2.5 xl:text-[15px] 2xl:px-3.5 2xl:text-[16px] ${
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative flex shrink-0 items-center whitespace-nowrap px-2.5 text-[13px] font-medium transition-colors xl:px-3.5 xl:text-[14px] ${
                   isActive
-                    ? 'text-white after:absolute after:inset-x-1.5 sm:after:inset-x-2 xl:after:inset-x-2.5 2xl:after:inset-x-3 after:-bottom-[2px] after:h-[3px] after:bg-[#D01F2D]'
-                    : 'text-[#B8C0D0] hover:text-white'
+                    ? 'text-white after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:border-x-[6px] after:border-b-[6px] after:border-x-transparent after:border-b-white'
+                    : 'text-[#C4C7CC] hover:text-white'
                 }`}
               >
                 {label}
@@ -46,14 +53,14 @@ export default function Header({ rightSlot, onSummaryOpen }) {
           })}
         </nav>
 
-        <div className="hidden shrink-0 items-center gap-1.5 lg:flex xl:gap-2">
+        <div className="ml-auto hidden shrink-0 items-center gap-2 pl-2 pr-4 lg:flex xl:pr-6">
           {showSummary && onSummaryOpen && (
             <button
               onClick={onSummaryOpen}
-              className="inline-flex h-10 items-center gap-1.5 border-2 border-[#0A0A0A] bg-[#D01F2D] px-2.5 text-[13px] font-black text-white tp-shadow-black transition-all hover:-translate-y-[1px] sm:px-3 lg:px-2.5 xl:px-4 xl:text-[15px]"
+              className="inline-flex h-8 items-center gap-1 rounded-full bg-[#D01F2D] pl-3.5 pr-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#B91A27]"
             >
               Summary
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 xl:h-4 xl:w-4" />
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             </button>
           )}
           {rightSlot && rightSlot}
