@@ -50,7 +50,7 @@ function NflChip({ game, open, onToggle }) {
   const possessionTeam = game.possession ? [home, away].find(s => String(s.espnId) === String(game.possession))?.team : null
 
   return (
-    <button type="button" onClick={onToggle} className={`w-[11.5rem] flex-shrink-0 rounded-lg px-2.5 py-2 text-left transition-colors ${open ? 'bg-[#EEF3FF] ring-1 ring-[#02275F]/20' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
+    <button type="button" onClick={onToggle} className={`w-[9rem] flex-shrink-0 rounded-lg px-2 py-1.5 text-left transition-colors ${open ? 'bg-[#EEF3FF] ring-1 ring-[#02275F]/20' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
         <span className={`truncate ${state === 'in' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
           {state === 'in' && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
@@ -74,7 +74,7 @@ function NflChip({ game, open, onToggle }) {
         </div>
       ))}
       <div className="mt-0.5 flex items-center gap-1 text-[10px] text-[#6B7280]">
-        {count > 0 ? <span className="font-medium text-[#02275F]">{count} Tapitas player{count > 1 ? 's' : ''}</span> : <span>No Tapitas players</span>}
+        {count > 0 ? <span className="font-medium text-[#02275F]">{count} Tapitas</span> : <span>No Tapitas</span>}
         {count > 0 && <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />}
       </div>
     </button>
@@ -83,23 +83,43 @@ function NflChip({ game, open, onToggle }) {
 
 function NflDetail({ game }) {
   const weather = weatherSummary(game.weather)
+  // Jogadores agrupados por franquia da liga (titulares primeiro)
+  const groups = new Map()
+  ;(game.leaguePlayers || []).forEach(p => {
+    if (!groups.has(p.fantasyTeam)) groups.set(p.fantasyTeam, [])
+    groups.get(p.fantasyTeam).push(p)
+  })
+  const byTeam = Array.from(groups.entries())
+    .map(([team, players]) => [team, [...players].sort((a, b) => Number(b.starter) - Number(a.starter) || a.name.localeCompare(b.name))])
+    .sort((a, b) => a[0].localeCompare(b[0]))
+
   return (
     <div className="border-t border-[#EEF0F2] px-3 py-2.5">
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#6B7280]">
         <span className="font-semibold text-[#111]">{game.away.name} @ {game.home.name}</span>
         {game.venue && <span>{game.venue}</span>}
-        {game.broadcast && <span>{game.broadcast}</span>}
         {weather && <span className={`flex items-center gap-1 ${game.weather?.alert ? 'font-medium text-[#B3171F]' : ''}`}><WeatherIcon weather={game.weather} /> {weather}</span>}
         {game.downDistance && game.state === 'in' && <span className="text-[#D01F2D]">{game.downDistance}</span>}
       </div>
-      {game.leaguePlayers?.length ? (
-        <div className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
-          {game.leaguePlayers.map(p => (
-            <div key={`${p.id}-${p.fantasyTeam}`} className="flex min-w-0 items-center gap-1.5 text-[12px]">
-              <PositionBadge position={p.pos} />
-              <span className={`flex-shrink-0 ${p.starter ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{p.name}</span>
-              <span className="text-[#9CA3AF]">{p.nflTeam}</span>
-              <span className="flex min-w-0 items-center gap-1 text-[#6B7280]"><span className="text-[#D1D5DB]">·</span><TeamLogo name={p.fantasyTeam} size={14} /><span className="truncate">{p.fantasyTeam}</span></span>
+      {byTeam.length ? (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {byTeam.map(([team, players]) => (
+            <div key={team} className="rounded-lg bg-[#F7F8FA] px-2.5 py-2">
+              <div className="mb-1 flex items-center gap-1.5 text-[12px] font-semibold text-[#111]">
+                <TeamLogo name={team} size={16} />
+                <span className="truncate">{team}</span>
+                <span className="ml-auto flex-shrink-0 text-[11px] font-normal text-[#6B7280]">{players.length}</span>
+              </div>
+              <div className="space-y-0.5">
+                {players.map(p => (
+                  <div key={p.id} className="flex min-w-0 items-center gap-1.5 text-[12px]">
+                    <PositionBadge position={p.pos} />
+                    <span className={`truncate ${p.starter ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{p.name}</span>
+                    <span className="flex-shrink-0 text-[#9CA3AF]">{p.nflTeam}</span>
+                    {!p.starter && <span className="ml-auto flex-shrink-0 text-[10px] text-[#9CA3AF]">Bench</span>}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -122,7 +142,7 @@ function TapitasChip({ season, status, m }) {
   const bWon = final && b.score > a.score
   const label = status === 'live' ? 'Live' : status === 'upcoming' ? 'Upcoming' : 'Final'
   return (
-    <a href={matchupHref(season, m)} className="w-[11.5rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2.5 py-2 transition-colors hover:bg-[#ECEEF1]">
+    <a href={matchupHref(season, m)} className="w-[9rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 py-1.5 transition-colors hover:bg-[#ECEEF1]">
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
         <span className={status === 'live' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}>
           {status === 'live' && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
@@ -137,75 +157,70 @@ function TapitasChip({ season, status, m }) {
           <span className={`tabular-nums ${won || !final ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{played ? t.score.toFixed(2) : '–'}</span>
         </div>
       ))}
-      <div className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-[#02275F]">Matchup details<ChevronRight className="h-3 w-3" /></div>
+      <div className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-[#02275F]">Details<ChevronRight className="h-3 w-3" /></div>
     </a>
   )
 }
 
-function ModeSwitch({ mode, onChange }) {
+function SectionLabel({ logo, name, week, onWeek, live }) {
   return (
-    <div className="inline-flex rounded-full bg-[#F1F2F4] p-0.5">
-      {[['nfl', 'NFL'], ['tapitas', 'Tapitas']].map(([key, label]) => (
-        <button key={key} type="button" onClick={() => onChange(key)} className={`h-6 rounded-full px-2 text-[11px] transition-colors ${mode === key ? 'bg-white font-semibold text-[#111] shadow-sm' : 'text-[#6B7280] hover:text-[#111]'}`}>
-          {label}
-        </button>
-      ))}
+    <div className="flex w-[6.5rem] flex-shrink-0 flex-col items-start justify-center gap-1 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
+      <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#111]">
+        <img src={logo} alt="" className="h-4 w-4 object-contain" />{name}
+        {live && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" title="Live" />}
+      </span>
+      <FilterPill value={String(week || '')} onChange={onWeek} options={WEEKS} displayOption={w => `Week ${w}`} label="Week" neutral hideLabel />
     </div>
   )
 }
 
-// Faixa de placares do topo: NFL ou Tapitas League, com seletor de semana único.
+const chipsRow = 'scroll-hide flex min-h-[84px] min-w-0 flex-1 items-stretch gap-1.5 overflow-x-auto p-2'
+const skeleton = n => Array.from({ length: n }).map((_, i) => <div key={i} className="w-[9rem] flex-shrink-0 animate-pulse rounded-lg bg-[#F4F5F7]" />)
+
+// Placares do topo da Home: NFL à esquerda (3 jogos visíveis, o resto rola) e
+// Tapitas League à direita, cada liga com o seu seletor de semana.
 export default function ScoreStrip({ onTapitasWeek }) {
-  const [mode, setMode] = useState('nfl')
-  const [week, setWeek] = useState(null)
+  const [nflWeek, setNflWeek] = useState(null)
+  const [tapWeek, setTapWeek] = useState(null)
   const [openId, setOpenId] = useState(null)
 
-  const url = mode === 'nfl'
-    ? `/api/nfl/scoreboard${week ? `?week=${week}` : ''}`
-    : `/api/league/week${week ? `?week=${week}` : ''}`
-  const { data, loading } = useWeekData(url)
-  const shownWeek = week || data?.week || null
+  const nfl = useWeekData(`/api/nfl/scoreboard${nflWeek ? `?week=${nflWeek}` : ''}`)
+  const tap = useWeekData(`/api/league/week${tapWeek ? `?week=${tapWeek}` : ''}`)
 
-  const changeWeek = w => {
-    setWeek(Number(w))
-    setOpenId(null)
-    if (mode === 'tapitas') onTapitasWeek?.(Number(w))
-  }
-  const changeMode = m => {
-    setMode(m)
-    setOpenId(null)
-    if (!week && data?.week) setWeek(Number(data.week))
-    if (m === 'tapitas' && (week || data?.week)) onTapitasWeek?.(Number(week || data.week))
-  }
-
-  const games = mode === 'nfl' ? data?.games || [] : []
-  const matchups = mode === 'tapitas' ? data?.matchups || [] : []
+  const games = nfl.data?.games || []
+  const matchups = tap.data?.matchups || []
   const open = games.find(g => g.id === openId)
-  const empty = !loading && (mode === 'nfl' ? !games.length : !matchups.length)
 
   return (
     <div className="relative z-20 border-b border-[#E6E8EB] bg-white">
-      <div className="flex items-stretch">
-        <div className="flex w-[7.25rem] flex-shrink-0 flex-col items-start justify-center gap-1 border-r border-[#EEF0F2] px-2 py-1.5">
-          <ModeSwitch mode={mode} onChange={changeMode} />
-          <div className="flex items-center gap-1">
-            <FilterPill
-              value={String(shownWeek || '')}
-              onChange={changeWeek}
-              options={WEEKS}
-              displayOption={w => `Week ${w}`}
-              label="Week"
-              neutral
-              hideLabel
-            />
-            {mode === 'nfl' && data?.live && <span className="text-[10px] font-semibold text-[#D01F2D]">LIVE</span>}
+      <div className="flex flex-col lg:flex-row">
+        <div className="flex min-w-0 border-b border-[#EEF0F2] lg:w-[36rem] lg:flex-none lg:border-b-0 lg:border-r">
+          <SectionLabel
+            logo="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png"
+            name="NFL"
+            week={nflWeek || nfl.data?.week}
+            onWeek={w => { setNflWeek(Number(w)); setOpenId(null) }}
+            live={nfl.data?.live}
+          />
+          <div className={chipsRow}>
+            {nfl.loading && skeleton(3)}
+            {!nfl.loading && !games.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No NFL games this week.</div>}
+            {!nfl.loading && games.map(g => <NflChip key={g.id} game={g} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
           </div>
         </div>
-        <div className="scroll-hide flex min-h-[92px] min-w-0 flex-1 items-stretch gap-1.5 overflow-x-auto p-2">
-          {loading && Array.from({ length: 6 }).map((_, i) => <div key={i} className="w-[11.5rem] flex-shrink-0 animate-pulse rounded-lg bg-[#F4F5F7]" />)}
-          {empty && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">{mode === 'nfl' ? 'No NFL games this week.' : 'No Tapitas matchups this week.'}</div>}
-          {!loading && games.map(g => <NflChip key={g.id} game={g} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
-          {!loading && matchups.map(m => <TapitasChip key={`${m.week}-${m.teams[0].team}`} season={data.season} status={data.status} m={m} />)}
+        <div className="flex min-w-0 flex-1">
+          <SectionLabel
+            logo="/images/LogoFinalBlack.png"
+            name="Tapitas"
+            week={tapWeek || tap.data?.week}
+            onWeek={w => { setTapWeek(Number(w)); onTapitasWeek?.(Number(w)) }}
+            live={tap.data?.status === 'live'}
+          />
+          <div className={chipsRow}>
+            {tap.loading && skeleton(5)}
+            {!tap.loading && !matchups.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No Tapitas matchups this week.</div>}
+            {!tap.loading && matchups.map(m => <TapitasChip key={`${m.week}-${m.teams[0].team}`} season={tap.data.season} status={tap.data.status} m={m} />)}
+          </div>
         </div>
       </div>
       {open && <NflDetail game={open} />}

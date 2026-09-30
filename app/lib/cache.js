@@ -3,6 +3,12 @@
 // - várias requisições simultâneas compartilham uma única busca;
 // - se a fonte falhar, devolve a última versão boa (quando existir).
 
+// Alguns sites recusam requisições sem cara de navegador
+export const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+  Accept: 'application/rss+xml, application/xml, text/xml, application/json, text/html;q=0.9, */*;q=0.8',
+}
+
 const store = new Map()
 const inflight = new Map()
 
@@ -32,13 +38,14 @@ export async function cached(key, ttlSeconds, load) {
 }
 
 export async function fetchJson(url, { timeoutMs = 15000, headers } = {}) {
-  const res = await fetch(url, { cache: 'no-store', headers, signal: AbortSignal.timeout(timeoutMs) })
+  const res = await fetch(url, { cache: 'no-store', headers: { 'User-Agent': BROWSER_HEADERS['User-Agent'], ...headers }, signal: AbortSignal.timeout(timeoutMs) })
   if (!res.ok) throw new Error(`${res.status} from ${url.split('?')[0]}`)
   return res.json()
 }
 
-export async function fetchText(url, { timeoutMs = 30000 } = {}) {
-  const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(timeoutMs) })
+
+export async function fetchText(url, { timeoutMs = 30000, headers } = {}) {
+  const res = await fetch(url, { cache: 'no-store', headers: { ...BROWSER_HEADERS, ...headers }, signal: AbortSignal.timeout(timeoutMs) })
   if (!res.ok) throw new Error(`${res.status} from ${url.split('?')[0]}`)
   return res.text()
 }

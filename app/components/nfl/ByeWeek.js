@@ -52,7 +52,8 @@ function FranchiseByes({ teams, byeTeams }) {
 // Semanas sem folga não aparecem; no fim da temporada avisa que acabaram.
 export function ByeWeekContent({ data }) {
   if (!data?.week) return <EmptyNote>Byes show up during the NFL regular season.</EmptyNote>
-  const weeks = data.upcomingByes || []
+  // Só a próxima semana com folga, para o card não ficar gigante
+  const weeks = (data.upcomingByes || []).slice(0, 1)
   if (!weeks.length) return <EmptyNote>No more byes this season.</EmptyNote>
   return (
     <>

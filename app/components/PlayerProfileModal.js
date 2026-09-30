@@ -185,6 +185,16 @@ function getPositionBadgeClasses(position) {
   return colors[String(position || '').toUpperCase()] || 'bg-[#F4F5F7] text-[#3F4757]'
 }
 
+// years_exp do Sleeper conta temporadas completas: quem estreou em 2025 tem 1
+// durante 2026, que é a 2ª temporada dele. Mostramos a temporada atual.
+function nflSeasonLabel(yearsExp) {
+  if (yearsExp == null || yearsExp === '') return 'Exp —'
+  const n = Number(yearsExp) + 1
+  if (n === 1) return 'Rookie'
+  const suffix = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th')
+  return `${n}${suffix} season`
+}
+
 // ── Sleeper (cache em módulo para não baixar os mesmos dados de novo) ──
 let SLEEPER_PLAYERS_PROMISE = null
 const SLEEPER_WEEKLY_PROMISES = new Map()
@@ -404,6 +414,19 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const [stageFilter, setStageFilter] = useState('All')
   const [sort, setSort] = useState(DEFAULT_SORT)
   const [tab, setTab] = useState(matchup ? 'week' : 'career')
+  // Altura visível do corpo do perfil (o game log usa isso como altura máxima)
+  const bodyRef = useRef(null)
+  const [bodyHeight, setBodyHeight] = useState(0)
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      const pad = parseFloat(getComputedStyle(el).paddingTop) + parseFloat(getComputedStyle(el).paddingBottom)
+      setBodyHeight(Math.max(240, el.clientHeight - pad))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const isSelf = name => String(name || '').trim() === rawName
 
@@ -680,7 +703,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
                   <>
                     <span className="text-white/35">·</span><span>Jersey {sleeperInfo?.number != null ? `#${sleeperInfo.number}` : '—'}</span>
                     <span className="text-white/35">·</span><span>Age {sleeperInfo?.age ?? '—'}</span>
-                    <span className="text-white/35">·</span><span>Exp {sleeperInfo?.years_exp != null ? `${sleeperInfo.years_exp} yrs` : '—'}</span>
+                    <span className="text-white/35">·</span><span title="Sleeper years_exp counts completed NFL seasons">{nflSeasonLabel(sleeperInfo?.years_exp)}</span>
                   </>
                 )}
                 {loadingInfo && <span className="text-white/50">Loading…</span>}
@@ -717,7 +740,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
           </div>
         )}
 
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2 sm:p-3">
+        <div ref={bodyRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2 sm:p-3">
           {matchup && tab === 'week' && (() => {
             const row = profileGames.find(x => x.isCurrent) || null
             const teamPA = row ? parseNumber(row.g?.PA) : 0
@@ -844,9 +867,11 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
           {/* Game log */}
           {tab === 'career' && (
           <ProfileCard title="Game Log" subtitle={`${sorted.length} of ${profileGames.length} games · click a row to open the matchup`}>
-            <div className="overflow-x-auto">
+            {/* A página rola até o game log encostar no topo; daí em diante só as
+                linhas rolam, com o cabeçalho (Season, Week…) fixo. */}
+            <div className="overflow-auto overscroll-contain" style={bodyHeight ? { maxHeight: bodyHeight } : undefined}>
               <table className="w-full min-w-[760px]">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_#EEF0F2]">
                   <tr className="border-b border-[#EEF0F2]">
                     {columns.map(([h, { sort: sortKey, filter, align }]) => {
                       const active = sortKey && sort.key === sortKey

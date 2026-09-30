@@ -8,6 +8,8 @@ const SOURCES = [
   { name: 'RotoBaller', urls: ['https://www.rotoballer.com/player-news/feed?sport=nfl', 'https://www.rotoballer.com/category/nfl/feed'] },
   { name: 'FantasyPros', urls: ['https://www.fantasypros.com/nfl/rss/player-news.xml', 'https://www.fantasypros.com/rss/nfl/news.xml'] },
   { name: 'CBS Sports', urls: ['https://www.cbssports.com/rss/headlines/nfl/'] },
+  { name: 'Pro Football Talk', urls: ['https://www.nbcsports.com/profootballtalk.rss', 'https://profootballtalk.nbcsports.com/feed/'] },
+  { name: 'ESPN NFL', urls: ['https://www.espn.com/espn/rss/nfl/news'] },
 ]
 
 const decode = str => String(str || '')
@@ -36,34 +38,47 @@ export function parseRss(xml, source) {
 }
 
 async function loadSource(src) {
-  let lastError = null
+  const attempts = []
   for (const url of src.urls) {
     try {
       const items = parseRss(await fetchText(url, { timeoutMs: 12000 }), src.name)
-      if (items.length) return items
-    } catch (err) { lastError = err }
+      attempts.push({ url, ok: true, items: items.length })
+      if (items.length) return { name: src.name, items, attempts }
+    } catch (err) {
+      attempts.push({ url, ok: false, error: err.message })
+    }
   }
-  if (lastError) console.error(`[rss] ${src.name}: ${lastError.message}`)
-  return []
+  console.error(`[rss] ${src.name}: no items`, attempts)
+  return { name: src.name, items: [], attempts }
+}
+
+// Resultado de cada fonte (para diagnóstico em /api/nfl/news-sources)
+export function getRssSources() {
+  return cached('rss:sources', 900, () => Promise.all(SOURCES.map(loadSource)))
 }
 
 // Todas as notícias recentes das fontes RSS
-export function getRssNews() {
-  return cached('rss:news', 900, async () => {
-    const lists = await Promise.all(SOURCES.map(loadSource))
-    return lists.flat()
-  })
+export async function getRssNews() {
+  const sources = await getRssSources()
+  return sources.flatMap(s => s.items)
 }
 
 // Liga notícias a jogadores pelo nome completo no título ou no resumo
 export function matchNewsToPlayers(items, players) {
+  // Variações do nome: "de von achane" e "devon achane" (apóstrofos e hífens)
   const keyed = players
     .filter(p => p?.name && p.pos !== 'DEF' && p.name.trim().split(/\s+/).length >= 2)
-    .map(p => ({ player: p, key: ` ${normalizePlayerKey(p.name)} ` }))
+    .map(p => {
+      const base = normalizePlayerKey(p.name)
+      const joined = normalizePlayerKey(String(p.name).replace(/['’`.-]/g, ''))
+      return { player: p, keys: Array.from(new Set([` ${base} `, ` ${joined} `])) }
+    })
   const out = []
   items.forEach(n => {
-    const text = ` ${normalizePlayerKey(`${n.headline} ${n.description}`)} `
-    const hit = keyed.find(k => text.includes(k.key))
+    const raw = `${n.headline} ${n.description}`
+    const text = ` ${normalizePlayerKey(raw)} `
+    const textJoined = ` ${normalizePlayerKey(raw.replace(/['’`.-]/g, ''))} `
+    const hit = keyed.find(k => k.keys.some(key => text.includes(key) || textJoined.includes(key)))
     if (hit) out.push({ ...n, player: hit.player })
   })
   return out

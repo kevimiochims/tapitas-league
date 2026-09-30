@@ -7,6 +7,7 @@ import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords
 import { PageShell, PageBar, BarTab, LeaderCard, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 import LeagueNewsCard from '../components/nfl/LeagueNewsCard'
+import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
 
 const BASE_URL = '/api/sheet'
 
@@ -447,13 +448,6 @@ function formatSeasonList(seasons) {
   }
   flush()
   return parts.join(' ')
-}
-
-// "Alvin Kamara" → "A. Kamara" (formato dos nomes no GAME_FACTS_ALL)
-function abbreviateName(name, pos) {
-  const parts = String(name || '').trim().split(/\s+/)
-  if (pos === 'DEF' || parts.length < 2) return String(name || '').trim()
-  return `${parts[0][0]}. ${parts.slice(1).join(' ')}`
 }
 
 export default function PlayersPage() {
@@ -1010,7 +1004,7 @@ export default function PlayersPage() {
       {newsPlayer && (
         <PlayerProfileModal
           key={`news-${newsPlayer.id}`}
-          rawName={newsPlayer.sheetName || abbreviateName(newsPlayer.name, newsPlayer.pos)}
+          rawName={resolveFactsName(buildFactsNameIndex(games), newsPlayer)}
           displayName={newsPlayer.name}
           position={newsPlayer.pos}
           playerId={newsPlayer.id}

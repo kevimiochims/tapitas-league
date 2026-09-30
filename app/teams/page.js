@@ -6,6 +6,7 @@ import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords
 import Header from '../components/Header'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 import TeamNflNotice from '../components/nfl/TeamNflNotice'
+import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
 import { SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
@@ -1685,7 +1686,7 @@ export default function TeamsPage() {
       <>
         {teamStrip}
         {heroCard}
-        <TeamNflNotice team={selected.team} onOpenPlayer={p => p.sheetName && openPlayerProfile(`raw:${p.sheetName}`)} />
+        <TeamNflNotice team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`)} />
 
         {/* Abas (só no mobile/tablet — no desktop os cards ficam nas laterais) */}
         <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">

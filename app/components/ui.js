@@ -531,13 +531,13 @@ const TEAM_IMAGES = {
 const TEAM_ABBR = {
   'howmuch': 'HOW',
   'i am megatron': 'MEG',
-  'moneyball': 'MNY',
-  'ocupa e resiste': 'OCU',
+  'moneyball': 'MON',
+  'ocupa e resiste': 'O&R',
   'oldbrady': 'OLD',
   'patrolao squad': 'PAT',
   'pequers verde': 'PEQ',
   'peytao da massa': 'PEY',
-  'rincao settlers': 'RIN',
+  'rincao settlers': 'SET',
   'h-lera do mahl': 'HLE',
 }
 

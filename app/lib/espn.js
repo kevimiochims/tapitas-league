@@ -57,9 +57,12 @@ export function getScoreboard({ week, season } = {}) {
 // Tenta o feed de notícias do fantasy da ESPN e, se falhar, o feed geral da NFL.
 export function getPlayerNews(espnId) {
   return cached(`espn:news:${espnId}`, 1800, async () => {
+    const id = encodeURIComponent(espnId)
     const urls = [
-      `https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=${encodeURIComponent(espnId)}&limit=8`,
-      `${SITE}/news?athlete=${encodeURIComponent(espnId)}&limit=8`,
+      `https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=${id}&limit=8`,
+      `https://site.web.api.espn.com/apis/common/v3/sports/football/nfl/athletes/${id}/overview`,
+      `${SITE}/news?athletes=${id}&limit=8`,
+      `${SITE}/news?athlete=${id}&limit=8`,
     ]
     let lastError = null
     let answered = false
@@ -90,7 +93,8 @@ function athleteIds(a) {
 }
 
 function mapNews(data) {
-  return (data?.feed || data?.articles || data?.headlines || []).map(a => ({
+  const list = data?.feed || data?.articles || data?.headlines || data?.news?.articles || data?.news || []
+  return (Array.isArray(list) ? list : []).map(a => ({
     id: String(a?.id || a?.dataSourceIdentifier || a?.headline || ''),
     headline: a?.headline || a?.title || '',
     description: a?.description || '',

@@ -13,6 +13,7 @@ import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
 import ScoreStrip from './components/nfl/ScoreStrip'
+import { resolveFactsName } from './lib/factsNames'
 import RosterAlertsCard from './components/nfl/RosterAlertsCard'
 import TrendingCard from './components/nfl/TrendingCard'
 import LeagueNewsCard from './components/nfl/LeagueNewsCard'
@@ -38,13 +39,6 @@ async function fetchSleeperPlayers() {
   return SLEEPER_PLAYERS_PROMISE
 }
 
-
-// "Alvin Kamara" → "A. Kamara" (formato dos nomes no GAME_FACTS_ALL)
-function abbreviatePlayerName(name, pos) {
-  const parts = String(name || '').trim().split(/\s+/)
-  if (pos === 'DEF' || parts.length < 2) return String(name || '').trim()
-  return `${parts[0][0]}. ${parts.slice(1).join(' ')}`
-}
 
 function normalizeString(value) {
   return String(value || '')
@@ -1801,7 +1795,7 @@ export default function TapitasLeagueHomepage() {
     return index
   }, [gameFactsData])
 
-  const resolveFactsName = (fullName) => {
+  const resolveDraftName = (fullName) => {
     const raw = String(fullName || '').trim()
     const exact = factsNameIndex.get(normalizePlayerKey(raw))
     if (exact) return exact
@@ -1950,18 +1944,45 @@ export default function TapitasLeagueHomepage() {
 
   const matchupLink = m => `/matchups?season=${encodeURIComponent(m.season)}&week=${encodeURIComponent(m.week)}&team=${encodeURIComponent(m.team)}&opp=${encodeURIComponent(m.opp)}`
 
-  // Rivalry da Home: começa com um confronto da semana exibida no placar,
-  // sorteado a cada visita (o usuário pode trocar pelos seletores).
+  // Rivalry da Home: sorteia um confronto da próxima semana (a seguinte à última
+  // registrada na planilha, vinda do Sleeper). Sem próxima semana (fim de
+  // temporada), sorteia qualquer par de franquias. O usuário pode trocar.
+  const [upcomingRivalry, setUpcomingRivalry] = useState({ loaded: false, week: null, pairs: [] })
+  const lastSheetWeek = useMemo(() => Math.max(0, ...matchupOptions
+    .filter(o => String(o.season) === String(currentSeason))
+    .map(o => Number(o.week) || 0)), [matchupOptions, currentSeason])
+
   useEffect(() => {
-    if (selectedTeamA || !visibleMatchups.length || !h2hData.length) return
+    if (!currentSeason || !gameFactsData.length || upcomingRivalry.loaded) return
+    let cancelled = false
+    const next = lastSheetWeek + 1
+    fetch(`/api/league/week?week=${next}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (cancelled) return
+        const pairs = d?.source === 'sleeper' && String(d?.season) === String(currentSeason)
+          ? (d.matchups || []).map(m => [m.teams[0].team, m.teams[1].team])
+          : []
+        setUpcomingRivalry({ loaded: true, week: pairs.length ? next : null, pairs })
+      })
+      .catch(() => { if (!cancelled) setUpcomingRivalry({ loaded: true, week: null, pairs: [] }) })
+    return () => { cancelled = true }
+  }, [currentSeason, gameFactsData.length, lastSheetWeek, upcomingRivalry.loaded])
+
+  useEffect(() => {
+    if (selectedTeamA || !upcomingRivalry.loaded || !h2hData.length) return
     const hasRow = (a, b) => h2hData.some(r => {
       const keys = Object.keys(r)
       return normalizeString(r[keys[0]]) === normalizeString(a) && normalizeString(r[keys[1]]) === normalizeString(b)
     })
-    const pick = visibleMatchups[Math.floor(Math.random() * visibleMatchups.length)]
-    if (hasRow(pick.team, pick.opp)) { setSelectedTeamA(pick.team); setSelectedTeamB(pick.opp) }
-    else if (hasRow(pick.opp, pick.team)) { setSelectedTeamA(pick.opp); setSelectedTeamB(pick.team) }
-  }, [visibleMatchups, h2hData, selectedTeamA])
+    const pairs = upcomingRivalry.pairs.length
+      ? upcomingRivalry.pairs
+      : h2hData.map(r => { const keys = Object.keys(r); return [r[keys[0]], r[keys[1]]] }).filter(([a, b]) => a && b)
+    if (!pairs.length) return
+    const [a, b] = pairs[Math.floor(Math.random() * pairs.length)]
+    if (hasRow(a, b)) { setSelectedTeamA(a); setSelectedTeamB(b) }
+    else if (hasRow(b, a)) { setSelectedTeamA(b); setSelectedTeamB(a) }
+  }, [upcomingRivalry, h2hData, selectedTeamA])
 
   // Destaques da semana: jogos em destaque + melhores jogadores no mesmo card,
   // em duas seções com título próprio.
@@ -2096,7 +2117,9 @@ export default function TapitasLeagueHomepage() {
   const rivalryCard = (
     <section className="mb-2 rounded-xl bg-white">
       <VersusPoster
-        label="Rivalry spotlight"
+        label={upcomingRivalry.week && upcomingRivalry.pairs.some(([a, b]) => [a, b].map(normalizeString).sort().join('|') === [selectedTeamA, selectedTeamB].map(normalizeString).sort().join('|'))
+          ? `Rivalry spotlight · Week ${upcomingRivalry.week} matchup`
+          : 'Rivalry spotlight'}
         badge={selectedRivalry ? `${selectedRivalry.heat} rivalry` : null}
         left={selectedRivalry ? { team: selectedRivalry.teamA, value: selectedRivalry.winsA } : null}
         right={selectedRivalry ? { team: selectedRivalry.teamB, value: selectedRivalry.winsB } : null}
@@ -2272,7 +2295,7 @@ export default function TapitasLeagueHomepage() {
       {selectedNflPlayer && (
         <PlayerProfileModal
           key={`nfl-${selectedNflPlayer.id || selectedNflPlayer.name}`}
-          rawName={selectedNflPlayer.sheetName || abbreviatePlayerName(selectedNflPlayer.name, selectedNflPlayer.pos)}
+          rawName={resolveFactsName(factsNameIndex, selectedNflPlayer)}
           displayName={selectedNflPlayer.name}
           position={selectedNflPlayer.pos}
           playerId={selectedNflPlayer.id}
@@ -2284,7 +2307,7 @@ export default function TapitasLeagueHomepage() {
       {selectedDraftPlayer && (
         <PlayerProfileModal
           key={selectedDraftPlayer.pick.player}
-          rawName={resolveFactsName(selectedDraftPlayer.pick.player)}
+          rawName={resolveDraftName(selectedDraftPlayer.pick.player)}
           displayName={selectedDraftPlayer.data?.shortName || selectedDraftPlayer.pick.player}
           position={selectedDraftPlayer.data?.pos || selectedDraftPlayer.pick.position}
           playerId={selectedDraftPlayer.data?.playerId}
