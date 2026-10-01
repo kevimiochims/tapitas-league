@@ -3,8 +3,8 @@
 import { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
-import { ChevronRight } from 'lucide-react'
-import { BrandBackdrop, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, StableHeight, LoadingState } from '../components/ui'
+import { ChevronRight, Activity, Swords, Flame } from 'lucide-react'
+import { HighlightCards, HighlightIcon, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, StableHeight, LoadingState } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -883,29 +883,22 @@ function StatsPageContent() {
     const allScores = rows.map(g => parseNumber(g?.PF))
     const leagueAvg = allScores.length ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0
     const games = new Set(gamesData.map(g => `${g?.Season}|${g?.Week}|${[g?.Team, g?.Opponent].sort().join('|')}`)).size
-    return { ppg, distribution, seasonScoring, winPct, titles, playoffApps, leagueAvg, maxScore: Math.max(0, ...allScores), games, over200: allScores.filter(v => v >= 200).length }
+    const maxGame = rows.reduce((best, g) => (!best || parseNumber(g?.PF) > parseNumber(best?.PF) ? g : best), null)
+    const over200ByTeam = {}
+    rows.forEach(g => { if (parseNumber(g?.PF) >= 200) { const t = String(g?.Team || '').trim(); over200ByTeam[t] = (over200ByTeam[t] || 0) + 1 } })
+    const over200Leader = Object.entries(over200ByTeam).sort((a, b) => b[1] - a[1])[0] || null
+    return { ppg, distribution, seasonScoring, winPct, titles, playoffApps, leagueAvg, maxScore: Math.max(0, ...allScores), maxGame, over200Leader, seasons: Object.keys(bySeason).length, games, over200: allScores.filter(v => v >= 200).length }
   }, [allTimeData, gamesData])
 
   const overviewTab = (
     <>
-      {/* Faixa "a liga em números" no azul da marca com textura */}
-      <div className="relative mb-2 overflow-hidden rounded-xl text-white">
-        <BrandBackdrop />
-        <div className="relative grid grid-cols-2 sm:grid-cols-4">
-          {[
-            { label: 'Matchups played', value: overview.games.toLocaleString(), sub: 'All stages' },
-            { label: 'League average', value: overview.leagueAvg.toFixed(1), sub: 'Points per team per week' },
-            { label: 'Highest score ever', value: overview.maxScore.toFixed(2), sub: 'Single week', accent: 'text-[#E8C766]' },
-            { label: '200+ games', value: overview.over200, sub: 'Single weeks' },
-          ].map((k, i) => (
-            <div key={k.label} className={`min-w-0 px-4 py-4 sm:px-5 sm:py-5 ${i % 2 === 1 ? 'border-l border-white/10' : ''} ${i >= 2 ? 'border-t border-white/10 sm:border-t-0' : ''} ${i === 2 ? 'sm:border-l' : ''}`}>
-              <div className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-white/65">{k.label}</div>
-              <div className={`mt-1.5 text-[28px] font-bold leading-none tabular-nums sm:text-[32px] ${k.accent || 'text-white'}`}>{k.value}</div>
-              <div className="mt-1.5 truncate text-[12px] text-white/65">{k.sub}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* A liga em números: quatro cards no padrão da Draft */}
+      <HighlightCards items={[
+        { label: 'Highest score ever', left: overview.maxGame ? <TeamLogo name={String(overview.maxGame.Team || '').trim()} size={32} /> : null, title: String(overview.maxGame?.Team || '—').trim(), subtitle: overview.maxGame ? `vs ${String(overview.maxGame.Opponent || '').trim()} · Week ${overview.maxGame.Week} ${overview.maxGame.Season}` : 'Single week', value: `${overview.maxScore.toFixed(2)} pts` },
+        { label: 'League average', left: <HighlightIcon icon={Activity} />, title: 'Per team, per week', subtitle: 'Single weeks · all seasons', value: overview.leagueAvg.toFixed(1) },
+        { label: 'Matchups played', left: <HighlightIcon icon={Swords} tone="red" />, title: 'All stages', subtitle: `${overview.seasons} seasons`, value: overview.games.toLocaleString() },
+        { label: '200+ games', left: overview.over200Leader ? <TeamLogo name={overview.over200Leader[0]} size={32} /> : <HighlightIcon icon={Flame} tone="gold" />, title: overview.over200Leader ? `${overview.over200Leader[0]} leads` : 'Single weeks', subtitle: overview.over200Leader ? `${overview.over200Leader[1]} of them · single weeks` : 'No 200+ game yet', value: overview.over200, valueClass: 'text-[#B8860B]' },
+      ]} />
 
       <CardShell title="Finishing positions" subtitle="Every franchise, every season · 🏆 champion · 🦄 last place · darker blue = higher finish">
         <div className="px-2 py-3 lg:px-3">

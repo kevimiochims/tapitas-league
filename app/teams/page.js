@@ -10,6 +10,7 @@ import { TeamTransactionsCard } from '../components/Transactions'
 import PlayerCutout from '../components/PlayerCutout'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
 import { BrandBackdrop, SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager, StableHeight } from '../components/ui'
+import { getTeamFocus } from '../context/TeamFocus'
 
 const BASE_URL = '/api/sheet'
 
@@ -648,9 +649,11 @@ export default function TeamsPage() {
         typeof window !== 'undefined'
           ? new URLSearchParams(window.location.search).get('team')
           : null
-      if (teamParam) {
+      // Sem ?team=, abre no time em foco (filtro geral do header), se houver
+      const wanted = teamParam || getTeamFocus()
+      if (wanted) {
         const match = at.find(r =>
-          String(r?.Team || '').trim().toLowerCase() === teamParam.toLowerCase()
+          String(r?.Team || '').trim().toLowerCase() === wanted.toLowerCase()
         )
         if (match) setSelected({ ...match, team: String(match.Team || '').trim() })
       }

@@ -43,16 +43,56 @@ export function SiteFooter() {
   )
 }
 
+// Quatro destaques em cards separados (padrão da página Draft): o 1º em azul
+// com o rótulo dourado, os outros brancos. Cada item: label, left (logo,
+// foto ou ícone), title, subtitle, value, valueClass.
+export function HighlightCards({ items }) {
+  const rows = items.filter(Boolean)
+  if (!rows.length) return null
+  return (
+    <div className="mb-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
+      {rows.map((row, i) => {
+        const featured = i === 0
+        return (
+          <div key={row.label} className={`relative min-w-0 overflow-hidden rounded-xl p-3 lg:p-4 ${featured ? 'text-white' : 'bg-white'}`}>
+            {featured && <BrandBackdrop />}
+            <div className="relative">
+              <div className={`truncate text-[11px] font-medium ${featured ? 'font-semibold uppercase tracking-[0.12em] text-[#E8C766]' : 'text-[#6B7280]'}`}>{row.label}</div>
+              <div className="mt-2 flex min-w-0 items-center gap-2.5">
+                {row.left && (featured ? <span className="flex-shrink-0 rounded-full bg-white p-0.5">{row.left}</span> : <span className="flex-shrink-0">{row.left}</span>)}
+                <div className="min-w-0">
+                  <div className={`truncate text-[13px] font-semibold leading-tight ${featured ? 'text-white' : 'text-[#111]'}`}>{row.title}</div>
+                  {row.subtitle && <div className={`truncate text-[11px] ${featured ? 'text-white/70' : 'text-[#6B7280]'}`}>{row.subtitle}</div>}
+                </div>
+              </div>
+              <div className={`mt-2 truncate text-[20px] font-bold leading-none tabular-nums ${featured ? 'text-white' : row.valueClass || 'text-[#111]'}`}>{row.value}</div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Ícone redondo para os destaques sem logo/foto
+export function HighlightIcon({ icon: Icon, tone = 'navy' }) {
+  const cls = { navy: 'bg-[#EEF3FF] text-[#02275F]', red: 'bg-[#FDECEE] text-[#B3171F]', gold: 'bg-[#FFF2B8] text-[#6B5A00]', green: 'bg-[#E8F5EC] text-[#1E8E3E]' }[tone]
+  return <span className={`flex h-8 w-8 items-center justify-center rounded-full ${cls}`}><Icon className="h-4 w-4" /></span>
+}
+
 // Botão "Season summary" (header no desktop, barra do topo no mobile).
-export function SummaryButton({ onClick, compact = false }) {
+// `iconOnly`: classes de quando esconder o texto (fica só o troféu).
+export function SummaryButton({ onClick, compact = false, iconOnly = '' }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D6DCE8] bg-white px-3 text-[13px] font-semibold text-[#02275F] transition-colors hover:border-[#02275F] hover:bg-[#EEF3FF]"
+      title="Season summary"
+      aria-label="Season summary"
+      className={`inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D6DCE8] bg-white text-[13px] font-semibold text-[#02275F] transition-colors hover:border-[#02275F] hover:bg-[#EEF3FF] ${iconOnly ? 'w-8 justify-center 2xl:w-auto 2xl:px-3' : 'px-3'}`}
     >
-      <Trophy className="h-3.5 w-3.5 text-[#B8860B]" />
-      {compact ? 'Summary' : 'Season summary'}
+      <Trophy className="h-3.5 w-3.5 flex-shrink-0 text-[#B8860B]" />
+      <span className={iconOnly ? 'hidden 2xl:inline' : ''}>{compact ? 'Summary' : 'Season summary'}</span>
     </button>
   )
 }

@@ -802,8 +802,8 @@ export default function HistoryPage() {
               {view === 'unicorn'
                 ? selected?.unicorn && <RoadCard title="Road to the bottom 🦄" subtitle={`${selected.unicorn} · consolation bracket`} list={selected.unicornConsolationGames || []} tone="red" />
                 : selected && <RoadCard title="Road to the title 🏆" subtitle={`${selected.champion} · playoff bracket`} list={selected.playoffGames || []} />}
-              <div className="lg:hidden">{awardsCard}</div>
               {view === 'unicorn' ? unicornRunCard : runCard}
+              <div className="lg:hidden">{awardsCard}</div>
               {recapCard}
             </div>
             <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{awardsCard}</aside>

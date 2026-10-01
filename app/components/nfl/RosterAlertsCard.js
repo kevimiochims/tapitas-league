@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { CardShell, FilterPill, ToggleChip, Tag, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { useLeagueStatus } from './useNflData'
 import { PlayerThumb, EmptyNote, injuryRank, injuryTone, injuryLabel } from './shared'
+import { useFocusFilter } from '../../context/TeamFocus'
 
 // Lesões dos elencos da liga (Sleeper), com filtro por franquia
 export default function RosterAlertsCard({ onOpenPlayer }) {
   const { data, loading, error } = useLeagueStatus()
   const [filter, setFilter] = useState('starters')
-  const [team, setTeam] = useState('All')
+  const [team, setTeam] = useFocusFilter('All')
 
   const teams = (data?.teams || []).map(t => t.team).sort((a, b) => a.localeCompare(b))
   const all = (data?.teams || [])
