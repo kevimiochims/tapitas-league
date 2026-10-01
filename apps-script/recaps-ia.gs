@@ -26,6 +26,7 @@
 // =============================================================================
 
 const RECAP_MAX_POR_EXECUCAO = 12   // evita estourar o limite de 6 min do Apps Script
+const RECAP_TEMPO_MAX_MS = 4.5 * 60 * 1000  // não começa um recap novo depois de 4,5 min (o Apps Script corta em 6)
 const RECAP_PAUSA_MS = 12000         // ~5 pedidos por minuto, o limite gratuito dos modelos Flash
 
 function recapConfig_() {
@@ -112,27 +113,36 @@ function fetchDossie_(cfg, params) {
   return res.getContentText()
 }
 
-// Chama o Gemini. Se o modelo estiver sobrecarregado (erro 503/500), espera e
-// tenta de novo; se continuar, usa o modelo reserva (GEMINI_MODEL_RESERVA,
-// padrão gemini-2.5-flash).
+// Chama o Gemini. Se o modelo principal estiver sobrecarregado (erro 503/500),
+// tenta mais uma vez após 10s; se continuar, passa para o modelo reserva
+// (GEMINI_MODEL_RESERVA, padrão gemini-2.5-flash) e usa só o reserva no resto
+// desta execução, para não perder tempo insistindo num modelo lotado.
+// Devolve { texto, modelo }.
+let PRINCIPAL_LOTADO_ = false
 function chamaGemini_(cfg, sistema, texto) {
-  const modelos = [cfg.model, cfg.reserva].filter((m, i, arr) => m && arr.indexOf(m) === i)
-  const esperas = [0, 15000, 30000]
+  const modelos = [cfg.model, cfg.reserva]
+    .filter((m, i, arr) => m && arr.indexOf(m) === i)
+    .filter((m, i) => !(i === 0 && PRINCIPAL_LOTADO_ && cfg.reserva && cfg.reserva !== cfg.model))
   let ultimoErro = null
-  for (const modelo of modelos) {
+  for (let k = 0; k < modelos.length; k++) {
+    const modelo = modelos[k]
+    const esperas = k === modelos.length - 1 ? [0, 10000, 20000] : [0, 10000]
     for (let t = 0; t < esperas.length; t++) {
       if (esperas[t]) {
         Logger.log(`[GEMINI] ${modelo} ocupado, tentando de novo em ${esperas[t] / 1000}s...`)
         Utilities.sleep(esperas[t])
       }
       try {
-        return chamaGeminiUmaVez_(cfg, modelo, sistema, texto)
+        return { texto: chamaGeminiUmaVez_(cfg, modelo, sistema, texto), modelo }
       } catch (e) {
         ultimoErro = e
         if (!/Gemini (500|503)/.test(e.message)) throw e // outros erros: não adianta insistir
       }
     }
-    if (modelo !== modelos[modelos.length - 1]) Logger.log(`[GEMINI] ${modelo} continua ocupado, usando o reserva.`)
+    if (k < modelos.length - 1) {
+      PRINCIPAL_LOTADO_ = true
+      Logger.log(`[GEMINI] ${modelo} continua ocupado: usando ${modelos[k + 1]} no resto desta execução.`)
+    }
   }
   throw ultimoErro
 }
@@ -193,8 +203,10 @@ function gerarRecapsDaLiga() {
   })
 
   let feitos = 0
+  const inicio = Date.now()
   const processados = new Set()
   for (let i = 1; i < data.length && feitos < RECAP_MAX_POR_EXECUCAO; i++) {
+    if (Date.now() - inicio > RECAP_TEMPO_MAX_MS) { Logger.log('[RECAP] Tempo quase no limite: parando aqui. Rode de novo para continuar.'); break }
     const r = data[i]
     if (String(r[cRecap] || '').trim()) continue
     const season = r[cSeason], week = r[cWeek], team = String(r[cTeam]).trim(), opp = String(r[cOpp]).trim()
@@ -218,12 +230,13 @@ function gerarRecapsDaLiga() {
         ? `\n\n## JÁ ESCRITOS NESTA SEMANA (não repita aberturas, piadas nem estrutura)\n${escritos.map(t => `- Abertura usada: "${primeiraFrase_(t)}"`).join('\n')}`
         : ''
       const texto = `Escreva o recap desta partida.\n\n${dossie}${loreTexto_(cfg, [team, opp])}${outros}`
-      const recap = chamaGemini_(cfg, sistema, texto)
+      const { texto: recap, modelo } = chamaGemini_(cfg, sistema, texto)
 
       sheet.getRange(i + 1, cRecap + 1).setValue(recap)
       if (espelho > 0) sheet.getRange(espelho + 1, cRecap + 1).setValue(recap)
       SpreadsheetApp.flush()
       ;(daSemana[key] = daSemana[key] || new Set()).add(recap)
+      Logger.log(`[RECAP] ✔ gravado (${modelo})`)
       feitos++
       Utilities.sleep(RECAP_PAUSA_MS)
     } catch (e) {
@@ -260,7 +273,9 @@ function gerarRecapsDoPowerRanking() {
   })
 
   let feitos = 0
+  const inicio = Date.now()
   for (let i = 1; i < data.length && feitos < RECAP_MAX_POR_EXECUCAO; i++) {
+    if (Date.now() - inicio > RECAP_TEMPO_MAX_MS) { Logger.log('[PR] Tempo quase no limite: parando aqui. Rode de novo para continuar.'); break }
     const r = data[i]
     if (String(r[cNote] || '').trim()) continue
     if (!(Number(r[cPR]) > 0)) continue // só linhas com Power Ranking calculado
@@ -274,10 +289,11 @@ function gerarRecapsDoPowerRanking() {
         ? `\n\n## VERBETES JÁ ESCRITOS NESTA SEMANA (não repita aberturas, piadas nem estrutura)\n${escritos.map(t => `- "${primeiraFrase_(t)}"`).join('\n')}`
         : ''
       const texto = `Escreva o verbete de Power Ranking de ${team} nesta semana.\n\n${dossie}${loreTexto_(cfg, [team, String(r[cOpp]).trim()])}${outros}`
-      const note = chamaGemini_(cfg, sistema, texto)
+      const { texto: note, modelo } = chamaGemini_(cfg, sistema, texto)
       sheet.getRange(i + 1, cNote + 1).setValue(note)
       SpreadsheetApp.flush()
       ;(daSemana[key] = daSemana[key] || []).push(note)
+      Logger.log(`[PR] ✔ gravado (${modelo})`)
       feitos++
       Utilities.sleep(RECAP_PAUSA_MS)
     } catch (e) {
