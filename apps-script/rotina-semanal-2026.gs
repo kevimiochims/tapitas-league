@@ -24,6 +24,10 @@ function executaRotinaSemanal() {
   executaEtapa_('Aba de Head-to-Head (updateHeadToHeadStats)', updateHeadToHeadStats);
   executaEtapa_('Power Rankings (calculatePowerRankingsV2)', calculatePowerRankingsV2);
 
+  // 3) Recaps com IA (arquivo recaps-ia.gs), depois que tudo acima foi recalculado
+  if (typeof gerarRecapsDaLiga === 'function') executaEtapa_('Recaps dos jogos (gerarRecapsDaLiga)', gerarRecapsDaLiga);
+  if (typeof gerarRecapsDoPowerRanking === 'function') executaEtapa_('Verbetes do Power Ranking (gerarRecapsDoPowerRanking)', gerarRecapsDoPowerRanking);
+
   Logger.log(`[ROTINA] Concluída com sucesso (${((Date.now() - inicio) / 1000).toFixed(1)}s).`);
 }
 
