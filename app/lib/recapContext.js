@@ -231,7 +231,7 @@ function teamAngles({ rows, team, opp, g, oppG, weekRows, seasonRows }) {
     angles.push({ w: pr > 0 && pr <= 25 ? 4 : 2, text: line })
   }
   const flop = starters.filter(p => p.slot !== 'K' && p.slot !== 'DEF').sort((a, b) => a.pts - b.pts)[0]
-  if (flop && flop.pts <= 3) angles.push({ w: 2, text: `${flop.name} (${flop.slot}) fez só ${f2(flop.pts)} pontos como titular de ${team}.` })
+  if (flop && flop.pts <= 3) angles.push({ w: 2, text: flop.pts === 0 ? `${flop.name} (${flop.slot}) zerou como titular de ${team}.` : `${flop.name} (${flop.slot}) fez só ${f2(flop.pts)} pontos como titular de ${team}.` })
   const benchTop = [...bench].sort((a, b) => b.pts - a.pts)[0]
   const maxPF = num(field(g, 'MaxPF', 'Max_PF', 'Ideal', 'Pontuação Ideal'))
   if (r === 'L' && maxPF && maxPF > pa && benchTop && benchTop.pts >= 15) {
@@ -391,7 +391,7 @@ export async function buildMatchupContext({ season, week, team, opp }) {
   // Recaps anteriores dos dois times (para dar continuidade e não repetir)
   const prevRecap = t => {
     const last = previousRows.filter(x => norm(x.Team) === norm(t) && str(x['Recap da Partida'])).sort((x, y) => order(y) - order(x))[0]
-    return last ? `${gameLabel(last)} vs ${str(last.Opponent)}: ${trimRecap(last['Recap da Partida'])}` : ''
+    return last ? `Último recap de ${t} (${gameLabel(last)} vs ${str(last.Opponent)}): ${trimRecap(last['Recap da Partida'])}` : ''
   }
 
   return {
