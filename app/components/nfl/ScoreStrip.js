@@ -50,7 +50,7 @@ function NflChip({ game, open, onToggle }) {
   const possessionTeam = game.possession ? [home, away].find(s => String(s.espnId) === String(game.possession))?.team : null
 
   return (
-    <button type="button" onClick={onToggle} className={`w-[9rem] flex-shrink-0 rounded-lg px-2 py-1.5 text-left transition-colors ${open ? 'bg-[#EEF3FF] ring-1 ring-[#02275F]/20' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
+    <button type="button" onClick={onToggle} className={`w-[8.25rem] flex-shrink-0 rounded-lg px-2 py-1.5 text-left transition-colors ${open ? 'bg-[#EEF3FF] ring-1 ring-[#02275F]/20' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
         <span className={`truncate ${state === 'in' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
           {state === 'in' && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
@@ -83,6 +83,8 @@ function NflChip({ game, open, onToggle }) {
 
 function NflDetail({ game }) {
   const weather = weatherSummary(game.weather)
+  // Pontos do jogador só depois que o jogo começou
+  const showPoints = game.state !== 'pre'
   // Jogadores agrupados por franquia da liga (titulares primeiro)
   const groups = new Map()
   ;(game.leaguePlayers || []).forEach(p => {
@@ -102,21 +104,20 @@ function NflDetail({ game }) {
         {game.downDistance && game.state === 'in' && <span className="text-[#D01F2D]">{game.downDistance}</span>}
       </div>
       {byTeam.length ? (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-wrap gap-2">
           {byTeam.map(([team, players]) => (
-            <div key={team} className="rounded-lg bg-[#F7F8FA] px-2.5 py-2">
+            <div key={team} className="w-full rounded-lg bg-[#F7F8FA] px-2.5 py-2 sm:w-[15.5rem]">
               <div className="mb-1 flex items-center gap-1.5 text-[12px] font-semibold text-[#111]">
                 <TeamLogo name={team} size={16} />
                 <span className="truncate">{team}</span>
-                <span className="ml-auto flex-shrink-0 text-[11px] font-normal text-[#6B7280]">{players.length}</span>
               </div>
               <div className="space-y-0.5">
                 {players.map(p => (
                   <div key={p.id} className="flex min-w-0 items-center gap-1.5 text-[12px]">
                     <PositionBadge position={p.pos} />
                     <span className={`truncate ${p.starter ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{p.name}</span>
-                    <span className="flex-shrink-0 text-[#9CA3AF]">{p.nflTeam}</span>
-                    {!p.starter && <span className="ml-auto flex-shrink-0 text-[10px] text-[#9CA3AF]">Bench</span>}
+                    {!p.starter && <span className="flex-shrink-0 text-[10px] text-[#9CA3AF]">BN</span>}
+                    {showPoints && p.points != null && <span className={`ml-auto flex-shrink-0 tabular-nums ${p.starter ? 'font-semibold text-[#111]' : 'text-[#9CA3AF]'}`}>{p.points.toFixed(2)}</span>}
                   </div>
                 ))}
               </div>
@@ -142,7 +143,7 @@ function TapitasChip({ season, status, m }) {
   const bWon = final && b.score > a.score
   const label = m.live ? 'Live' : status === 'final' ? 'Final' : status === 'upcoming' ? 'Upcoming' : played ? 'In progress' : 'This week'
   return (
-    <a href={matchupHref(season, m)} className="w-[9rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 py-1.5 transition-colors hover:bg-[#ECEEF1]">
+    <a href={matchupHref(season, m)} className="w-[8.75rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 py-1.5 transition-colors hover:bg-[#ECEEF1]">
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
         <span className={m.live ? 'text-[#D01F2D]' : 'text-[#6B7280]'}>
           {m.live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
@@ -209,7 +210,7 @@ function SectionLabel({ logo, name, week, onWeek, live }) {
 }
 
 const chipsRow = 'scroll-hide flex min-h-[84px] min-w-0 flex-1 items-stretch gap-1.5 overflow-x-auto p-2'
-const skeleton = n => Array.from({ length: n }).map((_, i) => <div key={i} className="w-[9rem] flex-shrink-0 animate-pulse rounded-lg bg-[#F4F5F7]" />)
+const skeleton = n => Array.from({ length: n }).map((_, i) => <div key={i} className="w-[8.25rem] flex-shrink-0 animate-pulse rounded-lg bg-[#F4F5F7]" />)
 
 // Placares do topo da Home: NFL à esquerda (3 jogos visíveis, o resto rola) e
 // Tapitas League à direita, cada liga com o seu seletor de semana.
@@ -228,7 +229,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
   return (
     <div className="relative z-20 border-b border-[#E6E8EB] bg-white">
       <div className="flex flex-col lg:flex-row">
-        <div className="flex min-w-0 border-b border-[#EEF0F2] lg:w-[36rem] lg:flex-none lg:border-b-0 lg:border-r">
+        <div className="flex min-w-0 border-b border-[#EEF0F2] lg:w-[calc(41.625rem+1px)] lg:flex-none lg:border-b-0 lg:border-r">
           <SectionLabel
             logo="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png"
             name="NFL"
@@ -237,7 +238,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
             live={nfl.data?.live}
           />
           <div className={chipsRow}>
-            {nfl.loading && skeleton(3)}
+            {nfl.loading && skeleton(4)}
             {!nfl.loading && !games.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No NFL games this week.</div>}
             {!nfl.loading && games.map(g => <NflChip key={g.id} game={g} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
           </div>

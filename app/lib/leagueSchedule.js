@@ -3,6 +3,8 @@ import { getSheetRows } from './sheets'
 import { getLeagueRosters, getSheetNames, SLEEPER_LEAGUE_ID } from './leagueRosters'
 import { getNflState, getSleeperPlayers } from './sleeper'
 import { getScoreboard } from './espn'
+import { getFinishedGameFacts } from './gameFacts'
+import { isWeekFinal } from './nflCalendar'
 
 // Calendário e placares da Tapitas League por semana.
 // - Semanas já registradas na planilha (GAME_FACTS_ALL): placar final da planilha.
@@ -38,7 +40,7 @@ function sheetGameType(row) {
 
 // Confrontos de uma semana na planilha (uma linha por time; juntamos os pares)
 async function getSheetWeek(season, week) {
-  const rows = await getSheetRows('GAME_FACTS_ALL')
+  const rows = await getFinishedGameFacts()
   const pairs = new Map()
   rows.forEach(r => {
     if (Number(r?.Season) !== Number(season) || !weekNumbers(r?.Week).includes(week)) return
@@ -60,7 +62,7 @@ async function getSheetWeek(season, week) {
 }
 
 // Confrontos de uma semana no Sleeper (pares pelo matchup_id)
-function getSleeperWeek(week) {
+export function getSleeperWeek(week) {
   return cached(`sleeper:matchups:${week}`, 60, async () => {
     const [entries, rosters] = await Promise.all([fetchJson(`${BASE}/matchups/${week}`), getLeagueRosters()])
     const teamByRoster = new Map(rosters.filter(r => r.rosterId != null).map(r => [String(r.rosterId), r.team]))
@@ -106,7 +108,8 @@ export async function getLeagueWeek(requestedWeek) {
 
   const sleeper = await getSleeperWeek(week).catch(err => { console.error('[league-week]', err.message); return [] })
   // final: semana encerrada · current: semana em andamento · upcoming: futura
-  const status = !currentWeek || week < currentWeek ? 'final' : week === currentWeek ? 'current' : 'upcoming'
+  const final = state?.seasonStartDate ? isWeekFinal(state.seasonStartDate, week) : !currentWeek || week < currentWeek
+  const status = final ? 'final' : week === currentWeek ? 'current' : 'upcoming'
   const liveIds = status === 'current' ? await getLiveStarterCheck() : null
   const matchups = sleeper.map(m => ({
     ...m,
@@ -143,7 +146,7 @@ export function getSleeperSeasonRows() {
     const [info, state, sheetRows, sheetNames, players] = await Promise.all([
       getLeagueInfo(),
       getNflState().catch(() => null),
-      getSheetRows('GAME_FACTS_ALL'),
+      getFinishedGameFacts(),
       getSheetNames(),
       getSleeperPlayers(),
     ])
@@ -154,7 +157,8 @@ export function getSleeperSeasonRows() {
       .filter(r => Number(r?.Season) === Number(season) && (Number(r?.PF) || 0) > 0)
       .flatMap(r => weekNumbers(r?.Week)))
     const currentWeek = state?.seasonType === 'regular' ? state.week : state?.seasonType === 'pre' ? 1 : null
-    const startWeek = currentWeek || 1
+    // Todas as semanas da temporada que ainda não estão (terminadas) na planilha
+    const startWeek = 1
 
     const name = id => {
       const info = players.get(id)
@@ -167,7 +171,8 @@ export function getSleeperSeasonRows() {
     const isLive = currentWeek && weeks.includes(currentWeek) ? await getLiveStarterCheck() : () => false
     weeks.forEach((week, wi) => {
       const matchups = allMatchups[wi]
-      const weekStatus = week === currentWeek ? 'current' : week > (currentWeek || 0) ? 'upcoming' : 'final'
+      const weekFinal = state?.seasonStartDate ? isWeekFinal(state.seasonStartDate, week) : week < (currentWeek || 0)
+      const weekStatus = weekFinal ? 'final' : week === currentWeek ? 'current' : 'upcoming'
       matchups.forEach(m => {
         const status = weekStatus === 'current' && m.teams.some(t => t.starters.some(isLive)) ? 'live' : weekStatus
         m.teams.forEach((t, i) => {

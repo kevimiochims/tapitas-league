@@ -1,18 +1,23 @@
 import { cached, fetchJson } from './cache'
 import { normalizeNflTeam } from './nflTeams'
+import { displayWeek } from './nflCalendar'
 
 const API = 'https://api.sleeper.app'
 
-// Temporada e semana atuais da NFL segundo o Sleeper.
-export function getNflState() {
-  return cached('sleeper:state', 600, async () => {
-    const s = await fetchJson(`${API}/v1/state/nfl`)
+// Temporada e semana atuais. A semana vem do calendário do site (vira na
+// quarta-feira); se o Sleeper não informar a data de início, usa a dele.
+export async function getNflState() {
+  const s = await cached('sleeper:state', 600, async () => {
+    const raw = await fetchJson(`${API}/v1/state/nfl`)
     return {
-      season: String(s?.season || s?.league_season || ''),
-      seasonType: String(s?.season_type || ''),
-      week: Number(s?.display_week || s?.week || 0),
+      season: String(raw?.season || raw?.league_season || ''),
+      seasonType: String(raw?.season_type || ''),
+      sleeperWeek: Number(raw?.display_week || raw?.week || 0),
+      seasonStartDate: raw?.season_start_date || null,
     }
   })
+  const week = (s.seasonStartDate && displayWeek(s.seasonStartDate)) || s.sleeperWeek
+  return { ...s, week }
 }
 
 // Base de jogadores do Sleeper (~15 MB). Guardamos só os campos que o site usa.
