@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { PageShell, PageBar, BarTab, LeaderCard, LoadingState, TeamLogo, PositionBadge as UiPositionBadge } from '../components/ui'
+import { BrandBackdrop, PageShell, PageBar, BarTab, LeaderCard, LoadingState, TeamLogo, PositionBadge as UiPositionBadge } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import React, { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -356,23 +356,86 @@ function PlayerPhotoLarge({ playerId, name, size }) {
   )
 }
 
+const slug = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+
+// Cada seção é um painel branco (título + contagem) com os recordes dentro.
+// Os cards brancos ganham contorno para não sumirem no painel.
 function RecordSection({ title, index = 0, children }) {
   const palette = CARD_TONES[index % CARD_TONES.length]
   const cards = React.Children.toArray(children).filter(Boolean)
   return (
-    <section className="mb-4">
-      <h2 className="mb-2 px-1 text-[15px] font-bold text-[#111]">{title}</h2>
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
-        {cards.map((card, i) => React.isValidElement(card) ? React.cloneElement(card, { tone: i === 0 ? palette[0] : palette[1 + ((i - 1) % 2)] }) : card)}
+    <section id={`rec-${slug(title)}`} className="mb-3 scroll-mt-3 rounded-xl bg-white">
+      <div className="flex items-center justify-between gap-3 px-3 pb-2 pt-3 lg:px-4 lg:pt-4">
+        <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-bold text-[#111]">
+          <span className="h-4 w-1 flex-shrink-0 rounded-full" style={{ background: ['#02275F', '#C8102E', '#B8860B'][index % 3] }} />
+          <span className="truncate">{title}</span>
+        </h2>
+        <span className="flex-shrink-0 text-[12px] text-[#6B7280]">{cards.length} record{cards.length === 1 ? '' : 's'}</span>
+      </div>
+      <div className="grid grid-cols-1 gap-2 px-3 pb-3 md:grid-cols-2 lg:px-4 lg:pb-4 xl:grid-cols-3">
+        {cards.map((card, i) => {
+          if (!React.isValidElement(card)) return card
+          const tone = i === 0 ? palette[0] : palette[1 + ((i - 1) % 2)]
+          return React.cloneElement(card, { tone: tone.dark ? tone : { ...tone, card: `${tone.card} ring-1 ring-[#E6E8EB]` } })
+        })}
       </div>
     </section>
   )
 }
 
-// Numera as seções de uma aba para alternar os tons de cor entre elas
+// Seções de uma aba: índice fixo à esquerda (desktop) ou atalhos no topo
+// (celular), e as seções numeradas para alternar os tons entre elas.
 function Sections({ children }) {
+  const all = React.Children.toArray(children)
+  const titles = all.filter(c => React.isValidElement(c) && c.type === RecordSection).map(c => c.props.title)
+  const [active, setActive] = useState(titles[0])
+  const titlesKey = titles.join('|')
+
+  useEffect(() => {
+    const els = titlesKey.split('|').map(t => document.getElementById(`rec-${slug(t)}`)).filter(Boolean)
+    if (!els.length || typeof IntersectionObserver === 'undefined') return
+    const obs = new IntersectionObserver(entries => {
+      const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+      if (visible) setActive(titlesKey.split('|').find(t => `rec-${slug(t)}` === visible.target.id))
+    }, { rootMargin: '-10% 0px -70% 0px' })
+    els.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [titlesKey])
+
+  const jump = t => {
+    setActive(t)
+    document.getElementById(`rec-${slug(t)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   let n = 0
-  return React.Children.toArray(children).map(child => React.isValidElement(child) && child.type === RecordSection ? React.cloneElement(child, { index: n++ }) : child)
+  const sections = all.map(child => React.isValidElement(child) && child.type === RecordSection ? React.cloneElement(child, { index: n++ }) : child)
+
+  return (
+    <div className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:gap-5">
+      <nav className="sticky top-3 hidden rounded-xl bg-white py-2 lg:block">
+        <div className="px-4 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">In this chapter</div>
+        {titles.map((t, i) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => jump(t)}
+            className={`flex w-full items-center gap-2 px-4 py-1.5 text-left text-[13px] transition-colors ${active === t ? 'bg-[#F4F6FA] font-semibold text-[#02275F] shadow-[inset_3px_0_0_#02275F]' : 'text-[#3F4757] hover:bg-[#F7F8FA] hover:text-[#111]'}`}
+          >
+            <span className="w-4 flex-shrink-0 text-[11px] tabular-nums text-[#9CA3AF]">{i + 1}</span>
+            <span className="min-w-0 truncate">{t}</span>
+          </button>
+        ))}
+      </nav>
+      <div className="min-w-0">
+        <div className="scroll-hide mb-2 flex gap-1.5 overflow-x-auto lg:hidden">
+          {titles.map(t => (
+            <button key={t} type="button" onClick={() => jump(t)} className={`h-8 flex-shrink-0 whitespace-nowrap rounded-full px-3 text-[12px] ${active === t ? 'bg-[#02275F] font-semibold text-white' : 'bg-white text-[#3F4757]'}`}>{t}</button>
+          ))}
+        </div>
+        {sections}
+      </div>
+    </div>
+  )
 }
 
 const TABS = [
@@ -1790,6 +1853,51 @@ function RecordsPageContent() {
           </BarTab>
         ))}
       </PageBar>
+
+        {/* Hero: os recordes mais famosos da liga (cada um leva à sua aba) */}
+        {!loading && (() => {
+          const firstName = v => (Array.isArray(v) ? v[0] : v) || '—'
+          const best = playerRecords?.all?.bestPts?.top5?.[0]
+          const tiles = [
+            { key: 'franchise', label: 'Most titles', value: franchiseRecords.mostTitles?.value, team: firstName(franchiseRecords.mostTitles?.teams), sub: (franchiseRecords.mostTitles?.teams || []).length > 1 ? `${franchiseRecords.mostTitles.teams.length}-way tie` : 'Championships' },
+            { key: 'games', label: 'Highest score', value: gameRecords.highNoDouble?.value, team: firstName(gameRecords.highNoDouble?.teams), sub: gameRecords.highNoDouble?.sub2 || 'Single week' },
+            { key: 'streaks', label: 'Longest win streak', value: streakRecords.bestWTotal?.value, team: firstName(streakRecords.bestWTotal?.teams)?.replace(/\s*\(.*?\)\s*/g, '').trim(), sub: 'Consecutive wins' },
+            best && { key: 'players', label: 'Best player game', value: best.value, player: best, sub: best.meta || best.sub || '' },
+          ].filter(Boolean)
+          return (
+            <div className="relative mb-3 overflow-hidden rounded-xl text-white">
+              <BrandBackdrop />
+              <div className="relative flex items-center justify-between gap-3 px-4 pt-4 sm:px-5">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#E8C766]">Tapitas League · since 2014</div>
+                  <div className="mt-0.5 text-[20px] font-bold leading-tight sm:text-[24px]">The Record Book</div>
+                </div>
+                <Trophy className="h-8 w-8 flex-shrink-0 text-white/15 sm:h-10 sm:w-10" />
+              </div>
+              <div className="relative mt-3 grid grid-cols-2 border-t border-white/10 lg:grid-cols-4">
+                {tiles.map((t, i) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => setTab(t.key)}
+                    className={`group relative min-w-0 overflow-hidden px-4 py-3.5 text-left transition-colors hover:bg-white/5 sm:px-5 ${i % 2 === 1 ? 'border-l border-white/10' : ''} ${i >= 2 ? 'border-t border-white/10 lg:border-t-0' : ''} ${i === 2 ? 'lg:border-l' : ''}`}
+                  >
+                    {t.player && <div className="absolute -right-3 bottom-0 opacity-90"><PlayerCutout sleeperId={t.player.playerId} name={t.player.label} className="h-[96px]" fallback={false} /></div>}
+                    <div className={`relative ${t.player ? 'pr-16' : ''}`}>
+                      <div className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-white/65">{t.label}</div>
+                      <div className="mt-1 text-[28px] font-bold leading-none tabular-nums sm:text-[32px]">{t.value ?? '—'}</div>
+                      <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+                        {t.team && <span className="flex-shrink-0 rounded-full bg-white p-px"><TeamLogo name={t.team} size={16} /></span>}
+                        <span className="truncate text-[13px] font-semibold">{t.team || (Array.isArray(t.player?.label) ? t.player.label.join(', ') : t.player?.label)}</span>
+                      </div>
+                      <div className="mt-0.5 truncate text-[11px] text-white/60">{t.sub}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         {loading ? (
           <LoadingState />

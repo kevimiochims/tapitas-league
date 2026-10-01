@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { TeamLogo } from '../ui'
 
 // Tira o nome do jogador do começo da manchete (ele já aparece em negrito)
@@ -11,9 +11,36 @@ function cleanHeadline(n) {
 }
 
 // Faixa de manchetes rolando ("Tapitas wire"): últimas notícias da NFL sobre
-// jogadores dos elencos da liga. Pausa ao passar o mouse.
+// jogadores dos elencos da liga. Pausa com o mouse (ou o dedo) em cima.
 export default function NewsTicker() {
   const [news, setNews] = useState([])
+  const trackRef = useRef(null)
+  const pausedRef = useRef(false)
+
+  // Rolagem em JS (pixels por segundo): pausa de verdade com o mouse em cima,
+  // sem voltar ao início, e mais rápida no desktop.
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track || !news.length) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let x = 0
+    let last = performance.now()
+    let frame
+    const step = now => {
+      const dt = Math.min(now - last, 100) / 1000
+      last = now
+      if (!pausedRef.current) {
+        const speed = window.innerWidth >= 1024 ? 70 : 45
+        const half = track.scrollWidth / 2
+        x -= speed * dt
+        if (half > 0 && -x >= half) x += half
+        track.style.transform = `translate3d(${x}px, 0, 0)`
+      }
+      frame = requestAnimationFrame(step)
+    }
+    frame = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(frame)
+  }, [news])
 
   useEffect(() => {
     let cancelled = false
@@ -45,18 +72,18 @@ export default function NewsTicker() {
 
   return (
     <div className="relative mb-2 flex items-stretch overflow-hidden rounded-xl bg-[#02275F] text-white">
-      <style>{`
-        @keyframes tapitas-ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-        .tapitas-ticker { animation: tapitas-ticker ${Math.max(90, news.length * 16)}s linear infinite; }
-        .tapitas-ticker:hover { animation-play-state: paused; }
-        @media (prefers-reduced-motion: reduce) { .tapitas-ticker { animation: none; } }
-      `}</style>
       <div className="relative z-10 flex flex-shrink-0 items-center gap-1.5 bg-[#C8102E] px-3 text-[11px] font-bold uppercase tracking-[0.12em]">
         <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
         Tapitas wire
       </div>
-      <div className="relative min-w-0 flex-1 overflow-hidden py-2.5">
-        <div className="tapitas-ticker flex w-max">
+      <div
+        className="relative min-w-0 flex-1 overflow-hidden py-2.5"
+        onMouseEnter={() => { pausedRef.current = true }}
+        onMouseLeave={() => { pausedRef.current = false }}
+        onTouchStart={() => { pausedRef.current = true }}
+        onTouchEnd={() => { setTimeout(() => { pausedRef.current = false }, 2500) }}
+      >
+        <div ref={trackRef} className="flex w-max will-change-transform">
           {renderItems('a')}
           {renderItems('b')}
         </div>

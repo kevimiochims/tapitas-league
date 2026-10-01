@@ -45,33 +45,45 @@ function PlayerLine({ p, onOpenPlayer, tone, compact = false }) {
 
 // Card de uma trade: cada franquia com o que recebeu, lado a lado
 export function TradeCard({ t, onOpenPlayer, compact = false }) {
+  const two = t.moves.length === 2
+  const tint = i => (i === 0 ? { band: 'bg-[#EEF3FF]', dot: 'bg-[#02275F]', text: 'text-[#02275F]' } : i === 1 ? { band: 'bg-[#FDF2F3]', dot: 'bg-[#C8102E]', text: 'text-[#C8102E]' } : { band: 'bg-[#FFF8E6]', dot: 'bg-[#B8860B]', text: 'text-[#8D6A00]' })
   return (
     <div className="overflow-hidden rounded-xl border border-[#E6E8EB] bg-white">
-      <div className="flex items-center justify-between gap-2 border-b border-[#EEF0F2] bg-[#F7F8FA] px-3 py-2">
+      <div className="flex items-center justify-between gap-2 border-b border-[#EEF0F2] px-3 py-2">
         <span className="inline-flex flex-shrink-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#02275F]"><ArrowLeftRight className="h-3.5 w-3.5" /> Trade</span>
         <span className="truncate text-[11px] text-[#6B7280]">{txMeta(t)}</span>
       </div>
-      <div className={`grid gap-px bg-[#EEF0F2] ${compact ? '' : t.moves.length > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-        {t.moves.map((m, i) => (
-          <div key={m.team} className="bg-white px-3 py-2.5">
-            <div className="mb-1.5 flex items-center gap-2">
-              <TeamLogo name={m.team} size={24} />
-              <span className="min-w-0 truncate text-[13px] font-bold text-[#111]">{m.team}</span>
-              {compact
-                ? <span className={`ml-auto h-2 w-2 flex-shrink-0 rounded-full ${i === 0 ? 'bg-[#02275F]' : 'bg-[#C8102E]'}`} />
-                : <span className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-semibold text-white ${i === 0 ? 'bg-[#02275F]' : 'bg-[#C8102E]'}`}>receives</span>}
-            </div>
-            {m.adds.map(p => <PlayerLine key={p.id} p={p} onOpenPlayer={onOpenPlayer} compact={compact} />)}
-            {m.picksIn.map((pk, j) => (
-              <div key={`pk-${j}`} className="flex items-center gap-2 py-1 text-[13px] text-[#111]">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF2B8] text-[10px] font-bold text-[#6B5A00]">R{pk.round}</span>
-                {pk.season} round {pk.round} pick{pk.from !== m.team ? <span className="text-[11px] text-[#9CA3AF]">(via {pk.from})</span> : null}
+      <div className={`relative grid gap-px bg-[#EEF0F2] ${compact ? '' : t.moves.length > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+        {/* Ícone de troca entre os dois lados */}
+        {two && !compact && (
+          <span className="absolute left-1/2 top-[18px] z-10 hidden h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-white text-[#3F4757] shadow ring-1 ring-[#E6E8EB] sm:flex">
+            <ArrowLeftRight className="h-3.5 w-3.5" />
+          </span>
+        )}
+        {t.moves.map((m, i) => {
+          const c = tint(i)
+          return (
+            <div key={m.team} className="bg-white">
+              <div className={`flex items-center gap-2 px-3 py-2 ${c.band} ${two && i === 1 && !compact ? 'sm:pl-6' : ''}`}>
+                <span className="flex-shrink-0 rounded-full bg-white p-px"><TeamLogo name={m.team} size={24} /></span>
+                <span className="min-w-0 truncate text-[13px] font-bold text-[#111]">{m.team}</span>
+                {!compact && <span className={`ml-auto flex-shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] ${c.text} ${two && i === 0 ? 'sm:mr-3' : ''}`}>receives</span>}
+                {compact && <span className={`ml-auto h-2 w-2 flex-shrink-0 rounded-full ${c.dot}`} />}
               </div>
-            ))}
-            {m.faabIn > 0 && <div className="py-1 text-[12px] font-semibold text-[#1E8E3E]">+ ${m.faabIn} FAAB</div>}
-            {!m.adds.length && !m.picksIn.length && !m.faabIn && <div className="py-1 text-[12px] text-[#9CA3AF]">Nothing received</div>}
-          </div>
-        ))}
+              <div className="px-3 py-1.5">
+                {m.adds.map(p => <PlayerLine key={p.id} p={p} onOpenPlayer={onOpenPlayer} compact={compact} />)}
+                {m.picksIn.map((pk, j) => (
+                  <div key={`pk-${j}`} className="flex items-center gap-2 py-1 text-[13px] text-[#111]">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF2B8] text-[10px] font-bold text-[#6B5A00]">R{pk.round}</span>
+                    {pk.season} round {pk.round} pick{pk.from !== m.team ? <span className="text-[11px] text-[#9CA3AF]">(via {pk.from})</span> : null}
+                  </div>
+                ))}
+                {m.faabIn > 0 && <div className="py-1 text-[12px] font-semibold text-[#1E8E3E]">+ ${m.faabIn} FAAB</div>}
+                {!m.adds.length && !m.picksIn.length && !m.faabIn && <div className="py-1 text-[12px] text-[#9CA3AF]">Nothing received</div>}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
