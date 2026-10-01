@@ -54,11 +54,11 @@ export function HighlightCards({ items }) {
       {rows.map((row, i) => {
         const featured = i === 0
         return (
-          <div key={row.label} className={`relative min-w-0 overflow-hidden rounded-xl p-3 lg:p-4 ${featured ? 'text-white' : 'bg-white'}`}>
+          <div key={row.label || i} className={`relative min-w-0 overflow-hidden rounded-xl p-3 lg:p-4 ${featured ? 'text-white' : 'bg-white'}`}>
             {featured && <BrandBackdrop />}
             <div className="relative">
-              <div className={`truncate text-[11px] font-medium ${featured ? 'font-semibold uppercase tracking-[0.12em] text-[#E8C766]' : 'text-[#6B7280]'}`}>{row.label}</div>
-              <div className="mt-2 flex min-w-0 items-center gap-2.5">
+              {row.label && <div className={`truncate text-[11px] font-medium ${featured ? 'font-semibold uppercase tracking-[0.12em] text-[#E8C766]' : 'text-[#6B7280]'}`}>{row.label}</div>}
+              <div className={`flex min-w-0 items-center gap-2.5 ${row.label ? 'mt-2' : ''}`}>
                 {row.left && (featured ? <span className="flex-shrink-0 rounded-full bg-white p-0.5">{row.left}</span> : <span className="flex-shrink-0">{row.left}</span>)}
                 <div className="min-w-0">
                   <div className={`truncate text-[13px] font-semibold leading-tight ${featured ? 'text-white' : 'text-[#111]'}`}>{row.title}</div>
