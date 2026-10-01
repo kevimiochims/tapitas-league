@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { Menu, X } from 'lucide-react'
 import { NAV_LINKS } from '../config/navigation'
 import { useDrawer } from '../context/DrawerContext'
+import TeamFocusPicker from './TeamFocusPicker'
 
 
 export default function MobileDrawer() {
@@ -28,6 +29,8 @@ export default function MobileDrawer() {
         </button>
 
         <div className="pointer-events-auto flex items-center gap-2 pr-3">
+          {/* Time em foco: na Home ele fica na barra de semanas, ao lado da week */}
+          {pathname !== '/' && <TeamFocusPicker showName="hidden sm:inline" />}
           {leftSlot && leftSlot}
         </div>
       </div>

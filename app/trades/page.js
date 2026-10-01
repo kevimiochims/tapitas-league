@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeftRight, UserPlus, Zap, Info } from 'lucide-react'
-import { BrandBackdrop, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, TeamLogo, PositionBadge, Pager, usePager } from '../components/ui'
+import { HighlightCards, HighlightIcon, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, TeamLogo, PositionBadge, Pager, usePager } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 import { useTransactions, TradeCard, MoveRow } from '../components/Transactions'
 import { PlayerThumb } from '../components/nfl/shared'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
+import { useFocusFilter } from '../context/TeamFocus'
 
 const TABS = [
   ['trade', 'Trades'],
@@ -20,7 +21,7 @@ export default function TradesPage() {
   const { data, loading, error } = useTransactions()
   const [tab, setTab] = useState('trade')
   const [season, setSeason] = useState('All')
-  const [team, setTeam] = useState('All')
+  const [team, setTeam] = useFocusFilter('All')
   const [games, setGames] = useState([])
   const [profile, setProfile] = useState(null)
 
@@ -88,24 +89,13 @@ export default function TradesPage() {
 
       {data && (
         <>
-          {/* Faixa de números no azul da marca */}
-          <div className="relative mb-2 overflow-hidden rounded-xl text-white">
-            <BrandBackdrop />
-            <div className="relative grid grid-cols-2 lg:grid-cols-4">
-              {[
-                { icon: ArrowLeftRight, label: 'Trades', value: count('trade'), sub: season === 'All' ? 'All seasons on Sleeper' : `${season} season` },
-                { icon: UserPlus, label: 'Waivers & free agents', value: count('waiver') + count('free_agent'), sub: `${count('waiver')} waivers · ${count('free_agent')} free agents` },
-                { icon: Zap, label: 'Most active GM', value: mostActive ? <span className="flex items-center gap-2"><span className="rounded-full bg-white p-0.5"><TeamLogo name={mostActive[0]} size={26} /></span><span className="truncate text-[18px]">{mostActive[0]}</span></span> : '—', sub: mostActive ? `${mostActive[1]} moves` : '' },
-                { icon: UserPlus, label: 'Most added player', value: mostAdded ? <span className="truncate text-[18px] text-[#E8C766]">{mostAdded.p.name}</span> : '—', sub: mostAdded ? `Picked up ${mostAdded.n} times · ${mostAdded.p.pos} ${mostAdded.p.nflTeam}` : '' },
-              ].map((k, i) => (
-                <div key={k.label} className={`min-w-0 px-4 py-4 sm:px-5 ${i % 2 === 1 ? 'border-l border-white/10' : ''} ${i >= 2 ? 'border-t border-white/10 lg:border-t-0' : ''} ${i === 2 ? 'lg:border-l' : ''}`}>
-                  <div className="flex items-center gap-1.5 truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-white/65"><k.icon className="h-3.5 w-3.5" />{k.label}</div>
-                  <div className={`mt-1.5 min-w-0 text-[28px] font-bold leading-none tabular-nums ${k.accent || 'text-white'}`}>{k.value}</div>
-                  <div className="mt-1.5 truncate text-[12px] text-white/65">{k.sub}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Números do topo: quatro cards no padrão da Draft */}
+          <HighlightCards items={[
+            { label: 'Most active GM', left: mostActive ? <TeamLogo name={mostActive[0]} size={32} /> : null, title: mostActive?.[0] || '—', subtitle: season === 'All' ? 'All seasons on Sleeper' : `${season} season`, value: mostActive ? `${mostActive[1]} moves` : '—' },
+            { label: 'Trades', left: <HighlightIcon icon={ArrowLeftRight} />, title: season === 'All' ? 'All seasons' : `${season} season`, subtitle: team === 'All' ? 'Whole league' : team, value: count('trade') },
+            { label: 'Waivers & free agents', left: <HighlightIcon icon={UserPlus} tone="green" />, title: `${count('waiver')} waivers`, subtitle: `${count('free_agent')} free agents`, value: count('waiver') + count('free_agent'), valueClass: 'text-[#1E8E3E]' },
+            { label: 'Most added player', left: <HighlightIcon icon={Zap} tone="gold" />, title: mostAdded?.p.name || '—', subtitle: mostAdded ? `${mostAdded.p.pos} · ${mostAdded.p.nflTeam}` : '', value: mostAdded ? `${mostAdded.n}× added` : '—', valueClass: 'text-[#B8860B]' },
+          ]} />
 
           <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-5">
           <div className="min-w-0">

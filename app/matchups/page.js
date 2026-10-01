@@ -9,6 +9,7 @@ import Header from '../components/Header'
 import SharedPlayerProfile from '../components/PlayerProfileModal'
 import PlayerCutout from '../components/PlayerCutout'
 import { PageShell, PageSkeleton, SiteFooter, getTeamAbbr, PositionBadge as UiPositionBadge } from '../components/ui'
+import { getTeamFocus } from '../context/TeamFocus'
 
 const BASE_URL = '/api/sheet'
 
@@ -456,6 +457,12 @@ function findLastPlayedWeek(data, seasonVal) {
 
 // Helper: first game of a given week (deduped)
 function firstGameOfWeek(data, seasonVal, weekVal) {
+  // Time em foco (filtro geral do header): abre direto no confronto dele
+  const focus = getTeamFocus()
+  if (focus) {
+    const mine = data.find(g => String(g?.Season || '').trim() === seasonVal && String(g?.Week || '').trim() === weekVal && String(g?.Team || '').trim() === focus)
+    if (mine) return mine
+  }
   const seen = new Set()
   for (const g of data) {
     if (String(g?.Season || '').trim() !== seasonVal) continue

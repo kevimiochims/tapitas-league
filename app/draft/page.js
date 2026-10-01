@@ -10,6 +10,7 @@ import { BrandBackdrop, SummaryButton, PageShell, CardShell, StatRow, Tabs, Filt
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 import { DRAFT_PHOTOS } from '../config/draftPhotos'
+import { useFocusFilter } from '../context/TeamFocus'
 
 const BASE_URL = '/api/sheet'
 
@@ -284,7 +285,7 @@ export default function DraftPage() {
     const [activeTab, setActiveTab] = useState('board')
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [allSeasons, setAllSeasons] = useState([])
-    const [teamFilter, setTeamFilter] = useState('All Teams')
+    const [teamFilter, setTeamFilter] = useFocusFilter('All Teams')
     const [positionFilter, setPositionFilter] = useState('All Positions')
     const [playerNameFilter, setPlayerNameFilter] = useState('')
     const { setLeftSlot } = useDrawer()
@@ -498,10 +499,11 @@ export default function DraftPage() {
     }, [seasonPicks, teamFilter, positionFilter, playerNameFilter])
 
     useEffect(() => {
-        setTeamFilter('All Teams')
+        // Nova temporada: o filtro de time volta ao time em foco (ou todos)
+        setTeamFilter(null)
         setPositionFilter('All Positions')
         setPlayerNameFilter('')
-    }, [season])
+    }, [season, setTeamFilter])
 
     const highlights = useMemo(() => {
         const seasonGames = gamesData.filter((g) => String(g?.Season || '').trim() === season)

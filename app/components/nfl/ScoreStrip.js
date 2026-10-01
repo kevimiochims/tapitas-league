@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { TeamLogo, PositionBadge, getTeamAbbr } from '../ui'
+import { useTeamFocus } from '../../context/TeamFocus'
+import TeamFocusPicker from '../TeamFocusPicker'
 import { WeatherIcon, weatherSummary } from './weatherUi'
 import { nflLogo } from './shared'
 
@@ -40,13 +42,13 @@ function useWeekData(url) {
 }
 
 // ── NFL ─────────────────────────────────────────────────────────────
-function NflChip({ game, open, onToggle }) {
+function NflChip({ game, open, onToggle, focus }) {
   const { away, home, state } = game
   const showScore = state !== 'pre'
   const awayWon = game.completed && away.score > home.score
   const homeWon = game.completed && home.score > away.score
   const status = state === 'pre' ? kickoffLabel(game.date) : game.detail
-  const count = game.leaguePlayers?.length || 0
+  const count = (game.leaguePlayers || []).filter(p => !focus || p.fantasyTeam === focus).length
   const possessionTeam = game.possession ? [home, away].find(s => String(s.espnId) === String(game.possession))?.team : null
 
   return (
@@ -74,20 +76,21 @@ function NflChip({ game, open, onToggle }) {
         </div>
       ))}
       <div className="mt-0.5 flex items-center gap-1 text-[10px] text-[#6B7280]">
-        {count > 0 ? <span className="font-medium text-[#02275F]">{count} Tapitas</span> : <span>No Tapitas</span>}
+        {count > 0 ? <span className="font-medium text-[#02275F]">{count} {focus ? getTeamAbbr(focus) : 'Tapitas'}</span> : <span>No Tapitas</span>}
         {count > 0 && <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />}
       </div>
     </button>
   )
 }
 
-function NflDetail({ game }) {
+function NflDetail({ game, focus }) {
   const weather = weatherSummary(game.weather)
   // Pontos do jogador só depois que o jogo começou
   const showPoints = game.state !== 'pre'
   // Jogadores agrupados por franquia da liga (titulares primeiro)
   const groups = new Map()
-  ;(game.leaguePlayers || []).forEach(p => {
+  // Com um time em foco, só os jogadores dele
+  ;(game.leaguePlayers || []).filter(p => !focus || p.fantasyTeam === focus).forEach(p => {
     if (!groups.has(p.fantasyTeam)) groups.set(p.fantasyTeam, [])
     groups.get(p.fantasyTeam).push(p)
   })
@@ -124,7 +127,7 @@ function NflDetail({ game }) {
             </div>
           ))}
         </div>
-      ) : <div className="text-[12px] text-[#6B7280]">No Tapitas players in this game.</div>}
+      ) : <div className="text-[12px] text-[#6B7280]">{focus ? `No ${focus} players in this game.` : 'No Tapitas players in this game.'}</div>}
     </div>
   )
 }
@@ -135,7 +138,7 @@ function matchupHref(season, m) {
   return `/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(m.week)}&team=${encodeURIComponent(a.team)}&opp=${encodeURIComponent(b.team)}`
 }
 
-function TapitasChip({ season, status, m }) {
+function TapitasChip({ season, status, m, focus }) {
   const [a, b] = m.teams
   const played = status !== 'upcoming' && (a.score > 0 || b.score > 0)
   const final = status === 'final'
@@ -143,7 +146,7 @@ function TapitasChip({ season, status, m }) {
   const bWon = final && b.score > a.score
   const label = m.live ? 'Live' : status === 'final' ? 'Final' : status === 'upcoming' ? 'Upcoming' : played ? 'In progress' : 'This week'
   return (
-    <a href={matchupHref(season, m)} className="w-[7.5rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 py-1.5 transition-colors hover:bg-[#ECEEF1]">
+    <a href={matchupHref(season, m)} className={`w-[7.5rem] flex-shrink-0 rounded-lg px-2 py-1.5 transition-colors ${focus && m.teams.some(t => t.team === focus) ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
         <span className={m.live ? 'text-[#D01F2D]' : 'text-[#6B7280]'}>
           {m.live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
@@ -224,8 +227,12 @@ export default function ScoreStrip({ onTapitasWeek }) {
   const nfl = useWeekData(`/api/nfl/scoreboard${nflWeek ? `?week=${nflWeek}` : ''}`)
   const tap = useWeekData(`/api/league/week${tapWeek ? `?week=${tapWeek}` : ''}`)
 
-  const games = nfl.data?.games || []
-  const matchups = tap.data?.matchups || []
+  // Time em foco: só os jogos da NFL com jogadores dele e o confronto dele primeiro
+  const [focus] = useTeamFocus()
+  const allGames = nfl.data?.games || []
+  const games = focus ? allGames.filter(g => (g.leaguePlayers || []).some(p => p.fantasyTeam === focus)) : allGames
+  const allMatchups = tap.data?.matchups || []
+  const matchups = focus ? [...allMatchups].sort((a, b) => Number(b.teams.some(t => t.team === focus)) - Number(a.teams.some(t => t.team === focus))) : allMatchups
   const open = games.find(g => g.id === openId)
 
   // Mantém a semana ativa visível na faixa de semanas do celular
@@ -237,15 +244,15 @@ export default function ScoreStrip({ onTapitasWeek }) {
   const nflChips = (
     <>
       {nfl.loading && skeleton(4)}
-      {!nfl.loading && !games.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No NFL games this week.</div>}
-      {!nfl.loading && games.map(g => <NflChip key={g.id} game={g} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
+      {!nfl.loading && !games.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">{focus && allGames.length ? `No ${focus} players in NFL games this week.` : 'No NFL games this week.'}</div>}
+      {!nfl.loading && games.map(g => <NflChip key={g.id} game={g} focus={focus} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
     </>
   )
   const tapChips = (
     <>
       {tap.loading && skeleton(5)}
       {!tap.loading && !matchups.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No Tapitas matchups this week.</div>}
-      {!tap.loading && matchups.map(m => <TapitasChip key={`${m.week}-${m.teams[0].team}`} season={tap.data.season} status={tap.data.status} m={m} />)}
+      {!tap.loading && matchups.map(m => <TapitasChip key={`${m.week}-${m.teams[0].team}`} season={tap.data.season} status={tap.data.status} m={m} focus={focus} />)}
     </>
   )
   const pickNflWeek = w => { setNflWeek(Number(w)); setOpenId(null) }
@@ -296,6 +303,8 @@ export default function ScoreStrip({ onTapitasWeek }) {
               )
             })}
           </div>
+          {/* Time em foco (filtro geral), ao lado das semanas */}
+          <div className="flex flex-shrink-0 items-center border-l border-[#EEF0F2] px-2"><TeamFocusPicker showName="hidden sm:inline" /></div>
         </div>
         <div className={chipsRow}>{isNfl ? nflChips : tapChips}</div>
       </div>
@@ -324,7 +333,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
           <div className={chipsRow}>{tapChips}</div>
         </div>
       </div>
-      {open && <NflDetail game={open} />}
+      {open && <NflDetail game={open} focus={focus} />}
     </div>
   )
 }

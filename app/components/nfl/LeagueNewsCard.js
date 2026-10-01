@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { CardShell, FilterPill, ToggleChip, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { PlayerThumb, EmptyNote, NewsImage, NewsHero } from './shared'
+import { useFocusFilter } from '../../context/TeamFocus'
 
 function timeAgo(iso) {
   const d = new Date(iso)
@@ -29,7 +30,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
   }, [])
 
   // Mesmos filtros do Injury report: titulares/todos e franquia
-  const [team, setTeam] = useState('All')
+  const [team, setTeam] = useFocusFilter('All')
   const [filter, setFilter] = useState('all')
   const teams = Array.from(new Set(state.news.map(n => n.player?.fantasyTeam).filter(Boolean))).sort((a, b) => a.localeCompare(b))
   const byTeam = team === 'All' ? state.news : state.news.filter(n => n.player?.fantasyTeam === team)
