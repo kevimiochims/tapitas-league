@@ -19,7 +19,9 @@
 //   SITE_URL        = https://SEU-SITE.vercel.app   (sem barra no final)
 //   LORE_SHEET_ID   = ID da planilha privada da LORE (o trecho do link entre
 //                     /d/ e /edit). Opcional: sem ela, os recaps saem sem LORE.
-//   GEMINI_MODEL    = gemini-2.5-flash   (opcional; teste gemini-2.5-pro)
+//   GEMINI_MODEL    = nome do modelo (rode listarModelos para ver os nomes)
+//   GEMINI_MODEL_RESERVA = modelo usado se o principal estiver sobrecarregado
+//                     (opcional; padrão gemini-2.5-flash)
 //   RECAP_TOKEN     = (opcional, não é necessário)
 // =============================================================================
 
@@ -33,6 +35,7 @@ function recapConfig_() {
     site: (props.getProperty('SITE_URL') || '').replace(/\/+$/, ''),
     token: props.getProperty('RECAP_TOKEN') || '',
     model: props.getProperty('GEMINI_MODEL') || 'gemini-2.5-flash',
+    reserva: props.getProperty('GEMINI_MODEL_RESERVA') || 'gemini-2.5-flash',
     loreSheetId: props.getProperty('LORE_SHEET_ID') || '',
   }
   if (!cfg.apiKey) throw new Error('Falta GEMINI_API_KEY nas Propriedades do script.')
@@ -109,8 +112,33 @@ function fetchDossie_(cfg, params) {
   return res.getContentText()
 }
 
+// Chama o Gemini. Se o modelo estiver sobrecarregado (erro 503/500), espera e
+// tenta de novo; se continuar, usa o modelo reserva (GEMINI_MODEL_RESERVA,
+// padrão gemini-2.5-flash).
 function chamaGemini_(cfg, sistema, texto) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${cfg.apiKey}`
+  const modelos = [cfg.model, cfg.reserva].filter((m, i, arr) => m && arr.indexOf(m) === i)
+  const esperas = [0, 15000, 30000]
+  let ultimoErro = null
+  for (const modelo of modelos) {
+    for (let t = 0; t < esperas.length; t++) {
+      if (esperas[t]) {
+        Logger.log(`[GEMINI] ${modelo} ocupado, tentando de novo em ${esperas[t] / 1000}s...`)
+        Utilities.sleep(esperas[t])
+      }
+      try {
+        return chamaGeminiUmaVez_(cfg, modelo, sistema, texto)
+      } catch (e) {
+        ultimoErro = e
+        if (!/Gemini (500|503)/.test(e.message)) throw e // outros erros: não adianta insistir
+      }
+    }
+    if (modelo !== modelos[modelos.length - 1]) Logger.log(`[GEMINI] ${modelo} continua ocupado, usando o reserva.`)
+  }
+  throw ultimoErro
+}
+
+function chamaGeminiUmaVez_(cfg, modelo, sistema, texto) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${cfg.apiKey}`
   const payload = {
     systemInstruction: { parts: [{ text: sistema }] },
     contents: [{ role: 'user', parts: [{ text: texto }] }],
