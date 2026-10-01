@@ -24,7 +24,7 @@
 // =============================================================================
 
 const RECAP_MAX_POR_EXECUCAO = 12   // evita estourar o limite de 6 min do Apps Script
-const RECAP_PAUSA_MS = 3000
+const RECAP_PAUSA_MS = 12000         // ~5 pedidos por minuto, o limite gratuito dos modelos Flash
 
 function recapConfig_() {
   const props = PropertiesService.getScriptProperties()
@@ -264,4 +264,23 @@ function gerarRecapsDoPowerRanking() {
 function testarDossie() {
   const cfg = recapConfig_()
   Logger.log(fetchDossie_(cfg, { season: 2025, week: 1, team: 'Moneyball' }) + loreTexto_(cfg, ['Moneyball']))
+}
+
+// Mostra no log os modelos que a sua chave pode usar, com o nome técnico
+// para colocar em GEMINI_MODEL (ex.: "gemini-3.8-flash").
+function listarModelos() {
+  const key = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY')
+  if (!key) throw new Error('Falta GEMINI_API_KEY nas Propriedades do script.')
+  let pageToken = ''
+  const nomes = []
+  do {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?pageSize=100&key=${key}${pageToken ? `&pageToken=${pageToken}` : ''}`
+    const json = JSON.parse(UrlFetchApp.fetch(url, { muteHttpExceptions: true }).getContentText())
+    if (json.error) throw new Error(`Gemini ${json.error.code}: ${json.error.message}`)
+    ;(json.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .forEach(m => nomes.push(`${m.name.replace('models/', '')}  —  ${m.displayName || ''}`))
+    pageToken = json.nextPageToken || ''
+  } while (pageToken)
+  Logger.log(`Modelos que geram texto com a sua chave (${nomes.length}):\n${nomes.join('\n')}`)
 }
