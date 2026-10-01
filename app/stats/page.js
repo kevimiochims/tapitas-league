@@ -111,7 +111,7 @@ function HBarChart({ rows, format = v => v, highlightTop = true, center = null }
 }
 
 // Colunas verticais com rótulo embaixo e valor em cima.
-function ColumnChart({ data, format = v => v, height = 180, width = 640, accentIndex = -1, line = null }) {
+function ColumnChart({ data, format = v => v, labelFormat = l => l, fontSize = 11, height = 180, width = 640, accentIndex = -1, line = null }) {
   const W = width, H = height, padB = 26, padT = 20, padX = 8
   const max = Math.max(...data.map(d => d.value), ...(line ? data.map(d => d[line.key] || 0) : []), 1)
   const bw = (W - padX * 2) / data.length
@@ -125,8 +125,8 @@ function ColumnChart({ data, format = v => v, height = 180, width = 640, accentI
         return (
           <g key={d.label}>
             <rect x={x} y={y(d.value)} width={w} height={H - padB - y(d.value)} rx="3" fill={i === accentIndex ? '#B8860B' : '#02275F'} opacity={i === accentIndex ? 1 : 0.9} />
-            <text x={x + w / 2} y={y(d.value) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="#111">{format(d.value)}</text>
-            <text x={x + w / 2} y={H - 8} textAnchor="middle" fontSize="11" fill="#6B7280">{d.label}</text>
+            <text x={x + w / 2} y={y(d.value) - 5} textAnchor="middle" fontSize={fontSize} fontWeight="600" fill="#111">{format(d.value)}</text>
+            <text x={x + w / 2} y={H - 8} textAnchor="middle" fontSize={fontSize} fill="#6B7280">{labelFormat(d.label)}</text>
           </g>
         )
       })}
@@ -829,8 +829,12 @@ function StatsPageContent() {
 
       <div className="grid gap-2 lg:grid-cols-2">
         <CardShell title="Scoring by season" subtitle="Average points per team per week · red line = highest score" className="lg:col-span-2">
-          <div className="px-2 pb-2 pt-3 lg:px-3">
+          {/* Desktop: gráfico largo · celular: versão própria com letras legíveis */}
+          <div className="hidden px-2 pb-2 pt-3 md:block lg:px-3">
             <ColumnChart data={overview.seasonScoring} width={1200} height={220} format={v => v.toFixed(0)} line={{ key: 'max' }} accentIndex={overview.seasonScoring.reduce((best, d, i, arr) => d.value > arr[best].value ? i : best, 0)} />
+          </div>
+          <div className="px-1 pb-2 pt-3 md:hidden">
+            <ColumnChart data={overview.seasonScoring} width={360} height={240} fontSize={10} format={v => v.toFixed(0)} labelFormat={l => `'${String(l).slice(-2)}`} line={{ key: 'max' }} accentIndex={overview.seasonScoring.reduce((best, d, i, arr) => d.value > arr[best].value ? i : best, 0)} />
           </div>
         </CardShell>
 

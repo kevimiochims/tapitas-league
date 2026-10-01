@@ -7,7 +7,7 @@ import Header from '../components/Header'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 import TeamNflNotice from '../components/nfl/TeamNflNotice'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
-import { SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
+import { SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -422,13 +422,14 @@ export default function TeamsPage() {
   const [log200Only, setLog200Only] = useState(false)
   const [logHighestOnly, setLogHighestOnly] = useState(false)
   const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
+  const [profileTab, setProfileTab] = useState(null)
   const [playerSearch, setPlayerSearch] = useState('')
   const [playerPositionFilter, setPlayerPositionFilter] = useState('All')
   const [playerSort, setPlayerSort] = useState('Appearances')
   const [playerSeasonFilter, setPlayerSeasonFilter] = useState('All')
   const [playerMinApps, setPlayerMinApps] = useState('All')
-  const [logLimit, setLogLimit] = useState(20)
-  const [playerLimit, setPlayerLimit] = useState(20)
+  const [logPage, setLogPage] = useState(0)
+  const [playerPage, setPlayerPage] = useState(0)
   const activeTeamChipRef = useRef(null)
 
   // Browser history for the in-page Teams selection.
@@ -476,7 +477,7 @@ export default function TeamsPage() {
     setMobileTeamView('overview')
   }
 
-  const openPlayerProfile = (playerKey, teamName = selected?.team) => {
+  const openPlayerProfile = (playerKey, teamName = selected?.team, tab = null) => {
     if (!playerKey) return
     const cleanTeam = String(teamName || '').trim()
     if (typeof window !== 'undefined') {
@@ -496,6 +497,7 @@ export default function TeamsPage() {
         window.history.pushState(profileState, '', window.location.href)
       }
     }
+    setProfileTab(tab)
     setSelectedPlayerKey(playerKey)
   }
 
@@ -596,9 +598,9 @@ export default function TeamsPage() {
     setPlayerMinApps('All')
   }, [selected])
 
-  // Game Log / Player Archive start compact and grow with "Show more".
-  useEffect(() => { setLogLimit(20) }, [selected, logSeason, logOpponent, logGameType, log200Only, logHighestOnly])
-  useEffect(() => { setPlayerLimit(20) }, [selected, playerSearch, playerPositionFilter, playerSort, playerSeasonFilter, playerMinApps])
+  // Game Log / Player Archive go back to the first page when the filters change.
+  useEffect(() => { setLogPage(0) }, [selected, logSeason, logOpponent, logGameType, log200Only, logHighestOnly])
+  useEffect(() => { setPlayerPage(0) }, [selected, playerSearch, playerPositionFilter, playerSort, playerSeasonFilter, playerMinApps])
 
   // Keep the selected franchise visible in the team switcher strip.
   useEffect(() => {
@@ -1372,8 +1374,14 @@ export default function TeamsPage() {
 
     const hasLogFilters = logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly
     const clearLogFilters = () => { setLogSeason('All'); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false) }
-    const visibleLog = filteredLog.slice(0, logLimit)
-    const visiblePlayers = filteredPlayers.slice(0, playerLimit)
+    // Paginação lateral (20 por página) no Game Log e no Player Archive
+    const PAGE_SIZE = 20
+    const logPages = Math.max(1, Math.ceil(filteredLog.length / PAGE_SIZE))
+    const playerPages = Math.max(1, Math.ceil(filteredPlayers.length / PAGE_SIZE))
+    const logPageSafe = Math.min(logPage, logPages - 1)
+    const playerPageSafe = Math.min(playerPage, playerPages - 1)
+    const visibleLog = filteredLog.slice(logPageSafe * PAGE_SIZE, (logPageSafe + 1) * PAGE_SIZE)
+    const visiblePlayers = filteredPlayers.slice(playerPageSafe * PAGE_SIZE, (playerPageSafe + 1) * PAGE_SIZE)
 
     // ── Team switcher (same strip pattern as the Matchups scoreboard) ──
     const teamStrip = (
@@ -1599,10 +1607,8 @@ export default function TeamsPage() {
               )
             })}
             {filteredLog.length === 0 && <div className="py-12 text-center text-[13px] text-[#6B7280]">No games match these filters</div>}
-            {filteredLog.length > logLimit && (
-              <button type="button" onClick={() => setLogLimit(l => l + 25)} className="w-full py-3 text-[13px] font-semibold text-[#D01F2D] transition-colors hover:bg-[#F7F8FA]">
-                Show more games ({filteredLog.length - logLimit} remaining)
-              </button>
+            {logPages > 1 && (
+              <Pager page={logPageSafe} totalPages={logPages} total={filteredLog.length} pageSize={PAGE_SIZE} onPrev={() => setLogPage(Math.max(0, logPageSafe - 1))} onNext={() => setLogPage(Math.min(logPages - 1, logPageSafe + 1))} />
             )}
           </div>
         </CardShell>
@@ -1658,10 +1664,8 @@ export default function TeamsPage() {
             </button>
           ))}
           {filteredPlayers.length === 0 && <div className="py-12 text-center text-[13px] text-[#6B7280]">No players found</div>}
-          {filteredPlayers.length > playerLimit && (
-            <button type="button" onClick={() => setPlayerLimit(l => l + 25)} className="w-full py-3 text-[13px] font-semibold text-[#D01F2D] transition-colors hover:bg-[#F7F8FA]">
-              Show more players ({filteredPlayers.length - playerLimit} remaining)
-            </button>
+          {playerPages > 1 && (
+            <Pager page={playerPageSafe} totalPages={playerPages} total={filteredPlayers.length} pageSize={PAGE_SIZE} onPrev={() => setPlayerPage(Math.max(0, playerPageSafe - 1))} onNext={() => setPlayerPage(Math.min(playerPages - 1, playerPageSafe + 1))} />
           )}
         </div>
       </CardShell>
@@ -1676,6 +1680,7 @@ export default function TeamsPage() {
         playerId={getPlayerId(selectedPlayer.rawName, playerLookup)}
         games={games}
         initialTeams={[selected.team]}
+        initialTab={profileTab}
         onClose={closePlayerProfile}
       />
     ) : null
@@ -1686,7 +1691,7 @@ export default function TeamsPage() {
       <>
         {teamStrip}
         {heroCard}
-        <TeamNflNotice team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`)} />
+        <TeamNflNotice team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`, selected.team, p.focus || null)} />
 
         {/* Abas (só no mobile/tablet — no desktop os cards ficam nas laterais) */}
         <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">

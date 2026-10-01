@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CardShell, TeamLogo, PositionBadge, ShowMore, SkeletonRows } from '../ui'
+import { CardShell, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { PlayerThumb, EmptyNote } from './shared'
 
 function timeAgo(iso) {
@@ -17,7 +17,6 @@ function timeAgo(iso) {
 // Últimas notícias da ESPN sobre jogadores dos elencos da liga
 export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar = true }) {
   const [state, setState] = useState({ news: [], loading: true, failed: false })
-  const [limit, setLimit] = useState(initialLimit)
 
   useEffect(() => {
     let cancelled = false
@@ -28,16 +27,17 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
     return () => { cancelled = true }
   }, [])
 
-  if (state.failed) return null
   const news = state.news
+  const { visible, totalPages, pagerProps } = usePager(news, initialLimit)
+  if (state.failed) return null
 
   return (
     <CardShell title="Player news" subtitle="Latest headlines on Tapitas players" sidebar={sidebar}>
       {state.loading ? <div className="py-2"><SkeletonRows rows={4} /></div> : news.length === 0 ? <EmptyNote>No recent news on Tapitas players.</EmptyNote> : (
         <div className="py-1">
-          {news.slice(0, limit).map(n => (
+          {visible.map(n => (
             <div key={n.id || n.url || n.headline} className="flex gap-2 px-3 py-2.5 lg:px-4">
-              <button type="button" onClick={() => onOpenPlayer?.(n.player, n.player?.fantasyTeam)} className="flex-shrink-0" aria-label={n.player?.name}>
+              <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="flex-shrink-0" aria-label={n.player?.name}>
                 <PlayerThumb id={n.player?.id} name={n.player?.name} pos={n.player?.pos} nflTeam={n.player?.nflTeam} size={32} />
               </button>
               <div className="min-w-0 flex-1">
@@ -45,7 +45,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
                   ? <a href={n.url} target="_blank" rel="noopener noreferrer" className="block text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]">{n.headline}</a>
                   : <div className="text-[13px] font-semibold leading-snug text-[#111]">{n.headline}</div>}
                 <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-[#6B7280]">
-                  <button type="button" onClick={() => onOpenPlayer?.(n.player, n.player?.fantasyTeam)} className="truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
+                  <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
                   <PositionBadge position={n.player?.pos} />
                   {n.player?.fantasyTeam && <TeamLogo name={n.player.fantasyTeam} size={14} />}
                   <span className="ml-auto flex-shrink-0">{[n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')}</span>
@@ -53,7 +53,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
               </div>
             </div>
           ))}
-          <ShowMore remaining={news.length - limit} onClick={() => setLimit(l => l + 8)} noun="headlines" />
+          {totalPages > 1 && <Pager {...pagerProps} />}
         </div>
       )}
     </CardShell>

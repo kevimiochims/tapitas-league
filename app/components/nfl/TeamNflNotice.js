@@ -46,7 +46,7 @@ export default function TeamNflNotice({ team, onOpenPlayer }) {
               <div className="mb-1.5 flex items-center gap-1 text-[11px] font-medium text-[#B3171F]"><AlertTriangle className="h-3.5 w-3.5" />Injuries ({injured.length})</div>
               <div className="flex flex-wrap gap-1.5">
                 {injured.map(p => (
-                  <PlayerChip key={p.id || p.name} p={p} onOpen={onOpenPlayer}>
+                  <PlayerChip key={p.id || p.name} p={p} onOpen={x => onOpenPlayer?.({ ...x, focus: 'news' })}>
                     <Tag tone={injuryTone(p.injury.status)}>{p.injury.status}{p.injury.bodyPart ? ` · ${p.injury.bodyPart}` : ''}</Tag>
                   </PlayerChip>
                 ))}

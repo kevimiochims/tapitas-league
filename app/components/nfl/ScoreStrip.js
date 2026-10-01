@@ -143,7 +143,7 @@ function TapitasChip({ season, status, m }) {
   const bWon = final && b.score > a.score
   const label = m.live ? 'Live' : status === 'final' ? 'Final' : status === 'upcoming' ? 'Upcoming' : played ? 'In progress' : 'This week'
   return (
-    <a href={matchupHref(season, m)} className="w-[8rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 py-1.5 transition-colors hover:bg-[#ECEEF1]">
+    <a href={matchupHref(season, m)} className="w-[7.5rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 py-1.5 transition-colors hover:bg-[#ECEEF1]">
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
         <span className={m.live ? 'text-[#D01F2D]' : 'text-[#6B7280]'}>
           {m.live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
@@ -164,7 +164,7 @@ function TapitasChip({ season, status, m }) {
 }
 
 // Seletor de semana discreto: só o texto e uma seta leve (como os números da Home)
-function WeekSelect({ week, onChange, maxWeek }) {
+function WeekSelect({ week, onChange, maxWeek, alignRight = false }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -180,7 +180,7 @@ function WeekSelect({ week, onChange, maxWeek }) {
         <ChevronDown className={`h-3.5 w-3.5 text-[#9CA3AF] transition-transform group-hover:text-[#D01F2D] ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-28 overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5">
+        <div className={`absolute ${alignRight ? 'right-0 lg:left-0 lg:right-auto' : 'left-0'} top-full z-50 mt-1 max-h-72 w-28 overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5`}>
           {WEEKS.filter(w => !maxWeek || Number(w) <= maxWeek).map(w => (
             <button
               key={w}
@@ -197,14 +197,15 @@ function WeekSelect({ week, onChange, maxWeek }) {
   )
 }
 
-function SectionLabel({ logo, name, week, onWeek, live, maxWeek }) {
+// `mobileRight`: no celular o rótulo fica à direita (os jogos rolam à esquerda)
+function SectionLabel({ logo, name, week, onWeek, live, maxWeek, mobileRight = false }) {
   return (
-    <div className="flex w-[6.5rem] flex-shrink-0 flex-col items-start justify-center gap-1 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
+    <div className={`flex w-[6.5rem] flex-shrink-0 flex-col justify-center gap-1 border-[#EEF0F2] py-1.5 ${mobileRight ? 'items-end border-l pl-2 pr-3 lg:items-start lg:border-l-0 lg:border-r lg:pl-3 lg:pr-2' : 'items-start border-r pl-3 pr-2'}`}>
       <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#111]">
         <img src={logo} alt="" className="h-4 w-4 object-contain" />{name}
         {live && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" title="Live" />}
       </span>
-      <WeekSelect week={week} onChange={onWeek} maxWeek={maxWeek} />
+      <WeekSelect week={week} onChange={onWeek} maxWeek={maxWeek} alignRight={mobileRight} />
     </div>
   )
 }
@@ -228,8 +229,9 @@ export default function ScoreStrip({ onTapitasWeek }) {
 
   return (
     <div className="relative z-20 border-b border-[#E6E8EB] bg-white">
-      <div className="flex flex-col lg:flex-row">
-        <div className="flex min-w-0 border-b border-[#EEF0F2] lg:w-[calc(38.625rem+1px)] lg:flex-none lg:border-b-0 lg:border-r">
+      {/* No celular a Tapitas vem em cima (flex-col-reverse); no desktop NFL à esquerda */}
+      <div className="flex flex-col-reverse lg:flex-row">
+        <div className="flex min-w-0 border-[#EEF0F2] lg:w-[calc(38.625rem+1px)] lg:flex-none lg:border-r">
           <SectionLabel
             logo="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png"
             name="NFL"
@@ -244,8 +246,9 @@ export default function ScoreStrip({ onTapitasWeek }) {
             {!nfl.loading && games.map(g => <NflChip key={g.id} game={g} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
           </div>
         </div>
-        <div className="flex min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-row-reverse border-b border-[#EEF0F2] lg:flex-row lg:border-b-0">
           <SectionLabel
+            mobileRight
             logo="/images/LogoFinalBlack.png"
             name="Tapitas"
             week={tapWeek || tap.data?.week}

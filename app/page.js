@@ -1655,6 +1655,7 @@ export default function TapitasLeagueHomepage() {
     const lastMeetingInfo = {
       score: `${parseNumber(last?.PF).toFixed(2)} vs ${parseNumber(last?.PA).toFixed(2)}`,
       meta: `Week ${String(last?.Week || '').trim()} · ${String(last?.Season || '').trim()}`,
+      href: `/matchups?season=${encodeURIComponent(String(last?.Season || '').trim())}&week=${encodeURIComponent(String(last?.Week || '').trim())}&team=${encodeURIComponent(String(last?.Team || '').trim())}&opp=${encodeURIComponent(String(last?.Opponent || '').trim())}`,
     }
 
     const totalGames = winsA + winsB
@@ -2081,9 +2082,10 @@ export default function TapitasLeagueHomepage() {
         <>
           <TaleOfTape leftName={selectedRivalry.teamA} rightName={selectedRivalry.teamB} rows={rivalryRows} />
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#EEF0F2] px-3 py-2.5 lg:px-4">
-            <span className="text-[12px] text-[#6B7280]">
-              Last meeting <span className="font-semibold tabular-nums text-[#111]">{selectedRivalry.lastMeeting.score}</span>{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}
-            </span>
+            <a href={selectedRivalry.lastMeeting.href} className="group text-[12px] text-[#6B7280] hover:text-[#111]">
+              Last meeting <span className="font-semibold tabular-nums text-[#111] group-hover:text-[#D01F2D]">{selectedRivalry.lastMeeting.score}</span>{selectedRivalry.lastMeeting.meta ? ` · ${selectedRivalry.lastMeeting.meta}` : ''}
+              <ChevronRight className="ml-0.5 inline h-3.5 w-3.5 align-[-2px] text-[#9CA3AF] group-hover:text-[#D01F2D]" />
+            </a>
             {cardLink(`/rivalries?teamA=${encodeURIComponent(selectedRivalry.teamA)}&teamB=${encodeURIComponent(selectedRivalry.teamB)}`, 'Full rivalry')}
           </div>
         </>
@@ -2252,6 +2254,7 @@ export default function TapitasLeagueHomepage() {
           position={selectedNflPlayer.pos}
           playerId={selectedNflPlayer.id}
           games={gameFactsData}
+          initialTab={selectedNflPlayer.focus}
           onClose={() => setSelectedNflPlayer(null)}
         />
       )}

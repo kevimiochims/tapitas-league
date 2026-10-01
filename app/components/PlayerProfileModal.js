@@ -405,7 +405,7 @@ const DEFAULT_SORT = { key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: '
  * @param initialTeams franquias pré-selecionadas (padrão: todas em que ele jogou)
  * @param matchup     { season, week, team, opponent } quando aberto de um confronto
  */
-export default function PlayerProfileModal({ rawName, displayName, position, playerId, games, initialTeams, matchup, onClose }) {
+export default function PlayerProfileModal({ rawName, displayName, position, playerId, games, initialTeams, matchup, initialTab, onClose }) {
   const pos = String(position || '').toUpperCase()
   const [sleeperInfo, setSleeperInfo] = useState(null)
   const [weeklyStats, setWeeklyStats] = useState(null)
@@ -416,7 +416,8 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const [resultFilter, setResultFilter] = useState('All')
   const [stageFilter, setStageFilter] = useState('All')
   const [sort, setSort] = useState(DEFAULT_SORT)
-  const [tab, setTab] = useState(matchup ? 'week' : 'career')
+  // initialTab: 'news' quando o perfil é aberto a partir de uma lesão/notícia
+  const [tab, setTab] = useState(initialTab || (matchup ? 'week' : 'career'))
   // Altura visível do corpo do perfil (o game log usa isso como altura máxima)
   const bodyRef = useRef(null)
   const [bodyHeight, setBodyHeight] = useState(0)

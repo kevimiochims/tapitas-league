@@ -1,34 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import { CardShell, Segmented, ToggleChip, Tag, TeamLogo, PositionBadge, ShowMore, SkeletonRows } from '../ui'
+import { CardShell, Segmented, ToggleChip, Tag, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { useLeagueStatus } from './useNflData'
 import { PlayerThumb, EmptyNote, injuryRank, injuryTone } from './shared'
 import { ByeWeekContent } from './ByeWeek'
 
 function InjuryList({ data, onOpenPlayer }) {
   const [filter, setFilter] = useState('starters')
-  const [limit, setLimit] = useState(8)
   const all = (data?.teams || []).flatMap(t => t.players.filter(p => p.injury).map(p => ({ ...p, fantasyTeam: t.team })))
   const list = all
     .filter(p => filter === 'all' || p.starter)
     .sort((a, b) => injuryRank(a.injury.status) - injuryRank(b.injury.status) || Number(b.starter) - Number(a.starter) || a.name.localeCompare(b.name))
+  const { visible, totalPages, pagerProps } = usePager(list, 8, filter)
 
   return (
     <>
       <div className="flex items-center gap-1.5 px-3 pb-1 pt-2.5 lg:px-4">
-        <ToggleChip active={filter === 'starters'} onClick={() => { setFilter('starters'); setLimit(8) }}>Starters</ToggleChip>
-        <ToggleChip active={filter === 'all'} onClick={() => { setFilter('all'); setLimit(8) }}>All ({all.length})</ToggleChip>
+        <ToggleChip active={filter === 'starters'} onClick={() => { setFilter('starters') }}>Starters</ToggleChip>
+        <ToggleChip active={filter === 'all'} onClick={() => { setFilter('all') }}>All ({all.length})</ToggleChip>
       </div>
       {list.length === 0 ? (
         <EmptyNote>{filter === 'starters' ? 'No injured starters. Clean bill of health!' : 'No Tapitas players on the injury report.'}</EmptyNote>
       ) : (
         <div className="pb-1">
-          {list.slice(0, limit).map(p => (
+          {visible.map(p => (
             <button
               key={`${p.id || p.name}-${p.fantasyTeam}`}
               type="button"
-              onClick={() => onOpenPlayer?.(p, p.fantasyTeam)}
+              onClick={() => onOpenPlayer?.({ ...p, focus: 'news' }, p.fantasyTeam)}
               className="group flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-black/[0.03] lg:px-4"
             >
               <PlayerThumb id={p.id} name={p.name} pos={p.pos} nflTeam={p.nflTeam} size={32} />
@@ -47,7 +47,7 @@ function InjuryList({ data, onOpenPlayer }) {
               </div>
             </button>
           ))}
-          <ShowMore remaining={list.length - limit} onClick={() => setLimit(l => l + 10)} noun="players" />
+          {totalPages > 1 && <Pager {...pagerProps} />}
         </div>
       )}
     </>

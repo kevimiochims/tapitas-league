@@ -757,15 +757,17 @@ export default function DraftPage() {
                     {activeTab === 'photos' && photos.length > 0 && (
                         <CardShell title="Draft day" subtitle={`${season} · ${photos.length} photo${photos.length === 1 ? '' : 's'}`} >
                             <div
-                                className="relative aspect-video max-h-[70vh] w-full overflow-hidden bg-[#111]"
+                                className="relative aspect-[4/3] max-h-[78vh] w-full overflow-hidden bg-[#111] sm:aspect-[3/2]"
                                 onTouchStart={handlePhotoTouchStart}
                                 onTouchEnd={handlePhotoTouchEnd}
                                 style={{ touchAction: 'pan-y' }}
                             >
                                 <AnimatePresence mode="wait">
                                     <motion.div key={photoIdx} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="absolute inset-0">
-                                        <Image src={`/images/draft/${season}/${photos[photoIdx].file}`} alt={photos[photoIdx].caption || ''} fill className="object-cover" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                        {/* Foto inteira (contain) sobre uma cópia desfocada que preenche as sobras */}
+                                        <Image src={`/images/draft/${season}/${photos[photoIdx].file}`} alt="" aria-hidden fill sizes="100vw" className="scale-110 object-cover opacity-60 blur-2xl" />
+                                        <Image src={`/images/draft/${season}/${photos[photoIdx].file}`} alt={photos[photoIdx].caption || ''} fill sizes="(min-width: 1024px) 1100px, 100vw" className="object-contain" />
+                                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
                                         {photos[photoIdx].caption && (
                                             <div className="absolute bottom-3 left-3 right-16 text-[12px] font-medium text-white/90">{photos[photoIdx].caption}</div>
                                         )}

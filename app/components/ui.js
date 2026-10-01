@@ -392,6 +392,21 @@ export function Pager({ page, totalPages, total, pageSize, onPrev, onNext }) {
   )
 }
 
+// Paginação lateral para listas (no lugar de "show more"): devolve a fatia
+// visível e as props do <Pager />. Volta para a 1ª página quando `resetKey` muda.
+export function usePager(items, pageSize, resetKey = '') {
+  const [state, setState] = useState({ page: 0, key: resetKey })
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
+  const page = Math.min(state.key === resetKey ? state.page : 0, totalPages - 1)
+  const go = delta => setState({ key: resetKey, page: Math.max(0, Math.min(totalPages - 1, page + delta)) })
+  return {
+    visible: items.slice(page * pageSize, (page + 1) * pageSize),
+    page,
+    totalPages,
+    pagerProps: { page, totalPages, total: items.length, pageSize, onPrev: () => go(-1), onNext: () => go(1) },
+  }
+}
+
 export function ToggleChip({ active, onClick, children }) {
   return (
     <button
@@ -502,16 +517,6 @@ export function PositionBadge({ position }) {
   const pos = String(position || '').toUpperCase()
   if (!pos) return null
   return <span className={`inline-flex flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none ${POSITION_BADGE_CLASSES[pos] || 'bg-[#F4F5F7] text-[#3F4757]'}`}>{pos}</span>
-}
-
-// ── Botão "mostrar mais" para listas longas ─────────────────────────
-export function ShowMore({ remaining, onClick, noun = 'items' }) {
-  if (remaining <= 0) return null
-  return (
-    <button type="button" onClick={onClick} className="w-full py-3 text-[13px] font-semibold text-[#D01F2D] transition-colors hover:bg-[#F7F8FA]">
-      Show more {noun} ({remaining} remaining)
-    </button>
-  )
 }
 
 // ── Avatares de times da liga ───────────────────────────────────────

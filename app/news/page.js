@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Newspaper, Laugh, FileText, ChevronRight, SquarePen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { PageShell, PageBar, BarTab, CardShell, StatRow, Tag, ShowMore, LoadingState, Skeleton } from '../components/ui'
+import { PageShell, PageBar, BarTab, CardShell, StatRow, Tag, Pager, usePager, LoadingState, Skeleton } from '../components/ui'
 import ReactMarkdown from 'react-markdown'
 import { NEWS_FORM_URL } from '../config/news'
 
@@ -64,9 +64,8 @@ export default function NewsPage() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('Todos')
-  const [page, setPage] = useState(1)
   const router = useRouter()
-  const PER_PAGE = 9
+  const PER_PAGE = 8
 
   useEffect(() => {
     fetch(SCRIPT_URL)
@@ -80,13 +79,11 @@ export default function NewsPage() {
   }, [])
 
   const filtered = filter === 'Todos' ? posts : posts.filter(p => p.category === filter)
-  const paginated = filtered.slice(0, page * PER_PAGE)
-  const hasMore = paginated.length < filtered.length
   const featured = filtered[0]
-  const rest = paginated.slice(1)
+  const { visible: rest, totalPages, pagerProps } = usePager(filtered.slice(1), PER_PAGE, filter)
 
   const countFor = cat => cat === 'Todos' ? posts.length : posts.filter(p => p.category === cat).length
-  const selectCategory = cat => { setFilter(cat); setPage(1) }
+  const selectCategory = cat => setFilter(cat)
 
   const publishButton = NEWS_FORM_URL && (
     <a href={NEWS_FORM_URL} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-full bg-[#D01F2D] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#B01A26]">
@@ -159,7 +156,7 @@ export default function NewsPage() {
                       </button>
                     ))}
                   </div>
-                  {hasMore && <ShowMore remaining={filtered.length - paginated.length} onClick={() => setPage(p => p + 1)} noun="stories" />}
+                  {totalPages > 1 && <Pager {...pagerProps} />}
                 </CardShell>
               )}
             </div>

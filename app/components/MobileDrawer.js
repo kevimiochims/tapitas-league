@@ -40,8 +40,8 @@ export default function MobileDrawer() {
       )}
 
       <div
-        className={`fixed left-0 top-0 z-50 flex h-full w-[min(86vw,320px)] flex-col bg-white shadow-xl transition-transform duration-300 lg:hidden ${
-          open ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed left-0 top-0 z-50 flex h-full w-[min(86vw,320px)] flex-col bg-white shadow-xl transition-[transform,visibility] duration-300 lg:hidden ${
+          open ? 'visible translate-x-0' : 'invisible -translate-x-full'
         }`}
       >
         <div className="flex h-11 flex-shrink-0 items-stretch justify-between border-b border-[#E6E8EB] bg-white">

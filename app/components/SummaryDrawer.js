@@ -254,8 +254,10 @@ export default function SummaryDrawer({ open, onClose, allSeasons }) {
       )}
 
       {/* DRAWER */}
-      <div className={`fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-[#EDEEF0] shadow-xl transition-transform duration-300 ${
-        open ? 'translate-x-0' : 'translate-x-full'
+      {/* Fechado fica invisível (não só fora da tela): o Safari do iPhone usa
+          elementos fixos encostados no topo/rodapé para pintar a barra do navegador. */}
+      <div className={`fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-[#EDEEF0] shadow-xl transition-[transform,visibility] duration-300 ${
+        open ? 'visible translate-x-0' : 'invisible translate-x-full'
       }`}>
 
         {/* HEADER */}

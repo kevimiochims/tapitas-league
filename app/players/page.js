@@ -1008,6 +1008,7 @@ export default function PlayersPage() {
           displayName={newsPlayer.name}
           position={newsPlayer.pos}
           playerId={newsPlayer.id}
+          initialTab="news"
           games={games}
           onClose={() => setNewsPlayer(null)}
         />
