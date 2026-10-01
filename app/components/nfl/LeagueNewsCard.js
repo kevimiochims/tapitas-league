@@ -34,7 +34,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
   const teams = Array.from(new Set(state.news.map(n => n.player?.fantasyTeam).filter(Boolean))).sort((a, b) => a.localeCompare(b))
   const byTeam = team === 'All' ? state.news : state.news.filter(n => n.player?.fantasyTeam === team)
   const news = filter === 'starters' ? byTeam.filter(n => n.player?.starter) : byTeam
-  const { visible, totalPages, pagerProps } = usePager(news, initialLimit, `${team}|${filter}`)
+  const { visible, totalPages, pagerProps, listProps } = usePager(news, initialLimit, `${team}|${filter}`)
   if (state.failed) return null
 
   return (
@@ -57,9 +57,13 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
             const firstPage = pagerProps.page === 0
             const hero = firstPage ? visible.find(n => n.image) : null
             const meta = n => [n.player?.name, n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')
+            // Card largo (aba Player News): foto em destaque à esquerda, lista à direita.
+            // Card estreito (coluna lateral, celular): tudo empilhado.
             return (
-              <>
-                {hero && <div className="px-3 pb-1 pt-2.5 lg:px-4"><NewsHero item={hero} meta={meta(hero)} /></div>}
+              <div {...listProps} className="@container">
+               <div className={hero ? '@3xl:grid @3xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)] @3xl:items-start' : ''}>
+                {hero && <div className="px-3 pb-1 pt-2.5 lg:px-4 @3xl:pb-2.5 @3xl:pr-0"><NewsHero item={hero} meta={meta(hero)} /></div>}
+                <div>
                 {visible.filter(n => n !== hero).map(n => (
                   <div key={n.id || n.url || n.headline} className="flex gap-2.5 px-3 py-2.5 lg:px-4">
                     <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="relative flex-shrink-0" aria-label={n.player?.name}>
@@ -80,7 +84,9 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
                     </div>
                   </div>
                 ))}
-              </>
+                </div>
+               </div>
+              </div>
             )
           })()}
           {totalPages > 1 && <Pager {...pagerProps} />}

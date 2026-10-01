@@ -46,8 +46,9 @@ export function PlayerNewsCard({ playerId, emptyText }) {
             const list = news.slice(0, 10)
             const hero = list.find(n => n.image)
             return (
-              <>
-                {hero && <div className="px-3 pb-1 pt-3 sm:px-4"><NewsHero item={hero} meta={[hero.source, hero.published && timeAgo(hero.published)].filter(Boolean).join(' · ')} /></div>}
+              <div className="@container">
+               <div className={hero ? '@3xl:grid @3xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] @3xl:items-start' : ''}>
+                {hero && <div className="px-3 pb-1 pt-3 sm:px-4 @3xl:pb-3 @3xl:pr-0"><NewsHero item={hero} meta={[hero.source, hero.published && timeAgo(hero.published)].filter(Boolean).join(' · ')} /></div>}
                 <div className="divide-y divide-[#F1F2F4]">
                   {list.filter(n => n !== hero).map(n => {
                     const Tag = n.url ? 'a' : 'div'
@@ -70,7 +71,8 @@ export function PlayerNewsCard({ playerId, emptyText }) {
                     )
                   })}
                 </div>
-              </>
+               </div>
+              </div>
             )
           })()}
         </div>

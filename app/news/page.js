@@ -81,7 +81,7 @@ export default function NewsPage() {
 
   const filtered = filter === 'Todos' ? posts : posts.filter(p => p.category === filter)
   const featured = filtered[0]
-  const { visible: rest, totalPages, pagerProps } = usePager(filtered.slice(1), PER_PAGE, filter)
+  const { visible: rest, totalPages, pagerProps, listProps } = usePager(filtered.slice(1), PER_PAGE, filter)
 
   const countFor = cat => cat === 'Todos' ? posts.length : posts.filter(p => p.category === cat).length
   const selectCategory = cat => setFilter(cat)
@@ -142,7 +142,7 @@ export default function NewsPage() {
             <div className="min-w-0">
               {rest.length > 0 && (
                 <CardShell title="Latest" subtitle={filter === 'Todos' ? 'All stories, newest first' : `${filter} · newest first`}>
-                  <div className="divide-y divide-[#F1F2F4]">
+                  <div {...listProps} className="divide-y divide-[#F1F2F4]">
                     {rest.map((post, i) => (
                       <button key={post.id || i} onClick={() => router.push(`/news/${post.slug}`)} className="group flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-[#F7F8FA] sm:gap-4 lg:px-4">
                         <div className="h-[72px] w-[108px] flex-shrink-0 overflow-hidden rounded-lg bg-[#F4F5F7] sm:h-[104px] sm:w-[168px]">

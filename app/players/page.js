@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronLeft, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
-import { BrandBackdrop, PageShell, PageBar, BarTab, LeaderCard, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
+import { BrandBackdrop, PageShell, PageBar, BarTab, LeaderCard, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager, StableHeight } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 import PlayerCutout from '../components/PlayerCutout'
 import LeagueNewsCard from '../components/nfl/LeagueNewsCard'
@@ -965,109 +965,113 @@ export default function PlayersPage() {
 
         {archiveView === 'consolidated' ? (
           <div className="overflow-hidden rounded-b-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px]">
-                <thead>
-                  <tr className="border-b border-[#EEF0F2]">
-                    <th className={`${th} w-10`}>#</th>
-                    <th className={th}>Player</th>
-                    <th className={th}>Franchises</th>
-                    {[['Apps', 'appearances'], ['Starts', 'starts'], ['Avg pts', 'avg'], ['Best', 'best']].map(([label, key]) => (
-                      <th key={key} className={thRight}>
-                        <SortHeader label={label} active={sort.key === key} dir={sort.dir} onClick={() => toggleSortCol(key)} align="right" />
-                      </th>
-                    ))}
-                    <th className={th}>Seasons</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleConsolidatedRows.map((p, i) => (
-                    <tr key={p.identityKey} onClick={() => setSelected(p)} className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
-                      <td className={`${td} text-[13px] font-semibold tabular-nums text-[#9CA3AF]`}>{consolidatedPage * consolidatedPageSize + i + 1}</td>
-                      <td className={td}>
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={34} />
-                          <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{p.name}</span>
-                          <PositionBadge position={p.position} />
-                        </div>
-                      </td>
-                      <td className={`${td} max-w-[240px]`}>
-                        <div className="flex items-center gap-1">
-                          {p.teams.slice(0, 5).map(t => <span key={t} title={t}><TeamLogo name={t} size={20} /></span>)}
-                          {p.teams.length > 5 && <span className="text-[11px] text-[#6B7280]">+{p.teams.length - 5}</span>}
-                        </div>
-                      </td>
-                      <td className={`${td} text-right text-[13px] tabular-nums text-[#3F4757]`}>{p.appearances}</td>
-                      <td className={`${td} text-right text-[13px] tabular-nums text-[#3F4757]`}>{p.starts}</td>
-                      <td className={`${td} text-right text-[13px] font-semibold tabular-nums text-[#111]`}>{p.avg.toFixed(2)}</td>
-                      <td className={`${td} text-right text-[13px] font-semibold tabular-nums text-[#111]`}>{p.best.toFixed(2)}</td>
-                      <td className={`${td} whitespace-nowrap text-[12px] text-[#6B7280]`}>{formatSeasonList(Array.from(p.seasons))}</td>
+            <StableHeight resetKey={`players|${filtered.length}`}>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px]">
+                  <thead>
+                    <tr className="border-b border-[#EEF0F2]">
+                      <th className={`${th} w-10`}>#</th>
+                      <th className={th}>Player</th>
+                      <th className={th}>Franchises</th>
+                      {[['Apps', 'appearances'], ['Starts', 'starts'], ['Avg pts', 'avg'], ['Best', 'best']].map(([label, key]) => (
+                        <th key={key} className={thRight}>
+                          <SortHeader label={label} active={sort.key === key} dir={sort.dir} onClick={() => toggleSortCol(key)} align="right" />
+                        </th>
+                      ))}
+                      <th className={th}>Seasons</th>
                     </tr>
-                  ))}
-                  {filtered.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-[13px] text-[#6B7280]">No players found</td></tr>}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {visibleConsolidatedRows.map((p, i) => (
+                      <tr key={p.identityKey} onClick={() => setSelected(p)} className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
+                        <td className={`${td} text-[13px] font-semibold tabular-nums text-[#9CA3AF]`}>{consolidatedPage * consolidatedPageSize + i + 1}</td>
+                        <td className={td}>
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={34} />
+                            <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{p.name}</span>
+                            <PositionBadge position={p.position} />
+                          </div>
+                        </td>
+                        <td className={`${td} max-w-[240px]`}>
+                          <div className="flex items-center gap-1">
+                            {p.teams.slice(0, 5).map(t => <span key={t} title={t}><TeamLogo name={t} size={20} /></span>)}
+                            {p.teams.length > 5 && <span className="text-[11px] text-[#6B7280]">+{p.teams.length - 5}</span>}
+                          </div>
+                        </td>
+                        <td className={`${td} text-right text-[13px] tabular-nums text-[#3F4757]`}>{p.appearances}</td>
+                        <td className={`${td} text-right text-[13px] tabular-nums text-[#3F4757]`}>{p.starts}</td>
+                        <td className={`${td} text-right text-[13px] font-semibold tabular-nums text-[#111]`}>{p.avg.toFixed(2)}</td>
+                        <td className={`${td} text-right text-[13px] font-semibold tabular-nums text-[#111]`}>{p.best.toFixed(2)}</td>
+                        <td className={`${td} whitespace-nowrap text-[12px] text-[#6B7280]`}>{formatSeasonList(Array.from(p.seasons))}</td>
+                      </tr>
+                    ))}
+                    {filtered.length === 0 && <tr><td colSpan="8" className="py-12 text-center text-[13px] text-[#6B7280]">No players found</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </StableHeight>
             <Pager page={consolidatedPage} totalPages={consolidatedTotalPages} total={filtered.length} pageSize={consolidatedPageSize} onPrev={() => goConsolidatedPage(-1)} onNext={() => goConsolidatedPage(1)} />
           </div>
         ) : (
           <div className="overflow-hidden rounded-b-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px]">
-                <thead>
-                  <tr className="border-b border-[#EEF0F2]">
-                    <th className={`${th} w-10`}>#</th>
-                    <th className={th}>Player</th>
-                    <th className={th}><SortHeader label="Season" active={performanceSort.key === 'season'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('season')} /></th>
-                    <th className={th}><SortHeader label="Week" active={performanceSort.key === 'week'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('week')} /></th>
-                    <th className={th}>Matchup</th>
-                    <th className={thRight}><SortHeader label="Points" active={performanceSort.key === 'pts'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('pts')} align="right" /></th>
-                    <th className={th}>Status</th>
-                    <th className={th}>Result</th>
-                    <th className={th}>Stage</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visiblePerformanceRows.map((g, i) => (
-                    <tr
-                      key={`${g.identityKey}-${g.season}-${g.week}-${g.team}-${i}`}
-                      onClick={() => router.push(canonicalMatchupHref(g, games))}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(canonicalMatchupHref(g, games)) }}
-                      tabIndex={0}
-                      className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] focus:bg-[#F7F8FA] focus:outline-none"
-                    >
-                      <td className={`${td} text-[13px] font-semibold tabular-nums text-[#9CA3AF]`}>{performancePage * performancePageSize + i + 1}</td>
-                      <td className={td}>
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={34} />
-                          <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{g.name}</span>
-                          <PositionBadge position={g.position} />
-                        </div>
-                      </td>
-                      <td className={`${td} text-[13px] font-semibold text-[#111]`}>{g.season}</td>
-                      <td className={`${td} whitespace-nowrap text-[13px] tabular-nums text-[#3F4757]`}>{g.week}</td>
-                      <td className={td}>
-                        <div className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-[#111]">
-                          <TeamLogo name={g.team} size={18} />{shortName(g.team)}
-                          <span className="text-[#9CA3AF]">vs</span>
-                          <TeamLogo name={g.opponent} size={18} />{shortName(g.opponent)}
-                        </div>
-                      </td>
-                      <td className={`${td} whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-[#111]`}>
-                        {g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1"><Tag>DW</Tag></span>}
-                        <div className="ml-auto mt-1 h-1 w-20 overflow-hidden rounded-full bg-[#EEF0F2]">
-                          <div className="ml-auto h-full rounded-full bg-[#02275F]" style={{ width: `${performanceShowcase.max > 0 ? Math.max(0, g.pts) / performanceShowcase.max * 100 : 0}%` }} />
-                        </div>
-                      </td>
-                      <td className={td}><Tag tone={g.status === 'Starter' ? 'green' : undefined}>{g.status}</Tag></td>
-                      <td className={td}><ResultBadge result={g.result} /></td>
-                      <td className={`${td} text-[12px] text-[#6B7280]`}>{g.stage || '—'}</td>
+            <StableHeight resetKey={`perf|${performanceRows.length}`}>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[820px]">
+                  <thead>
+                    <tr className="border-b border-[#EEF0F2]">
+                      <th className={`${th} w-10`}>#</th>
+                      <th className={th}>Player</th>
+                      <th className={th}><SortHeader label="Season" active={performanceSort.key === 'season'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('season')} /></th>
+                      <th className={th}><SortHeader label="Week" active={performanceSort.key === 'week'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('week')} /></th>
+                      <th className={th}>Matchup</th>
+                      <th className={thRight}><SortHeader label="Points" active={performanceSort.key === 'pts'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('pts')} align="right" /></th>
+                      <th className={th}>Status</th>
+                      <th className={th}>Result</th>
+                      <th className={th}>Stage</th>
                     </tr>
-                  ))}
-                  {performanceRows.length === 0 && <tr><td colSpan="9" className="py-12 text-center text-[13px] text-[#6B7280]">No performances found</td></tr>}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {visiblePerformanceRows.map((g, i) => (
+                      <tr
+                        key={`${g.identityKey}-${g.season}-${g.week}-${g.team}-${i}`}
+                        onClick={() => router.push(canonicalMatchupHref(g, games))}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(canonicalMatchupHref(g, games)) }}
+                        tabIndex={0}
+                        className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] focus:bg-[#F7F8FA] focus:outline-none"
+                      >
+                        <td className={`${td} text-[13px] font-semibold tabular-nums text-[#9CA3AF]`}>{performancePage * performancePageSize + i + 1}</td>
+                        <td className={td}>
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={34} />
+                            <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{g.name}</span>
+                            <PositionBadge position={g.position} />
+                          </div>
+                        </td>
+                        <td className={`${td} text-[13px] font-semibold text-[#111]`}>{g.season}</td>
+                        <td className={`${td} whitespace-nowrap text-[13px] tabular-nums text-[#3F4757]`}>{g.week}</td>
+                        <td className={td}>
+                          <div className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-[#111]">
+                            <TeamLogo name={g.team} size={18} />{shortName(g.team)}
+                            <span className="text-[#9CA3AF]">vs</span>
+                            <TeamLogo name={g.opponent} size={18} />{shortName(g.opponent)}
+                          </div>
+                        </td>
+                        <td className={`${td} whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-[#111]`}>
+                          {g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1"><Tag>DW</Tag></span>}
+                          <div className="ml-auto mt-1 h-1 w-20 overflow-hidden rounded-full bg-[#EEF0F2]">
+                            <div className="ml-auto h-full rounded-full bg-[#02275F]" style={{ width: `${performanceShowcase.max > 0 ? Math.max(0, g.pts) / performanceShowcase.max * 100 : 0}%` }} />
+                          </div>
+                        </td>
+                        <td className={td}><Tag tone={g.status === 'Starter' ? 'green' : undefined}>{g.status}</Tag></td>
+                        <td className={td}><ResultBadge result={g.result} /></td>
+                        <td className={`${td} text-[12px] text-[#6B7280]`}>{g.stage || '—'}</td>
+                      </tr>
+                    ))}
+                    {performanceRows.length === 0 && <tr><td colSpan="9" className="py-12 text-center text-[13px] text-[#6B7280]">No performances found</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </StableHeight>
             <Pager page={performancePage} totalPages={performanceTotalPages} total={performanceRows.length} pageSize={performancePageSize} onPrev={() => goPerformancePage(-1)} onNext={() => goPerformancePage(1)} />
           </div>
         )}

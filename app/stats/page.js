@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
-import { BrandBackdrop, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
+import { BrandBackdrop, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, StableHeight, LoadingState } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -975,51 +975,53 @@ function StatsPageContent() {
           </FilterBar>
           {loading ? <LoadingState /> : (
             <div className="overflow-hidden rounded-b-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-[#EEF0F2]">
-                      <th className={`${th} sticky left-0 z-10 w-10 bg-white text-left`}>
-                        {season !== 'All-Time'
-                          ? <SortHeader label="#" active={sortCol === 'Pos'} dir={sortDir} onClick={() => handleSort('Pos')} />
-                          : '#'}
-                      </th>
-                      <th className={`${th} sticky left-10 z-10 bg-white text-left`}>Team</th>
-                      {tabCols[tab].map(col => (
-                        <th key={col} className={`${th} text-right`}>
-                          <SortHeader label={col} active={sortCol === col} dir={sortDir} onClick={() => handleSort(col)} align="right" />
+              <StableHeight resetKey={`standings|${tableData.length}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[#EEF0F2]">
+                        <th className={`${th} sticky left-0 z-10 w-10 bg-white text-left`}>
+                          {season !== 'All-Time'
+                            ? <SortHeader label="#" active={sortCol === 'Pos'} dir={sortDir} onClick={() => handleSort('Pos')} />
+                            : '#'}
                         </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paged.map((row, i) => {
-                      const rank = page * PER_PAGE + i + 1
-                      const pos = season !== 'All-Time' && row.standing ? row.standing : rank
-                      return (
-                        <tr key={row.team} onClick={() => router.push(`/teams?team=${encodeURIComponent(row.team)}`)} className="group cursor-pointer border-b border-[#F1F2F4] bg-white transition-colors hover:bg-[#F7F8FA]">
-                          <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5 text-[13px] font-semibold tabular-nums lg:px-4">
-                            {/* 1º em dourado, zona de playoff (top 6) em azul */}
-                            <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1 ${pos === 1 ? 'bg-[#B8860B] text-white' : pos <= 6 ? 'bg-[#02275F] text-white' : 'bg-[#F1F2F4] text-[#3F4757]'}`}>{pos}</span>
-                          </td>
-                          <td className="sticky left-10 z-10 bg-inherit px-3 py-2.5 lg:px-4">
-                            <div className="flex min-w-0 items-center gap-2.5">
-                              <TeamLogo name={row.team} size={24} />
-                              <span className="max-w-[110px] truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D] sm:max-w-[220px]">{row.team}</span>
-                              {row.champion && <span className="flex-shrink-0 text-[12px]">🏆</span>}
-                            </div>
-                          </td>
-                          {tabCols[tab].map(col => (
-                            <td key={col} className={`whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums lg:px-4 ${sortCol === col ? 'font-semibold text-[#111]' : 'text-[#3F4757]'}`}>
-                              {getCol(row, col)}
+                        <th className={`${th} sticky left-10 z-10 bg-white text-left`}>Team</th>
+                        {tabCols[tab].map(col => (
+                          <th key={col} className={`${th} text-right`}>
+                            <SortHeader label={col} active={sortCol === col} dir={sortDir} onClick={() => handleSort(col)} align="right" />
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paged.map((row, i) => {
+                        const rank = page * PER_PAGE + i + 1
+                        const pos = season !== 'All-Time' && row.standing ? row.standing : rank
+                        return (
+                          <tr key={row.team} onClick={() => router.push(`/teams?team=${encodeURIComponent(row.team)}`)} className="group cursor-pointer border-b border-[#F1F2F4] bg-white transition-colors hover:bg-[#F7F8FA]">
+                            <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5 text-[13px] font-semibold tabular-nums lg:px-4">
+                              {/* 1º em dourado, zona de playoff (top 6) em azul */}
+                              <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1 ${pos === 1 ? 'bg-[#B8860B] text-white' : pos <= 6 ? 'bg-[#02275F] text-white' : 'bg-[#F1F2F4] text-[#3F4757]'}`}>{pos}</span>
                             </td>
-                          ))}
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            <td className="sticky left-10 z-10 bg-inherit px-3 py-2.5 lg:px-4">
+                              <div className="flex min-w-0 items-center gap-2.5">
+                                <TeamLogo name={row.team} size={24} />
+                                <span className="max-w-[110px] truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D] sm:max-w-[220px]">{row.team}</span>
+                                {row.champion && <span className="flex-shrink-0 text-[12px]">🏆</span>}
+                              </div>
+                            </td>
+                            {tabCols[tab].map(col => (
+                              <td key={col} className={`whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums lg:px-4 ${sortCol === col ? 'font-semibold text-[#111]' : 'text-[#3F4757]'}`}>
+                                {getCol(row, col)}
+                              </td>
+                            ))}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </StableHeight>
               {totalPages > 1 && (
                 <Pager page={page} totalPages={totalPages} total={tableData.length} pageSize={PER_PAGE} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => Math.min(totalPages - 1, p + 1))} />
               )}
@@ -1076,48 +1078,50 @@ function StatsPageContent() {
           </FilterBar>
           {loading ? <LoadingState /> : (
             <div className="overflow-hidden rounded-b-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1100px]">
-                  <thead>
-                    <tr className="border-b border-[#EEF0F2]">
-                      {['Season', 'Week', 'Team', 'Opponent', 'PF', 'PA', 'Margin', 'Result', 'Stage', 'Streak', 'Power Ranking', 'HS', 'Max PF', 'Starters Accuracy'].map(col => {
-                        const sortable = ['Season', 'Week', 'PF', 'PA', 'Margin', 'Streak', 'Max PF', 'Starters Accuracy'].includes(col)
-                        const right = ['PF', 'PA', 'Margin', 'Streak', 'Power Ranking', 'Max PF', 'Starters Accuracy'].includes(col)
-                        const label = { 'Power Ranking': 'PR', 'Starters Accuracy': 'Accuracy' }[col] || col
+              <StableHeight resetKey={`games|${filteredGameFacts.length}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1100px]">
+                    <thead>
+                      <tr className="border-b border-[#EEF0F2]">
+                        {['Season', 'Week', 'Team', 'Opponent', 'PF', 'PA', 'Margin', 'Result', 'Stage', 'Streak', 'Power Ranking', 'HS', 'Max PF', 'Starters Accuracy'].map(col => {
+                          const sortable = ['Season', 'Week', 'PF', 'PA', 'Margin', 'Streak', 'Max PF', 'Starters Accuracy'].includes(col)
+                          const right = ['PF', 'PA', 'Margin', 'Streak', 'Power Ranking', 'Max PF', 'Starters Accuracy'].includes(col)
+                          const label = { 'Power Ranking': 'PR', 'Starters Accuracy': 'Accuracy' }[col] || col
+                          return (
+                            <th key={col} className={`${th} ${right ? 'text-right' : 'text-left'}`}>
+                              {sortable ? <SortHeader label={label} active={gfSortCol === col} dir={gfSortDir} onClick={() => handleGameFactSort(col)} align={right ? 'right' : 'left'} /> : label}
+                            </th>
+                          )
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedGameFacts.map(row => {
+                        const isHS = row.weeklyHighScorer && normalizeString(row.weeklyHighScorer) === normalizeString(row.team)
                         return (
-                          <th key={col} className={`${th} ${right ? 'text-right' : 'text-left'}`}>
-                            {sortable ? <SortHeader label={label} active={gfSortCol === col} dir={gfSortDir} onClick={() => handleGameFactSort(col)} align={right ? 'right' : 'left'} /> : label}
-                          </th>
+                          <tr key={row.id} onClick={() => handleGameFactClick(row)} title="Open matchup" className="cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
+                            <td className="whitespace-nowrap px-3 py-2.5 text-[13px] font-semibold text-[#111] lg:px-4">{row.season}</td>
+                            <td className="whitespace-nowrap px-3 py-2.5 text-[13px] tabular-nums text-[#6B7280] lg:px-4">{row.week}</td>
+                            <td className="whitespace-nowrap px-3 py-2.5 lg:px-4"><div className="flex items-center gap-2 text-[13px] font-medium text-[#111]"><TeamLogo name={row.team} size={20} />{row.team}</div></td>
+                            <td className="whitespace-nowrap px-3 py-2.5 lg:px-4"><div className="flex items-center gap-2 text-[13px] text-[#3F4757]"><TeamLogo name={row.opponent} size={20} />{row.opponent}</div></td>
+                            <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums text-[#111] lg:px-4">{row.pf.toFixed(2)}</td>
+                            <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#6B7280] lg:px-4">{row.pa.toFixed(2)}</td>
+                            <td className={`whitespace-nowrap px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums lg:px-4 ${row.margin >= 0 ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{row.margin > 0 ? '+' : ''}{row.margin.toFixed(2)}</td>
+                            <td className="px-3 py-2.5 lg:px-4"><ResultBadge result={row.result} /></td>
+                            <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[#6B7280] lg:px-4">{row.stage}</td>
+                            <td className="whitespace-nowrap px-3 py-2.5 text-right lg:px-4">{row.streak ? <StreakBadge streak={row.streak > 0 ? `W${row.streak}` : `L${Math.abs(row.streak)}`} /> : <span className="text-[12px] text-[#9CA3AF]">—</span>}</td>
+                            <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#111] lg:px-4">{row.powerRanking > 0 ? `#${row.powerRanking}` : '—'}</td>
+                            <td className="px-3 py-2.5 lg:px-4">{isHS ? <Tag tone="gold">HS</Tag> : <span className="text-[12px] text-[#C4C7CC]">—</span>}</td>
+                            <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#3F4757] lg:px-4">{row.maxPF > 0 ? row.maxPF.toFixed(2) : '—'}</td>
+                            <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#111] lg:px-4">{row.maxPF > 0 ? `${row.startersAccuracy.toFixed(1)}%` : '—'}</td>
+                          </tr>
                         )
                       })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pagedGameFacts.map(row => {
-                      const isHS = row.weeklyHighScorer && normalizeString(row.weeklyHighScorer) === normalizeString(row.team)
-                      return (
-                        <tr key={row.id} onClick={() => handleGameFactClick(row)} title="Open matchup" className="cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA]">
-                          <td className="whitespace-nowrap px-3 py-2.5 text-[13px] font-semibold text-[#111] lg:px-4">{row.season}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-[13px] tabular-nums text-[#6B7280] lg:px-4">{row.week}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5 lg:px-4"><div className="flex items-center gap-2 text-[13px] font-medium text-[#111]"><TeamLogo name={row.team} size={20} />{row.team}</div></td>
-                          <td className="whitespace-nowrap px-3 py-2.5 lg:px-4"><div className="flex items-center gap-2 text-[13px] text-[#3F4757]"><TeamLogo name={row.opponent} size={20} />{row.opponent}</div></td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums text-[#111] lg:px-4">{row.pf.toFixed(2)}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#6B7280] lg:px-4">{row.pa.toFixed(2)}</td>
-                          <td className={`whitespace-nowrap px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums lg:px-4 ${row.margin >= 0 ? 'text-[#1E8E3E]' : 'text-[#D01F2D]'}`}>{row.margin > 0 ? '+' : ''}{row.margin.toFixed(2)}</td>
-                          <td className="px-3 py-2.5 lg:px-4"><ResultBadge result={row.result} /></td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[#6B7280] lg:px-4">{row.stage}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-right lg:px-4">{row.streak ? <StreakBadge streak={row.streak > 0 ? `W${row.streak}` : `L${Math.abs(row.streak)}`} /> : <span className="text-[12px] text-[#9CA3AF]">—</span>}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#111] lg:px-4">{row.powerRanking > 0 ? `#${row.powerRanking}` : '—'}</td>
-                          <td className="px-3 py-2.5 lg:px-4">{isHS ? <Tag tone="gold">HS</Tag> : <span className="text-[12px] text-[#C4C7CC]">—</span>}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#3F4757] lg:px-4">{row.maxPF > 0 ? row.maxPF.toFixed(2) : '—'}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-right text-[13px] tabular-nums text-[#111] lg:px-4">{row.maxPF > 0 ? `${row.startersAccuracy.toFixed(1)}%` : '—'}</td>
-                        </tr>
-                      )
-                    })}
-                    {pagedGameFacts.length === 0 && <tr><td colSpan="14" className="py-16 text-center text-[13px] text-[#6B7280]">No games found</td></tr>}
-                  </tbody>
-                </table>
-              </div>
+                      {pagedGameFacts.length === 0 && <tr><td colSpan="14" className="py-16 text-center text-[13px] text-[#6B7280]">No games found</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </StableHeight>
               {gameFactTotalPages > 1 && (
                 <Pager page={gfPage} totalPages={gameFactTotalPages} total={filteredGameFacts.length} pageSize={GAME_FACT_PAGE_SIZE} onPrev={() => setGfPage(p => Math.max(0, p - 1))} onNext={() => setGfPage(p => Math.min(gameFactTotalPages - 1, p + 1))} />
               )}

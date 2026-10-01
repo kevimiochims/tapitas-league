@@ -392,6 +392,37 @@ export function Pager({ page, totalPages, total, pageSize, onPrev, onNext }) {
   )
 }
 
+// Altura estável para listas paginadas: guarda a maior altura que a lista já
+// teve e usa como altura mínima. Assim o card não muda de tamanho ao passar de
+// página (e as setas do Pager não saem do lugar). Volta ao natural quando
+// `resetKey` muda (ex.: troca de filtro). Uso: <div {...useStableHeight(key)}>.
+export function useStableHeight(resetKey = '') {
+  const ref = useRef(null)
+  const [state, setState] = useState({ key: resetKey, h: 0 })
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      const h = el.offsetHeight
+      setState(s => {
+        const base = s.key === resetKey ? s.h : 0
+        return h > base ? { key: resetKey, h } : s.key === resetKey ? s : { key: resetKey, h: 0 }
+      })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [resetKey])
+  const minHeight = state.key === resetKey && state.h ? state.h : undefined
+  return { ref, style: minHeight ? { minHeight } : undefined }
+}
+
+// Mesmo efeito em forma de componente (para listas com paginação própria):
+// <StableHeight resetKey={filtros}>…lista…</StableHeight>
+export function StableHeight({ resetKey = '', className = '', children }) {
+  const props = useStableHeight(resetKey)
+  return <div {...props} className={className}>{children}</div>
+}
+
 // Paginação lateral para listas (no lugar de "show more"): devolve a fatia
 // visível e as props do <Pager />. Volta para a 1ª página quando `resetKey` muda.
 export function usePager(items, pageSize, resetKey = '') {
@@ -399,10 +430,14 @@ export function usePager(items, pageSize, resetKey = '') {
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
   const page = Math.min(state.key === resetKey ? state.page : 0, totalPages - 1)
   const go = delta => setState({ key: resetKey, page: Math.max(0, Math.min(totalPages - 1, page + delta)) })
+  const listProps = useStableHeight(`${resetKey}|${pageSize}|${items.length}`)
   return {
     visible: items.slice(page * pageSize, (page + 1) * pageSize),
     page,
     totalPages,
+    // Vai na lista paginada: ela mantém a maior altura já vista, então o card
+    // não cresce nem encolhe ao trocar de página
+    listProps,
     pagerProps: { page, totalPages, total: items.length, pageSize, onPrev: () => go(-1), onNext: () => go(1) },
   }
 }
