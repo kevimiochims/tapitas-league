@@ -57,3 +57,31 @@ export function NflTeamMark({ team, size = 14 }) {
 export function EmptyNote({ children }) {
   return <div className="px-3 py-6 text-center text-[13px] text-[#6B7280] lg:px-4">{children}</div>
 }
+
+// Foto da matéria (ESPN / RSS). Some se a imagem não carregar.
+export function NewsImage({ src, alt = '', className = '' }) {
+  const [failed, setFailed] = useState(false)
+  if (!src || failed) return null
+  return <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} className={`object-cover ${className}`} />
+}
+
+// Notícia em destaque: foto grande com o título por cima (estilo RotoBaller)
+export function NewsHero({ item, meta, onClick }) {
+  const [failed, setFailed] = useState(false)
+  if (!item?.image || failed) return null
+  const Wrap = item.url ? 'a' : 'div'
+  return (
+    <Wrap
+      {...(item.url ? { href: item.url, target: '_blank', rel: 'noopener noreferrer' } : {})}
+      onClick={onClick}
+      className="group relative block aspect-[16/9] max-h-[320px] w-full overflow-hidden rounded-lg bg-[#16274F]"
+    >
+      <img src={item.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 p-3">
+        <div className="line-clamp-3 text-[16px] font-extrabold leading-tight text-white sm:text-[18px]">{item.headline}</div>
+        {meta && <div className="mt-1 text-[11px] font-medium text-white/75">{meta}</div>}
+      </div>
+    </Wrap>
+  )
+}

@@ -42,6 +42,18 @@ const tag = (xml, name) => {
   return m ? m[1] : ''
 }
 
+// Foto da matéria: media:content / media:thumbnail / enclosure de imagem, ou a
+// primeira <img> do resumo ou do conteúdo
+function rssImage(item) {
+  const attr = re => decodeEntities((item.match(re) || [])[1] || '')
+  const url = attr(/<media:content[^>]*\burl="([^"]+)"[^>]*>/i)
+    || attr(/<media:thumbnail[^>]*\burl="([^"]+)"/i)
+    || attr(/<enclosure[^>]*\burl="([^"]+)"[^>]*type="image/i)
+    || attr(/<enclosure[^>]*type="image[^"]*"[^>]*\burl="([^"]+)"/i)
+    || (decodeEntities(item).match(/<img[^>]*\bsrc="([^"]+)"/i) || [])[1] || ''
+  return /^https?:\/\//.test(url) && !/\.(mp4|mp3|m4a)(\?|$)/i.test(url) ? url : null
+}
+
 export function parseRss(xml, source) {
   const items = xml.match(/<item[\s>][\s\S]*?<\/item>/gi) || xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || []
   return items.map(item => {
@@ -50,7 +62,7 @@ export function parseRss(xml, source) {
     const date = decode(tag(item, 'pubDate') || tag(item, 'published') || tag(item, 'updated') || tag(item, 'dc:date'))
     const published = date && !Number.isNaN(new Date(date).getTime()) ? new Date(date).toISOString() : null
     const description = decode(tag(item, 'description') || tag(item, 'summary') || tag(item, 'content:encoded')).slice(0, 400)
-    return { id: `${source}:${link || headline}`, headline, description, published, url: link, source }
+    return { id: `${source}:${link || headline}`, headline, description, published, url: link, source, image: rssImage(item) }
   }).filter(n => n.headline)
 }
 
