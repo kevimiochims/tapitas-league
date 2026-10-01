@@ -7,7 +7,7 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import Header from '../components/Header'
 import SharedPlayerProfile from '../components/PlayerProfileModal'
-import { PageShell, PageSkeleton, SiteFooter } from '../components/ui'
+import { PageShell, PageSkeleton, SiteFooter, getTeamAbbr } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -1271,7 +1271,7 @@ function MatchupsPageContent() {
             {/* Seletor de matchup (faixa de placares) */}
             {week && matchups.length > 0 && (
               <div className="mb-2 overflow-hidden rounded-xl bg-white">
-                <div ref={matchupsFrameRef} className="scroll-hide flex gap-1.5 overflow-x-auto p-2">
+                <div ref={matchupsFrameRef} className="scroll-hide flex gap-1.5 overflow-x-auto p-2 [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto">
                   {matchups.map((g, i) => {
                     const pf = parseNumber(g?.PF)
                     const pa = parseNumber(g?.PA)
@@ -1289,19 +1289,19 @@ function MatchupsPageContent() {
                           setShowWeekRecap(false)
                           setShowPowerRankingPreview(false)
                         }}
-                        className={`w-[10.5rem] flex-shrink-0 rounded-lg px-2.5 py-2 text-left transition-colors ${isSelected ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
+                        className={`min-w-[7.5rem] flex-shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-left transition-colors lg:min-w-[10.5rem] ${isSelected ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
                       >
                         {gameType && gameType !== 'Reg Season' && (
                           <div className="mb-0.5 text-[10px] font-medium text-[#6B7280]">{gameType}</div>
                         )}
                         <div className="flex items-center gap-1.5 text-[13px] leading-5">
                           <TeamAvatar name={team} className="h-4 w-4 flex-shrink-0 rounded-sm" textClassName="text-[6px]" />
-                          <span className={`min-w-0 flex-1 truncate ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{team}</span>
+                          <span className={`flex-1 ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`} title={team}><span className="lg:hidden">{getTeamAbbr(team)}</span><span className="hidden lg:inline">{team}</span></span>
                           <span className={`tabular-nums ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{pf > 0 ? pf.toFixed(2) : '—'}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[13px] leading-5">
                           <TeamAvatar name={opp} className="h-4 w-4 flex-shrink-0 rounded-sm" textClassName="text-[6px]" />
-                          <span className={`min-w-0 flex-1 truncate ${!won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{opp}</span>
+                          <span className={`flex-1 ${!won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`} title={opp}><span className="lg:hidden">{getTeamAbbr(opp)}</span><span className="hidden lg:inline">{opp}</span></span>
                           <span className={`tabular-nums ${!won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{pa > 0 ? pa.toFixed(2) : '—'}</span>
                         </div>
                       </button>

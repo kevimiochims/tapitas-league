@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { CardShell, Segmented, Tag, TeamLogo, PositionBadge, SkeletonRows } from '../ui'
 import { useTrending } from './useNflData'
-import { PlayerThumb, EmptyNote, injuryTone } from './shared'
+import { PlayerThumb, EmptyNote, injuryTone, injuryLabel } from './shared'
 
 function compact(n) {
   if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`
@@ -34,7 +34,7 @@ export default function TrendingCard({ onOpenPlayer }) {
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{p.name}</span>
                   <PositionBadge position={p.pos} />
-                  {p.injury && <Tag tone={injuryTone(p.injury)}>{p.injury}</Tag>}
+                  {p.injury && <Tag tone={injuryTone(p.injury)}>{injuryLabel(p.injury)}</Tag>}
                 </div>
                 <div className="flex items-center gap-1 truncate text-[11px] text-[#6B7280]">
                   {p.nflTeam || 'FA'}

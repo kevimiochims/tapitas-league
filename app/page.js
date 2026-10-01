@@ -17,7 +17,7 @@ import { resolveFactsName } from './lib/factsNames'
 import RosterAlertsCard from './components/nfl/RosterAlertsCard'
 import TrendingCard from './components/nfl/TrendingCard'
 import LeagueNewsCard from './components/nfl/LeagueNewsCard'
-import { SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, StatGrid, StatTile, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
+import { SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
 
 
 // Same Sleeper player source used by the Teams Player Profile.
@@ -345,9 +345,9 @@ function DraftPickTile({ pick, playerLookup, onOpenPlayer }) {
   useEffect(() => { setPhotoFailed(false) }, [pick.player, playerId, pick.position])
 
   return (
-    <div className="w-[104px] flex-shrink-0 text-center">
+    <div className="w-[104px] min-w-0 flex-shrink-0 text-center lg:w-auto">
       <button type="button" onClick={() => onOpenPlayer?.(pick, data)} className="group block w-full focus:outline-none" aria-label={`Open player profile for ${displayName}`}>
-        <div className="relative mx-auto h-[72px] w-[72px]">
+        <div className="relative mx-auto h-[72px] w-[72px] lg:h-[54px] lg:w-[54px]">
           <div className="h-full w-full overflow-hidden rounded-full bg-[#F4F5F7] ring-1 ring-[#E6E8EB]">
             {photoSrc ? (
               <img src={photoSrc} alt={displayName} className={`h-full w-full ${isDefense ? 'object-contain p-2' : 'object-cover'}`} onError={() => setPhotoFailed(true)} />
@@ -360,7 +360,7 @@ function DraftPickTile({ pick, playerLookup, onOpenPlayer }) {
           <span className="absolute -left-1 -top-1 rounded-full bg-[#111] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-white">#{pick.pick}</span>
           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2"><UiPositionBadge position={pick.position} /></span>
         </div>
-        <div className="mt-2.5 truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{displayName}</div>
+        <div className="mt-2.5 truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D] lg:text-[12px]">{displayName}</div>
       </button>
       <a href={`/teams?team=${encodeURIComponent(pick.team)}`} className="mt-0.5 flex items-center justify-center gap-1 text-[11px] text-[#6B7280] hover:text-[#111]">
         <TeamLogo name={pick.team} size={14} />
@@ -676,20 +676,6 @@ function parseBestStreak(value) {
     else { start = rangeMatch[1].trim() }
   }
   return { result: countMatch[1].toUpperCase(), count: countMatch[2], start, end }
-}
-
-function getPrLeaderMessage(row) {
-  if (!row) return ''
-
-  if (row.delta > 0) {
-    return `Reached the top spot climbing ${Math.abs(row.delta)} ${Math.abs(row.delta) === 1 ? 'position' : 'positions'}`
-  }
-
-  if (row.delta < 0) {
-    return 'Still holds the lead despite pressure this week'
-  }
-
-  return 'Still on Top '
 }
 
 export default function TapitasLeagueHomepage() {
@@ -1183,7 +1169,7 @@ export default function TapitasLeagueHomepage() {
             const rank = parseNumber(g?.['Power Ranking'])
             const prev = prevGames.find(p => String(p?.Team || '').trim() === team)
             const prevRank = prev ? parseNumber(prev?.['Power Ranking']) : rank
-            return { team, rank, delta: prevRank - rank }
+            return { team, rank, delta: prevRank - rank, week: latestWeek }
           })
           if (mounted) { setPrData(prRows); setCurrentSeason(latestSeason) }
 
@@ -1775,11 +1761,12 @@ export default function TapitasLeagueHomepage() {
       image: '/images/draft.png',
     },
     {
-      eyebrow: `${currentSeason || ''} · Latest week`,
-      title: 'Weekly Power Rankings',
-      text: prLeader ? `${prLeader.team} leads the league. ${getPrLeaderMessage(prLeader)}.` : "Who's hot, who's not.",
+      eyebrow: `${currentSeason || ''}${prData?.[0]?.week ? ` · Week ${prData[0].week}` : ''}`,
+      title: 'Power Rankings',
+      text: prData?.length >= 3 ? `${prData[0].team} leads the league. ${prData[1].team} and ${prData[2].team} give chase.` : "Who's hot, who's not.",
       cta: { label: 'Power rankings', href: '/powerrankings' },
       image: null,
+      podium: (prData || []).slice(0, 3),
     },
   ]
 
@@ -1816,13 +1803,35 @@ export default function TapitasLeagueHomepage() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#02275F] via-[#02275F]/80 to-[#02275F]/10" />
         </>
       )}
-      {!slide.image && (
+      {!slide.image && !slide.podium && (
         <img src="/images/LogoFinalBlack.png" alt="" className="pointer-events-none absolute -right-10 top-1/2 h-[260px] w-[260px] -translate-y-1/2 object-contain opacity-15 sm:h-[340px] sm:w-[340px]" />
       )}
-      <div className="relative flex min-h-[230px] flex-col justify-center px-5 py-7 sm:min-h-[280px] sm:px-8">
+      {/* Slide do Power Rankings: textura diagonal e pódio com o top 3 */}
+      {slide.podium && (
+        <>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(115deg, #02275F 0%, #02275F 52%, #0A3B85 100%)' }} />
+          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 16px)' }} />
+          {slide.podium.length === 3 && (
+            <div className="pointer-events-none absolute bottom-0 right-6 hidden items-end gap-1.5 sm:flex xl:right-10">
+              {[slide.podium[1], slide.podium[0], slide.podium[2]].map(row => {
+                const first = row.rank === 1
+                return (
+                  <div key={row.team} className="flex w-[66px] flex-col items-center xl:w-[76px]">
+                    <span className={`mb-2 rounded-full bg-white p-1 shadow-lg ${first ? 'ring-2 ring-[#E8C766]' : ''}`}><TeamLogo name={row.team} size={first ? 44 : 36} /></span>
+                    <div className={`flex w-full items-start justify-center rounded-t-lg pt-1.5 text-[20px] font-black italic tabular-nums ${first ? 'h-[88px] bg-white/20 text-[#E8C766]' : row.rank === 2 ? 'h-[64px] bg-white/[0.14]' : 'h-[46px] bg-white/10'}`}>{row.rank}</div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+      {/* Altura fixa: todos os slides do mesmo tamanho (a página não "pula" ao trocar) */}
+      {/* Slide com pódio: só o texto de baixo abre espaço para o pódio (o título usa a linha toda) */}
+      <div className="relative flex h-[250px] flex-col justify-center px-5 py-6 sm:h-[280px] sm:px-8">
         <div className="text-[12px] font-medium text-white/70">{slide.eyebrow}</div>
-        <h1 className="mt-1.5 max-w-[520px] text-[30px] font-bold leading-[1.05] tracking-tight sm:text-[42px]">{slide.title}</h1>
-        <p className="mt-2 max-w-[440px] text-[14px] leading-relaxed text-white/80 sm:text-[15px]">{slide.text}</p>
+        <h1 className="mt-1.5 line-clamp-2 max-w-[520px] text-[30px] font-bold leading-[1.05] tracking-tight sm:text-[38px] xl:text-[42px]">{slide.title}</h1>
+        <p className={`mt-2 line-clamp-2 max-w-[440px] text-[14px] leading-relaxed text-white/80 sm:text-[15px] ${slide.podium?.length === 3 ? 'sm:line-clamp-3 sm:max-w-[calc(100%-250px)] xl:max-w-[calc(100%-280px)]' : ''}`}>{slide.text}</p>
         <div className="mt-4">
           <Link href={slide.cta.href} className="inline-flex h-9 items-center gap-1 rounded-full bg-white px-4 text-[13px] font-semibold text-[#02275F] transition-colors hover:bg-white/90">
             {slide.cta.label} <ChevronRight className="h-4 w-4" />
@@ -1834,17 +1843,6 @@ export default function TapitasLeagueHomepage() {
           <button key={i} type="button" aria-label={`Slide ${i + 1}`} onClick={() => setCurrentSlide(i)} className={`h-1.5 rounded-full transition-all ${i === currentSlide ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
         ))}
       </div>
-    </div>
-  )
-
-  const numbersCard = (
-    <div className="mb-2 overflow-hidden rounded-xl">
-      <StatGrid className="grid-cols-2 sm:grid-cols-4">
-        <StatTile href="/teams" label="Franchises" value={leagueStats.franchises || '—'} sub="Active teams" />
-        <StatTile href="/history" label="Seasons" value={leagueStats.seasons || '—'} sub={leagueStats.seasonRange || '—'} />
-        <StatTile href="/stats?tab=games" label="Games played" value={leagueStats.games ? leagueStats.games.toLocaleString() : '—'} sub="All stages" />
-        <StatTile href="/records?tab=games" label="Highest score" value={leagueStats.highestScore ? leagueStats.highestScore.toFixed(2) : '—'} sub={leagueStats.highestScoreTeam || '—'} valueClass="text-[#1E8E3E]" />
-      </StatGrid>
     </div>
   )
 
@@ -1942,7 +1940,9 @@ export default function TapitasLeagueHomepage() {
     <CardShell title={`Week ${selectedMatchupOption?.week} highlights`} subtitle={`${currentSeason} · ${visibleMatchups.length} matchups`} action={<Link href={matchupLink(visibleMatchups[0])} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All matchups</Link>}>
       <div className="flex items-center gap-1.5 px-3 pb-2 pt-3 text-[12px] font-semibold text-[#111] lg:px-4"><Swords className="h-3.5 w-3.5 text-[#6B7280]" />Games of the week</div>
       {/* Mesmo estilo do Top Performance (página Players): o destaque em azul */}
-      <div className="grid grid-cols-1 gap-2 px-3 md:grid-cols-3 lg:px-4">
+      {/* Colunas conforme a largura do card (não da tela): evita estourar em telas médias */}
+      <div className="@container px-3 lg:px-4">
+      <div className="grid grid-cols-1 gap-2 @min-[420px]:grid-cols-3">
         {[
           { label: 'Top score', m: weekHighlights.topScore, value: weekHighlights.topScore.high.toFixed(2), unit: 'pts', Icon: Flame, ring: 'bg-[#B8860B]' },
           { label: 'Biggest win', m: weekHighlights.blowout, value: `+${weekHighlights.blowout.margin.toFixed(2)}`, unit: 'margin', Icon: TrendingUp, ring: 'bg-[#1E8E3E]' },
@@ -1953,16 +1953,16 @@ export default function TapitasLeagueHomepage() {
             <Link
               key={label}
               href={matchupLink(m)}
-              className={`group relative flex items-center gap-3 overflow-hidden rounded-xl p-3.5 transition-shadow hover:shadow-md ${featured ? 'bg-[#02275F] text-white' : 'bg-[#F4F5F7] text-[#111]'}`}
+              className={`group relative flex min-w-0 items-center gap-2.5 overflow-hidden rounded-xl p-3 transition-shadow @min-[760px]:gap-3 @min-[760px]:p-3.5 hover:shadow-md ${featured ? 'bg-[#02275F] text-white' : 'bg-[#F4F5F7] text-[#111]'}`}
             >
               <Icon className={`pointer-events-none absolute -right-2 -top-2 h-20 w-20 ${featured ? 'text-white/[0.07]' : 'text-[#02275F]/[0.06]'}`} strokeWidth={2.5} />
-              <span className={`flex-shrink-0 rounded-full p-0.5 ${featured ? 'bg-[#B8860B]' : ring}`}>
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white"><TeamLogo name={m.winner} size={40} /></span>
+              <span className={`flex-shrink-0 rounded-full p-0.5 @min-[420px]:@max-[639px]:hidden ${featured ? 'bg-[#B8860B]' : ring}`}>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white @min-[760px]:h-12 @min-[760px]:w-12"><TeamLogo name={m.winner} size={34} /></span>
               </span>
               <div className="relative min-w-0 flex-1">
-                <div className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${featured ? 'text-[#E8C766]' : 'text-[#6B7280]'}`}>{label}</div>
-                <div className="mt-0.5 flex items-baseline gap-1">
-                  <span className="text-[26px] font-bold leading-none tabular-nums">{value}</span>
+                <div className={`truncate text-[11px] font-semibold uppercase tracking-[0.12em] ${featured ? 'text-[#E8C766]' : 'text-[#6B7280]'}`}>{label}</div>
+                <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1">
+                  <span className="text-[21px] font-bold leading-none tabular-nums @min-[760px]:text-[26px]">{value}</span>
                   <span className={`text-[11px] ${featured ? 'text-white/70' : 'text-[#6B7280]'}`}>{unit}</span>
                 </div>
                 <div className={`mt-1 truncate text-[12px] font-semibold ${featured ? '' : 'group-hover:text-[#D01F2D]'}`}>{m.winner}</div>
@@ -1971,6 +1971,7 @@ export default function TapitasLeagueHomepage() {
             </Link>
           )
         })}
+      </div>
       </div>
       {weekPerformers.length > 0 && (
         <>
@@ -1988,7 +1989,7 @@ export default function TapitasLeagueHomepage() {
   )
 
   const newsCard = (
-    <CardShell title="Latest news" subtitle="Memes, recaps and news" action={<Link href="/news" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All news</Link>}>
+    <CardShell title="Latest news" subtitle="Memes, recaps and news" className="lg:mb-0 lg:h-full" action={<Link href="/news" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All news</Link>}>
       {newsLoading ? <LoadingState /> : featuredNewsPosts.length === 0 ? (
         <div className="py-10 text-center text-[13px] text-[#6B7280]">No posts yet</div>
       ) : (
@@ -2029,6 +2030,7 @@ export default function TapitasLeagueHomepage() {
   const draftCard = draftPicks.length > 0 && (
     <CardShell
       title={`${draftSeason} Draft`}
+      className="lg:mb-0 lg:flex lg:h-full lg:flex-col"
       subtitle={`Round ${selectedDraftRound} · tap a player for his profile`}
       action={
         <div className="flex flex-shrink-0 items-center gap-1">
@@ -2038,7 +2040,8 @@ export default function TapitasLeagueHomepage() {
         </div>
       }
     >
-      <div ref={draftScrollRef} className="scroll-hide flex gap-2 overflow-x-auto p-3 lg:p-4">
+      {/* Desktop (meia linha ao lado das notícias): 2 linhas de 5, sem rolagem */}
+      <div ref={draftScrollRef} className="scroll-hide flex gap-2 overflow-x-auto p-3 lg:grid lg:flex-1 lg:grid-cols-5 lg:content-center lg:gap-x-2 lg:gap-y-4 lg:overflow-visible lg:p-4">
         {visibleDraftPicks.map(pick => (
           <DraftPickTile key={pick.pick} pick={pick} playerLookup={playerLookup} onOpenPlayer={(draftPick, data) => setSelectedDraftPlayer({ pick: draftPick, data })} />
         ))}
@@ -2151,23 +2154,6 @@ export default function TapitasLeagueHomepage() {
     </div>
   )
 
-  const championsList = (
-    <div className="py-1 lg:py-2">
-      {championsData.map(c => (
-        <StatRow
-          key={`${c.season}-${c.team}`}
-          href={`/teams?team=${encodeURIComponent(c.team)}`}
-          left={<TeamLogo name={c.team} size={24} />}
-          title={c.team}
-          subtitle={c.regGames?.length ? `${c.regGames.filter(g => g.result === 'W').length}–${c.regGames.filter(g => g.result === 'L').length} reg. season` : undefined}
-          value={c.season}
-          valueClass="text-[#6B7280]"
-        />
-      ))}
-    </div>
-  )
-
-
   // Rankings, standings e líderes num card só com abas (desktop e mobile).
   const tablesMeta = {
     pr: { title: 'Power Rankings', subtitle: `${currentSeason} · latest week`, link: cardLink('/powerrankings', 'Full power rankings') },
@@ -2186,16 +2172,6 @@ export default function TapitasLeagueHomepage() {
       <div className="border-t border-[#EEF0F2] py-2 text-center">{tablesMeta[tablesTab].link}</div>
     </CardShell>
   )
-  const championsCard = championsData.length > 0 && <CardShell title="Champions wall" subtitle="Every Tapitas League title" sidebar action={cardLink('/history', 'History')}>{championsList}</CardShell>
-
-  // Cards da NFL (coluna da direita no desktop; no mobile entram no meio da página)
-  const nflCards = (
-    <>
-      <RosterAlertsCard onOpenPlayer={openNflPlayer} />
-      <TrendingCard onOpenPlayer={openNflPlayer} />
-      <LeagueNewsCard onOpenPlayer={openNflPlayer} />
-    </>
-  )
 
   return (
     <PageShell
@@ -2207,27 +2183,37 @@ export default function TapitasLeagueHomepage() {
         if (opt) setSelectedMatchupKey(opt.key)
       }} />}
     >
-      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[280px_minmax(0,1fr)_340px] xl:gap-5">
+      <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_340px] xl:gap-5">
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
+          <LeagueNewsCard onOpenPlayer={openNflPlayer} />
           {tablesCard}
-          {championsCard}
         </aside>
 
         <div className="min-w-0">
           {heroCard}
-          {numbersCard}
           {weekCard}
-          <div className="lg:hidden">{tablesCard}</div>
+          {/* Ordem no celular: notícias de jogadores → rivalry → lesões → news → rankings → trending → draft */}
+          <div className="lg:hidden"><LeagueNewsCard onOpenPlayer={openNflPlayer} /></div>
           {rivalryCard}
-          {newsCard}
-          <div className="lg:hidden">{nflCards}</div>
-          {draftCard}
-          <div className="lg:hidden">{championsCard}</div>
+          <div className="lg:hidden">
+            <RosterAlertsCard onOpenPlayer={openNflPlayer} />
+            {newsCard}
+            {tablesCard}
+            <TrendingCard onOpenPlayer={openNflPlayer} />
+            {draftCard}
+          </div>
         </div>
 
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
-          {nflCards}
+          <RosterAlertsCard onOpenPlayer={openNflPlayer} />
+          <TrendingCard onOpenPlayer={openNflPlayer} />
         </aside>
+      </div>
+
+      {/* Desktop: notícias e draft lado a lado (metade cada), abaixo das três colunas */}
+      <div className="mb-2 hidden lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-4 xl:gap-5">
+        {newsCard}
+        {draftCard}
       </div>
 
       <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={leagueStats.allSeasons} />

@@ -1420,26 +1420,36 @@ export default function TeamsPage() {
     // ── Franchise header ───────────────────────────────────────────
     const heroCard = (
       <div className="mb-2 overflow-hidden rounded-xl bg-white">
-        <div className="flex items-center gap-3 px-3 py-4 sm:gap-4 sm:px-5 sm:py-5">
-          <TeamAvatar name={selected.team} size="md" />
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[22px] font-bold leading-tight tracking-tight text-[#111] sm:text-[30px]">{selected.team}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[#6B7280] sm:text-[13px]">
-              <span className="font-semibold text-[#111]">{teamRecordLabel}</span>
-              <span>·</span><span>{winPct} win rate</span>
-              <span>·</span><span>{teamSeasons} seasons</span>
-              {firstSeason && <><span>·</span><span>Since {firstSeason}</span></>}
+        {/* Topo no azul da marca com a textura diagonal do hero da Home */}
+        <div className="relative overflow-hidden bg-[#02275F] text-white">
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(115deg, #02275F 0%, #02275F 55%, #0A3B85 100%)' }} />
+          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 16px)' }} />
+          <div className="relative flex items-center gap-3 px-3 py-4 sm:gap-4 sm:px-5 sm:py-5">
+            <span className="flex-shrink-0 rounded-full bg-white p-1 shadow-lg"><TeamAvatar name={selected.team} size="md" /></span>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-[22px] font-bold leading-tight tracking-tight sm:text-[30px]">{selected.team}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-white/75 sm:text-[13px]">
+                <span className="font-semibold text-white">{teamRecordLabel}</span>
+                <span>·</span><span>{winPct} win rate</span>
+                <span>·</span><span>{teamSeasons} seasons</span>
+                {firstSeason && <><span>·</span><span>Since {firstSeason}</span></>}
+              </div>
+              {titles.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {titles.map(t => <span key={t.Season} className="inline-flex items-center gap-0.5 rounded-full bg-[#E8C766]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[#E8C766]">🏆 {t.Season}</span>)}
+                </div>
+              )}
             </div>
+            {recentSeason && (
+              <div className="hidden flex-shrink-0 rounded-lg bg-white/10 px-4 py-2.5 text-right sm:block">
+                <div className="text-[11px] text-white/70">{recentSeason.Season} season</div>
+                <div className="mt-0.5 text-[20px] font-bold leading-none tabular-nums">{parseNumber(recentSeason.RS_W)}–{parseNumber(recentSeason.RS_L)}</div>
+                <div className="mt-1 text-[11px] text-white/70">{recentStanding > 0 ? `Finished #${recentStanding}` : 'In progress'}</div>
+              </div>
+            )}
           </div>
-          {recentSeason && (
-            <div className="hidden flex-shrink-0 rounded-lg bg-[#F4F5F7] px-4 py-2.5 text-right sm:block">
-              <div className="text-[11px] text-[#6B7280]">{recentSeason.Season} season</div>
-              <div className="mt-0.5 text-[20px] font-bold leading-none tabular-nums text-[#111]">{parseNumber(recentSeason.RS_W)}–{parseNumber(recentSeason.RS_L)}</div>
-              <div className="mt-1 text-[11px] text-[#6B7280]">{recentStanding > 0 ? `Finished #${recentStanding}` : 'In progress'}</div>
-            </div>
-          )}
         </div>
-        <div className="grid grid-cols-3 gap-px border-t border-[#EEF0F2] bg-[#EEF0F2] sm:grid-cols-6">
+        <div className="grid grid-cols-3 gap-px bg-[#EEF0F2] sm:grid-cols-6">
           {profileStats.map(stat => (
             <div key={stat.label} className="min-w-0 bg-white px-3 py-3 sm:px-5">
               <div className="truncate text-[11px] text-[#6B7280]">{stat.label}</div>
@@ -1685,14 +1695,14 @@ export default function TeamsPage() {
       />
     ) : null
 
+    const rosterStatusCard = <TeamNflNotice team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`, selected.team, p.focus || null)} />
+
     const mobileTabs = [['overview', 'Overview'], ['games', 'Game Log'], ['players', 'Players'], ['h2h', 'H2H']]
 
     return renderShell(
       <>
         {teamStrip}
         {heroCard}
-        <TeamNflNotice team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`, selected.team, p.focus || null)} />
-
         {/* Abas (só no mobile/tablet — no desktop os cards ficam nas laterais) */}
         <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">
           {mobileTabs.map(([key, label]) => (
@@ -1702,21 +1712,24 @@ export default function TeamsPage() {
           ))}
         </div>
 
-        {/* Grid: records + jogadores | game log + archive | temporadas + head to head */}
+        {/* Grid: status do elenco + records + jogadores | game log | temporadas + head to head.
+            O Player Archive ocupa a linha inteira embaixo (desktop). */}
         <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
           <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
+            {rosterStatusCard}
             {recordsCard}
             {playersCard}
           </aside>
 
           <div className="min-w-0">
             <div className={`${mobileTeamView === 'overview' ? 'block' : 'hidden'} lg:hidden`}>
+              {rosterStatusCard}
               {seasonHistoryCard}
               {recordsCard}
               {playersCard}
             </div>
             <div className={`${mobileTeamView === 'games' ? 'block' : 'hidden'} lg:block`}>{gameLogCard}</div>
-            <div className={`${mobileTeamView === 'players' ? 'block' : 'hidden'} lg:block`}>{playerArchiveCard}</div>
+            <div className={`${mobileTeamView === 'players' ? 'block' : 'hidden'} lg:hidden`}>{playerArchiveCard}</div>
             <div className={`${mobileTeamView === 'h2h' ? 'block' : 'hidden'} lg:hidden`}>{h2hCard}</div>
           </div>
 
@@ -1725,6 +1738,7 @@ export default function TeamsPage() {
             {h2hCard}
           </aside>
         </div>
+        <div className="hidden lg:block">{playerArchiveCard}</div>
         {PlayerProfile}
       </>
     )
@@ -1756,7 +1770,7 @@ export default function TeamsPage() {
   )
 
   const Trajectory = ({ seasons }) => {
-    const W = 260, H = 64, padX = 8, padT = 12, padB = 6
+    const W = 260, H = 64, padX = 10, padT = 16, padB = 6
     if (!seasons.length) return <div className="h-16" />
     const step = seasons.length > 1 ? (W - padX * 2) / (seasons.length - 1) : 0
     const pts = seasons.map((r, i) => ({
@@ -1769,8 +1783,11 @@ export default function TeamsPage() {
     }))
     const line = pts.map(p => `${p.x},${p.y}`).join(' ')
     const area = `${pts[0].x},${H - padB} ${line} ${pts[pts.length - 1].x},${H - padB}`
+    // Rótulos em HTML (o SVG estica): vitórias em cima de cada ponto e o ano embaixo
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} className="block h-16 w-full" preserveAspectRatio="none" role="img">
+      <div>
+      <div className="relative h-16">
+      <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 block h-16 w-full" preserveAspectRatio="none" role="img">
         <polygon points={area} fill="#02275F" opacity="0.07" />
         <polyline points={line} fill="none" stroke="#02275F" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         {pts.map(p => (
@@ -1779,6 +1796,24 @@ export default function TeamsPage() {
           </circle>
         ))}
       </svg>
+        {pts.map(p => (
+          <span
+            key={p.season}
+            className={`absolute -translate-x-1/2 text-[9px] font-semibold leading-none tabular-nums ${p.champ ? 'text-[#8D6A00]' : 'text-[#3F4757]'}`}
+            style={{ left: `${(p.x / W) * 100}%`, top: `calc(${(p.y / H) * 100}% - 13px)` }}
+          >
+            {p.wins}
+          </span>
+        ))}
+      </div>
+      <div className="relative mt-1 h-3">
+        {pts.map(p => (
+          <span key={p.season} className="absolute -translate-x-1/2 text-[9px] leading-none tabular-nums text-[#9CA3AF]" style={{ left: `${(p.x / W) * 100}%` }}>
+            &apos;{p.season.slice(2)}
+          </span>
+        ))}
+      </div>
+      </div>
     )
   }
 
@@ -1807,12 +1842,8 @@ export default function TeamsPage() {
 
             {/* Trajetória */}
             <div className="mt-2">
+              <div className="mb-1 text-[10px] text-[#9CA3AF]">Regular-season wins per season</div>
               <Trajectory seasons={seasonsAsc} />
-              <div className="mt-1 flex justify-between text-[10px] text-[#9CA3AF]">
-                <span>{seasonsAsc[0] ? `'${String(seasonsAsc[0].Season).slice(2)}` : ''}</span>
-                <span>regular-season wins</span>
-                <span>{seasonsAsc.length ? `'${String(seasonsAsc[seasonsAsc.length - 1].Season).slice(2)}` : ''}</span>
-              </div>
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-[#F1F2F4] pt-2.5 text-[12px]">

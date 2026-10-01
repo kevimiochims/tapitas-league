@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CardShell, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
+import { CardShell, FilterPill, ToggleChip, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { PlayerThumb, EmptyNote } from './shared'
 
 function timeAgo(iso) {
@@ -27,14 +27,31 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
     return () => { cancelled = true }
   }, [])
 
-  const news = state.news
-  const { visible, totalPages, pagerProps } = usePager(news, initialLimit)
+  // Mesmos filtros do Injury report: titulares/todos e franquia
+  const [team, setTeam] = useState('All')
+  const [filter, setFilter] = useState('all')
+  const teams = Array.from(new Set(state.news.map(n => n.player?.fantasyTeam).filter(Boolean))).sort((a, b) => a.localeCompare(b))
+  const byTeam = team === 'All' ? state.news : state.news.filter(n => n.player?.fantasyTeam === team)
+  const news = filter === 'starters' ? byTeam.filter(n => n.player?.starter) : byTeam
+  const { visible, totalPages, pagerProps } = usePager(news, initialLimit, `${team}|${filter}`)
   if (state.failed) return null
 
   return (
-    <CardShell title="Player news" subtitle="Latest headlines on Tapitas players" sidebar={sidebar}>
-      {state.loading ? <div className="py-2"><SkeletonRows rows={4} /></div> : news.length === 0 ? <EmptyNote>No recent news on Tapitas players.</EmptyNote> : (
-        <div className="py-1">
+    <CardShell
+      title="Player news"
+      subtitle="Headlines on Tapitas players"
+      sidebar={sidebar}
+      withMenus
+    >
+      {!state.loading && (
+        <div className="flex items-center gap-1.5 px-3 pb-1 pt-2.5 lg:px-4">
+          <ToggleChip active={filter === 'starters'} onClick={() => setFilter('starters')}>Starters</ToggleChip>
+          <ToggleChip active={filter === 'all'} onClick={() => setFilter('all')}>All ({byTeam.length})</ToggleChip>
+          {teams.length > 0 && <div className="ml-auto min-w-0"><FilterPill value={team} onChange={setTeam} options={['All', ...teams]} label="Team" allLabel="All teams" align="right" /></div>}
+        </div>
+      )}
+      {state.loading ? <div className="py-2"><SkeletonRows rows={4} /></div> : news.length === 0 ? <EmptyNote>{team === 'All' ? 'No recent news on Tapitas players.' : `No recent news on ${team} players.`}</EmptyNote> : (
+        <div className="pb-1">
           {visible.map(n => (
             <div key={n.id || n.url || n.headline} className="flex gap-2 px-3 py-2.5 lg:px-4">
               <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="flex-shrink-0" aria-label={n.player?.name}>

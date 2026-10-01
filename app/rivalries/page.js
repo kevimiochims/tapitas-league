@@ -290,6 +290,16 @@ export default function RivalriesPage() {
     useState('ALL')
 
   const [initialPair, setInitialPair] = useState(null)
+  // Celular: abre direto no confronto (com os seletores no pôster); a lista fica numa aba
+  const [showList, setShowList] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const update = () => setIsDesktop(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
   const [loadFailed, setLoadFailed] = useState(false)
 
   /* =====================================================
@@ -495,8 +505,8 @@ export default function RivalriesPage() {
   AUTO SELECT
   ===================================================== */
 
-  // Seleção inicial: par vindo da URL (ex.: link da página Teams) ou, no
-  // desktop, a rivalidade do topo da lista.
+  // Seleção inicial: par vindo da URL (ex.: link da página Teams) ou a
+  // rivalidade do topo da lista (desktop e celular).
   useEffect(() => {
     if (!rivalries.length || selected) return
     if (initialPair) {
@@ -505,7 +515,7 @@ export default function RivalriesPage() {
       setInitialPair(null)
       if (match) { setSelected(normalizeString(match.teamA) === normalizeString(a) ? match : flipRivalry(match)); return }
     }
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) setSelected(rivalries[0])
+    setSelected(rivalries[0])
   }, [rivalries, selected, initialPair])
 
   /* =====================================================
@@ -808,6 +818,7 @@ RENDER
 
   const selectRivalry = (r) => {
     setSelected(r)
+    setShowList(false)
     setSeasonFilter('ALL')
     if (typeof window !== 'undefined' && window.innerWidth < 1024) window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -901,7 +912,7 @@ RENDER
               <Flame className={`h-3.5 w-3.5 ${streakTeamIsA ? 'text-[#02275F]' : 'text-[#C8102E]'}`} />
               {currentStreak.team} on a <span className="font-semibold text-[#111]">{currentStreak.result}{currentStreak.count}</span> streak
             </span>
-            <button type="button" onClick={() => setSelected(null)} className="text-[12px] font-medium text-[#6B7280] hover:text-[#111] lg:hidden">All rivalries</button>
+            <button type="button" onClick={() => { setShowList(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-[12px] font-medium text-[#D01F2D] hover:underline lg:hidden">All rivalries</button>
           </div>
         )}
       </section>
@@ -961,14 +972,17 @@ RENDER
   return (
     <PageShell loading={!h2hData.length && !loadFailed}>
       <PageBar title="Rivalries">
+        <span className="contents lg:hidden">
+          <BarTab active={!showList} onClick={() => setShowList(false)}>Matchup</BarTab>
+        </span>
         {[['HEAT', '🔥 Heat'], ['GAMES', 'Most games'], ['CLOSEST', 'Closest']].map(([value, label]) => (
-          <BarTab key={value} active={sortBy === value} onClick={() => setSortBy(value)}>{label}</BarTab>
+          <BarTab key={value} active={sortBy === value && (showList || isDesktop)} onClick={() => { setSortBy(value); setShowList(true) }}>{label}</BarTab>
         ))}
       </PageBar>
 
       <div className="lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-5">
-        <aside className={`lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] ${selected ? 'hidden lg:block' : ''}`}>{listCard}</aside>
-        <div className="min-w-0">
+        <aside className={`lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] lg:block ${showList || !selected ? '' : 'hidden'}`}>{listCard}</aside>
+        <div className={`min-w-0 lg:block ${showList ? 'hidden' : ''}`}>
           {detail || (
             <div className="hidden min-h-[320px] flex-col items-center justify-center rounded-xl bg-white text-center lg:flex">
               <Swords className="mb-3 h-8 w-8 text-[#9CA3AF]" />

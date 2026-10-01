@@ -9,6 +9,12 @@ export function injuryRank(status) {
   return i < 0 ? INJURY_ORDER.length : i
 }
 
+// Rótulo curto do status de lesão (Questionable → Ques, Doubtful → Doub)
+const INJURY_SHORT = { Questionable: 'Ques', Doubtful: 'Doub' }
+export function injuryLabel(status) {
+  return INJURY_SHORT[status] || status
+}
+
 // Tom da tag de acordo com a gravidade
 export function injuryTone(status) {
   if (status === 'Questionable') return 'gold'

@@ -164,7 +164,7 @@ function TapitasChip({ season, status, m }) {
 }
 
 // Seletor de semana discreto: só o texto e uma seta leve (como os números da Home)
-function WeekSelect({ week, onChange, maxWeek, alignRight = false }) {
+function WeekSelect({ week, onChange, maxWeek }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -180,7 +180,7 @@ function WeekSelect({ week, onChange, maxWeek, alignRight = false }) {
         <ChevronDown className={`h-3.5 w-3.5 text-[#9CA3AF] transition-transform group-hover:text-[#D01F2D] ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className={`absolute ${alignRight ? 'right-0 lg:left-0 lg:right-auto' : 'left-0'} top-full z-50 mt-1 max-h-72 w-28 overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5`}>
+        <div className={`absolute left-0 top-full z-50 mt-1 max-h-72 w-28 overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5`}>
           {WEEKS.filter(w => !maxWeek || Number(w) <= maxWeek).map(w => (
             <button
               key={w}
@@ -197,15 +197,14 @@ function WeekSelect({ week, onChange, maxWeek, alignRight = false }) {
   )
 }
 
-// `mobileRight`: no celular o rótulo fica à direita (os jogos rolam à esquerda)
-function SectionLabel({ logo, name, week, onWeek, live, maxWeek, mobileRight = false }) {
+function SectionLabel({ logo, name, week, onWeek, live, maxWeek }) {
   return (
-    <div className={`flex w-[6.5rem] flex-shrink-0 flex-col justify-center gap-1 border-[#EEF0F2] py-1.5 ${mobileRight ? 'items-end border-l pl-2 pr-3 lg:items-start lg:border-l-0 lg:border-r lg:pl-3 lg:pr-2' : 'items-start border-r pl-3 pr-2'}`}>
+    <div className={`flex w-[6.5rem] flex-shrink-0 flex-col justify-center gap-1 border-[#EEF0F2] py-1.5 items-start border-r pl-3 pr-2`}>
       <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#111]">
         <img src={logo} alt="" className="h-4 w-4 object-contain" />{name}
         {live && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" title="Live" />}
       </span>
-      <WeekSelect week={week} onChange={onWeek} maxWeek={maxWeek} alignRight={mobileRight} />
+      <WeekSelect week={week} onChange={onWeek} maxWeek={maxWeek} />
     </div>
   )
 }
@@ -219,6 +218,8 @@ export default function ScoreStrip({ onTapitasWeek }) {
   const [nflWeek, setNflWeek] = useState(null)
   const [tapWeek, setTapWeek] = useState(null)
   const [openId, setOpenId] = useState(null)
+  const [mobileLeague, setMobileLeague] = useState('tapitas')
+  const weeksRef = useRef(null)
 
   const nfl = useWeekData(`/api/nfl/scoreboard${nflWeek ? `?week=${nflWeek}` : ''}`)
   const tap = useWeekData(`/api/league/week${tapWeek ? `?week=${tapWeek}` : ''}`)
@@ -227,40 +228,100 @@ export default function ScoreStrip({ onTapitasWeek }) {
   const matchups = tap.data?.matchups || []
   const open = games.find(g => g.id === openId)
 
+  // Mantém a semana ativa visível na faixa de semanas do celular
+  useEffect(() => {
+    const el = weeksRef.current?.querySelector('[data-active]')
+    if (el) weeksRef.current.scrollLeft = el.offsetLeft - weeksRef.current.clientWidth / 2 + el.clientWidth / 2
+  })
+
+  const nflChips = (
+    <>
+      {nfl.loading && skeleton(4)}
+      {!nfl.loading && !games.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No NFL games this week.</div>}
+      {!nfl.loading && games.map(g => <NflChip key={g.id} game={g} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
+    </>
+  )
+  const tapChips = (
+    <>
+      {tap.loading && skeleton(5)}
+      {!tap.loading && !matchups.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No Tapitas matchups this week.</div>}
+      {!tap.loading && matchups.map(m => <TapitasChip key={`${m.week}-${m.teams[0].team}`} season={tap.data.season} status={tap.data.status} m={m} />)}
+    </>
+  )
+  const pickNflWeek = w => { setNflWeek(Number(w)); setOpenId(null) }
+  const pickTapWeek = w => { setTapWeek(Number(w)); onTapitasWeek?.(Number(w)) }
+
+  // Celular: barra igual à da Matchups (liga no lugar do ano + semanas) e os jogos da liga escolhida
+  const isNfl = mobileLeague === 'nfl'
+  const mobileWeek = String(isNfl ? (nflWeek || nfl.data?.week || '') : (tapWeek || tap.data?.week || ''))
+  const mobileMax = isNfl ? (nfl.data?.currentWeek || tap.data?.currentWeek) : (tap.data?.currentWeek || nfl.data?.currentWeek)
+  const mobileWeeks = WEEKS.filter(w => !mobileMax || Number(w) <= mobileMax)
+
   return (
     <div className="relative z-20 border-b border-[#E6E8EB] bg-white">
-      {/* No celular a Tapitas vem em cima (flex-col-reverse); no desktop NFL à esquerda */}
-      <div className="flex flex-col-reverse lg:flex-row">
-        <div className="flex min-w-0 border-[#EEF0F2] lg:w-[calc(38.625rem+1px)] lg:flex-none lg:border-r">
+      <div className="lg:hidden">
+        <div className="flex items-stretch border-b border-[#EEF0F2]">
+          {/* O <select> invisível cobre toda a área (logo, nome e seta): qualquer toque abre */}
+          <label className="relative flex flex-shrink-0 cursor-pointer items-center gap-1.5 border-r border-[#EEF0F2] py-3 pl-3 pr-2.5">
+            <img src={isNfl ? 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png' : '/images/LogoFinalBlack.png'} alt="" className="h-4 w-4 object-contain" />
+            <span className="text-[14px] font-bold text-[#111]">{isNfl ? 'NFL' : 'Tapitas'}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-[#6B7280]" />
+            <select
+              aria-label="League"
+              value={mobileLeague}
+              onChange={e => { setMobileLeague(e.target.value); setOpenId(null) }}
+              className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0"
+            >
+              <option value="tapitas">Tapitas</option>
+              <option value="nfl">NFL</option>
+            </select>
+          </label>
+          <span className="flex flex-shrink-0 items-center gap-1 self-center pl-3 pr-1 text-[12px] text-[#6B7280]">
+            Week
+            {(isNfl ? nfl.data?.live : tap.data?.live) && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" title="Live" />}
+          </span>
+          <div ref={weeksRef} className="scroll-hide flex min-w-0 flex-1 overflow-x-auto">
+            {mobileWeeks.map(w => {
+              const active = mobileWeek === w
+              return (
+                <button
+                  key={w}
+                  type="button"
+                  data-active={active || undefined}
+                  onClick={() => (isNfl ? pickNflWeek(w) : pickTapWeek(w))}
+                  className={`flex-shrink-0 border-b-2 px-2.5 py-3 text-[13px] tabular-nums transition-colors ${active ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}
+                >
+                  {w}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div className={chipsRow}>{isNfl ? nflChips : tapChips}</div>
+      </div>
+
+      <div className="hidden lg:flex lg:flex-row">
+        <div className="flex min-w-0 lg:w-[calc(38.625rem+1px)] lg:flex-none lg:border-r lg:border-[#EEF0F2]">
           <SectionLabel
             logo="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png"
             name="NFL"
             week={nflWeek || nfl.data?.week}
-            onWeek={w => { setNflWeek(Number(w)); setOpenId(null) }}
+            onWeek={pickNflWeek}
             live={nfl.data?.live}
             maxWeek={nfl.data?.currentWeek || tap.data?.currentWeek}
           />
-          <div className={chipsRow}>
-            {nfl.loading && skeleton(4)}
-            {!nfl.loading && !games.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No NFL games this week.</div>}
-            {!nfl.loading && games.map(g => <NflChip key={g.id} game={g} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
-          </div>
+          <div className={chipsRow}>{nflChips}</div>
         </div>
-        <div className="flex min-w-0 flex-1 flex-row-reverse border-b border-[#EEF0F2] lg:flex-row lg:border-b-0">
+        <div className="flex min-w-0 flex-1">
           <SectionLabel
-            mobileRight
             logo="/images/LogoFinalBlack.png"
             name="Tapitas"
             week={tapWeek || tap.data?.week}
-            onWeek={w => { setTapWeek(Number(w)); onTapitasWeek?.(Number(w)) }}
+            onWeek={pickTapWeek}
             live={tap.data?.live}
             maxWeek={tap.data?.currentWeek || nfl.data?.currentWeek}
           />
-          <div className={chipsRow}>
-            {tap.loading && skeleton(5)}
-            {!tap.loading && !matchups.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No Tapitas matchups this week.</div>}
-            {!tap.loading && matchups.map(m => <TapitasChip key={`${m.week}-${m.teams[0].team}`} season={tap.data.season} status={tap.data.status} m={m} />)}
-          </div>
+          <div className={chipsRow}>{tapChips}</div>
         </div>
       </div>
       {open && <NflDetail game={open} />}

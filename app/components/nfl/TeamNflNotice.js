@@ -1,68 +1,73 @@
 'use client'
 
-import { AlertTriangle, CalendarOff } from 'lucide-react'
-import { Tag, PositionBadge, normalizeTeamKey } from '../ui'
+import { useState } from 'react'
+import { CardShell, Segmented, Tag, PositionBadge, Pager, usePager, normalizeTeamKey } from '../ui'
 import { useLeagueStatus } from './useNflData'
-import { injuryRank, injuryTone } from './shared'
+import { PlayerThumb, EmptyNote, injuryTone, injuryLabel } from './shared'
 
-function PlayerChip({ p, children, onOpen }) {
-  return (
-    <button type="button" onClick={() => onOpen?.(p)} className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F5F7] py-1 pl-1.5 pr-2.5 text-[12px] transition-colors hover:bg-[#ECEEF1]">
-      <PositionBadge position={p.pos} />
-      <span className={p.starter ? 'font-semibold text-[#111]' : 'text-[#3F4757]'}>{p.name}</span>
-      <span className="text-[#9CA3AF]">{p.nflTeam}</span>
-      {children}
-    </button>
-  )
+const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']
+const posRank = pos => {
+  const i = POSITION_ORDER.indexOf(String(pos || '').toUpperCase())
+  return i < 0 ? POSITION_ORDER.length : i
 }
+// Ordem: posição (QB → DEF), titulares primeiro e depois nome
+const byPosition = (a, b) => posRank(a.pos) - posRank(b.pos) || Number(b.starter) - Number(a.starter) || a.name.localeCompare(b.name)
 
-// Aviso no elenco de cada franquia: lesionados e jogadores de folga (bye)
+// Status do elenco de uma franquia (coluna da esquerda da página Teams):
+// lesionados e jogadores de folga (bye), 5 por página.
 export default function TeamNflNotice({ team, onOpenPlayer }) {
   const { data } = useLeagueStatus()
+  const [tab, setTab] = useState('injuries')
   const roster = (data?.teams || []).find(t => normalizeTeamKey(t.team) === normalizeTeamKey(team))
+
+  const injured = (roster?.players || []).filter(p => p.injury).sort(byPosition)
+  const byes = (roster?.players || [])
+    .filter(p => p.byeThisWeek || p.byeNextWeek)
+    .map(p => ({ ...p, byeLabel: p.byeThisWeek ? `Week ${data.week}` : `Week ${data.week + 1}` }))
+    .sort((a, b) => Number(b.byeThisWeek) - Number(a.byeThisWeek) || byPosition(a, b))
+  const list = tab === 'injuries' ? injured : byes
+  const { visible, totalPages, pagerProps } = usePager(list, 5, `${team}|${tab}`)
+
   if (!roster) return null
 
-  const injured = roster.players.filter(p => p.injury)
-    .sort((a, b) => Number(b.starter) - Number(a.starter) || injuryRank(a.injury.status) - injuryRank(b.injury.status))
-  const byeNow = roster.players.filter(p => p.byeThisWeek)
-  const byeNext = roster.players.filter(p => p.byeNextWeek)
-  const clean = !injured.length && !byeNow.length && !byeNext.length
-
   return (
-    <div className="mb-2 overflow-hidden rounded-xl bg-white">
-      <div className="flex items-center justify-between gap-3 px-3 pb-2 pt-3 sm:px-5">
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-bold leading-tight text-[#111]">Roster status</h2>
-          <div className="mt-0.5 text-[12px] text-[#6B7280]">
-            {data.week ? `NFL week ${data.week}` : 'NFL'} · {roster.source === 'sleeper' ? 'live Sleeper roster' : `lineup from week ${roster.lineupWeek}`} · injuries via Sleeper
-          </div>
-        </div>
-        {clean && <Tag tone="green">All clear</Tag>}
+    <CardShell
+      title="Roster status"
+      subtitle={`${data.week ? `NFL week ${data.week} · ` : ''}${roster.source === 'sleeper' ? 'live Sleeper roster' : `lineup from week ${roster.lineupWeek}`}`}
+      sidebar
+    >
+      <div className="px-3 pt-2.5 lg:px-4">
+        <Segmented options={[['injuries', `Injuries (${injured.length})`], ['byes', `Byes (${byes.length})`]]} value={tab} onChange={setTab} />
       </div>
-      {!clean && (
-        <div className="space-y-2.5 border-t border-[#EEF0F2] px-3 py-3 sm:px-5">
-          {injured.length > 0 && (
-            <div>
-              <div className="mb-1.5 flex items-center gap-1 text-[11px] font-medium text-[#B3171F]"><AlertTriangle className="h-3.5 w-3.5" />Injuries ({injured.length})</div>
-              <div className="flex flex-wrap gap-1.5">
-                {injured.map(p => (
-                  <PlayerChip key={p.id || p.name} p={p} onOpen={x => onOpenPlayer?.({ ...x, focus: 'news' })}>
-                    <Tag tone={injuryTone(p.injury.status)}>{p.injury.status}{p.injury.bodyPart ? ` · ${p.injury.bodyPart}` : ''}</Tag>
-                  </PlayerChip>
-                ))}
+      {list.length === 0 ? (
+        <EmptyNote>{tab === 'injuries' ? 'No injuries. All clear!' : 'Nobody on bye this week or next.'}</EmptyNote>
+      ) : (
+        <div className="pb-1 pt-1">
+          {visible.map(p => (
+            <button
+              key={p.id || p.name}
+              type="button"
+              onClick={() => onOpenPlayer?.(tab === 'injuries' ? { ...p, focus: 'news' } : p)}
+              className="group flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-black/[0.03] lg:px-4"
+            >
+              <PlayerThumb id={p.id} name={p.name} pos={p.pos} nflTeam={p.nflTeam} size={28} />
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className={`truncate text-[13px] group-hover:text-[#D01F2D] ${p.starter ? 'font-semibold text-[#111]' : 'text-[#3F4757]'}`}>{p.name}</span>
+                  <PositionBadge position={p.pos} />
+                </div>
+                <div className="truncate text-[11px] text-[#6B7280]">
+                  {[p.nflTeam, tab === 'injuries' ? p.injury.bodyPart : null, p.starter ? 'Starter' : 'Bench'].filter(Boolean).join(' · ')}
+                </div>
               </div>
-            </div>
-          )}
-          {[[byeNow, `On bye in week ${data.week}`], [byeNext, `On bye next week (${data.week + 1})`]].map(([list, label]) => list.length > 0 && (
-            <div key={label}>
-              <div className="mb-1.5 flex items-center gap-1 text-[11px] font-medium text-[#6B5A00]"><CalendarOff className="h-3.5 w-3.5" />{label} ({list.length})</div>
-              <div className="flex flex-wrap gap-1.5">
-                {list.map(p => <PlayerChip key={p.id || p.name} p={p} onOpen={onOpenPlayer} />)}
-              </div>
-            </div>
+              {tab === 'injuries'
+                ? <Tag tone={injuryTone(p.injury.status)}>{injuryLabel(p.injury.status)}</Tag>
+                : <Tag tone={p.byeThisWeek ? 'red' : 'gold'}>{p.byeLabel}</Tag>}
+            </button>
           ))}
+          {totalPages > 1 && <Pager {...pagerProps} />}
         </div>
       )}
-    </div>
+    </CardShell>
   )
 }
