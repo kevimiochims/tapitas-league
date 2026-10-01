@@ -5,7 +5,8 @@ import { buildMatchupContext, buildPowerRankingContext, renderContext } from '@/
 //   /api/recap/context?season=2026&week=5&team=Moneyball            → confronto
 //   /api/recap/context?season=2026&week=5&team=Moneyball&mode=pr    → Power Ranking
 //   &format=json devolve os dados estruturados em vez do texto.
-// Com RECAP_TOKEN definido na Vercel, exige &token=... (a aba LORE fica privada).
+// Só usa dados que já são públicos no site. Opcional: com RECAP_TOKEN definido
+// na Vercel, exige &token=... (não é necessário).
 export async function GET(request) {
   const params = request.nextUrl.searchParams
   const token = process.env.RECAP_TOKEN

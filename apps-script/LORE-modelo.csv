@@ -1,6 +1,16 @@
 Tipo,Alvo,Texto,Ativo
-Apelido,Moneyball,"(exemplo) O GM é chamado de ""Professor"" desde o título de 2015",Sim
-GM,Patrolao Squad,"(exemplo) Dois vices e nenhum título: o eterno quase",Sim
-Rivalidade,Peytao da Massa x Moneyball,"(exemplo) Os dois maiores campeões da liga; toda vitória vira provocação no grupo",Sim
-Piada,,"(exemplo) Quando alguém passa dos 200 pontos, o grupo inteiro manda o mesmo meme",Sim
-Proibido,,"(exemplo) Não fazer piada com assunto X",Sim
+Geral,,"A liga nasceu em 2014 entre amigos, ficou parada de 2017 a 2020 (o ""hiato"") e voltou em 2021. Quem estava lá em 2014 se considera fundador e faz questão de lembrar.",Sim
+Geral,,"O Unicórnio é o troféu da vergonha: vai para quem perde o jogo do último lugar. Ninguém quer, todo mundo comenta.",Sim
+Narrativa,Patrolao Squad,"O eterno quase: dois vices (2021 e 2023) e nenhum título. Toda campanha boa vem acompanhada da pergunta ""será que agora vai?"".",Sim
+Narrativa,Pequers Verde,"Colecionador de Unicórnios (2022 e 2025). Qualquer derrota no fim da temporada acende o alerta do tri.",Sim
+Narrativa,I am Megatron,"A maior virada de roteiro da liga: Unicórnio em 2021, campeão em 2023, vice em 2025. Do fundo do poço ao topo e de volta à final.",Sim
+Narrativa,H-Lera do Mahl,"De Unicórnio (2023) a campeão (2025) em duas temporadas. Entra em 2026 defendendo o título.",Sim
+Narrativa,Ocupa e Resiste,"Bateu na trave em 2022 (vice) e voltou para ganhar em 2024.",Sim
+Rivalidade,Peytao da Massa x Moneyball,"Os dois maiores campeões da liga (2 títulos cada) e protagonistas da primeira final, em 2014 (Peytao venceu). Todo confronto entre os dois vale como clássico.",Sim
+Narrativa,Rincão Settlers,"Unicórnio em 2024. Ainda procura a temporada da redenção.",Sim
+Narrativa,Howmuch,"Nunca foi campeão, nem vice, nem Unicórnio: a Suíça da liga. Neutralidade absoluta.",Sim
+Apelido,Moneyball,"(preencher) Apelido do GM ou da franquia usado no grupo",Não
+GM,Peytao da Massa,"(preencher) Como o GM é conhecido no grupo: estilo de jogo, manias, bordões",Não
+Piada,,"(preencher) Uma piada interna ou meme recorrente do grupo, e quando ela costuma aparecer",Não
+Historia,,"(preencher) Um momento lendário da liga: trade absurdo, escalação esquecida, discussão famosa",Não
+Proibido,,"(preencher) Assunto que a IA NUNCA deve usar como piada",Não

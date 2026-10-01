@@ -3,7 +3,8 @@
 // A ideia: o código calcula, a IA escreve. Aqui juntamos tudo o que a liga
 // sabe sobre um confronto (ou um time, no Power Ranking) — histórico do
 // confronto, recordes, sequências, campanha, títulos, transações, recaps
-// anteriores e a aba LORE (zoeiras) — e transformamos em "ganchos" prontos.
+// anteriores — e transformamos em "ganchos" prontos. As piadas internas
+// (LORE) ficam numa planilha privada e são somadas pelo Apps Script, não aqui.
 // A IA não precisa fazer conta nenhuma: só escolher a história e contar.
 //
 // Regra de cronologia: só entram jogos até a semana pedida (nada do futuro),
@@ -166,25 +167,11 @@ const gameLabel = g => `${str(g.Season)} W${str(g.Week)}${str(g.GameType) && sta
 
 // ── Contexto de um confronto ────────────────────────────────────────────
 async function loadData() {
-  const [games, lore, tx] = await Promise.all([
+  const [games, tx] = await Promise.all([
     getSheetRows('GAME_FACTS_ALL'),
-    getSheetRows('LORE').catch(() => []),
     getLeagueTransactions().catch(() => ({ transactions: [] })),
   ])
-  return { games, lore, transactions: tx?.transactions || [] }
-}
-
-function loreFor(lore, teams) {
-  const keys = teams.map(norm)
-  return (lore || [])
-    .filter(r => !['nao', 'não', 'no', 'false', '0'].includes(norm(field(r, 'Ativo', 'Active'))))
-    .map(r => ({ type: str(field(r, 'Tipo', 'Type')), target: str(field(r, 'Alvo', 'Target')), text: str(field(r, 'Texto', 'Text')) }))
-    .filter(r => r.text)
-    .filter(r => {
-      if (!r.target) return true
-      const t = norm(r.target)
-      return keys.some(k => t.includes(k))
-    })
+  return { games, transactions: tx?.transactions || [] }
 }
 
 // Ganchos de um time no jogo (recordes, sequência, jogadores...)
@@ -307,7 +294,7 @@ function trimRecap(text, max = 600) {
 }
 
 export async function buildMatchupContext({ season, week, team, opp }) {
-  const { games, lore, transactions } = await loadData()
+  const { games, transactions } = await loadData()
   const rowsAll = teamGames(games)
   const target = rowsAll.find(x => str(x.Season) === str(season) && str(x.Week) === str(week) && norm(x.Team) === norm(team) && (!opp || norm(x.Opponent) === norm(opp)))
   if (!target) return null
@@ -422,7 +409,6 @@ export async function buildMatchupContext({ season, week, team, opp }) {
     honors: hon,
     otherGames: others,
     previousRecaps: [a, b].map(prevRecap).filter(Boolean),
-    lore: loreFor(lore, [a, b]),
   }
 }
 
@@ -500,11 +486,6 @@ export function renderContext(ctx) {
   if (ctx.otherGames.length) {
     lines.push('')
     lines.push(`## OUTROS JOGOS DA SEMANA: ${ctx.otherGames.join(' · ')}`)
-  }
-  if (ctx.lore.length) {
-    lines.push('')
-    lines.push('## LORE DA LIGA (piadas internas, apelidos, rivalidades — use quando encaixar, nunca force)')
-    ctx.lore.forEach(r => lines.push(`- [${r.type || 'Geral'}${r.target ? ` · ${r.target}` : ''}] ${r.text}`))
   }
   if (ctx.previousRecaps.length) {
     lines.push('')
