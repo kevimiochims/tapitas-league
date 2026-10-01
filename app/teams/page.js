@@ -6,8 +6,10 @@ import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords
 import Header from '../components/Header'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 import TeamNflNotice from '../components/nfl/TeamNflNotice'
+import { TeamTransactionsCard } from '../components/Transactions'
+import PlayerCutout from '../components/PlayerCutout'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
-import { SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager } from '../components/ui'
+import { BrandBackdrop, SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -1422,8 +1424,7 @@ export default function TeamsPage() {
       <div className="mb-2 overflow-hidden rounded-xl bg-white">
         {/* Topo no azul da marca com a textura diagonal do hero da Home */}
         <div className="relative overflow-hidden bg-[#02275F] text-white">
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(115deg, #02275F 0%, #02275F 55%, #0A3B85 100%)' }} />
-          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 16px)' }} />
+          <BrandBackdrop />
           <div className="relative flex items-center gap-3 px-3 py-4 sm:gap-4 sm:px-5 sm:py-5">
             <span className="flex-shrink-0 rounded-full bg-white p-1 shadow-lg"><TeamAvatar name={selected.team} size="md" /></span>
             <div className="min-w-0 flex-1">
@@ -1477,8 +1478,27 @@ export default function TeamsPage() {
 
     const playersCard = franchisePlayers.length > 0 && (
       <CardShell title="Franchise Players" subtitle="All-time roster leaders" sidebar>
+        {/* O 1º (mais vezes no elenco) em destaque, com a foto recortada */}
+        {franchisePlayers[0] && (() => {
+          const top = franchisePlayers[0]
+          return (
+            <button
+              type="button"
+              onClick={() => openPlayerProfile(top.p.archiveKey || `raw:${top.p.rawName}`)}
+              className="group relative mx-3 mt-3 block w-[calc(100%-1.5rem)] overflow-hidden rounded-xl text-left text-white lg:mx-4 lg:w-[calc(100%-2rem)]"
+            >
+              <BrandBackdrop />
+              <div className="absolute -right-2 bottom-0"><PlayerCutout sleeperId={getPlayerId(top.p.rawName, playerLookup)} name={top.p.name} className="h-[108px]" /></div>
+              <div className="relative max-w-[60%] px-3 py-3">
+                <div className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-[#E8C766]">{top.label}</div>
+                <div className="mt-1 truncate text-[15px] font-bold">{top.p.name}</div>
+                <div className="mt-2 text-[24px] font-bold leading-none tabular-nums">{top.value}</div>
+              </div>
+            </button>
+          )
+        })()}
         <div className="py-1 lg:py-2">
-          {franchisePlayers.map(item => (
+          {franchisePlayers.slice(1).map(item => (
             <StatRow
               key={item.label}
               onClick={() => openPlayerProfile(item.p.archiveKey || `raw:${item.p.rawName}`)}
@@ -1695,6 +1715,9 @@ export default function TeamsPage() {
       />
     ) : null
 
+    // Trades e adds/drops do time (Sleeper); o jogador abre o Player Profile
+    const transactionsCard = <TeamTransactionsCard team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`, selected.team)} />
+
     const rosterStatusCard = <TeamNflNotice team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`, selected.team, p.focus || null)} />
 
     const mobileTabs = [['overview', 'Overview'], ['games', 'Game Log'], ['players', 'Players'], ['h2h', 'H2H']]
@@ -1717,13 +1740,14 @@ export default function TeamsPage() {
         <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
           <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
             {rosterStatusCard}
+            {transactionsCard}
             {recordsCard}
-            {playersCard}
           </aside>
 
           <div className="min-w-0">
             <div className={`${mobileTeamView === 'overview' ? 'block' : 'hidden'} lg:hidden`}>
               {rosterStatusCard}
+              {transactionsCard}
               {seasonHistoryCard}
               {recordsCard}
               {playersCard}
@@ -1735,6 +1759,7 @@ export default function TeamsPage() {
 
           <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
             {seasonHistoryCard}
+            {playersCard}
             {h2hCard}
           </aside>
         </div>

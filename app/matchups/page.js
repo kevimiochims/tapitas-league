@@ -7,7 +7,8 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import Header from '../components/Header'
 import SharedPlayerProfile from '../components/PlayerProfileModal'
-import { PageShell, PageSkeleton, SiteFooter, getTeamAbbr } from '../components/ui'
+import PlayerCutout from '../components/PlayerCutout'
+import { PageShell, PageSkeleton, SiteFooter, getTeamAbbr, PositionBadge as UiPositionBadge } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -1393,12 +1394,17 @@ function MatchupsPageContent() {
                   const gameType = String(selected?.GameType || '').trim()
 
                   return (
-                    <div className="border-b border-[#EEF0F2] px-3 py-3">
+                    <div className="relative overflow-hidden px-3 py-3 text-white">
+                      {/* Pôster dividido: time A no azul da marca, time B no vermelho (como o Rivalry) */}
+                      <div className="absolute inset-0 bg-[#02275F]" />
+                      <div className="absolute inset-0 bg-[#C8102E]" style={{ clipPath: 'polygon(56% 0, 100% 0, 100% 100%, 44% 100%)' }} />
+                      <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 14px)' }} />
+                      <div className="relative">
 
                       {/* Badge do tipo de jogo */}
                       <div className="flex justify-center mb-2">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F2F4] px-3 py-1">
-                          <span className="text-[12px] font-medium text-[#4B5563]">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1">
+                          <span className="text-[12px] font-semibold text-white">
                             {season} · Week {week}{gameType && gameType !== 'Reg Season' ? ` · ${gameType}` : ''}
                           </span>
                         </div>
@@ -1409,20 +1415,20 @@ function MatchupsPageContent() {
 
                         {/* Time A */}
                         <div className="flex flex-col items-center gap-2">
-                          <TeamAvatar name={teamName} className="h-10 w-10 rounded-lg" textClassName="text-lg" />
+                          <span className="rounded-full bg-white p-1 shadow-lg"><TeamAvatar name={teamName} className="h-10 w-10 rounded-lg" textClassName="text-lg" /></span>
                           <a href={`/teams?team=${encodeURIComponent(teamName)}`}
-                            className={`text-center font-semibold leading-tight hover:underline ${teamBold ? 'text-[#111]' : 'text-[#6B7280]'}`}
+                            className={`text-center font-semibold leading-tight hover:underline ${teamBold ? 'text-white' : 'text-white/65'}`}
                             style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
                             {teamName}
                           </a>
-                          <div className={`font-bold leading-none ${teamBold ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
-                            isHistoricTeamScore(teamPF) ? 'text-[#B8860B]' : ''
+                          <div className={`font-bold leading-none ${isHistoricTeamScore(teamPF) ? 'text-[#E8C766]' : teamBold ? 'text-white' : 'text-white/55'} ${
+                            ''
                             }`}
                             style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(32px, 6vw, 44px)' }}>
                             {teamPF.toFixed(2)}
                           </div>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs font-semibold text-[#6B7280]">
+                            <span className="text-xs font-semibold text-white/75">
                               {teamRecord.w}–{teamRecord.l}
                             </span>
                             {teamStreak && (
@@ -1446,39 +1452,39 @@ function MatchupsPageContent() {
 
                         {/* VS central */}
                         <div className="flex flex-col items-center gap-1 self-center">
-                          <div className="text-[#9CA3AF] font-semibold text-sm">VS</div>
-                          <div className="text-[10px] font-bold text-[#6B7280]">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[13px] font-black italic text-[#111] shadow-lg">VS</div>
+                          <div className="mt-1 text-[10px] font-bold text-white/85">
                             {Math.abs(teamPF - teamPA).toFixed(2)}
                           </div>
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">margin</div>
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-white/60">margin</div>
                           {undecided ? (
-                            <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${matchStatus === 'live' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
-                              {matchStatus === 'live' && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" />}
+                            <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${matchStatus === 'live' ? 'text-white' : 'text-white/70'}`}>
+                              {matchStatus === 'live' && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />}
                               {matchStatus === 'live' ? 'Live' : matchStatus === 'current' ? 'In progress' : 'Upcoming'}
                             </div>
                           ) : teamWon ? (
-                            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">← WIN</div>
+                            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766]">← WIN</div>
                           ) : (
-                            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">WIN →</div>
+                            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766]">WIN →</div>
                           )}
                         </div>
 
                         {/* Time B */}
                         <div className="flex flex-col items-center gap-2">
-                          <TeamAvatar name={oppName} className="h-10 w-10 rounded-lg" textClassName="text-lg" />
+                          <span className="rounded-full bg-white p-1 shadow-lg"><TeamAvatar name={oppName} className="h-10 w-10 rounded-lg" textClassName="text-lg" /></span>
                           <a href={`/teams?team=${encodeURIComponent(oppName)}`}
-                            className={`text-center font-semibold leading-tight hover:underline ${oppBold ? 'text-[#111]' : 'text-[#6B7280]'}`}
+                            className={`text-center font-semibold leading-tight hover:underline ${oppBold ? 'text-white' : 'text-white/65'}`}
                             style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
                             {oppName}
                           </a>
-                          <div className={`font-bold leading-none ${oppBold ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
-                            isHistoricTeamScore(teamPA) ? 'text-[#B8860B]' : ''
+                          <div className={`font-bold leading-none ${isHistoricTeamScore(teamPA) ? 'text-[#E8C766]' : oppBold ? 'text-white' : 'text-white/55'} ${
+                            ''
                             }`}
                             style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(32px, 6vw, 44px)' }}>
                             {teamPA.toFixed(2)}
                           </div>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs font-semibold text-[#6B7280]">
+                            <span className="text-xs font-semibold text-white/75">
                               {oppRecord.w}–{oppRecord.l}
                             </span>
                             {oppStreak && (
@@ -1500,6 +1506,93 @@ function MatchupsPageContent() {
                           )}
                         </div>
 
+                      </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Player of the game: o titular que mais pontuou no confronto, com a foto recortada */}
+                {hasPlayerData && (() => {
+                  const positions = getRosterPositions(season)
+                  const pool = [
+                    ...starters.map((p, i) => ({ p, pos: positions[i] || '', side: 'home' })),
+                    ...oppStarters.map((p, i) => ({ p, pos: positions[i] || '', side: 'away' })),
+                  ].filter(x => x.p?.name && getDisplayPlayerPos(x.p.name, x.pos, playerLookup) !== 'DEF')
+                  const best = pool.sort((a, b) => (Number(b.p.pts) || 0) - (Number(a.p.pts) || 0))[0]
+                  if (!best || !(Number(best.p.pts) > 0)) return null
+                  const data = getPlayerData(best.p.name, best.pos, playerLookup)
+                  const team = best.side === 'home' ? String(selected?.Team || '').trim() : String(selected?.Opponent || '').trim()
+                  const pos = getDisplayPlayerPos(best.p.name, best.pos, playerLookup)
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => openPlayerProfile(best.p, best.pos, best.side)}
+                      className="group relative flex w-full items-center gap-3 overflow-hidden border-b border-[#EEF0F2] bg-gradient-to-r from-[#FFF6D6] via-[#FFFBEF] to-white px-3 text-left md:px-4"
+                    >
+                      <span className={`absolute inset-y-0 left-0 w-1 ${best.side === 'home' ? 'bg-[#02275F]' : 'bg-[#C8102E]'}`} />
+                      <div className="relative -mb-px flex-shrink-0 self-end pt-2"><PlayerCutout sleeperId={data?.playerId} name={best.p.name} className="h-[76px]" /></div>
+                      <div className="min-w-0 flex-1 py-2.5">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8D6A00]">⭐ Player of the game</div>
+                        <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                          <span className="truncate text-[15px] font-bold text-[#111] group-hover:text-[#D01F2D]">{getDisplayPlayerName(best.p.name, best.pos, playerLookup)}</span>
+                          {pos && <UiPositionBadge position={pos} />}
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1 text-[12px] text-[#6B7280]"><TeamAvatar name={team} className="h-4 w-4 rounded-sm" textClassName="text-[6px]" />{team}</div>
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        <div className="text-[28px] font-bold leading-none tabular-nums text-[#111]">{Number(best.p.pts).toFixed(2)}</div>
+                        <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8D6A00]">points</div>
+                      </div>
+                    </button>
+                  )
+                })()}
+
+                {/* Batalha por posição: soma dos titulares de cada posição, quem levou a melhor */}
+                {hasPlayerData && (() => {
+                  const positions = getRosterPositions(season)
+                  const groups = []
+                  positions.forEach((pos, i) => {
+                    const key = String(pos || '').toUpperCase().replace(/[^A-Z/]/g, '') || 'FLEX'
+                    let g = groups.find(x => x.key === key)
+                    if (!g) { g = { key, a: 0, b: 0 }; groups.push(g) }
+                    g.a += Number(starters[i]?.pts) || 0
+                    g.b += Number(oppStarters[i]?.pts) || 0
+                  })
+                  if (!groups.length) return null
+                  const winsA = groups.filter(g => g.a > g.b).length
+                  const winsB = groups.filter(g => g.b > g.a).length
+                  return (
+                    <div className="border-b border-[#EEF0F2] px-3 py-3 md:px-4">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <div className="text-[15px] font-bold text-[#111]">Position battle</div>
+                        <div className="flex items-center gap-1.5 text-[12px] font-semibold tabular-nums">
+                          <span className="rounded bg-[#02275F] px-1.5 py-0.5 text-white">{winsA}</span>
+                          <span className="text-[#9CA3AF]">–</span>
+                          <span className="rounded bg-[#C8102E] px-1.5 py-0.5 text-white">{winsB}</span>
+                        </div>
+                      </div>
+                      <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${groups.length}, minmax(0, 1fr))` }}>
+                        {groups.map(g => {
+                          const total = g.a + g.b
+                          const pctA = total > 0 ? (g.a / total) * 100 : 50
+                          const aWon = g.a > g.b
+                          const bWon = g.b > g.a
+                          return (
+                            <div key={g.key} className={`min-w-0 rounded-lg px-1 py-1.5 text-center ${aWon ? 'bg-[#EEF3FF]' : bWon ? 'bg-[#FDF2F3]' : 'bg-[#F4F5F7]'}`}>
+                              <div className={`text-[10px] font-bold tracking-wide ${aWon ? 'text-[#02275F]' : bWon ? 'text-[#C8102E]' : 'text-[#6B7280]'}`}>{g.key}</div>
+                              <div className="mx-auto mt-1 flex h-1.5 w-full max-w-[56px] gap-px overflow-hidden rounded-full">
+                                <div className="bg-[#02275F]" style={{ width: `${pctA}%` }} />
+                                <div className="flex-1 bg-[#C8102E]" />
+                              </div>
+                              <div className="mt-1 truncate text-[10px] tabular-nums text-[#3F4757]">
+                                <span className={aWon ? 'font-bold text-[#02275F]' : ''}>{g.a.toFixed(0)}</span>
+                                <span className="text-[#9CA3AF]">–</span>
+                                <span className={bWon ? 'font-bold text-[#C8102E]' : ''}>{g.b.toFixed(0)}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )

@@ -10,6 +10,7 @@ export const NAV_LINKS = [
   { label: 'Rivalries',      href: '/rivalries'     },
   { label: 'Stats',          href: '/stats'     },
   { label: 'Teams',          href: '/teams'     },
+  { label: 'Trades',         href: '/trades'    },
   
   
 ]

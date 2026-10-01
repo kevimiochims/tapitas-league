@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Newspaper, Laugh, FileText, ChevronRight, SquarePen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { PageShell, PageBar, BarTab, CardShell, StatRow, Tag, Pager, usePager, LoadingState, Skeleton } from '../components/ui'
+import NewsTicker from '../components/nfl/NewsTicker'
+import { BrandBackdrop, PageShell, PageBar, BarTab, CardShell, StatRow, Tag, Pager, usePager, LoadingState, Skeleton } from '../components/ui'
 import ReactMarkdown from 'react-markdown'
 import { NEWS_FORM_URL } from '../config/news'
 
@@ -103,6 +104,8 @@ export default function NewsPage() {
         ))}
       </PageBar>
 
+      <NewsTicker />
+
       {loading ? (
         <div className="space-y-2">
           <Skeleton className="h-[260px] w-full rounded-xl sm:h-[380px]" />
@@ -171,7 +174,7 @@ export default function NewsPage() {
                       <StatRow
                         key={cat}
                         onClick={() => selectCategory(cat)}
-                        left={<span className={`flex h-7 w-7 items-center justify-center rounded-full ${filter === cat ? 'bg-[#02275F] text-white' : 'bg-white text-[#3F4757] ring-1 ring-[#E6E8EB]'}`}><Icon className="h-3.5 w-3.5" /></span>}
+                        left={<span className={`flex h-7 w-7 items-center justify-center rounded-full ${filter === cat ? 'bg-[#02275F] text-white' : ({ gold: 'bg-[#FFF2B8] text-[#6B5A00]', navy: 'bg-[#EEF3FF] text-[#02275F]', green: 'bg-[#E8F5EC] text-[#1E8E3E]', red: 'bg-[#FDECEE] text-[#B3171F]' }[style?.tone] || 'bg-white text-[#3F4757] ring-1 ring-[#E6E8EB]')}`}><Icon className="h-3.5 w-3.5" /></span>}
                         title={cat === 'Todos' ? 'All stories' : cat}
                         value={countFor(cat)}
                         valueClass={filter === cat ? 'text-[#02275F]' : 'text-[#6B7280]'}
@@ -181,12 +184,15 @@ export default function NewsPage() {
                 </div>
               </CardShell>
               {NEWS_FORM_URL && (
-                <CardShell title="Got a story?" subtitle="Memes, recaps and hot takes from the league" sidebar>
-                  <div className="p-3 lg:p-4">
-                    <p className="text-[13px] leading-relaxed text-[#3F4757]">Send your post through the form. It shows up here after it's published.</p>
+                <section className="relative mb-2 overflow-hidden rounded-xl text-white">
+                  <BrandBackdrop />
+                  <div className="relative p-4 lg:p-5">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#E8C766]">Newsroom</div>
+                    <h2 className="mt-1 text-[18px] font-bold leading-tight">Got a story?</h2>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-white/80">Memes, recaps and hot takes from the league. Send your post through the form. It shows up here after it&apos;s published.</p>
                     <div className="mt-3">{publishButton}</div>
                   </div>
-                </CardShell>
+                </section>
               )}
             </aside>
           </div>

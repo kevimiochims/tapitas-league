@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
-import { SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
+import { BrandBackdrop, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -111,6 +111,67 @@ function HBarChart({ rows, format = v => v, highlightTop = true, center = null }
 }
 
 // Colunas verticais com rótulo embaixo e valor em cima.
+// Mapa de calor: posição final de cada franquia em cada temporada.
+// Campeão em dourado, depois tons de azul até o último colocado em vermelho.
+function FinishHeatmap({ history, teams }) {
+  const seasons = [...new Set(history.map(r => String(r?.Season || '').trim()).filter(Boolean))].sort((a, b) => Number(a) - Number(b))
+  const lastBySeason = Object.fromEntries(seasons.map(sn => [sn, Math.max(0, ...history.filter(r => String(r?.Season).trim() === sn).map(r => parseNumber(r?.Standing)))]))
+  const cellStyle = (standing, last) => {
+    if (!standing) return { background: '#F4F5F7', color: '#6B7280' }
+    if (standing === 1) return { background: '#B8860B', color: '#fff' }
+    if (standing === last) return { background: '#C8102E', color: '#fff' }
+    const shades = ['#02275F', '#0B3D8C', '#2F57A3', '#5C7DBD', '#8DA3D1', '#BCCAE6', '#E3EAF6']
+    const bg = shades[Math.min(standing - 2, shades.length - 1)]
+    return { background: bg, color: standing <= 5 ? '#fff' : '#02275F' }
+  }
+  const rows = teams.map(team => ({
+    team,
+    cells: seasons.map(sn => history.find(r => String(r?.Season).trim() === sn && String(r?.Team || '').trim().toLowerCase() === String(team).trim().toLowerCase()) || null),
+  }))
+  return (
+    <div className="scroll-hide overflow-x-auto">
+      <table className="w-full border-separate" style={{ borderSpacing: 3 }}>
+        <thead>
+          <tr>
+            <th className="sticky left-0 z-10 bg-white" />
+            {seasons.map(sn => <th key={sn} className="px-0.5 text-center text-[10px] font-medium tabular-nums text-[#6B7280]">&apos;{sn.slice(2)}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.team}>
+              <td className="sticky left-0 z-10 bg-white pr-2">
+                <a href={`/teams?team=${encodeURIComponent(row.team)}`} className="flex min-w-0 items-center gap-1.5 text-[12px] font-medium text-[#111] hover:text-[#D01F2D]">
+                  <TeamLogo name={row.team} size={18} />
+                  <span className="max-w-[120px] truncate">{row.team}</span>
+                </a>
+              </td>
+              {row.cells.map((r, i) => {
+                const sn = seasons[i]
+                const standing = parseNumber(r?.Standing)
+                const st = cellStyle(standing, lastBySeason[sn])
+                return (
+                  <td key={sn} className="p-0">
+                    {r ? (
+                      <div
+                        className="flex h-8 min-w-[34px] items-center justify-center rounded-md text-[12px] font-bold tabular-nums"
+                        style={st}
+                        title={`${row.team} · ${sn}: ${standing ? `#${standing}` : 'in progress'} · ${parseNumber(r?.RS_W)}–${parseNumber(r?.RS_L)}`}
+                      >
+                        {standing === 1 ? '🏆' : standing && standing === lastBySeason[sn] ? '🦄' : standing || <span className="text-[10px] font-medium">{parseNumber(r?.RS_W)}–{parseNumber(r?.RS_L)}</span>}
+                      </div>
+                    ) : <div className="h-8 min-w-[34px] rounded-md bg-[#FAFBFC]" />}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function ColumnChart({ data, format = v => v, labelFormat = l => l, fontSize = 11, height = 180, width = 640, accentIndex = -1, line = null }) {
   const W = width, H = height, padB = 26, padT = 20, padX = 8
   const max = Math.max(...data.map(d => d.value), ...(line ? data.map(d => d[line.key] || 0) : []), 1)
@@ -820,12 +881,30 @@ function StatsPageContent() {
 
   const overviewTab = (
     <>
-      <StatGrid className="mb-2 grid-cols-2 overflow-hidden rounded-xl sm:grid-cols-4">
-        <StatTile label="Matchups played" value={overview.games.toLocaleString()} sub="All stages" />
-        <StatTile label="League average" value={overview.leagueAvg.toFixed(1)} sub="Points per team per week" />
-        <StatTile label="Highest score ever" value={overview.maxScore.toFixed(2)} sub="Single week" valueClass="text-[#1E8E3E]" />
-        <StatTile label="200+ games" value={overview.over200} sub="Single weeks" valueClass="text-[#B8860B]" />
-      </StatGrid>
+      {/* Faixa "a liga em números" no azul da marca com textura */}
+      <div className="relative mb-2 overflow-hidden rounded-xl text-white">
+        <BrandBackdrop />
+        <div className="relative grid grid-cols-2 sm:grid-cols-4">
+          {[
+            { label: 'Matchups played', value: overview.games.toLocaleString(), sub: 'All stages' },
+            { label: 'League average', value: overview.leagueAvg.toFixed(1), sub: 'Points per team per week' },
+            { label: 'Highest score ever', value: overview.maxScore.toFixed(2), sub: 'Single week', accent: 'text-[#E8C766]' },
+            { label: '200+ games', value: overview.over200, sub: 'Single weeks' },
+          ].map((k, i) => (
+            <div key={k.label} className={`min-w-0 px-4 py-4 sm:px-5 sm:py-5 ${i % 2 === 1 ? 'border-l border-white/10' : ''} ${i >= 2 ? 'border-t border-white/10 sm:border-t-0' : ''} ${i === 2 ? 'sm:border-l' : ''}`}>
+              <div className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-white/65">{k.label}</div>
+              <div className={`mt-1.5 text-[28px] font-bold leading-none tabular-nums sm:text-[32px] ${k.accent || 'text-white'}`}>{k.value}</div>
+              <div className="mt-1.5 truncate text-[12px] text-white/65">{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <CardShell title="Finishing positions" subtitle="Every franchise, every season · 🏆 champion · 🦄 last place · darker blue = higher finish">
+        <div className="px-2 py-3 lg:px-3">
+          <FinishHeatmap history={historyData} teams={[...allTimeData].sort((a, b) => parseNumber(b?.W) - parseNumber(a?.W)).map(r => String(r?.Team || '').trim()).filter(Boolean)} />
+        </div>
+      </CardShell>
 
       <div className="grid gap-2 lg:grid-cols-2">
         <CardShell title="Scoring by season" subtitle="Average points per team per week · red line = highest score" className="lg:col-span-2">
@@ -919,7 +998,10 @@ function StatsPageContent() {
                       const pos = season !== 'All-Time' && row.standing ? row.standing : rank
                       return (
                         <tr key={row.team} onClick={() => router.push(`/teams?team=${encodeURIComponent(row.team)}`)} className="group cursor-pointer border-b border-[#F1F2F4] bg-white transition-colors hover:bg-[#F7F8FA]">
-                          <td className={`sticky left-0 z-10 bg-inherit px-3 py-2.5 text-[13px] font-semibold tabular-nums lg:px-4 ${pos === 1 ? 'text-[#B8860B]' : 'text-[#111]'}`}>{pos}</td>
+                          <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5 text-[13px] font-semibold tabular-nums lg:px-4">
+                            {/* 1º em dourado, zona de playoff (top 6) em azul */}
+                            <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1 ${pos === 1 ? 'bg-[#B8860B] text-white' : pos <= 6 ? 'bg-[#02275F] text-white' : 'bg-[#F1F2F4] text-[#3F4757]'}`}>{pos}</span>
+                          </td>
                           <td className="sticky left-10 z-10 bg-inherit px-3 py-2.5 lg:px-4">
                             <div className="flex min-w-0 items-center gap-2.5">
                               <TeamLogo name={row.team} size={24} />

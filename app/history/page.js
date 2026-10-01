@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Trophy } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-import { PageShell, CardShell, CardGroup, StatRow, Tag, ResultBadge, TeamLogo, Segmented, Tabs } from '../components/ui'
+import { BrandBackdrop, PageShell, CardShell, CardGroup, StatRow, Tag, ResultBadge, TeamLogo, Segmented, Tabs } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
+import PlayerCutout from '../components/PlayerCutout'
 
 const BASE_URL = '/api/sheet'
 
@@ -545,36 +546,82 @@ export default function HistoryPage() {
     </div>
   )
 
-  // Placar de um jogo decisivo (final ou jogo do unicórnio).
-  const Scoreboard = ({ href, badge, left, right, leftTag, rightTag, winnerLeft = true }) => (
-    <Link href={href} className="group mb-2 block overflow-hidden rounded-xl bg-white">
-      <div className="px-3 py-4 sm:py-5">
+  // Caminho em formato de chave: cada jogo da fase decisiva é uma etapa,
+  // ligadas por uma linha; a última etapa (final/unicórnio) em destaque.
+  const RoadCard = ({ title, subtitle, list, tone = 'navy' }) => {
+    const steps = [...list].sort((x, y) => parseFloat(x.week) - parseFloat(y.week))
+    if (!steps.length) return null
+    const accent = tone === 'red' ? '#C8102E' : '#02275F'
+    return (
+      <CardShell title={title} subtitle={subtitle}>
+        <div className="scroll-hide overflow-x-auto px-3 py-4 lg:px-4">
+          <div className="mx-auto flex w-max items-stretch">
+            {steps.map((g, i) => {
+              const last = i === steps.length - 1
+              const won = g.result === 'W'
+              return (
+                <React.Fragment key={i}>
+                  {i > 0 && (
+                    <div className="flex w-8 flex-shrink-0 items-center sm:w-12">
+                      <div className="h-[3px] w-full rounded-full" style={{ background: accent, opacity: 0.25 }} />
+                    </div>
+                  )}
+                  <Link
+                    href={g.href || '/matchups'}
+                    className={`group relative flex w-[150px] flex-shrink-0 flex-col items-center overflow-hidden rounded-xl px-3 py-3 text-center transition-shadow hover:shadow-md sm:w-[168px] ${last ? 'text-white' : 'bg-[#F4F5F7]'}`}
+                  >
+                    {last && <BrandBackdrop tone={tone} />}
+                    <div className={`relative text-[10px] font-semibold uppercase tracking-[0.12em] ${last ? (tone === 'red' ? 'text-white/85' : 'text-[#E8C766]') : 'text-[#6B7280]'}`}>
+                      {g.gameType && String(g.gameType).trim() ? String(g.gameType).trim() : `Week ${g.week}`}
+                    </div>
+                    <span className={`relative mt-2 rounded-full bg-white p-1 ${last ? 'shadow-lg' : 'ring-1 ring-[#E6E8EB]'}`}><TeamLogo name={g.opp} size={36} /></span>
+                    <div className={`relative mt-1.5 w-full truncate text-[12px] font-medium ${last ? 'text-white' : 'text-[#111] group-hover:text-[#D01F2D]'}`}>vs {g.opp}</div>
+                    <div className="relative mt-1 flex items-center gap-1.5">
+                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${won ? 'bg-[#1E8E3E] text-white' : 'bg-[#D01F2D] text-white'}`}>{g.result}</span>
+                      <span className={`text-[13px] font-bold tabular-nums ${last ? 'text-white' : 'text-[#111]'}`}>{Number(g.score).toFixed(1)}–{Number(g.oppScore).toFixed(1)}</span>
+                    </div>
+                  </Link>
+                </React.Fragment>
+              )
+            })}
+          </div>
+        </div>
+      </CardShell>
+    )
+  }
+
+  // Placar de um jogo decisivo: hero azul (final) ou vermelho (unicórnio),
+  // com a textura do hero da Home.
+  const Scoreboard = ({ href, badge, left, right, leftTag, rightTag, winnerLeft = true, tone = 'navy' }) => (
+    <Link href={href} className="group relative mb-2 block overflow-hidden rounded-xl text-white">
+      <BrandBackdrop tone={tone} />
+      <div className="relative px-3 py-4 sm:py-5">
         <div className="mb-3 flex justify-center">{badge}</div>
         <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
           {[[left, leftTag, winnerLeft], null, [right, rightTag, !winnerLeft]].map((cfg, i) => cfg ? (
             <div key={i} className="flex flex-col items-center gap-2">
-              <TeamLogo name={cfg[0].team} size={48} />
-              <div className={`text-center text-[14px] font-semibold leading-tight sm:text-[16px] ${cfg[2] ? 'text-[#111]' : 'text-[#6B7280]'}`}>{cfg[0].team || '—'}</div>
-              <div className={`font-bold leading-none tabular-nums ${cfg[2] ? 'text-[#111]' : 'text-[#9CA3AF]'}`} style={{ fontSize: 'clamp(30px, 5vw, 44px)' }}>{Number.isFinite(cfg[0].score) ? cfg[0].score.toFixed(2) : '—'}</div>
+              <span className="rounded-full bg-white p-1 shadow-lg"><TeamLogo name={cfg[0].team} size={46} /></span>
+              <div className={`text-center text-[14px] font-semibold leading-tight sm:text-[16px] ${cfg[2] ? 'text-white' : 'text-white/65'}`}>{cfg[0].team || '—'}</div>
+              <div className={`font-bold leading-none tabular-nums ${cfg[2] ? 'text-white' : 'text-white/55'}`} style={{ fontSize: 'clamp(30px, 5vw, 44px)' }}>{Number.isFinite(cfg[0].score) ? cfg[0].score.toFixed(2) : '—'}</div>
               {cfg[1]}
             </div>
           ) : (
             <div key={i} className="flex flex-col items-center gap-1 self-center">
-              <div className="text-[14px] font-semibold text-[#9CA3AF]">VS</div>
-              <div className="text-[11px] font-bold tabular-nums text-[#6B7280]">{Number.isFinite(left.score) && Number.isFinite(right.score) ? Math.abs(left.score - right.score).toFixed(2) : '—'}</div>
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">margin</div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[13px] font-black italic text-[#111] shadow-lg">VS</div>
+              <div className="mt-1 text-[11px] font-bold tabular-nums text-white/85">{Number.isFinite(left.score) && Number.isFinite(right.score) ? Math.abs(left.score - right.score).toFixed(2) : '—'}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-white/60">margin</div>
             </div>
           ))}
         </div>
       </div>
-      <div className="border-t border-[#EEF0F2] py-2 text-center text-[12px] font-medium text-[#D01F2D] group-hover:underline">Open the game</div>
+      <div className="relative border-t border-white/15 py-2 text-center text-[12px] font-medium text-white/85 group-hover:text-white group-hover:underline">Open the game</div>
     </Link>
   )
 
   const finalCard = selected && (
     <Scoreboard
       href={matchupHref(selected.championshipFinalGame)}
-      badge={<span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF2B8] px-3 py-1 text-[12px] font-medium text-[#6B5A00]"><Trophy className="h-3.5 w-3.5" /> {selected.season} · Tapitas Bowl</span>}
+      badge={<span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8C766]/20 px-3 py-1 text-[12px] font-semibold text-[#E8C766]"><Trophy className="h-3.5 w-3.5" /> {selected.season} · Tapitas Bowl</span>}
       left={{ team: selected.champion, score: selected.championshipScore }}
       right={{ team: selected.championshipOpponent, score: selected.championshipOpponentScore }}
       leftTag={<Tag tone="gold">🏆 Champion</Tag>}
@@ -585,7 +632,8 @@ export default function HistoryPage() {
   const unicornCard = selected && selected.unicornGame && (
     <Scoreboard
       href={matchupHref(selected.unicornGame)}
-      badge={<span className="inline-flex items-center gap-1.5 rounded-full bg-[#F3E8FF] px-3 py-1 text-[12px] font-medium text-[#6B21A8]">🦄 {selected.season} · Unicorn game</span>}
+      badge={<span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[12px] font-semibold text-white">🦄 {selected.season} · Unicorn game</span>}
+      tone="red"
       left={{ team: selected.unicornOpponent, score: selected.unicornOpponentScore }}
       right={{ team: selected.unicorn, score: selected.unicornScore }}
       leftTag={<Tag tone="green">Escaped</Tag>}
@@ -643,6 +691,23 @@ export default function HistoryPage() {
 
   const awardsCard = selected && (
     <CardShell title="Season awards" subtitle={`${selected.season} season`} sidebar>
+      {/* MVP da temporada (mais pontos) em destaque, com a foto recortada */}
+      {selected.topScorer && (
+        <button
+          type="button"
+          onClick={() => setProfile({ name: selected.topScorer.name, team: selected.topScorer.team })}
+          className="group relative mx-3 mt-3 block w-[calc(100%-1.5rem)] overflow-hidden rounded-xl text-left text-white lg:mx-4 lg:w-[calc(100%-2rem)]"
+        >
+          <BrandBackdrop />
+          <div className="absolute -right-2 bottom-0"><PlayerCutout sleeperId={playerInfo(selected.topScorer.name)?.playerId} name={selected.topScorer.name} className="h-[112px]" /></div>
+          <div className="relative max-w-[60%] px-3 py-3">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#E8C766]">⭐ Season MVP</div>
+            <div className="mt-1 truncate text-[15px] font-bold">{selected.topScorer.name}</div>
+            <div className="mt-0.5 flex items-center gap-1 text-[11px] text-white/75"><span className="rounded-full bg-white p-px"><TeamLogo name={selected.topScorer.team} size={14} /></span><span className="truncate">{selected.topScorer.team}</span></div>
+            <div className="mt-2 text-[24px] font-bold leading-none tabular-nums">{selected.topScorer.total.toFixed(1)}<span className="ml-1 text-[11px] font-medium text-white/70">pts</span></div>
+          </div>
+        </button>
+      )}
       <CardGroup label="Final standings" first>
         <StatRow href={teamHref(selected.champion)} left={<TeamLogo name={selected.champion} size={28} />} eyebrow="🏆 Champion" title={selected.champion || '—'} subtitle={`Reg. season ${selected.championRecord?.wins ?? 0}–${selected.championRecord?.losses ?? 0} · Playoffs ${selected.playoffGames.filter(g => g?.result === 'W').length}–${selected.playoffGames.filter(g => g?.result === 'L').length}`} />
         {selected.runnerUp && <StatRow href={teamHref(selected.runnerUp)} left={<TeamLogo name={selected.runnerUp} size={28} />} eyebrow="🥈 Runner-up" title={selected.runnerUp} subtitle={selected.runnerUpLine} />}
@@ -710,8 +775,11 @@ export default function HistoryPage() {
                 <button
                   key={s.season}
                   onClick={() => setOpenSeason(s.season)}
-                  className={`flex-shrink-0 border-b-2 px-3 py-3 text-[13px] tabular-nums transition-colors ${selected?.season === s.season ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}
+                  title={view === 'unicorn' ? `🦄 ${s.unicorn || ''}` : `🏆 ${s.champion || ''}`}
+                  className={`flex flex-shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13px] tabular-nums transition-colors ${selected?.season === s.season ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}
                 >
+                  {/* Logo do campeão (ou do unicórnio) de cada temporada */}
+                  <span className={`rounded-full ${selected?.season === s.season ? 'ring-2 ring-[#E8C766]' : 'opacity-80'}`}><TeamLogo name={view === 'unicorn' ? s.unicorn : s.champion} size={20} /></span>
                   {s.season}
                 </button>
               ))}
@@ -731,6 +799,9 @@ export default function HistoryPage() {
             </aside>
             <div className="min-w-0">
               {view === 'unicorn' ? unicornCard : finalCard}
+              {view === 'unicorn'
+                ? selected?.unicorn && <RoadCard title="Road to the bottom 🦄" subtitle={`${selected.unicorn} · consolation bracket`} list={selected.unicornConsolationGames || []} tone="red" />
+                : selected && <RoadCard title="Road to the title 🏆" subtitle={`${selected.champion} · playoff bracket`} list={selected.playoffGames || []} />}
               <div className="lg:hidden">{awardsCard}</div>
               {view === 'unicorn' ? unicornRunCard : runCard}
               {recapCard}

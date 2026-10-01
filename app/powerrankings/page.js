@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   TrendingUp,
@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Star,
 } from 'lucide-react'
-import { SummaryButton, PageShell, CardShell, CardGroup, StatRow, ResultBadge, StreakBadge, TeamLogo } from '../components/ui'
+import { BrandBackdrop, Podium, SummaryButton, PageShell, CardShell, CardGroup, StatRow, ResultBadge, StreakBadge, TeamLogo } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -73,6 +73,71 @@ async function safeFetch(url) {
   } catch {
     return []
   }
+}
+
+// Faixas do ranking (6 vagas de playoff)
+const TIERS = [
+  { max: 3, label: 'Contenders', color: '#B8860B' },
+  { max: 6, label: 'Playoff hunt', color: '#02275F' },
+  { max: 8, label: 'On the bubble', color: '#9CA3AF' },
+  { max: 99, label: 'Rebuilding', color: '#C8102E' },
+]
+const tierOf = rank => TIERS.find(t => rank <= t.max) || TIERS[TIERS.length - 1]
+
+// "Season race": posição de cada time semana a semana (bump chart).
+// Linhas cinza; o top 3 da semana em cores e o time destacado em azul forte.
+function BumpChart({ weeks, series, active, onPick }) {
+  const [hover, setHover] = useState(null)
+  const W = 320, H = 300, padL = 22, padR = 34, padT = 12, padB = 22
+  const n = weeks.length
+  const maxRank = Math.max(10, ...series.flatMap(s => s.ranks.filter(Boolean)))
+  const x = i => (n > 1 ? padL + (i * (W - padL - padR)) / (n - 1) : (padL + W - padR) / 2)
+  const y = r => padT + ((r - 1) * (H - padT - padB)) / (maxRank - 1)
+  const focus = hover || active
+  const colorOf = s => s.team === focus ? '#02275F' : s.final === 1 ? '#B8860B' : s.final === 2 ? '#3B5B9A' : s.final === 3 ? '#C8102E' : '#C9CED6'
+  const ordered = [...series].sort((a, b) => (a.team === focus) - (b.team === focus) || (b.final > 3) - (a.final > 3))
+  const step = n > 8 ? Math.ceil(n / 8) : 1
+  return (
+    <div className="relative aspect-[320/300] w-full" onMouseLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full">
+        {Array.from({ length: maxRank }, (_, r) => (
+          <g key={r}>
+            <line x1={padL} x2={W - padR} y1={y(r + 1)} y2={y(r + 1)} stroke="#EEF0F2" strokeWidth="1" />
+            <text x={padL - 8} y={y(r + 1) + 3.5} textAnchor="end" fontSize="10" fill="#9CA3AF">{r + 1}</text>
+          </g>
+        ))}
+        {weeks.map((w, i) => (i % step === 0 || i === n - 1) && (
+          <text key={w} x={x(i)} y={H - 6} textAnchor="middle" fontSize="10" fill="#9CA3AF">W{w}</text>
+        ))}
+        {ordered.map(s => {
+          const pts = s.ranks.map((r, i) => r ? [x(i), y(r)] : null).filter(Boolean)
+          const isFocus = s.team === focus
+          const c = colorOf(s)
+          return (
+            <g key={s.team} onMouseEnter={() => setHover(s.team)} onClick={() => onPick?.(s.team)} className="cursor-pointer">
+              <polyline points={pts.map(p => p.join(',')).join(' ')} fill="none" stroke="transparent" strokeWidth="12" />
+              <polyline points={pts.map(p => p.join(',')).join(' ')} fill="none" stroke={c} strokeWidth={isFocus ? 3.5 : s.final <= 3 ? 2.5 : 1.5} strokeLinejoin="round" strokeLinecap="round" opacity={focus && !isFocus ? 0.55 : 1} />
+              {pts.map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={isFocus ? 3.5 : 2.5} fill="#fff" stroke={c} strokeWidth="1.5" />)}
+            </g>
+          )
+        })}
+      </svg>
+      {/* Logos no fim de cada linha */}
+      {series.map(s => s.final && (
+        <button
+          key={s.team}
+          type="button"
+          onMouseEnter={() => setHover(s.team)}
+          onClick={() => onPick?.(s.team)}
+          title={s.team}
+          className={`absolute -translate-y-1/2 rounded-full bg-white p-0.5 transition-transform hover:scale-110 ${s.team === focus ? 'ring-2 ring-[#02275F]' : 'ring-1 ring-[#E6E8EB]'}`}
+          style={{ left: `${((W - padR + 6) / W) * 100}%`, top: `${(y(s.final) / H) * 100}%` }}
+        >
+          <TeamLogo name={s.team} size={18} />
+        </button>
+      ))}
+    </div>
+  )
 }
 
 function TrendIcon({ delta }) {
@@ -743,6 +808,22 @@ function PowerRankingsPageContent() {
     if (ws.length > 0) setWeek(ws[ws.length - 1])
   }
 
+  // Posição de cada time em todas as semanas até a semana escolhida
+  const raceWeeks = weeks.filter(w => getWeekStart(w) <= getWeekStart(week))
+  // Todos os times da temporada (nos playoffs só alguns seguem ranqueados)
+  const raceTeams = [...new Set(games
+    .filter(x => String(x?.Season || '').trim() === season && parseNumber(x?.['Power Ranking']) > 0 && raceWeeks.includes(String(x?.Week || '').trim()))
+    .map(x => String(x?.Team || '').trim()))]
+  const raceSeries = raceTeams.map(team => {
+    const ranks = raceWeeks.map(w => {
+      const g = games.find(x => String(x?.Season || '').trim() === season && String(x?.Week || '').trim() === w && String(x?.Team || '').trim() === team)
+      const r = parseNumber(g?.['Power Ranking'])
+      return r > 0 ? r : null
+    })
+    const final = [...ranks].reverse().find(Boolean) || null
+    return { team, final, ranks }
+  })
+
   const risers = [...rankings].filter(t => t.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 3)
   const fallers = [...rankings].filter(t => t.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 3)
   const topScorer = [...rankings].sort((a, b) => b.pf - a.pf)[0]
@@ -812,11 +893,45 @@ function PowerRankingsPageContent() {
         </div>
       </div>
 
+      {/* Hero da semana: o líder, os destaques e o pódio do top 3 */}
+      {rankings.length >= 3 && (() => {
+        const leader = rankings[0]
+        const riser = risers[0]
+        return (
+          <div className="relative mb-2 overflow-hidden rounded-xl text-white">
+            <BrandBackdrop />
+            <div className="relative flex min-h-[176px] items-stretch gap-4 px-4 pt-4 sm:px-6 sm:pt-5">
+              <div className="min-w-0 flex-1 pb-4 sm:pb-5">
+                <div className="text-[12px] font-medium text-white/70">{season} · Week {week} · Power Rankings</div>
+                <div className="mt-2 flex min-w-0 items-center gap-3">
+                  <span className="flex-shrink-0 rounded-full bg-white p-1 shadow-lg sm:hidden"><TeamLogo name={leader.team} size={40} /></span>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#E8C766]">#1 this week</div>
+                    <h1 className="truncate text-[26px] font-bold leading-tight tracking-tight sm:text-[34px]">{leader.team}</h1>
+                  </div>
+                </div>
+                <div className="mt-1 text-[13px] text-white/80">
+                  <span className="font-semibold tabular-nums text-white">{leader.wins}–{leader.losses}</span> · {leader.avgPF.toFixed(1)} pts per week
+                  {leader.delta > 0 ? ` · ▲ ${leader.delta}` : leader.delta < 0 ? ` · ▼ ${Math.abs(leader.delta)}` : ' · holds the top spot'}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {riser && <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[12px]"><span className="text-white/70">Biggest riser</span><TeamLogo name={riser.team} size={14} /><span className="font-semibold">{riser.team}</span><span className="text-[#7FD18A]">▲ {riser.delta}</span></span>}
+                  {topScorer && <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[12px]"><span className="text-white/70">Week high</span><TeamLogo name={topScorer.team} size={14} /><span className="font-semibold">{topScorer.team}</span><span className="tabular-nums text-[#E8C766]">{topScorer.pf.toFixed(2)}</span></span>}
+                </div>
+              </div>
+              <div className="hidden flex-shrink-0 self-end sm:block"><Podium rows={rankings.slice(0, 3)} /></div>
+            </div>
+          </div>
+        )
+      })()}
+
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-5">
         <div className="min-w-0">
           <CardShell title="Power Rankings" subtitle={`${season} · Week ${week} · tap a team for details`}>
             <div>
-              {rankings.map(team => {
+              {rankings.map((team, ti) => {
+                const tier = tierOf(team.rank)
+                const newTier = ti === 0 || tierOf(rankings[ti - 1].rank).label !== tier.label
                 const expandedOpen = expanded === team.team
                 const seasonResults = getSeasonResults(team.team)
                 const nextOpponent = expandedOpen ? getNextOpponentData(team.team) : null
@@ -825,10 +940,18 @@ function PowerRankingsPageContent() {
                 const opponentRecord = expandedOpen ? getOpponentRecord(team.opponent) : null
 
                 return (
-                  <div key={team.team} className={`border-b border-[#F1F2F4] last:border-b-0 ${expandedOpen ? 'bg-[#F9FAFB]' : ''}`}>
+                  <React.Fragment key={team.team}>
+                  {newTier && (
+                    <div className="flex items-center gap-2 border-b border-[#F1F2F4] bg-[#FAFBFC] px-3 py-1.5 lg:px-4">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: tier.color }} />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: tier.color === '#9CA3AF' ? '#6B7280' : tier.color }}>{tier.label}</span>
+                    </div>
+                  )}
+                  <div className={`relative border-b border-[#F1F2F4] last:border-b-0 ${expandedOpen ? 'bg-[#F9FAFB]' : ''}`}>
+                    <span className="absolute inset-y-0 left-0 w-[3px]" style={{ background: tier.color }} />
                     <button onClick={() => setExpanded(expandedOpen ? null : team.team)} className="group flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-[#F7F8FA] lg:gap-4 lg:px-4">
                       <div className="w-9 flex-shrink-0 text-center">
-                        <div className={`text-[26px] font-bold leading-none tabular-nums ${team.rank === 1 ? 'text-[#B8860B]' : 'text-[#111]'}`}>{team.rank}</div>
+                        <div className="text-[26px] font-bold leading-none tabular-nums" style={{ color: tier.color === '#9CA3AF' ? '#6B7280' : tier.color }}>{team.rank}</div>
                         <div className="mt-1 flex justify-center"><TrendIcon delta={team.delta} /></div>
                       </div>
                       <TeamAvatar team={team.team} size="md" />
@@ -935,12 +1058,22 @@ function PowerRankingsPageContent() {
                       </div>
                     )}
                   </div>
+                  </React.Fragment>
                 )
               })}
             </div>
           </CardShell>
         </div>
-        <aside>{moversCard}</aside>
+        <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC]">
+          {raceSeries.length > 0 && (
+            <CardShell title="Season race" subtitle={`${season} · rank week by week · tap a line`} sidebar>
+              <div className="px-2 pb-3 pt-3 lg:px-3">
+                <BumpChart weeks={raceWeeks} series={raceSeries} active={expanded} onPick={team => setExpanded(team)} />
+              </div>
+            </CardShell>
+          )}
+          {moversCard}
+        </aside>
       </div>
 
       <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={allSeasons} />

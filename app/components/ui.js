@@ -609,6 +609,42 @@ export function VersusPoster({ label, badge, left, right, leftControl, rightCont
   )
 }
 
+// ── Identidade visual: fundo de marca e pódio ─────────────────────────
+// Fundo azul (ou vermelho) com a textura diagonal do hero da Home. Vai dentro
+// de um container `relative overflow-hidden`; o conteúdo usa `relative`.
+const BACKDROPS = {
+  navy: 'linear-gradient(115deg, #02275F 0%, #02275F 55%, #0A3B85 100%)',
+  red: 'linear-gradient(115deg, #B3171F 0%, #B3171F 50%, #8E1022 100%)',
+  ink: 'linear-gradient(115deg, #16274F 0%, #16274F 55%, #1F3A6E 100%)',
+}
+export function BrandBackdrop({ tone = 'navy' }) {
+  return (
+    <>
+      <div className="absolute inset-0" style={{ background: BACKDROPS[tone] || BACKDROPS.navy }} />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 16px)' }} />
+    </>
+  )
+}
+
+// Pódio do top 3 (2º, 1º, 3º) para usar sobre o BrandBackdrop.
+// rows: [{ team, rank }] já ordenados do 1º ao 3º.
+export function Podium({ rows, compact = false }) {
+  if (!rows || rows.length < 3) return null
+  return (
+    <div className="flex items-end gap-1.5">
+      {[rows[1], rows[0], rows[2]].map(row => {
+        const first = row.rank === 1
+        return (
+          <div key={row.team} className={`flex flex-col items-center ${compact ? 'w-[58px]' : 'w-[66px] xl:w-[76px]'}`}>
+            <span className={`mb-2 rounded-full bg-white p-1 shadow-lg ${first ? 'ring-2 ring-[#E8C766]' : ''}`}><TeamLogo name={row.team} size={first ? (compact ? 38 : 44) : (compact ? 30 : 36)} /></span>
+            <div className={`flex w-full items-start justify-center rounded-t-lg pt-1.5 text-[20px] font-black italic tabular-nums text-white ${first ? `${compact ? 'h-[70px]' : 'h-[88px]'} bg-white/20 text-[#E8C766]` : row.rank === 2 ? `${compact ? 'h-[52px]' : 'h-[64px]'} bg-white/[0.14]` : `${compact ? 'h-[38px]' : 'h-[46px]'} bg-white/10`}`}>{row.rank}</div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // "Tale of the tape": comparação lado a lado com barra nas cores do pôster.
 // rows: { label, a, b, shareA, shareB, subA, subB }
 export function TaleOfTape({ leftName, rightName, rows }) {
@@ -655,40 +691,43 @@ export function TaleOfTape({ leftName, rightName, rows }) {
 // ── Card de líderes (estilo "stat leaders") ─────────────────────────
 // Líder em destaque + 2º ao 5º em lista compacta.
 // entry: { key, avatar, name, badge, sub, value, href, onClick }
-export function LeaderCard({ title, icon: Icon, accentClass = 'bg-[#EEF3FF] text-[#02275F]', leader, others = [], className = '' }) {
+export function LeaderCard({ title, icon: Icon, accentClass = 'bg-[#EEF3FF] text-[#02275F]', leader, others = [], className = '', featured = false }) {
+  // featured: versão em destaque no azul da marca (o 1º card de uma fileira)
   const Wrap = ({ entry, className: cls, children }) => entry?.href
     ? <a href={entry.href} className={cls}>{children}</a>
     : entry?.onClick ? <button type="button" onClick={entry.onClick} className={`w-full text-left ${cls}`}>{children}</button>
       : <div className={cls}>{children}</div>
+  const hover = featured ? 'hover:bg-white/10' : 'hover:bg-[#F7F8FA]'
   return (
-    <div className={`flex flex-col overflow-hidden rounded-xl bg-white ${className}`}>
-      <div className="flex items-center gap-2 px-3 pt-3 sm:px-4">
-        {Icon && <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${accentClass}`}><Icon className="h-3.5 w-3.5" /></span>}
-        <span className="text-[13px] font-semibold leading-tight text-[#111]">{title}</span>
+    <div className={`relative flex flex-col overflow-hidden rounded-xl ${featured ? 'text-white' : 'bg-white'} ${className}`}>
+      {featured && <BrandBackdrop />}
+      <div className="relative flex items-center gap-2 px-3 pt-3 sm:px-4">
+        {Icon && <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${featured ? 'bg-white/15 text-[#E8C766]' : accentClass}`}><Icon className="h-3.5 w-3.5" /></span>}
+        <span className={`text-[13px] font-semibold leading-tight ${featured ? 'text-white' : 'text-[#111]'}`}>{title}</span>
       </div>
       {leader ? (
-        <Wrap entry={leader} className="group flex items-center gap-3 px-3 pb-3 pt-3 transition-colors hover:bg-[#F7F8FA] sm:px-4">
-          <span className="flex-shrink-0">{leader.avatar}</span>
+        <Wrap entry={leader} className={`group relative flex items-center gap-3 px-3 pb-3 pt-3 transition-colors sm:px-4 ${hover}`}>
+          <span className={`flex-shrink-0 ${featured ? 'rounded-full bg-white p-0.5' : ''}`}>{leader.avatar}</span>
           <span className="min-w-0 flex-1">
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate text-[14px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{leader.name}</span>
+              <span className={`truncate text-[14px] font-semibold ${featured ? 'text-white' : 'text-[#111] group-hover:text-[#D01F2D]'}`}>{leader.name}</span>
               {leader.badge}
             </span>
-            {leader.sub && <span className="mt-0.5 block truncate text-[11px] text-[#6B7280]">{leader.sub}</span>}
+            {leader.sub && <span className={`mt-0.5 block truncate text-[11px] ${featured ? 'text-white/70' : 'text-[#6B7280]'}`}>{leader.sub}</span>}
           </span>
-          <span className="flex-shrink-0 text-[26px] font-bold leading-none tabular-nums text-[#111]">{leader.value}</span>
+          <span className={`flex-shrink-0 text-[26px] font-bold leading-none tabular-nums ${featured ? 'text-white' : 'text-[#111]'}`}>{leader.value}</span>
         </Wrap>
       ) : (
-        <div className="px-3 py-6 text-center text-[12px] text-[#9CA3AF] sm:px-4">No data</div>
+        <div className={`relative px-3 py-6 text-center text-[12px] sm:px-4 ${featured ? 'text-white/60' : 'text-[#9CA3AF]'}`}>No data</div>
       )}
       {others.length > 0 && (
-        <div className="mt-auto border-t border-[#F1F2F4]">
+        <div className={`relative mt-auto border-t ${featured ? 'border-white/15' : 'border-[#F1F2F4]'}`}>
           {others.map((o, i) => (
-            <Wrap key={o.key || i} entry={o} className="group flex items-center gap-2 px-3 py-1.5 transition-colors hover:bg-[#F7F8FA] sm:px-4">
-              <span className="w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums text-[#9CA3AF]">{i + 2}</span>
+            <Wrap key={o.key || i} entry={o} className={`group flex items-center gap-2 px-3 py-1.5 transition-colors sm:px-4 ${hover}`}>
+              <span className={`w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums ${featured ? 'text-white/50' : 'text-[#9CA3AF]'}`}>{i + 2}</span>
               {o.avatar}
-              <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[#3F4757] group-hover:text-[#D01F2D]">{o.name}</span>
-              <span className="flex-shrink-0 text-[12px] font-semibold tabular-nums text-[#111]">{o.value}</span>
+              <span className={`min-w-0 flex-1 truncate text-[12px] font-medium ${featured ? 'text-white/90' : 'text-[#3F4757] group-hover:text-[#D01F2D]'}`}>{o.name}</span>
+              <span className={`flex-shrink-0 text-[12px] font-semibold tabular-nums ${featured ? 'text-white' : 'text-[#111]'}`}>{o.value}</span>
             </Wrap>
           ))}
         </div>

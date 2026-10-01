@@ -4,8 +4,9 @@ import React, { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronLeft, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
-import { PageShell, PageBar, BarTab, LeaderCard, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
+import { BrandBackdrop, PageShell, PageBar, BarTab, LeaderCard, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
+import PlayerCutout from '../components/PlayerCutout'
 import LeagueNewsCard from '../components/nfl/LeagueNewsCard'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
 
@@ -526,7 +527,7 @@ export default function PlayersPage() {
             position: getPlayerPosition(raw, playerLookup),
             aliases: new Set(), appearances: 0, starts: 0, bench: 0,
             total: 0, avgTotal: 0, avgCount: 0, best: 0,
-            seasons: new Set(), teams: new Set(), rostered: 0,
+            seasons: new Set(), teams: new Set(), teamApps: {}, rostered: 0,
           })
         }
         const p = map.get(key)
@@ -537,7 +538,7 @@ export default function PlayersPage() {
         const points = doubleWeek ? app.pts / 2 : app.pts
         p.total += points
         if (gSeason) p.seasons.add(gSeason)
-        if (gTeam) p.teams.add(gTeam)
+        if (gTeam) { p.teams.add(gTeam); p.teamApps[gTeam] = (p.teamApps[gTeam] || 0) + 1 }
         if (!(app.status === 'Bench' && app.pts === 0)) {
           p.avgTotal += points
           p.avgCount++
@@ -783,11 +784,12 @@ export default function PlayersPage() {
             { title: 'Best average (10+ apps)', icon: TrendingUp, accent: 'bg-[#E8F5EC] text-[#1E8E3E]', list: [...filtered].filter(p => p.appearances >= 10).sort((a, b) => b.avg - a.avg), value: p => p.avg.toFixed(2) },
             { title: 'Best single game', icon: Flame, accent: 'bg-[#FFF2B8] text-[#8D6A00]', list: [...filtered].sort((a, b) => b.best - a.best), value: p => p.best.toFixed(2) },
             { title: 'Most starts', icon: Star, accent: 'bg-[#FDECEE] text-[#D01F2D]', list: [...filtered].sort((a, b) => b.starts - a.starts), value: p => p.starts },
-          ].map(card => {
+          ].map((card, cardIndex) => {
             const [first, ...rest] = card.list.slice(0, 5)
             return (
               <LeaderCard
                 key={card.title}
+                featured={cardIndex === 0}
                 title={card.title}
                 icon={card.icon}
                 accentClass={card.accent}
@@ -815,12 +817,18 @@ export default function PlayersPage() {
                 <a
                   key={`${g.identityKey}-${g.season}-${g.week}-${i}`}
                   href={g.href}
-                  className={`group relative flex items-center gap-4 overflow-hidden rounded-xl p-4 transition-shadow hover:shadow-md ${first ? 'bg-[#02275F] text-white' : 'bg-white text-[#111]'}`}
+                  className={`group relative flex items-center gap-4 overflow-hidden rounded-xl p-4 transition-shadow hover:shadow-md ${first ? 'min-h-[118px] pr-[120px] text-white' : 'bg-white text-[#111]'}`}
                 >
+                  {first && <BrandBackdrop />}
                   <span className={`absolute right-3 top-2 text-[64px] font-black italic leading-none tabular-nums ${first ? 'text-white/10' : 'text-[#02275F]/[0.06]'}`}>{i + 1}</span>
-                  <div className={`flex-shrink-0 rounded-full p-0.5 ${first ? 'bg-[#B8860B]' : i === 1 ? 'bg-[#C0C4CC]' : 'bg-[#C98A55]'}`}>
-                    <PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={first ? 76 : 64} />
-                  </div>
+                  {/* 1º lugar: foto recortada grande à direita; os outros, a foto redonda */}
+                  {first
+                    ? <div className="absolute -right-2 bottom-0"><PlayerCutout sleeperId={getPlayerId(g.rawName, playerLookup)} name={g.name} className="h-[118px]" /></div>
+                    : (
+                      <div className={`flex-shrink-0 rounded-full p-0.5 ${i === 1 ? 'bg-[#C0C4CC]' : 'bg-[#C98A55]'}`}>
+                        <PlayerAvatar name={g.rawName} playerLookup={playerLookup} size={64} />
+                      </div>
+                    )}
                   <div className="relative min-w-0 flex-1">
                     <div className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${first ? 'text-[#E8C766]' : 'text-[#6B7280]'}`}>{first ? 'Top performance' : `#${i + 1} performance`}</div>
                     <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
@@ -863,6 +871,70 @@ export default function PlayersPage() {
           </div>
         </>
       )}
+
+      {/* Franchise icons (mais jogos por um só time) e Journeymen (mais times diferentes) */}
+      {archiveView === 'consolidated' && filtered.length > 0 && (() => {
+        const icons = filtered
+          .map(p => {
+            const [team, apps] = Object.entries(p.teamApps || {}).sort((a, b) => b[1] - a[1])[0] || []
+            return team ? { p, team, apps, share: apps / Math.max(p.appearances, 1) } : null
+          })
+          .filter(Boolean)
+          .sort((a, b) => b.apps - a.apps || b.share - a.share)
+          .slice(0, 5)
+        const journeymen = [...filtered]
+          .filter(p => p.teams.length > 1)
+          .sort((a, b) => b.teams.length - a.teams.length || b.appearances - a.appearances)
+          .slice(0, 5)
+        return (
+          <div className="mb-2 grid gap-2 lg:grid-cols-2">
+            <CardShell title="Franchise icons" subtitle="Most games with a single franchise" className="mb-0">
+              <div className="py-1">
+                {icons.map(({ p, team, apps, share }, i) => (
+                  <button key={p.identityKey} type="button" onClick={() => setSelected(p)} className="group flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-[#F7F8FA] lg:px-4">
+                    <span className="w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums text-[#9CA3AF]">{i + 1}</span>
+                    <span className="relative flex-shrink-0">
+                      <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={38} />
+                      <span className="absolute -bottom-1 -right-1 rounded-full bg-white p-px shadow"><TeamLogo name={team} size={18} /></span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{p.name}</span><PositionBadge position={p.position} /></span>
+                      <span className="mt-1 flex items-center gap-2">
+                        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EEF0F2]"><span className="block h-full rounded-full bg-[#02275F]" style={{ width: `${Math.round(share * 100)}%` }} /></span>
+                        <span className="flex-shrink-0 text-[11px] tabular-nums text-[#6B7280]">{Math.round(share * 100)}% of career</span>
+                      </span>
+                    </span>
+                    <span className="flex-shrink-0 text-right">
+                      <span className="block text-[18px] font-bold leading-none tabular-nums text-[#111]">{apps}</span>
+                      <span className="text-[10px] text-[#6B7280]">apps</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </CardShell>
+            <CardShell title="Journeymen" subtitle="Players who suited up for the most franchises" className="mb-0">
+              <div className="py-1">
+                {journeymen.map((p, i) => (
+                  <button key={p.identityKey} type="button" onClick={() => setSelected(p)} className="group flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-[#F7F8FA] lg:px-4">
+                    <span className="w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums text-[#9CA3AF]">{i + 1}</span>
+                    <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={38} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{p.name}</span><PositionBadge position={p.position} /></span>
+                      <span className="mt-1 flex -space-x-1.5">
+                        {[...p.teams].sort((a, b) => (p.teamApps?.[b] || 0) - (p.teamApps?.[a] || 0)).map(t => <span key={t} title={`${t} · ${p.teamApps?.[t] || 0} apps`} className="rounded-full bg-white ring-2 ring-white"><TeamLogo name={t} size={20} /></span>)}
+                      </span>
+                    </span>
+                    <span className="flex-shrink-0 text-right">
+                      <span className="block text-[18px] font-bold leading-none tabular-nums text-[#111]">{p.teams.length}</span>
+                      <span className="text-[10px] text-[#6B7280]">teams</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </CardShell>
+          </div>
+        )
+      })()}
 
       {archiveView !== 'news' && <CardShell
         title={archiveView === 'consolidated' ? `${filtered.length} players` : `${performanceRows.length} performances`}

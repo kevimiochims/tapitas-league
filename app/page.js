@@ -8,6 +8,7 @@ import {
   Users, BookOpen, Zap, TrendingDown, Minus, Hash, ChevronDown, Star,
 } from 'lucide-react'
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
+import PlayerCutout from './components/PlayerCutout'
 import { useDrawer } from './context/DrawerContext'
 import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
@@ -17,7 +18,7 @@ import { resolveFactsName } from './lib/factsNames'
 import RosterAlertsCard from './components/nfl/RosterAlertsCard'
 import TrendingCard from './components/nfl/TrendingCard'
 import LeagueNewsCard from './components/nfl/LeagueNewsCard'
-import { SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
+import { BrandBackdrop, Podium, SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
 
 
 // Same Sleeper player source used by the Teams Player Profile.
@@ -379,6 +380,26 @@ function PerformerTile({ rank, performer, data, onOpen }) {
     ? (isDefense ? getNFLTeamLogo(performer.name) : (data?.playerId ? `https://sleepercdn.com/content/nfl/players/${data.playerId}.jpg` : null))
     : null
   const initials = String(performer.name).split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
+
+  // O melhor da semana ganha destaque: azul da marca e a foto recortada grande
+  if (rank === 1 && !isDefense) return (
+    <button type="button" onClick={onOpen} className="group relative w-[250px] flex-shrink-0 overflow-hidden rounded-lg px-3 pb-2.5 pt-3 text-left text-white">
+      <BrandBackdrop />
+      <div className="absolute -right-3 bottom-0"><PlayerCutout sleeperId={data?.playerId} name={performer.name} className="h-[136px]" /></div>
+      <div className="relative max-w-[130px]">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#E8C766]">Player of the week</div>
+        <div className="mt-2 text-[30px] font-bold leading-none tabular-nums">{performer.pts.toFixed(1)}</div>
+        <div className="mt-1.5 flex items-center gap-1">
+          <span className="truncate text-[13px] font-semibold">{data?.shortName || performer.name}</span>
+          {pos && <UiPositionBadge position={pos} />}
+        </div>
+        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-white/75">
+          <span className="rounded-full bg-white p-px"><TeamLogo name={performer.team} size={14} /></span>
+          <span className="truncate">{performer.team}</span>
+        </div>
+      </div>
+    </button>
+  )
 
   return (
     <button type="button" onClick={onOpen} className="group w-[112px] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2 pb-2.5 pt-3 text-center transition-colors hover:bg-[#ECEEF1]">
@@ -1809,20 +1830,9 @@ export default function TapitasLeagueHomepage() {
       {/* Slide do Power Rankings: textura diagonal e pódio com o top 3 */}
       {slide.podium && (
         <>
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(115deg, #02275F 0%, #02275F 52%, #0A3B85 100%)' }} />
-          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 16px)' }} />
+          <BrandBackdrop />
           {slide.podium.length === 3 && (
-            <div className="pointer-events-none absolute bottom-0 right-6 hidden items-end gap-1.5 sm:flex xl:right-10">
-              {[slide.podium[1], slide.podium[0], slide.podium[2]].map(row => {
-                const first = row.rank === 1
-                return (
-                  <div key={row.team} className="flex w-[66px] flex-col items-center xl:w-[76px]">
-                    <span className={`mb-2 rounded-full bg-white p-1 shadow-lg ${first ? 'ring-2 ring-[#E8C766]' : ''}`}><TeamLogo name={row.team} size={first ? 44 : 36} /></span>
-                    <div className={`flex w-full items-start justify-center rounded-t-lg pt-1.5 text-[20px] font-black italic tabular-nums ${first ? 'h-[88px] bg-white/20 text-[#E8C766]' : row.rank === 2 ? 'h-[64px] bg-white/[0.14]' : 'h-[46px] bg-white/10'}`}>{row.rank}</div>
-                  </div>
-                )
-              })}
-            </div>
+            <div className="pointer-events-none absolute bottom-0 right-6 hidden sm:block xl:right-10"><Podium rows={slide.podium} /></div>
           )}
         </>
       )}

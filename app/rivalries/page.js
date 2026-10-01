@@ -941,7 +941,7 @@ RENDER
               : <Tag tone="navy">{gameType}</Tag>
             const href = `/matchups?season=${encodeURIComponent(g.Season)}&week=${encodeURIComponent(g.Week)}&team=${encodeURIComponent(g.Team)}&opp=${encodeURIComponent(g.Opponent)}`
             return (
-              <a key={i} href={href} className="grid grid-cols-[6px_84px_minmax(0,1fr)] items-center gap-3 border-b border-[#F1F2F4] py-2.5 pr-3 transition-colors last:border-b-0 hover:bg-[#F7F8FA] lg:pr-4">
+              <a key={i} href={href} className={`grid grid-cols-[6px_84px_minmax(0,1fr)] items-center gap-3 border-b border-[#F1F2F4] py-2.5 pr-3 transition-colors last:border-b-0 lg:pr-4 ${winnerIsA ? 'bg-[#F5F8FF] hover:bg-[#EAF0FD]' : 'bg-[#FFF6F7] hover:bg-[#FDECEE]'}`}>
                 <span className={`h-full min-h-[40px] w-[3px] rounded-r ${winnerIsA ? 'bg-[#02275F]' : 'bg-[#C8102E]'}`} />
                 <div>
                   <div className="text-[13px] font-semibold text-[#111]">{g.Season}</div>

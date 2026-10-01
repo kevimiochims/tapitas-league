@@ -4,6 +4,7 @@ import { PageShell, PageBar, BarTab, LeaderCard, LoadingState, TeamLogo, Positio
 import SummaryDrawer from '../components/SummaryDrawer'
 import React, { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
+import PlayerCutout from '../components/PlayerCutout'
 import { Trophy, Flame, Swords, Activity, Users, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull, RotateCw } from 'lucide-react'
 
 const BASE_URL = '/api/sheet'
@@ -292,7 +293,10 @@ function RecordCard({ label, value, sub, sub2, subHref, sub2Href, subItems, acce
       <div className="relative flex items-center gap-4 p-4">
         <div className="flex-shrink-0">
           {pair ? <VersusLogos teams={pair} size={52} />
-            : leadPlayer ? <span className={`block rounded-full p-0.5 ${t.dark ? 'bg-white/80' : RING[accent] || RING.slate}`}><span className="block rounded-full bg-white"><PlayerPhotoLarge playerId={leadPlayer.playerId} name={leadPlayer.name} size={64} /></span></span>
+            : leadPlayer ? (t.dark
+              // Card escuro: foto recortada grande, encostada na base do card
+              ? <PlayerCutout sleeperId={leadPlayer.playerId} name={leadPlayer.name} className="-mb-4 h-[92px]" />
+              : <span className={`block rounded-full p-0.5 ${RING[accent] || RING.slate}`}><span className="block rounded-full bg-white"><PlayerPhotoLarge playerId={leadPlayer.playerId} name={leadPlayer.name} size={64} /></span></span>)
               : leadTeam ? (t.dark ? <span className="block rounded-full bg-white p-1 shadow-lg"><TeamLogo name={leadTeam} size={58} /></span> : <TeamLogo name={leadTeam} size={64} />)
                 : <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#F4F5F7] text-[#9CA3AF]">—</span>}
         </div>

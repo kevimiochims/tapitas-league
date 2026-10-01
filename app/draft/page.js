@@ -5,7 +5,8 @@ import ReactMarkdown from 'react-markdown'
 import { useEffect, useMemo, useState, useRef, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { SummaryButton, PageShell, CardShell, StatRow, Tabs, FilterBar, FilterPill, SearchInput, Tag, PositionBadge, TeamLogo } from '../components/ui'
+import PlayerCutout from '../components/PlayerCutout'
+import { BrandBackdrop, SummaryButton, PageShell, CardShell, StatRow, Tabs, FilterBar, FilterPill, SearchInput, Tag, PositionBadge, TeamLogo } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 import { DRAFT_PHOTOS } from '../config/draftPhotos'
@@ -240,6 +241,36 @@ function PlayerAvatar({ player, pick, playerLookup, size = 'md', className = '' 
 function TeamAvatar({ team, size = 'md' }) {
     const px = { xs: 20, sm: 32, md: 40, lg: 56 }[size] || 40
     return <TeamLogo name={team} size={px} />
+}
+
+// Cores por posição (iguais às etiquetas do site)
+const POS_COLORS = { QB: '#D01F2D', RB: '#1E8E3E', WR: '#02275F', TE: '#B8860B', K: '#6B7280', DEF: '#3F4757' }
+const posColor = pos => POS_COLORS[String(pos || '').toUpperCase()] || '#9CA3AF'
+
+// "Draft DNA": em cada rodada (coluna), as posições escolhidas, do topo
+// para baixo na ordem QB → RB → WR → TE → K → DEF
+function DraftDna({ picks }) {
+    const byRound = new Map()
+    picks.forEach(p => {
+        if (!byRound.has(p.round)) byRound.set(p.round, [])
+        byRound.get(p.round).push(p)
+    })
+    const rounds = [...byRound.entries()].sort((a, b) => a[0] - b[0])
+    const order = Object.keys(POS_COLORS)
+    return (
+        <div className="flex items-end gap-1 sm:gap-1.5">
+            {rounds.map(([round, list]) => (
+                <div key={round} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                    <div className="flex w-full flex-col gap-px overflow-hidden rounded">
+                        {[...list].sort((a, b) => order.indexOf(a.position) - order.indexOf(b.position)).map(p => (
+                            <div key={p.pick} className="h-2.5 w-full sm:h-3" style={{ background: posColor(p.position) }} title={`R${round} · #${p.pick} ${p.player} (${p.position}) · ${p.team}`} />
+                        ))}
+                    </div>
+                    <span className="text-[10px] tabular-nums text-[#9CA3AF]">{round}</span>
+                </div>
+            ))}
+        </div>
+    )
 }
 
 export default function DraftPage() {
@@ -554,7 +585,7 @@ export default function DraftPage() {
     const highlightRows = highlights ? [
         { label: 'Best drafter', left: <TeamAvatar team={highlights.bestTeam} size="sm" />, title: highlights.bestTeam, subtitle: 'Most points from drafted players', value: highlights.bestDrafter ? `${highlights.bestDrafter.points.toFixed(1)} pts` : '—', valueClass: 'text-[#1E8E3E]' },
         { label: 'Worst drafter', left: <TeamAvatar team={highlights.worstTeam} size="sm" />, title: highlights.worstTeam, subtitle: 'Fewest points from drafted players', value: highlights.worstDrafter ? `${highlights.worstDrafter.points.toFixed(1)} pts` : '—', valueClass: 'text-[#D01F2D]' },
-        highlights.steal && { label: 'Steal of the draft', left: <PlayerAvatar player={highlights.steal.player} pick={highlights.steal} playerLookup={playerLookup} size="sm" />, title: highlights.steal.player, subtitle: `Pick #${highlights.steal.pick} · ${highlights.steal.team}`, value: `${highlights.steal.fantasyPoints.toFixed(1)} pts`, valueClass: 'text-[#B8860B]' },
+        highlights.steal && { steal: true, label: 'Steal of the draft', left: <PlayerAvatar player={highlights.steal.player} pick={highlights.steal} playerLookup={playerLookup} size="sm" />, title: highlights.steal.player, subtitle: `Pick #${highlights.steal.pick} · ${highlights.steal.team}`, value: `${highlights.steal.fantasyPoints.toFixed(1)} pts`, valueClass: 'text-[#B8860B]' },
         highlights.bust && { label: 'Biggest bust', left: <PlayerAvatar player={highlights.bust.player} pick={highlights.bust} playerLookup={playerLookup} size="sm" />, title: highlights.bust.player, subtitle: `Pick #${highlights.bust.pick} · ${highlights.bust.team}`, value: `${highlights.bust.fantasyPoints.toFixed(1)} pts` },
     ].filter(Boolean) : []
 
@@ -579,20 +610,42 @@ export default function DraftPage() {
             {/* Destaques do draft: 4 cards em linha, largura total */}
             {highlightRows.length > 0 && (
                 <div className="mb-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
-                    {highlightRows.map(row => (
-                        <div key={row.label} className="min-w-0 rounded-xl bg-white p-3 lg:p-4">
-                            <div className="text-[11px] font-medium text-[#6B7280]">{row.label}</div>
-                            <div className="mt-2 flex min-w-0 items-center gap-2.5">
-                                {row.left}
-                                <div className="min-w-0">
-                                    <div className="truncate text-[13px] font-semibold leading-tight text-[#111]">{row.title}</div>
-                                    <div className="truncate text-[11px] text-[#6B7280]">{row.subtitle}</div>
+                    {/* Equilíbrio da Home: o 1º destaque em azul com textura, os outros brancos */}
+                    {highlightRows.map((row, i) => {
+                        const featured = i === 0
+                        const stealData = row.steal ? getPlayerDataByFullName(highlights.steal.player, playerLookup) : null
+                        return (
+                            <div key={row.label} className={`relative min-w-0 overflow-hidden rounded-xl p-3 lg:p-4 ${featured ? 'text-white' : row.steal ? 'bg-gradient-to-br from-[#FFF2B8] via-[#FFF8DD] to-white' : 'bg-white'}`}>
+                                {featured && <BrandBackdrop />}
+                                {/* Steal: foto recortada do jogador no canto */}
+                                {row.steal && <div className="absolute -right-2 bottom-0 opacity-90"><PlayerCutout sleeperId={stealData?.playerId} name={highlights.steal.player} className="h-[96px]" fallback={false} /></div>}
+                                <div className={`relative ${row.steal ? 'pr-16' : ''}`}>
+                                    <div className={`text-[11px] font-medium ${featured ? 'font-semibold uppercase tracking-[0.12em] text-[#E8C766]' : 'text-[#6B7280]'}`}>{row.label}</div>
+                                    <div className="mt-2 flex min-w-0 items-center gap-2.5">
+                                        {featured ? <span className="flex-shrink-0 rounded-full bg-white p-0.5">{row.left}</span> : row.left}
+                                        <div className="min-w-0">
+                                            <div className={`truncate text-[13px] font-semibold leading-tight ${featured ? 'text-white' : 'text-[#111]'}`}>{row.title}</div>
+                                            <div className={`truncate text-[11px] ${featured ? 'text-white/70' : 'text-[#6B7280]'}`}>{row.subtitle}</div>
+                                        </div>
+                                    </div>
+                                    <div className={`mt-2 text-[20px] font-bold leading-none tabular-nums ${featured ? 'text-white' : row.valueClass || 'text-[#111]'}`}>{row.value}</div>
                                 </div>
                             </div>
-                            <div className={`mt-2 text-[20px] font-bold leading-none tabular-nums ${row.valueClass || 'text-[#111]'}`}>{row.value}</div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
+            )}
+
+            {/* DNA do draft: posições escolhidas em cada rodada */}
+            {seasonPicks.length > 0 && (
+                <CardShell
+                    title="Draft DNA"
+                    subtitle="Positions taken in each round · hover a block for the pick"
+                    action={<div className="hidden flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#6B7280] sm:flex">{Object.entries(POS_COLORS).map(([pos, c]) => <span key={pos} className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ background: c }} />{pos}</span>)}</div>}
+                >
+                    <div className="px-3 py-3 lg:px-4"><DraftDna picks={seasonPicks} /></div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 px-3 pb-3 text-[11px] text-[#6B7280] sm:hidden">{Object.entries(POS_COLORS).map(([pos, c]) => <span key={pos} className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ background: c }} />{pos}</span>)}</div>
+                </CardShell>
             )}
 
             <div className="min-w-0">
