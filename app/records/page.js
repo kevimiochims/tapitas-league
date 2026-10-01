@@ -427,54 +427,100 @@ function Sections({ children, filter = 'All', onFilter }) {
 const stripParens = v => String(v || '').replace(/\s*\(.*?\)\s*/g, '').trim()
 
 // Um destaque do hero a partir de um recorde (o #1 do top 5, ou o primeiro detentor)
-function heroTile(rec, { label, section, tab, value, sub }) {
+function heroEntry(e, fmt) {
+  if (!e) return null
+  const label = stripParens(Array.isArray(e.label) ? e.label.join(', ') : String(e.label || ''))
+  if (!label) return null
+  return { name: label, value: fmt ? fmt(e.value) : e.value, sub: e.sub || e.meta || '', playerId: e.playerId || null, position: e.position || null }
+}
+
+// Número de um valor exibido ("60,00%", "25,001", "16.83", "W7") para calcular a diferença
+function heroNumber(v) {
+  let t = String(v ?? '').replace(/[^0-9.,-]/g, '')
+  if (!t) return null
+  if (/^-?\d{1,3}(,\d{3})+$/.test(t)) t = t.replace(/,/g, '')
+  else t = t.replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')
+  const n = Number(t)
+  return Number.isFinite(n) ? n : null
+}
+
+// Um recorde do hero: o detentor (#1 do top 5) e quem vem logo atrás (#2)
+function heroTile(rec, { label, section, tab, fmt }) {
   if (!rec) return null
-  const lead = Array.isArray(rec.top5) ? rec.top5[0] : null
-  const leadLabel = lead ? (Array.isArray(lead.label) ? lead.label.join(', ') : String(lead.label || '')) : ''
-  const holder = stripParens(leadLabel || (Array.isArray(rec.teams) ? rec.teams[0] : rec.teams) || '')
-  const ties = Array.isArray(rec.teams) ? rec.teams.length : 0
-  const v = value ?? lead?.value ?? rec.value
-  if (v === undefined || v === null || v === '' || !holder) return null
+  const rows = Array.isArray(rec.top5) ? rec.top5 : []
+  const lead = heroEntry(rows[0], fmt) || (() => {
+    const team = stripParens(Array.isArray(rec.teams) ? rec.teams[0] : rec.teams)
+    return team && rec.value !== undefined && typeof rec.value !== 'object' ? { name: team, value: rec.value, sub: '' } : null
+  })()
+  if (!lead || lead.value === undefined || lead.value === null || lead.value === '') return null
+  const pair = lead.name.includes(' vs ') ? lead.name.split(' vs ').slice(0, 2) : null
+  const runner = pair ? null : heroEntry(rows[1], fmt)
+  const decimals = (String(lead.value).match(/[.,](\d+)\D*$/)?.[1] || '').length
+  const a = heroNumber(lead.value), b = runner ? heroNumber(runner.value) : null
+  const gap = a !== null && b !== null ? Math.abs(a - b) : null
   return {
-    label, section, tab,
-    value: v,
-    holder,
-    pair: holder.includes(' vs ') ? holder.split(' vs ').slice(0, 2) : null,
-    playerId: lead?.playerId || null,
-    position: lead?.position || null,
-    sub: sub || (ties > 1 ? `${ties}-way tie` : (lead?.sub || lead?.meta || (Array.isArray(rec.sub2) ? rec.sub2.filter(Boolean).join(' · ') : rec.sub2) || '')),
+    label, section, tab, lead, runner, pair,
+    tied: gap === 0,
+    gap: gap === null ? null : gap.toFixed(decimals > 2 ? 2 : decimals),
   }
 }
 
-function HeroHolder({ tile, size = 18 }) {
-  if (tile.pair) return <VersusLogos teams={tile.pair} size={size} />
-  if (tile.playerId) return null
-  return <span className="flex-shrink-0 rounded-full bg-white p-px"><TeamLogo name={tile.holder} size={size} /></span>
+// Lado do pôster: logo do time ou foto recortada do jogador, nome, valor e detalhe
+function PosterSide({ who, tag, highlight }) {
+  if (!who) return <div />
+  return (
+    <div className="flex min-w-0 flex-col items-center text-center">
+      {tag && <span className={`mb-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] ${highlight ? 'bg-[#E8C766] text-[#02275F]' : 'bg-white/15 text-white'}`}>{tag}</span>}
+      {who.playerId ? (
+        <div className="flex h-[56px] items-end overflow-hidden"><PlayerCutout sleeperId={who.playerId} name={who.name} className="h-[60px]" /></div>
+      ) : (
+        <span className="rounded-full bg-white p-1 shadow-lg"><TeamLogo name={who.name} size={44} /></span>
+      )}
+      <div className="mt-1.5 flex max-w-full items-center justify-center gap-1">
+        {who.position && <PositionBadge position={who.position} />}
+        <span className={`truncate text-[13px] font-semibold leading-tight sm:text-[15px] ${highlight ? 'text-white' : 'text-white/75'}`}>{who.name}</span>
+      </div>
+      <div className={`mt-1 font-bold leading-none tabular-nums ${highlight ? 'text-[#E8C766]' : 'text-white/70'}`} style={{ fontSize: 'clamp(24px, 5.5vw, 40px)' }}>{who.value}</div>
+      {who.sub && <div className="mt-1 max-w-full truncate text-[11px] text-white/60 sm:text-[12px]">{who.sub}</div>}
+    </div>
+  )
 }
 
-// Hero da Record Book no formato do hero da Home: um card de altura fixa
-// que passa pelos recordes principais da aba (pontos embaixo, arrastar no
-// celular, troca sozinho). O botão leva à seção do recorde.
+// Hero da Record Book inspirado no pôster da Matchups: azul de um lado,
+// vermelho do outro. Cada recorde aparece como "detentor x quem vem atrás",
+// com a diferença no meio (quanto falta para quebrar). Recordes de confronto
+// (rivalries) mostram os dois times e o número no centro. Passa pelos
+// destaques da aba (setas, pontos, arrastar no celular, troca sozinho).
 function RecordsHero({ tab, tiles, onPick }) {
   const meta = TABS.find(t => t.key === tab) || TABS[0]
   const list = tiles.filter(Boolean)
   const [i, setI] = useState(0)
+  const [paused, setPaused] = useState(false)
   const touchX = React.useRef(null)
   const count = list.length
 
   useEffect(() => {
-    if (count < 2) return
-    const id = setInterval(() => setI(v => (v + 1) % count), 7000)
+    if (count < 2 || paused) return
+    const id = setInterval(() => setI(v => (v + 1) % count), 8000)
     return () => clearInterval(id)
-  }, [count, i])
+  }, [count, i, paused])
 
+  const go = d => count && setI(v => (v + d + count) % count)
   const t = list[Math.min(i, count - 1)]
   const Icon = meta.Icon
-  const go = d => count && setI(v => (v + d + count) % count)
+  if (!t) return null
+
+  const arrow = (d, label) => count > 1 && (
+    <button type="button" aria-label={label} onClick={() => go(d)} className={`absolute top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 sm:flex ${d < 0 ? 'left-3' : 'right-3'}`}>
+      {d < 0 ? <ChevronRight className="h-4 w-4 rotate-180" /> : <ChevronRight className="h-4 w-4" />}
+    </button>
+  )
 
   return (
     <div
-      className="relative mb-2 overflow-hidden rounded-xl bg-[#02275F] text-white"
+      className="relative mb-2 overflow-hidden rounded-xl text-white"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
       onTouchStart={e => { touchX.current = e.touches[0].clientX }}
       onTouchEnd={e => {
         if (touchX.current == null) return
@@ -483,52 +529,61 @@ function RecordsHero({ tab, tiles, onPick }) {
         touchX.current = null
       }}
     >
-      {/* Arte da direita: jogador, confronto ou logo do time; sem detentor, o ícone da aba */}
-      {t?.playerId ? (
-        <div className="pointer-events-none absolute bottom-0 right-2 sm:right-8"><PlayerCutout sleeperId={t.playerId} name={t.holder} className="h-[150px] opacity-90 sm:h-[180px] sm:opacity-100" fallback={false} /></div>
-      ) : t?.pair ? (
-        <div className="pointer-events-none absolute right-5 top-1/2 hidden -translate-y-1/2 sm:block sm:right-10"><VersusLogos teams={t.pair} size={64} /></div>
-      ) : t ? (
-        <div className="pointer-events-none absolute right-5 top-1/2 hidden -translate-y-1/2 rounded-full bg-white p-1 shadow-lg sm:block sm:right-10"><TeamLogo name={t.holder} size={88} /></div>
-      ) : null}
-      <Icon className="pointer-events-none absolute -right-6 -top-6 h-36 w-36 text-white/[0.05]" strokeWidth={1.5} />
+      <div className="absolute inset-0 bg-[#02275F]" />
+      <div className="absolute inset-0 bg-[#C8102E]" style={{ clipPath: 'polygon(56% 0, 100% 0, 100% 100%, 44% 100%)' }} />
+      {arrow(-1, 'Previous record')}
+      {arrow(1, 'Next record')}
 
-      <div className="relative flex h-[190px] flex-col justify-center px-5 py-5 sm:h-[200px] sm:px-8">
-        <div className="flex items-center gap-1.5 text-[12px] font-medium text-white/70">
-          <Icon className="h-3.5 w-3.5" />
-          <span className="truncate">Record Book · {meta.label}{t ? ` · ${t.label}` : ''}</span>
+      <div className="relative flex min-h-[236px] flex-col justify-center px-3 pb-7 pt-3 sm:min-h-[244px] sm:px-14">
+        <div className="mb-2 flex justify-center">
+          <div className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[12px] font-semibold">
+            <Icon className="h-3.5 w-3.5 flex-shrink-0 text-white/80" />
+            <span className="truncate">{meta.label} · {t.label}</span>
+          </div>
         </div>
-        {t ? (
-          <>
-            <div className="mt-1.5 flex items-baseline gap-3 pr-24 sm:pr-40">
-              <span className="text-[34px] font-bold leading-none tabular-nums tracking-tight sm:text-[40px]">{t.value}</span>
+
+        {t.pair ? (
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <PosterSide who={{ name: t.pair[0], value: '' }} highlight />
+            <div className="flex flex-col items-center px-1">
+              <div className="rounded-xl bg-white px-3 py-2 text-center text-[#02275F] shadow-lg">
+                <div className="text-[26px] font-bold leading-none tabular-nums sm:text-[32px]">{t.lead.value}</div>
+              </div>
+              {t.lead.sub && <div className="mt-1.5 max-w-[150px] text-center text-[11px] leading-tight text-white/75">{t.lead.sub}</div>}
             </div>
-            <div className="mt-1.5 flex min-w-0 items-center gap-1.5 pr-24 sm:pr-40">
-              {t.position && <PositionBadge position={t.position} />}
-              {!t.playerId && <span className="flex flex-shrink-0 sm:hidden"><HeroHolder tile={t} size={18} /></span>}
-              <span className="truncate text-[16px] font-semibold sm:text-[18px]">{t.holder}</span>
-            </div>
-            {t.sub && <p className="mt-0.5 truncate pr-24 text-[13px] text-white/70 sm:pr-40">{t.sub}</p>}
-            <div className="mt-3">
-              <button type="button" onClick={() => onPick(t)} className="inline-flex h-8 items-center gap-1 rounded-full bg-white px-3.5 text-[12px] font-semibold text-[#02275F] transition-colors hover:bg-white/90">
-                See the record <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </>
+            <PosterSide who={{ name: t.pair[1], value: '' }} highlight />
+          </div>
         ) : (
-          <>
-            <h1 className="mt-1.5 text-[30px] font-bold leading-tight tracking-tight">{meta.label}</h1>
-            <p className="mt-1 text-[14px] text-white/75">{meta.blurb}</p>
-          </>
+          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+            <PosterSide who={t.lead} tag={t.tied ? 'Co-holder' : 'Record'} highlight />
+            <div className="flex flex-col items-center gap-1 self-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[12px] font-black italic text-[#111] shadow-lg">VS</div>
+              {t.runner && (t.tied
+                ? <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-[#E8C766]">Tied</div>
+                : t.gap !== null && <>
+                    <div className="mt-1 text-[12px] font-bold tabular-nums text-white">+{t.gap}</div>
+                    <div className="text-[9px] font-semibold uppercase tracking-wide text-white/60">lead</div>
+                  </>)}
+            </div>
+            {t.runner ? <PosterSide who={t.runner} tag={t.tied ? 'Co-holder' : 'Closest'} /> : (
+              <div className="flex h-full flex-col items-center justify-center text-center text-[12px] text-white/60">No one else<br />on the board</div>
+            )}
+          </div>
         )}
       </div>
-      {count > 1 && (
-        <div className="absolute bottom-3 right-4 flex gap-1.5">
-          {list.map((_, k) => (
-            <button key={k} type="button" aria-label={`Record ${k + 1}`} onClick={() => setI(k)} className={`h-1.5 rounded-full transition-all ${k === i ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
-          ))}
-        </div>
-      )}
+
+      <div className="absolute inset-x-0 bottom-2 flex items-center justify-between px-3 sm:px-4">
+        <button type="button" onClick={() => onPick(t)} className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-white/85 hover:text-white">
+          See the record <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+        {count > 1 && (
+          <div className="flex gap-1.5">
+            {list.map((_, k) => (
+              <button key={k} type="button" aria-label={`Record ${k + 1}`} onClick={() => setI(k)} className={`h-1.5 rounded-full transition-all ${k === i ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1942,7 +1997,6 @@ function RecordsPageContent() {
   }, [history, allTime])
 
   // Destaques do hero por aba (o primeiro é o recorde principal)
-  const rsRecord = r => r ? `${parseNumber(r.RS_W)}–${parseNumber(r.RS_L)}` : undefined
   const heroTiles = {
     franchise: [
       heroTile(franchiseRecords.mostWins, { label: 'Most wins all-time', section: 'All-Time Wins & Losses', tab: 'franchise' }),
@@ -1973,10 +2027,10 @@ function RecordsPageContent() {
       heroTile(playerRecords?.from23?.bestPts, { label: 'Best game since 2023', section: 'Most Points', tab: 'players' }),
     ],
     seasons: [
-      heroTile(seasonRecords.byWin, { label: 'Best reg season record', section: 'Best Records', tab: 'seasons', value: rsRecord(seasonRecords.byWin?.value) }),
+      heroTile(seasonRecords.byWin, { label: 'Most reg season wins', section: 'Best Records', tab: 'seasons', fmt: v => `${v} wins` }),
       heroTile(seasonRecords.byPF, { label: 'Most points in a season', section: 'Most Points in a Season (RS)', tab: 'seasons' }),
       heroTile(seasonRecords.avgHigh, { label: 'Best avg per week', section: 'Best Avg Points/Week in a Season (RS)', tab: 'seasons' }),
-      heroTile(seasonRecords.byLoss, { label: 'Worst reg season record', section: 'Worst Records', tab: 'seasons', value: rsRecord(seasonRecords.byLoss?.value) }),
+      heroTile(seasonRecords.byLoss, { label: 'Most reg season losses', section: 'Worst Records', tab: 'seasons', fmt: v => `${v} losses` }),
       heroTile(seasonRecords.byLowPF, { label: 'Fewest points in a season', section: 'Fewest Points in a Season (RS)', tab: 'seasons' }),
     ],
     rivalry: [
