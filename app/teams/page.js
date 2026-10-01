@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronRight, ChevronLeft, ChevronDown, Check, Skull, Zap, Filter, Users } from 'lucide-react'
 import Header from '../components/Header'
 import PlayerProfileModal from '../components/PlayerProfileModal'
-import { PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
+import TeamNflNotice from '../components/nfl/TeamNflNotice'
+import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
+import { SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -1054,7 +1056,7 @@ export default function TeamsPage() {
   const allValuesFor = (key) => leagueStats ? Object.values(leagueStats).map(v => v[key]) : []
 
   const renderShell = (content) => (
-    <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
+    <main className="mx-root flex min-h-screen flex-col bg-[#EDEEF0] text-[#111]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         .mx-root { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-variant-numeric:tabular-nums; }
@@ -1067,6 +1069,7 @@ export default function TeamsPage() {
           <PageSkeleton />
         ) : content}
       </section>
+      <SiteFooter />
     </main>
   )
 
@@ -1683,6 +1686,7 @@ export default function TeamsPage() {
       <>
         {teamStrip}
         {heroCard}
+        <TeamNflNotice team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`)} />
 
         {/* Abas (só no mobile/tablet — no desktop os cards ficam nas laterais) */}
         <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">

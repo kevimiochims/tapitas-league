@@ -4,24 +4,42 @@
 // Mantém cards, filtros e etiquetas iguais em todas as páginas.
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Check, Trophy } from 'lucide-react'
+import { ChevronDown, ChevronRight, Check, Trophy } from 'lucide-react'
 import Header from './Header'
 
 // ── Estrutura da página ─────────────────────────────────────────────
-export function PageShell({ children, loading = false, headerProps }) {
+// `topBar`: faixas de largura total logo abaixo do header, sem espaçamento
+// (ex.: placares da Home). O espaço volta só antes do conteúdo principal.
+// `wide`: usa mais largura em telas grandes (Home, com três colunas).
+export function PageShell({ children, loading = false, headerProps, topBar, wide = false }) {
   return (
-    <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
+    <main className="mx-root flex min-h-screen flex-col bg-[#EDEEF0] text-[#111]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         .mx-root { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-variant-numeric:tabular-nums; }
         .scroll-hide::-webkit-scrollbar { display: none; }
         .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-      <Header {...headerProps} />
-      <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
+      <Header {...headerProps} flush={Boolean(topBar)} />
+      {topBar && <div className="mb-2">{topBar}</div>}
+      <section className={`mx-auto w-full ${wide ? 'max-w-[1720px]' : 'max-w-[1400px]'} px-0 pb-6 pt-0 sm:px-2 lg:px-4`}>
         {loading ? <PageSkeleton /> : children}
       </section>
+      <SiteFooter />
     </main>
+  )
+}
+
+// Rodapé branco em todas as páginas: o fim da página (e a área que aparece
+// ao "arrastar" no celular) fica branco, igual ao topo com o header.
+export function SiteFooter() {
+  return (
+    <footer className="mt-auto border-t border-[#E6E8EB] bg-white">
+      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-5 text-[12px] text-[#6B7280]">
+        <span className="font-semibold text-[#111]">Tapitas League</span>
+        <span>Est. 2014 · Fantasy Football</span>
+      </div>
+    </footer>
   )
 }
 
@@ -194,14 +212,20 @@ export function StatRow({ left, eyebrow, title, subtitle, value, valueClass = 't
 }
 
 // Número em destaque (rótulo em cima, valor, detalhe embaixo).
-export function StatTile({ label, value, sub, valueClass = 'text-[#111]' }) {
-  return (
-    <div className="min-w-0 bg-white px-3 py-3 sm:px-4">
-      <div className="truncate text-[11px] text-[#6B7280]">{label}</div>
+// Com `href`, o número vira link para a página relacionada.
+export function StatTile({ label, value, sub, valueClass = 'text-[#111]', href }) {
+  const inner = (
+    <>
+      <div className="flex items-center justify-between gap-1 truncate text-[11px] text-[#6B7280]">
+        <span className="truncate">{label}</span>
+        {href && <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 text-[#9CA3AF] transition-colors group-hover:text-[#D01F2D]" />}
+      </div>
       <div className={`mt-1 whitespace-nowrap text-[20px] font-bold leading-none tabular-nums sm:text-[22px] ${valueClass}`}>{value}</div>
       {sub && <div className="mt-1 truncate text-[11px] text-[#6B7280]">{sub}</div>}
-    </div>
+    </>
   )
+  if (href) return <a href={href} className="group block min-w-0 bg-white px-3 py-3 transition-colors hover:bg-[#F7F8FA] sm:px-4">{inner}</a>
+  return <div className="min-w-0 bg-white px-3 py-3 sm:px-4">{inner}</div>
 }
 
 // Grade de StatTiles separadas por linhas finas.
@@ -502,6 +526,25 @@ const TEAM_IMAGES = {
   'peytao da massa': '/images/peytao.png',
   'rincao settlers': '/images/rincao.png',
   'h-lera do mahl': '/images/hlera.png',
+}
+
+// Siglas de três letras das franquias (placares compactos)
+const TEAM_ABBR = {
+  'howmuch': 'HOW',
+  'i am megatron': 'MEG',
+  'moneyball': 'MON',
+  'ocupa e resiste': 'O&R',
+  'oldbrady': 'OLD',
+  'patrolao squad': 'PAT',
+  'pequers verde': 'PEQ',
+  'peytao da massa': 'PEY',
+  'rincao settlers': 'SET',
+  'h-lera do mahl': 'HLE',
+}
+
+export function getTeamAbbr(name) {
+  const key = normalizeTeamKey(name)
+  return TEAM_ABBR[key] || key.replace(/[^a-z]/g, '').slice(0, 3).toUpperCase() || '—'
 }
 
 export function normalizeTeamKey(value) {

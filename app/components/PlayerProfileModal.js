@@ -5,6 +5,7 @@
 // números do jogador naquela semana e o retrospecto contra aquele adversário.
 
 import { useEffect, useRef, useState } from 'react'
+import { PlayerNewsCard } from './nfl/PlayerNflCards'
 import { ChevronDown, Check } from 'lucide-react'
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -184,6 +185,16 @@ function getPositionBadgeClasses(position) {
   return colors[String(position || '').toUpperCase()] || 'bg-[#F4F5F7] text-[#3F4757]'
 }
 
+// years_exp do Sleeper conta temporadas completas: quem estreou em 2025 tem 1
+// durante 2026, que é a 2ª temporada dele. Mostramos a temporada atual.
+function nflSeasonLabel(yearsExp) {
+  if (yearsExp == null || yearsExp === '') return 'Exp —'
+  const n = Number(yearsExp) + 1
+  if (n === 1) return 'Rookie'
+  const suffix = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th')
+  return `${n}${suffix} season`
+}
+
 // ── Sleeper (cache em módulo para não baixar os mesmos dados de novo) ──
 let SLEEPER_PLAYERS_PROMISE = null
 const SLEEPER_WEEKLY_PROMISES = new Map()
@@ -296,22 +307,8 @@ function formatCompactPlayerStatGroups(stats, pos) {
 
 const STAT_GROUP_LABELS = { PASS: 'Passing', RUSH: 'Rushing', REC: 'Receiving', KICK: 'Kicking', DEF: 'Defense' }
 
-// Linha de box score: rótulo do grupo à esquerda, números com a legenda embaixo.
-function StatGroupRow({ group }) {
-  return (
-    <div className="grid grid-cols-[76px_minmax(0,1fr)] items-start gap-2 py-2">
-      <span className="pt-0.5 text-[12px] text-[#6B7280]">{STAT_GROUP_LABELS[group.label] || group.label}</span>
-      <div className="flex flex-wrap gap-x-5 gap-y-2">
-        {group.items.map((item, i) => (
-          <div key={i} className="flex flex-col">
-            <strong className="text-[17px] font-bold leading-tight tabular-nums text-[#111]">{item.value}</strong>
-            <span className="text-[10px] uppercase tracking-wide text-[#6B7280]">{item.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+// Altura do título do card Game Log (título + subtítulo + divisória)
+const GAME_LOG_HEADER_PX = 64
 
 // Card branco no padrão das páginas (título + subtítulo + divisória).
 function ProfileCard({ title, subtitle, right, children }) {
@@ -420,6 +417,19 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const [stageFilter, setStageFilter] = useState('All')
   const [sort, setSort] = useState(DEFAULT_SORT)
   const [tab, setTab] = useState(matchup ? 'week' : 'career')
+  // Altura visível do corpo do perfil (o game log usa isso como altura máxima)
+  const bodyRef = useRef(null)
+  const [bodyHeight, setBodyHeight] = useState(0)
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      const pad = parseFloat(getComputedStyle(el).paddingTop) + parseFloat(getComputedStyle(el).paddingBottom)
+      setBodyHeight(Math.max(240, el.clientHeight - pad))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const isSelf = name => String(name || '').trim() === rawName
 
@@ -581,6 +591,12 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     : null
   const weeklyGroups = formatCompactPlayerStatGroups(weeklyStats, pos)
 
+  const profileTabs = [
+    ...(matchup ? [['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(matchup.opponent)}`]] : []),
+    ['career', 'Career'],
+    ['news', 'News'],
+  ]
+
   const options = key => ['All', ...Array.from(new Set(profileGames.map(x => x[key]).filter(Boolean))).sort()]
   const filtered = profileGames
     .filter(x => opponentFilter === 'All' || x.opponent === opponentFilter)
@@ -690,7 +706,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
                   <>
                     <span className="text-white/35">·</span><span>Jersey {sleeperInfo?.number != null ? `#${sleeperInfo.number}` : '—'}</span>
                     <span className="text-white/35">·</span><span>Age {sleeperInfo?.age ?? '—'}</span>
-                    <span className="text-white/35">·</span><span>Exp {sleeperInfo?.years_exp != null ? `${sleeperInfo.years_exp} yrs` : '—'}</span>
+                    <span className="text-white/35">·</span><span title="Sleeper years_exp counts completed NFL seasons">{nflSeasonLabel(sleeperInfo?.years_exp)}</span>
                   </>
                 )}
                 {loadingInfo && <span className="text-white/50">Loading…</span>}
@@ -716,47 +732,93 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
           </div>
         </div>
 
-        {/* Abas (só no perfil aberto a partir de um confronto) */}
-        {matchup && (
-          <div className="flex flex-shrink-0 border-b border-[#E6E8EB] bg-white">
-            {[['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(matchup.opponent)}`], ['career', 'Career']].map(([key, label]) => (
-              <button key={key} type="button" onClick={() => setTab(key)} className={`flex-1 border-b-2 px-2 py-2.5 text-[13px] transition-colors ${tab === key ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}>
+        {/* Abas (também no desktop) */}
+        {(
+          <div className="scroll-hide flex flex-shrink-0 overflow-x-auto border-b border-[#E6E8EB] bg-white">
+            {profileTabs.map(([key, label]) => (
+              <button key={key} type="button" onClick={() => setTab(key)} className={`flex-1 whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] transition-colors ${tab === key ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280] hover:text-[#111]'}`}>
                 {label}
               </button>
             ))}
           </div>
         )}
 
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2 sm:p-3">
-          {matchup && tab === 'week' && (
-            <ProfileCard
-              title={`Week ${matchup.week} performance`}
-              subtitle={`${matchup.season} · ${shortName(matchup.team)} vs ${shortName(matchup.opponent)}`}
-              right={nflOpponent && (
-                <span className="flex flex-shrink-0 items-center gap-1.5 text-[12px] text-[#6B7280]">
-                  NFL: vs {nflOpponent.toUpperCase()}
-                  {getNFLTeamLogo(nflOpponent) && <img src={getNFLTeamLogo(nflOpponent)} alt="" className="h-6 w-6 object-contain" />}
-                </span>
-              )}
-            >
-              <div className="flex flex-col gap-1 px-3 py-2 sm:flex-row sm:items-stretch sm:gap-4 sm:px-4 sm:py-3">
-                <div className="flex items-center gap-3 border-b border-[#F1F2F4] pb-2 sm:w-[120px] sm:flex-shrink-0 sm:flex-col sm:items-start sm:justify-center sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4">
-                  <div>
-                    <div className="text-[30px] font-bold leading-none tabular-nums text-[#111]">{currentGame ? currentGame.pts.toFixed(2) : '—'}</div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">Fantasy points</div>
+        <div ref={bodyRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2 sm:p-3">
+          {matchup && tab === 'week' && (() => {
+            const row = profileGames.find(x => x.isCurrent) || null
+            const teamPA = row ? parseNumber(row.g?.PA) : 0
+            const seasonRows = profileGames.filter(x => x.season === String(matchup.season) && !x.isCurrent && x.status === 'Starter')
+            const seasonAvg = seasonRows.length ? seasonRows.reduce((sum, x) => sum + x.adjustedPts, 0) / seasonRows.length : null
+            const diff = currentGame && seasonAvg != null ? currentGame.pts - seasonAvg : null
+            return (
+              <div className="grid gap-2 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+                {/* Destaque da semana (mesmo estilo do Top Performance) */}
+                <div className="relative overflow-hidden rounded-xl bg-[#02275F] p-4 text-white sm:p-5">
+                  <span className="pointer-events-none absolute -right-1 -top-3 text-[92px] font-black italic leading-none text-white/[0.07]">W{matchup.week}</span>
+                  <div className="relative">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#E8C766]">Week {matchup.week} · {matchup.season}</div>
+                    <div className="mt-2 flex items-baseline gap-1.5">
+                      <span className="text-[44px] font-bold leading-none tabular-nums">{currentGame ? currentGame.pts.toFixed(2) : '—'}</span>
+                      <span className="text-[13px] text-white/70">fantasy pts</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]">
+                      {currentGame && <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none ${currentGame.status === 'Starter' ? 'bg-[#1E8E3E] text-white' : 'bg-white/15 text-white'}`}>{currentGame.status}</span>}
+                      {diff != null && (
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none ${diff >= 0 ? 'bg-[#E8F5EC] text-[#1E8E3E]' : 'bg-[#FDECEE] text-[#B3171F]'}`}>
+                          {diff >= 0 ? '+' : ''}{diff.toFixed(1)} vs season avg
+                        </span>
+                      )}
+                      {nflOpponent && (
+                        <span className="flex items-center gap-1 text-white/80">
+                          NFL vs {nflOpponent.toUpperCase()}
+                          {getNFLTeamLogo(nflOpponent) && <img src={getNFLTeamLogo(nflOpponent)} alt="" className="h-4 w-4 object-contain" />}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/15 pt-3">
+                      <div className="min-w-0">
+                        <div className="text-[10px] uppercase tracking-wide text-white/60">Matchup</div>
+                        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[13px] font-semibold">
+                          <TeamAvatar name={matchup.team} size={18} />
+                          <span className="truncate">{row ? `${row.teamPF.toFixed(1)} – ${teamPA.toFixed(1)}` : `vs ${shortName(matchup.opponent)}`}</span>
+                          {row?.result && <ResultBadge result={row.result} />}
+                        </div>
+                        <div className="mt-0.5 truncate text-[11px] text-white/60">{shortName(matchup.team)} vs {shortName(matchup.opponent)}</div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[10px] uppercase tracking-wide text-white/60">Season avg</div>
+                        <div className="mt-1 text-[13px] font-semibold tabular-nums">{seasonAvg != null ? seasonAvg.toFixed(2) : '—'}</div>
+                        <div className="mt-0.5 truncate text-[11px] text-white/60">{seasonRows.length} other starts in {matchup.season}</div>
+                      </div>
+                    </div>
                   </div>
-                  {currentGame && (
-                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none ${currentGame.status === 'Starter' ? 'bg-[#E8F5EC] text-[#1E8E3E]' : 'bg-[#F1F2F4] text-[#4B5563]'}`}>{currentGame.status}</span>
+                </div>
+
+                {/* Box score da NFL, em colunas que ocupam a largura toda */}
+                <ProfileCard title="NFL box score" subtitle={`Week ${matchup.week} stats via Sleeper`}>
+                  {weeklyGroups.length ? (
+                    <div className="grid grid-cols-1 gap-px bg-[#F1F2F4] sm:grid-cols-2">
+                      {weeklyGroups.map(group => (
+                        <div key={group.label} className="bg-white px-3 py-3 sm:px-4">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">{STAT_GROUP_LABELS[group.label] || group.label}</div>
+                          <div className="mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(group.items.length, 4)}, minmax(0, 1fr))` }}>
+                            {group.items.map((item, i) => (
+                              <div key={i} className="min-w-0 rounded-lg bg-[#F7F8FA] px-2 py-2 text-center">
+                                <div className="text-[20px] font-bold leading-tight tabular-nums text-[#111]">{item.value}</div>
+                                <div className="text-[10px] uppercase tracking-wide text-[#6B7280]">{item.label}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-3 py-8 text-center text-[13px] text-[#6B7280] sm:px-4">{loadingInfo ? 'Loading…' : 'Stats unavailable for this week'}</div>
                   )}
-                </div>
-                <div className="min-w-0 flex-1 divide-y divide-[#F1F2F4]">
-                  {weeklyGroups.length
-                    ? weeklyGroups.map(group => <StatGroupRow key={group.label} group={group} />)
-                    : <div className="py-3 text-[13px] text-[#6B7280]">{loadingInfo ? 'Loading…' : 'Stats unavailable for this week'}</div>}
-                </div>
+                </ProfileCard>
               </div>
-            </ProfileCard>
-          )}
+            )
+          })()}
 
           {matchup && tab === 'opponent' && (
             <ProfileCard
@@ -802,12 +864,18 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
           </ProfileCard>
           )}
 
+          {/* Últimas notícias do jogador */}
+          {tab === 'news' && <PlayerNewsCard playerId={playerId} emptyText="No recent ESPN news for this player." />}
+
           {/* Game log */}
           {tab === 'career' && (
           <ProfileCard title="Game Log" subtitle={`${sorted.length} of ${profileGames.length} games · click a row to open the matchup`}>
-            <div className="overflow-x-auto">
+            {/* A janela rola até o card do Game Log encostar no topo (título visível);
+                daí em diante só as linhas rolam, com o cabeçalho (Season, Week…)
+                fixo. No topo da tabela, o scroll volta a mover a janela. */}
+            <div className="overflow-auto" style={bodyHeight ? { maxHeight: Math.max(200, bodyHeight - GAME_LOG_HEADER_PX) } : undefined}>
               <table className="w-full min-w-[760px]">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_#EEF0F2]">
                   <tr className="border-b border-[#EEF0F2]">
                     {columns.map(([h, { sort: sortKey, filter, align }]) => {
                       const active = sortKey && sort.key === sortKey

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { Suspense, useEffect, useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, LoadingState } from '../components/ui'
@@ -202,13 +203,27 @@ const CHART_STATS = [
   { label: 'Win %', keys: { 'Reg Season': 'RS_W%', 'Playoffs': 'PO_W%', 'Total': 'W%' } },
 ]
 
+// useSearchParams precisa de um Suspense em volta nas páginas estáticas
 export default function StatsPage() {
+  return (
+    <Suspense fallback={<PageShell loading />}>
+      <StatsPageContent />
+    </Suspense>
+  )
+}
+
+function StatsPageContent() {
   const router = useRouter()
   const [allTimeData, setAllTimeData] = useState([])
   const [historyData, setHistoryData] = useState([])
   const [gamesData, setGamesData] = useState([])
   const [loading, setLoading] = useState(true)
-  const [section, setSection] = useState('overview')
+  // Abre direto numa aba via ?tab= (ex.: vindo dos números da Home)
+  const searchParams = useSearchParams()
+  const [section, setSection] = useState(() => {
+    const t = searchParams.get('tab')
+    return ['overview', 'standings', 'evolution', 'games'].includes(t) ? t : 'overview'
+  })
   const [tab, setTab] = useState('Overall')
   const [season, setSeason] = useState('All-Time')
   const [chartTeam, setChartTeam] = useState('Moneyball')

@@ -7,12 +7,12 @@ import { SummaryButton } from './ui'
 
 const SUMMARY_PAGES = ['/', '/standings', '/powerrankings', '/draft', '/records']
 
-export default function Header({ rightSlot, onSummaryOpen }) {
+export default function Header({ rightSlot, onSummaryOpen, flush = false }) {
   const pathname = usePathname()
   const showSummary = SUMMARY_PAGES.includes(pathname)
 
   return (
-    <header className="relative z-30 mb-2 w-full border-b border-[#E6E8EB] bg-white">
+    <header className={`relative z-30 w-full border-b border-[#E6E8EB] bg-white ${flush ? '' : 'mb-2'}`}>
       <div className="flex h-11 items-stretch">
         {/* Bloco azul (cor do TL do logo) com a marca. No mobile, o botão do menu (MobileDrawer) fica sobre a área da esquerda. */}
         <a

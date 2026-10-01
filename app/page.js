@@ -12,6 +12,11 @@ import { useDrawer } from './context/DrawerContext'
 import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
+import ScoreStrip from './components/nfl/ScoreStrip'
+import { resolveFactsName } from './lib/factsNames'
+import RosterAlertsCard from './components/nfl/RosterAlertsCard'
+import TrendingCard from './components/nfl/TrendingCard'
+import LeagueNewsCard from './components/nfl/LeagueNewsCard'
 import { SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, StatGrid, StatTile, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
 
 
@@ -617,13 +622,6 @@ function shortTeamName(name) {
 }
 
 // Returns top N teams for a key, handling ties
-function topNTeams(arr, getter, n = 3) {
-  const sorted = [...arr].sort((a, b) => getter(b) - getter(a))
-  if (!sorted.length) return []
-  const topVal = getter(sorted[0])
-  const tied = sorted.filter(t => getter(t) === topVal)
-  return tied.slice(0, n)
-}
 
 // Vagas de playoff na liga (linha tracejada na classificação da Home)
 const PLAYOFF_SPOTS = 6
@@ -727,12 +725,13 @@ export default function TapitasLeagueHomepage() {
   const closeDraftPlayer = () => setSelectedDraftPlayer(null)
   const [selectedPerformer, setSelectedPerformer] = useState(null)
   const [mobileTableTab, setMobileTableTab] = useState('pr')
-  const [mobileLeagueTab, setMobileLeagueTab] = useState('leaders')
   const closePerformer = () => setSelectedPerformer(null)
+  // Jogador aberto a partir dos cards da NFL (lesões, trending)
+  const [selectedNflPlayer, setSelectedNflPlayer] = useState(null)
+  const openNflPlayer = p => p && setSelectedNflPlayer(p)
   const [selectedDraftRound, setSelectedDraftRound] = useState(1)
   const [selectedMatchupKey, setSelectedMatchupKey] = useState('')
   const [prPage, setPrPage] = useState(0)
-  const [recordsPage, setRecordsPage] = useState(0)
   const draftScrollRef = useRef(null)
   const touchStartX = useRef(null);
   const totalSlides = 3;
@@ -1616,35 +1615,47 @@ export default function TapitasLeagueHomepage() {
   const selectedRivalry = useMemo(() => {
     if (!selectedTeamA || !selectedTeamB) return null
 
-    const row = h2hData.find((r) => {
-      const keys = Object.keys(r)
-      const a = String(r[keys[0]] || '').trim()
-      const b = String(r[keys[1]] || '').trim()
-      return (
-        normalizeString(a) === normalizeString(selectedTeamA) &&
-        normalizeString(b) === normalizeString(selectedTeamB)
-      )
-    })
+    // Confronto direto calculado a partir da GAME_FACTS_ALL, que já chega sem as
+    // semanas em andamento (a aba HEAD_TO_HEAD_SORTED da planilha pode incluir
+    // placares parciais da semana atual).
+    const weekNum = w => Math.max(0, ...(String(w || '').match(/\d+/g) || ['0']).map(Number))
+    const pairGames = (gameFactsData || [])
+      .filter(g =>
+        normalizeString(g?.Team) === normalizeString(selectedTeamA) &&
+        normalizeString(g?.Opponent) === normalizeString(selectedTeamB) &&
+        (parseNumber(g?.PF) > 0 || parseNumber(g?.PA) > 0))
+      .sort((a, b) => (Number(a?.Season) - Number(b?.Season)) || (weekNum(a?.Week) - weekNum(b?.Week)))
+    if (!pairGames.length) return null
 
-    if (!row) return null
+    const resultOf = g => {
+      const r = String(g?.Result || '').trim().toUpperCase()
+      if (r === 'W' || r === 'L' || r === 'T') return r
+      const pf = parseNumber(g?.PF), pa = parseNumber(g?.PA)
+      return pf > pa ? 'W' : pf < pa ? 'L' : 'T'
+    }
+    const isPlayoff = g => {
+      const stage = String(g?.GameStage || g?.GameType || '').toLowerCase()
+      return /playoff|semi|final|quarter|champ|wild/.test(stage) && !/consol|toilet|loser/.test(stage)
+    }
+    const winsA = pairGames.filter(g => resultOf(g) === 'W').length
+    const winsB = pairGames.filter(g => resultOf(g) === 'L').length
+    const poWinsA = pairGames.filter(g => isPlayoff(g) && resultOf(g) === 'W').length
+    const poWinsB = pairGames.filter(g => isPlayoff(g) && resultOf(g) === 'L').length
+    const avgMargin = (pairGames.reduce((sum, g) => sum + parseNumber(g?.PF) - parseNumber(g?.PA), 0) / pairGames.length).toFixed(2)
 
-    const lastMatch = String(row['Last Match'] || row['last match'] || '')
-    const scoreMatch = lastMatch.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
-    const weekMatch = lastMatch.match(/Week\s*([\d][\d\-\/]*)/i) || lastMatch.match(/\bW(\d[\d\-\/]*)\b/i)
-    const yearMatch = lastMatch.match(/(20\d{2})/)
-
-    const winsA = parseNumber(
-      row['A W'] || row['A_W'] || row['A_WINS'] || row['A Wins'] || row['A'] || 0
-    )
-    const winsB = parseNumber(
-      row['B W'] || row['B_W'] || row['B_WINS'] || row['B Wins'] || row['B'] || 0
-    )
-    const poWinsA = parseNumber(row['A PO_W'] || 0)
-    const poWinsB = parseNumber(row['B PO_W'] || 0)
-    const avgMargin = String(
-      row['Avg Margin'] || row['AVG_MARGIN'] || row['Average Margin'] || row['Margin'] || '0.0'
-    )
-    const streak = String(row['Current Streak'] || '--')
+    const last = pairGames[pairGames.length - 1]
+    const lastResult = resultOf(last)
+    let streakLen = 0
+    for (let i = pairGames.length - 1; i >= 0 && resultOf(pairGames[i]) === lastResult; i--) streakLen++
+    const currentStreak = lastResult === 'W'
+      ? { streakA: `W${streakLen}`, streakB: `L${streakLen}`, streakCount: streakLen, winner: 'A' }
+      : lastResult === 'L'
+        ? { streakA: `L${streakLen}`, streakB: `W${streakLen}`, streakCount: streakLen, winner: 'B' }
+        : { streakA: '—', streakB: '—', streakCount: streakLen, winner: null }
+    const lastMeetingInfo = {
+      score: `${parseNumber(last?.PF).toFixed(2)} vs ${parseNumber(last?.PA).toFixed(2)}`,
+      meta: `Week ${String(last?.Week || '').trim()} · ${String(last?.Season || '').trim()}`,
+    }
 
     const totalGames = winsA + winsB
     const recordGap = Math.abs(winsA - winsB)
@@ -1693,58 +1704,6 @@ export default function TapitasLeagueHomepage() {
       return mappings[n] || String(name).split(' ')[0]
     }
 
-    const parseCurrentStreak = (rawStreak, teamA, teamB) => {
-      const raw = String(rawStreak || '').trim()
-      if (!raw) {
-        return { streakA: '—', streakB: '—', streakCount: null, winner: null }
-      }
-
-      const match = raw.match(/\bW\s*(\d+)\b|\bW(\d+)\b/i)
-      const count = match?.[1] || match?.[2]
-
-      if (!count) {
-        return { streakA: '—', streakB: '—', streakCount: null, winner: null }
-      }
-
-      const normRaw = normalizeString(raw)
-      const normA = normalizeString(teamA)
-      const normB = normalizeString(teamB)
-      const normShortA = normalizeString(shortName(teamA))
-      const normShortB = normalizeString(shortName(teamB))
-
-      const mentionsA =
-        normRaw.includes(normA) || normRaw.includes(normShortA)
-
-      const mentionsB =
-        normRaw.includes(normB) || normRaw.includes(normShortB)
-
-      if (mentionsA && !mentionsB) {
-        return {
-          streakA: `W${count}`,
-          streakB: `L${count}`,
-          streakCount: Number(count),
-          winner: 'A',
-        }
-      }
-
-      if (mentionsB && !mentionsA) {
-        return {
-          streakA: `L${count}`,
-          streakB: `W${count}`,
-          streakCount: Number(count),
-          winner: 'B',
-        }
-      }
-
-      return {
-        streakA: '—',
-        streakB: '—',
-        streakCount: Number(count),
-        winner: null,
-      }
-    }
-
-    const currentStreak = parseCurrentStreak(streak, selectedTeamA, selectedTeamB)
 
     return {
       teamA: selectedTeamA,
@@ -1759,18 +1718,9 @@ export default function TapitasLeagueHomepage() {
       streakB: currentStreak.streakB,
       streakWinner: currentStreak.winner,
       streakCount: currentStreak.streakCount,
-      lastMeeting: {
-        score: scoreMatch ? `${scoreMatch[1]} vs ${scoreMatch[2]}` : '-- vs --',
-        meta: (weekMatch || yearMatch)
-          ? `${weekMatch ? `Week ${weekMatch[1]}` : ''} ${yearMatch ? `· ${yearMatch[1]}` : ''}`.trim()
-          : '',
-      },
-      biggestA: String(row['Biggest Win Team A'] || row['biggest_win_a'] || '—'),
-      biggestB: String(row['Biggest Win Team B'] || row['biggest_win_b'] || '—'),
-      bestStreakA: String(row['Best Streak Team A'] || row['best_streak_a'] || '—'),
-      bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || '—'),
+      lastMeeting: lastMeetingInfo,
     }
-  }, [h2hData, selectedTeamA, selectedTeamB])
+  }, [gameFactsData, selectedTeamA, selectedTeamB])
 
   useEffect(() => {
     if (!draftScrollRef.current) return
@@ -1796,7 +1746,7 @@ export default function TapitasLeagueHomepage() {
     return index
   }, [gameFactsData])
 
-  const resolveFactsName = (fullName) => {
+  const resolveDraftName = (fullName) => {
     const raw = String(fullName || '').trim()
     const exact = factsNameIndex.get(normalizePlayerKey(raw))
     if (exact) return exact
@@ -1850,45 +1800,11 @@ export default function TapitasLeagueHomepage() {
     return v
   }
 
-  const recordItems = [
-    { label: 'Most wins', getter: t => t.wins, format: v => v },
-    { label: 'Most titles', getter: t => t.titles, format: v => v },
-    { label: 'Most points', getter: t => t.pf, format: v => Math.round(v).toLocaleString() },
-    { label: 'Best win %', getter: t => t.winPct, format: v => `${Number(v).toFixed(1)}%` },
-    { label: 'Most finals', getter: t => t.finals, format: v => v },
-    { label: 'Most playoff apps', getter: t => t.playoffApps, format: v => v },
-  ]
 
   const isFinalStandings = currentWeekLabel === '__final__'
   const heatTone = { Legendary: 'gold', Elite: 'navy', High: 'red' }
 
   // ── Blocos ──────────────────────────────────────────────────────────
-  const scoreboardStrip = visibleMatchups.length > 0 && (
-    <div className="relative z-20 mb-2 flex items-stretch rounded-xl bg-white">
-      <div className="flex flex-shrink-0 flex-col items-start justify-center gap-0.5 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
-        <span className="pl-1 text-[12px] font-bold text-[#111]">{currentSeason}</span>
-        <FilterPill value={selectedMatchupKey} onChange={setSelectedMatchupKey} options={matchupOptions.map(o => o.key)} displayOption={key => `Week ${matchupOptions.find(o => o.key === key)?.week ?? ''}`} label="Week" neutral hideLabel />
-      </div>
-      <div className="scroll-hide flex min-w-0 flex-1 gap-1.5 overflow-x-auto p-2">
-        {visibleMatchups.map((m, i) => {
-          const teamWon = m.score > m.oppScore
-          const href = `/matchups?season=${encodeURIComponent(m.season)}&week=${encodeURIComponent(m.week)}&team=${encodeURIComponent(m.team)}&opp=${encodeURIComponent(m.opp)}`
-          return (
-            <a key={i} href={href} className="w-[10.5rem] flex-shrink-0 rounded-lg bg-[#F4F5F7] px-2.5 py-2 transition-colors hover:bg-[#ECEEF1]">
-              {m.gameType && m.gameType !== 'Regular Season' && m.gameType !== 'Reg Season' && <div className="mb-0.5 text-[10px] font-medium text-[#6B7280]">{m.gameType}</div>}
-              {[[m.team, m.score, teamWon], [m.opp, m.oppScore, !teamWon]].map(([name, score, won]) => (
-                <div key={name} className="flex items-center gap-1.5 text-[13px] leading-5">
-                  <TeamLogo name={name} size={16} />
-                  <span className={`min-w-0 flex-1 truncate ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{name}</span>
-                  <span className={`tabular-nums ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{score.toFixed(2)}</span>
-                </div>
-              ))}
-            </a>
-          )
-        })}
-      </div>
-    </div>
-  )
 
   const slide = slides[currentSlide] || slides[0]
   const heroCard = (
@@ -1923,10 +1839,10 @@ export default function TapitasLeagueHomepage() {
   const numbersCard = (
     <div className="mb-2 overflow-hidden rounded-xl">
       <StatGrid className="grid-cols-2 sm:grid-cols-4">
-        <StatTile label="Franchises" value={leagueStats.franchises || '—'} sub="Active teams" />
-        <StatTile label="Seasons" value={leagueStats.seasons || '—'} sub={leagueStats.seasonRange || '—'} />
-        <StatTile label="Games played" value={leagueStats.games ? leagueStats.games.toLocaleString() : '—'} sub="All stages" />
-        <StatTile label="Highest score" value={leagueStats.highestScore ? leagueStats.highestScore.toFixed(2) : '—'} sub={leagueStats.highestScoreTeam || '—'} valueClass="text-[#1E8E3E]" />
+        <StatTile href="/teams" label="Franchises" value={leagueStats.franchises || '—'} sub="Active teams" />
+        <StatTile href="/history" label="Seasons" value={leagueStats.seasons || '—'} sub={leagueStats.seasonRange || '—'} />
+        <StatTile href="/stats?tab=games" label="Games played" value={leagueStats.games ? leagueStats.games.toLocaleString() : '—'} sub="All stages" />
+        <StatTile href="/records?tab=games" label="Highest score" value={leagueStats.highestScore ? leagueStats.highestScore.toFixed(2) : '—'} sub={leagueStats.highestScoreTeam || '—'} valueClass="text-[#1E8E3E]" />
       </StatGrid>
     </div>
   )
@@ -1979,41 +1895,81 @@ export default function TapitasLeagueHomepage() {
 
   const matchupLink = m => `/matchups?season=${encodeURIComponent(m.season)}&week=${encodeURIComponent(m.week)}&team=${encodeURIComponent(m.team)}&opp=${encodeURIComponent(m.opp)}`
 
-  // Rivalry da Home: começa com um confronto da semana exibida no placar,
-  // sorteado a cada visita (o usuário pode trocar pelos seletores).
+  // Rivalry da Home: sorteia um confronto da próxima semana (a seguinte à última
+  // registrada na planilha, vinda do Sleeper). Sem próxima semana (fim de
+  // temporada), sorteia qualquer par de franquias. O usuário pode trocar.
+  const [upcomingRivalry, setUpcomingRivalry] = useState({ loaded: false, week: null, pairs: [] })
+  const lastSheetWeek = useMemo(() => Math.max(0, ...matchupOptions
+    .filter(o => String(o.season) === String(currentSeason))
+    .map(o => Number(o.week) || 0)), [matchupOptions, currentSeason])
+
   useEffect(() => {
-    if (selectedTeamA || !visibleMatchups.length || !h2hData.length) return
+    if (!currentSeason || !gameFactsData.length || upcomingRivalry.loaded) return
+    let cancelled = false
+    const next = lastSheetWeek + 1
+    fetch(`/api/league/week?week=${next}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (cancelled) return
+        const pairs = d?.source === 'sleeper' && String(d?.season) === String(currentSeason)
+          ? (d.matchups || []).map(m => [m.teams[0].team, m.teams[1].team])
+          : []
+        setUpcomingRivalry({ loaded: true, week: pairs.length ? next : null, pairs })
+      })
+      .catch(() => { if (!cancelled) setUpcomingRivalry({ loaded: true, week: null, pairs: [] }) })
+    return () => { cancelled = true }
+  }, [currentSeason, gameFactsData.length, lastSheetWeek, upcomingRivalry.loaded])
+
+  useEffect(() => {
+    if (selectedTeamA || !upcomingRivalry.loaded || !h2hData.length) return
     const hasRow = (a, b) => h2hData.some(r => {
       const keys = Object.keys(r)
       return normalizeString(r[keys[0]]) === normalizeString(a) && normalizeString(r[keys[1]]) === normalizeString(b)
     })
-    const pick = visibleMatchups[Math.floor(Math.random() * visibleMatchups.length)]
-    if (hasRow(pick.team, pick.opp)) { setSelectedTeamA(pick.team); setSelectedTeamB(pick.opp) }
-    else if (hasRow(pick.opp, pick.team)) { setSelectedTeamA(pick.opp); setSelectedTeamB(pick.team) }
-  }, [visibleMatchups, h2hData, selectedTeamA])
+    const pairs = upcomingRivalry.pairs.length
+      ? upcomingRivalry.pairs
+      : h2hData.map(r => { const keys = Object.keys(r); return [r[keys[0]], r[keys[1]]] }).filter(([a, b]) => a && b)
+    if (!pairs.length) return
+    const [a, b] = pairs[Math.floor(Math.random() * pairs.length)]
+    if (hasRow(a, b)) { setSelectedTeamA(a); setSelectedTeamB(b) }
+    else if (hasRow(b, a)) { setSelectedTeamA(b); setSelectedTeamB(a) }
+  }, [upcomingRivalry, h2hData, selectedTeamA])
 
   // Destaques da semana: jogos em destaque + melhores jogadores no mesmo card,
   // em duas seções com título próprio.
   const weekCard = weekHighlights && (
     <CardShell title={`Week ${selectedMatchupOption?.week} highlights`} subtitle={`${currentSeason} · ${visibleMatchups.length} matchups`} action={<Link href={matchupLink(visibleMatchups[0])} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All matchups</Link>}>
       <div className="flex items-center gap-1.5 px-3 pb-2 pt-3 text-[12px] font-semibold text-[#111] lg:px-4"><Swords className="h-3.5 w-3.5 text-[#6B7280]" />Games of the week</div>
-      <div className="mx-3 grid grid-cols-3 gap-px overflow-hidden rounded-lg bg-[#EEF0F2] ring-1 ring-[#EEF0F2] lg:mx-4">
+      {/* Mesmo estilo do Top Performance (página Players): o destaque em azul */}
+      <div className="grid grid-cols-1 gap-2 px-3 md:grid-cols-3 lg:px-4">
         {[
-          { label: 'Top score', m: weekHighlights.topScore, big: weekHighlights.topScore.high.toFixed(2), bigClass: 'text-[#1E8E3E]', team: weekHighlights.topScore.score >= weekHighlights.topScore.oppScore ? weekHighlights.topScore.team : weekHighlights.topScore.opp },
-          { label: 'Biggest win', m: weekHighlights.blowout, big: `+${weekHighlights.blowout.margin.toFixed(2)}`, bigClass: 'text-[#111]', team: weekHighlights.blowout.winner },
-          { label: 'Closest game', m: weekHighlights.closest, big: weekHighlights.closest.margin.toFixed(2), bigClass: 'text-[#D01F2D]', team: weekHighlights.closest.winner },
-        ].map(({ label, m, big, bigClass, team }) => (
-          <Link key={label} href={matchupLink(m)} className="group min-w-0 bg-white px-2.5 py-3 transition-colors hover:bg-[#F7F8FA] sm:px-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate text-[11px] text-[#6B7280]">{label}</span>
-              <span className="hidden sm:block"><TeamLogo name={team} size={22} /></span>
-            </div>
-            <div className={`mt-1 text-[19px] font-bold leading-none tabular-nums sm:text-[24px] ${bigClass}`}>{big}</div>
-            <div className="mt-1.5 truncate text-[12px] text-[#3F4757] group-hover:text-[#D01F2D]">
-              <span className="font-semibold text-[#111]">{m.winner}</span><span className="hidden sm:inline"> {m.high.toFixed(1)}–{m.low.toFixed(1)} {m.loser}</span>
-            </div>
-          </Link>
-        ))}
+          { label: 'Top score', m: weekHighlights.topScore, value: weekHighlights.topScore.high.toFixed(2), unit: 'pts', Icon: Flame, ring: 'bg-[#B8860B]' },
+          { label: 'Biggest win', m: weekHighlights.blowout, value: `+${weekHighlights.blowout.margin.toFixed(2)}`, unit: 'margin', Icon: TrendingUp, ring: 'bg-[#1E8E3E]' },
+          { label: 'Closest game', m: weekHighlights.closest, value: weekHighlights.closest.margin.toFixed(2), unit: 'margin', Icon: Target, ring: 'bg-[#D01F2D]' },
+        ].map(({ label, m, value, unit, Icon, ring }, i) => {
+          const featured = i === 0
+          return (
+            <Link
+              key={label}
+              href={matchupLink(m)}
+              className={`group relative flex items-center gap-3 overflow-hidden rounded-xl p-3.5 transition-shadow hover:shadow-md ${featured ? 'bg-[#02275F] text-white' : 'bg-[#F4F5F7] text-[#111]'}`}
+            >
+              <Icon className={`pointer-events-none absolute -right-2 -top-2 h-20 w-20 ${featured ? 'text-white/[0.07]' : 'text-[#02275F]/[0.06]'}`} strokeWidth={2.5} />
+              <span className={`flex-shrink-0 rounded-full p-0.5 ${featured ? 'bg-[#B8860B]' : ring}`}>
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white"><TeamLogo name={m.winner} size={40} /></span>
+              </span>
+              <div className="relative min-w-0 flex-1">
+                <div className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${featured ? 'text-[#E8C766]' : 'text-[#6B7280]'}`}>{label}</div>
+                <div className="mt-0.5 flex items-baseline gap-1">
+                  <span className="text-[26px] font-bold leading-none tabular-nums">{value}</span>
+                  <span className={`text-[11px] ${featured ? 'text-white/70' : 'text-[#6B7280]'}`}>{unit}</span>
+                </div>
+                <div className={`mt-1 truncate text-[12px] font-semibold ${featured ? '' : 'group-hover:text-[#D01F2D]'}`}>{m.winner}</div>
+                <div className={`truncate text-[11px] tabular-nums ${featured ? 'text-white/75' : 'text-[#6B7280]'}`}>{m.high.toFixed(1)}–{m.low.toFixed(1)} vs {m.loser}</div>
+              </div>
+            </Link>
+          )
+        })}
       </div>
       {weekPerformers.length > 0 && (
         <>
@@ -2112,7 +2068,9 @@ export default function TapitasLeagueHomepage() {
   const rivalryCard = (
     <section className="mb-2 rounded-xl bg-white">
       <VersusPoster
-        label="Rivalry spotlight"
+        label={upcomingRivalry.week && upcomingRivalry.pairs.some(([a, b]) => [a, b].map(normalizeString).sort().join('|') === [selectedTeamA, selectedTeamB].map(normalizeString).sort().join('|'))
+          ? `Rivalry spotlight · Week ${upcomingRivalry.week} matchup`
+          : 'Rivalry spotlight'}
         badge={selectedRivalry ? `${selectedRivalry.heat} rivalry` : null}
         left={selectedRivalry ? { team: selectedRivalry.teamA, value: selectedRivalry.winsA } : null}
         right={selectedRivalry ? { team: selectedRivalry.teamB, value: selectedRivalry.winsB } : null}
@@ -2207,84 +2165,66 @@ export default function TapitasLeagueHomepage() {
     </div>
   )
 
-  const recordsList = (
-    <div className="py-1 lg:py-2">
-      {recordItems.map(item => {
-        const leaders = topNTeams(standings, item.getter, 3)
-        if (!leaders.length) return null
-        return (
-          <StatRow
-            key={item.label}
-            href="/records"
-            left={<div className="flex -space-x-1.5">{leaders.map(t => <TeamLogo key={t.team} name={t.team} size={24} />)}</div>}
-            eyebrow={item.label}
-            title={leaders.map(t => t.team).join(', ')}
-            value={item.format(item.getter(leaders[0]))}
-          />
-        )
-      })}
-    </div>
-  )
 
-  // Desktop: cards separados nas colunas laterais.
-  const powerCard = <CardShell title="Power Rankings" subtitle={`${currentSeason} · latest week`} sidebar action={cardLink('/powerrankings', 'Full')}>{powerList}</CardShell>
-  const standingsCard = currentStandings.length > 0 && <CardShell title="Standings" subtitle={standingsSubtitle} sidebar action={cardLink('/stats', 'Stats')}>{standingsList}</CardShell>
-  const leadersCard = <CardShell title="Franchise leaders" subtitle="All-time" sidebar withMenus action={cardLink('/records', 'Records')}>{leadersFilters}{leadersList}</CardShell>
-  const championsCard = championsData.length > 0 && <CardShell title="Champions wall" subtitle="Every Tapitas League title" sidebar action={cardLink('/history', 'History')}>{championsList}</CardShell>
-  const recordsCard = <CardShell title="All-time records" subtitle="Best of the best" sidebar action={cardLink('/records', 'Record book')}>{recordsList}</CardShell>
-
-  // Mobile: um card com abas no lugar de várias listas iguais em sequência.
-  const mobileTableCard = (
-    <CardShell
-      title={mobileTableTab === 'pr' ? 'Power Rankings' : 'Standings'}
-      subtitle={mobileTableTab === 'pr' ? `${currentSeason} · latest week` : standingsSubtitle}
-      action={<Segmented options={[['pr', 'Rankings'], ['standings', 'Standings']]} value={mobileTableTab} onChange={setMobileTableTab} />}
-    >
-      {mobileTableTab === 'pr' ? powerList : standingsList}
-      <div className="border-t border-[#EEF0F2] py-2 text-center">{mobileTableTab === 'pr' ? cardLink('/powerrankings', 'Full power rankings') : cardLink('/stats', 'Full standings')}</div>
-    </CardShell>
-  )
-
-  const mobileLeagueCard = (
-    <CardShell
-      title={{ leaders: 'Franchise leaders', champions: 'Champions wall', records: 'All-time records' }[mobileLeagueTab]}
-      subtitle={{ leaders: 'All-time', champions: 'Every Tapitas League title', records: 'Best of the best' }[mobileLeagueTab]}
-      withMenus
-    >
-      <div className="px-3 pt-2.5">
-        <Segmented options={[['leaders', 'Leaders'], ['champions', 'Champions'], ['records', 'Records']]} value={mobileLeagueTab} onChange={setMobileLeagueTab} />
+  // Rankings, standings e líderes num card só com abas (desktop e mobile).
+  const tablesMeta = {
+    pr: { title: 'Power Rankings', subtitle: `${currentSeason} · latest week`, link: cardLink('/powerrankings', 'Full power rankings') },
+    standings: { title: 'Standings', subtitle: standingsSubtitle, link: cardLink('/stats', 'Full standings') },
+    leaders: { title: 'Franchise leaders', subtitle: 'All-time', link: cardLink('/records', 'Record book') },
+  }
+  const tablesTab = tablesMeta[mobileTableTab] ? mobileTableTab : 'pr'
+  const tablesCard = (
+    <CardShell title={tablesMeta[tablesTab].title} subtitle={tablesMeta[tablesTab].subtitle} sidebar withMenus>
+      <div className="px-3 pt-2.5 lg:px-4">
+        <Segmented options={[['pr', 'Rankings'], ['standings', 'Standings'], ['leaders', 'Leaders']]} value={tablesTab} onChange={setMobileTableTab} />
       </div>
-      {mobileLeagueTab === 'leaders' && <>{leadersFilters}{leadersList}</>}
-      {mobileLeagueTab === 'champions' && championsList}
-      {mobileLeagueTab === 'records' && recordsList}
+      {tablesTab === 'pr' && powerList}
+      {tablesTab === 'standings' && standingsList}
+      {tablesTab === 'leaders' && <>{leadersFilters}{leadersList}</>}
+      <div className="border-t border-[#EEF0F2] py-2 text-center">{tablesMeta[tablesTab].link}</div>
     </CardShell>
+  )
+  const championsCard = championsData.length > 0 && <CardShell title="Champions wall" subtitle="Every Tapitas League title" sidebar action={cardLink('/history', 'History')}>{championsList}</CardShell>
+
+  // Cards da NFL (coluna da direita no desktop; no mobile entram no meio da página)
+  const nflCards = (
+    <>
+      <RosterAlertsCard onOpenPlayer={openNflPlayer} />
+      <TrendingCard onOpenPlayer={openNflPlayer} />
+      <LeagueNewsCard onOpenPlayer={openNflPlayer} />
+    </>
   )
 
   return (
-    <PageShell loading={leagueLoading || prLoading} headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
-      {scoreboardStrip}
-
-      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
+    <PageShell
+      loading={leagueLoading || prLoading}
+      headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}
+      wide
+      topBar={<ScoreStrip onTapitasWeek={week => {
+        const opt = matchupOptions.find(o => Number(o.week) === week && String(o.season) === String(currentSeason))
+        if (opt) setSelectedMatchupKey(opt.key)
+      }} />}
+    >
+      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[280px_minmax(0,1fr)_340px] xl:gap-5">
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
-          {powerCard}
-          {standingsCard}
+          {tablesCard}
+          {championsCard}
         </aside>
 
         <div className="min-w-0">
           {heroCard}
           {numbersCard}
           {weekCard}
-          <div className="lg:hidden">{mobileTableCard}</div>
+          <div className="lg:hidden">{tablesCard}</div>
           {rivalryCard}
           {newsCard}
+          <div className="lg:hidden">{nflCards}</div>
           {draftCard}
-          <div className="lg:hidden">{mobileLeagueCard}</div>
+          <div className="lg:hidden">{championsCard}</div>
         </div>
 
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
-          {leadersCard}
-          {championsCard}
-          {recordsCard}
+          {nflCards}
         </aside>
       </div>
 
@@ -2304,10 +2244,22 @@ export default function TapitasLeagueHomepage() {
         />
       )}
 
+      {selectedNflPlayer && (
+        <PlayerProfileModal
+          key={`nfl-${selectedNflPlayer.id || selectedNflPlayer.name}`}
+          rawName={resolveFactsName(factsNameIndex, selectedNflPlayer)}
+          displayName={selectedNflPlayer.name}
+          position={selectedNflPlayer.pos}
+          playerId={selectedNflPlayer.id}
+          games={gameFactsData}
+          onClose={() => setSelectedNflPlayer(null)}
+        />
+      )}
+
       {selectedDraftPlayer && (
         <PlayerProfileModal
           key={selectedDraftPlayer.pick.player}
-          rawName={resolveFactsName(selectedDraftPlayer.pick.player)}
+          rawName={resolveDraftName(selectedDraftPlayer.pick.player)}
           displayName={selectedDraftPlayer.data?.shortName || selectedDraftPlayer.pick.player}
           position={selectedDraftPlayer.data?.pos || selectedDraftPlayer.pick.position}
           playerId={selectedDraftPlayer.data?.playerId}

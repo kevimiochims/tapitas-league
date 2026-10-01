@@ -7,7 +7,7 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import Header from '../components/Header'
 import SharedPlayerProfile from '../components/PlayerProfileModal'
-import { PageShell, PageSkeleton } from '../components/ui'
+import { PageShell, PageSkeleton, SiteFooter } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -578,10 +578,13 @@ function MatchupsPageContent() {
 
   useEffect(() => {
     async function load() {
-      const [data, cacheRows] = await Promise.all([
+      const [sheetData, cacheRows, sleeperRows] = await Promise.all([
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
         safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
+        // Semana em andamento e semanas futuras da temporada atual (Sleeper)
+        safeFetch('/api/league/sleeper-rows'),
       ])
+      const data = [...sheetData, ...sleeperRows]
       setGames(data)
       setPlayerLookup(buildPlayerLookup(cacheRows))
 
@@ -979,6 +982,11 @@ function MatchupsPageContent() {
   const teamPF = selected ? parseNumber(selected?.PF) : 0
   const teamPA = selected ? parseNumber(selected?.PA) : 0
   const teamWon = selected ? String(selected?.Result || '').trim().toUpperCase() === 'W' : false
+  // Semanas vindas do Sleeper: em andamento (live) ou futuras (upcoming)
+  const matchStatus = String(selected?.Status || '').trim()
+  const undecided = matchStatus === 'live' || matchStatus === 'current' || matchStatus === 'upcoming'
+  const teamBold = undecided || teamWon
+  const oppBold = undecided || !teamWon
 
   const starters = selected ? extractPlayers(selected, 'S') : []
   const bench = selected ? extractPlayers(selected, 'B') : []
@@ -1076,7 +1084,9 @@ function MatchupsPageContent() {
 
   const mobilePanelOpen = showWeekRecap || showPowerRankingPreview
 
-  const recapCard = weekRecap ? (
+  // Semana sem pontos (ainda não começou): sem Week Recap
+  const weekHasPoints = matchups.some(g => parseNumber(g?.PF) > 0 || parseNumber(g?.PA) > 0)
+  const recapCard = weekRecap && weekHasPoints ? (
     <CardShell title="Week Recap" subtitle={`${season} · Week ${week}`}>
       <CardGroup label="Teams" first>
         <StatRow
@@ -1202,7 +1212,7 @@ function MatchupsPageContent() {
   ) : null
 
   return (
-    <main className="mx-root min-h-screen bg-[#EDEEF0] text-[#111]">
+    <main className="mx-root flex min-h-screen flex-col bg-[#EDEEF0] text-[#111]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         .mx-root {
@@ -1313,10 +1323,10 @@ function MatchupsPageContent() {
                       if (!selected && matchups[0]) setSelected(matchups[0])
                     },
                   },
-                  {
+                  ...(recapCard ? [{
                     key: 'recap', label: 'Week Recap', active: showWeekRecap,
                     onClick: () => { setShowWeekRecap(true); setShowPowerRankingPreview(false) },
-                  },
+                  }] : []),
                   {
                     key: 'pr', label: 'Power Rankings', active: showPowerRankingPreview,
                     onClick: () => { setShowPowerRankingPreview(true); setShowWeekRecap(false) },
@@ -1401,11 +1411,11 @@ function MatchupsPageContent() {
                         <div className="flex flex-col items-center gap-2">
                           <TeamAvatar name={teamName} className="h-10 w-10 rounded-lg" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(teamName)}`}
-                            className={`text-center font-semibold leading-tight hover:underline ${teamWon ? 'text-[#111]' : 'text-[#6B7280]'}`}
+                            className={`text-center font-semibold leading-tight hover:underline ${teamBold ? 'text-[#111]' : 'text-[#6B7280]'}`}
                             style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
                             {teamName}
                           </a>
-                          <div className={`font-bold leading-none ${teamWon ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
+                          <div className={`font-bold leading-none ${teamBold ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
                             isHistoricTeamScore(teamPF) ? 'text-[#B8860B]' : ''
                             }`}
                             style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(32px, 6vw, 44px)' }}>
@@ -1415,12 +1425,14 @@ function MatchupsPageContent() {
                             <span className="text-xs font-semibold text-[#6B7280]">
                               {teamRecord.w}–{teamRecord.l}
                             </span>
+                            {teamStreak && (
                             <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${teamStreak.startsWith('W')
                               ? 'text-white bg-[#1E8E3E]'
                               : 'text-white bg-[#D01F2D]'
                               }`}>
                               {teamStreak}
                             </span>
+                            )}
                           </div>
                           {isHistoricTeamScore(teamPF) && (
                             <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
@@ -1439,7 +1451,12 @@ function MatchupsPageContent() {
                             {Math.abs(teamPF - teamPA).toFixed(2)}
                           </div>
                           <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">margin</div>
-                          {teamWon ? (
+                          {undecided ? (
+                            <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${matchStatus === 'live' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
+                              {matchStatus === 'live' && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" />}
+                              {matchStatus === 'live' ? 'Live' : matchStatus === 'current' ? 'In progress' : 'Upcoming'}
+                            </div>
+                          ) : teamWon ? (
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">← WIN</div>
                           ) : (
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#D01F2D]">WIN →</div>
@@ -1450,11 +1467,11 @@ function MatchupsPageContent() {
                         <div className="flex flex-col items-center gap-2">
                           <TeamAvatar name={oppName} className="h-10 w-10 rounded-lg" textClassName="text-lg" />
                           <a href={`/teams?team=${encodeURIComponent(oppName)}`}
-                            className={`text-center font-semibold leading-tight hover:underline ${!teamWon ? 'text-[#111]' : 'text-[#6B7280]'}`}
+                            className={`text-center font-semibold leading-tight hover:underline ${oppBold ? 'text-[#111]' : 'text-[#6B7280]'}`}
                             style={{ fontSize: 'clamp(14px, 2vw, 16px)' }}>
                             {oppName}
                           </a>
-                          <div className={`font-bold leading-none ${!teamWon ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
+                          <div className={`font-bold leading-none ${oppBold ? 'text-[#111]' : 'text-[#9CA3AF]'} ${
                             isHistoricTeamScore(teamPA) ? 'text-[#B8860B]' : ''
                             }`}
                             style={{ fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(32px, 6vw, 44px)' }}>
@@ -1464,12 +1481,14 @@ function MatchupsPageContent() {
                             <span className="text-xs font-semibold text-[#6B7280]">
                               {oppRecord.w}–{oppRecord.l}
                             </span>
+                            {oppStreak && (
                             <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${oppStreak.startsWith('W')
                               ? 'text-white bg-[#1E8E3E]'
                               : 'text-white bg-[#D01F2D]'
                               }`}>
                               {oppStreak}
                             </span>
+                            )}
                           </div>
                           {isHistoricTeamScore(teamPA) && (
                             <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
@@ -1738,7 +1757,7 @@ function MatchupsPageContent() {
             displayName={selectedPlayerProfile.displayName}
             position={selectedPlayerProfile.position}
             playerId={getPlayerData(selectedPlayerProfile.rawName, selectedPlayerProfile.position, playerLookup)?.playerId || getPlayerId(selectedPlayerProfile.rawName, playerLookup)}
-            games={games}
+            games={games.filter(g => g?.Source !== 'sleeper')}
             initialTeams={[selectedPlayerProfile.team]}
             matchup={{
               season: selectedPlayerProfile.season,
@@ -1751,6 +1770,7 @@ function MatchupsPageContent() {
         )}
 
       </section>
+      <SiteFooter />
     </main>
   )
 }
