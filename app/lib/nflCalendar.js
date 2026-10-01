@@ -4,8 +4,8 @@
 // - O confronto da semana N só termina na madrugada de terça, depois do último
 //   jogo da rodada (Monday Night). Antes disso a semana está em andamento e não
 //   pode entrar em resultados, sequências nem confrontos diretos.
-// Horários em UTC: quarta 09:00 UTC ≈ 05:00/06:00 em Nova York; terça 10:00 UTC
-// ≈ 06:00/05:00 em Nova York.
+// Horários em UTC: a semana vira na quarta 09:00 UTC; o confronto termina na
+// terça 06:00 UTC (03:00 em Brasília).
 
 const DAY = 86400000
 
@@ -30,11 +30,12 @@ export function displayWeek(seasonStartDate, now = Date.now()) {
   return Math.min(22, Math.floor(diff / (7 * DAY)) + 1)
 }
 
-// O confronto da semana já terminou? (terça 10:00 UTC depois do início da semana)
+// O confronto da semana já terminou? (terça 06:00 UTC = 03:00 em Brasília,
+// depois do Monday Night; mesma regra do script semanal da planilha)
 export function isWeekFinal(seasonStartDate, week, now = Date.now()) {
   const start = weekStart(seasonStartDate, week)
   if (!start) return true
-  return now >= start.getTime() + 6 * DAY + 1 * 3600000
+  return now >= start.getTime() + 6 * DAY - 3 * 3600000
 }
 
 // Kickoff da temporada pela regra da NFL: a quinta-feira depois do Labor Day
