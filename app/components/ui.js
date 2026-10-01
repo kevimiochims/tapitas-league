@@ -594,7 +594,6 @@ export function VersusPoster({ label, badge, left, right, leftControl, rightCont
       <div className="absolute inset-0 overflow-hidden rounded-t-xl">
         <div className="absolute inset-0 bg-[#02275F]" />
         <div className="absolute inset-0 bg-[#C8102E]" style={{ clipPath: 'polygon(56% 0, 100% 0, 100% 100%, 44% 100%)' }} />
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 14px)' }} />
       </div>
       <div className="relative flex items-center justify-between gap-2 px-3 pt-3 lg:px-4">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80">{label}</span>
@@ -610,20 +609,12 @@ export function VersusPoster({ label, badge, left, right, leftControl, rightCont
 }
 
 // ── Identidade visual: fundo de marca e pódio ─────────────────────────
-// Fundo azul (ou vermelho) com a textura diagonal do hero da Home. Vai dentro
+// Fundo azul (ou vermelho) em cor sólida, no padrão do hero da Home. Vai dentro
 // de um container `relative overflow-hidden`; o conteúdo usa `relative`.
-const BACKDROPS = {
-  navy: 'linear-gradient(115deg, #02275F 0%, #02275F 55%, #0A3B85 100%)',
-  red: 'linear-gradient(115deg, #B3171F 0%, #B3171F 50%, #8E1022 100%)',
-  ink: 'linear-gradient(115deg, #16274F 0%, #16274F 55%, #1F3A6E 100%)',
-}
+// Cor sólida (sem textura listrada nem degradê).
+const BACKDROPS = { navy: '#02275F', red: '#B3171F', ink: '#16274F' }
 export function BrandBackdrop({ tone = 'navy' }) {
-  return (
-    <>
-      <div className="absolute inset-0" style={{ background: BACKDROPS[tone] || BACKDROPS.navy }} />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 16px)' }} />
-    </>
-  )
+  return <div className="absolute inset-0" style={{ background: BACKDROPS[tone] || BACKDROPS.navy }} />
 }
 
 // Pódio do top 3 (2º, 1º, 3º) para usar sobre o BrandBackdrop.
