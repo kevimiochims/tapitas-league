@@ -91,8 +91,11 @@ export default function TransactionsPage() {
         <>
           {/* Números do topo: quatro cards no padrão da Draft */}
           <HighlightCards items={[
-            { label: 'Most active GM', left: mostActive ? <TeamLogo name={mostActive[0]} size={32} /> : null, title: mostActive?.[0] || '—', subtitle: season === 'All' ? 'All seasons on Sleeper' : `${season} season`, value: mostActive ? `${mostActive[1]} moves` : '—' },
-            { label: 'Trades', left: <HighlightIcon icon={ArrowLeftRight} />, title: season === 'All' ? 'All seasons' : `${season} season`, subtitle: team === 'All' ? 'Whole league' : team, value: count('trade') },
+            // Com um time no filtro, o 1º card é o próprio time (sem rótulo: o nome em destaque já diz de quem são os números)
+            team === 'All'
+              ? { label: 'Most active GM', left: mostActive ? <TeamLogo name={mostActive[0]} size={32} /> : null, title: mostActive?.[0] || '—', subtitle: season === 'All' ? 'All seasons on Sleeper' : `${season} season`, value: mostActive ? `${mostActive[1]} moves` : '—' }
+              : { left: <TeamLogo name={team} size={32} />, title: team, subtitle: season === 'All' ? 'All seasons on Sleeper' : `${season} season`, value: `${activity[team] || 0} ${(activity[team] || 0) === 1 ? 'move' : 'moves'}` },
+            { label: 'Trades', left: <HighlightIcon icon={ArrowLeftRight} />, title: season === 'All' ? 'All seasons' : `${season} season`, subtitle: 'Completed trades', value: count('trade') },
             { label: 'Waivers & free agents', left: <HighlightIcon icon={UserPlus} tone="green" />, title: `${count('waiver')} waivers`, subtitle: `${count('free_agent')} free agents`, value: count('waiver') + count('free_agent'), valueClass: 'text-[#1E8E3E]' },
             { label: 'Most added player', left: <HighlightIcon icon={Zap} tone="gold" />, title: mostAdded?.p.name || '—', subtitle: mostAdded ? `${mostAdded.p.pos} · ${mostAdded.p.nflTeam}` : '', value: mostAdded ? `${mostAdded.n}× added` : '—', valueClass: 'text-[#B8860B]' },
           ]} />

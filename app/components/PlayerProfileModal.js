@@ -597,7 +597,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     ...(matchup ? [['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(matchup.opponent)}`]] : []),
     ['career', 'Career'],
     ['news', 'News'],
-    ...(playerId ? [['transactions', 'Transactions']] : []),
+    ['transactions', 'Transactions'],
   ]
 
   const options = key => ['All', ...Array.from(new Set(profileGames.map(x => x[key]).filter(Boolean))).sort()]
@@ -871,7 +871,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
           {tab === 'news' && <PlayerNewsCard playerId={playerId} emptyText="No recent ESPN news for this player." />}
 
           {/* Movimentações do jogador na liga (trades, adds, drops) */}
-          {tab === 'transactions' && <PlayerTransactionsCard playerId={playerId} />}
+          {tab === 'transactions' && <PlayerTransactionsCard playerId={playerId} names={[fullName, displayName, rawName].filter(Boolean)} />}
 
           {/* Game log */}
           {tab === 'career' && (

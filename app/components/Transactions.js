@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeftRight, Plus, Minus } from 'lucide-react'
+import { ArrowLeftRight, Plus, Minus, ClipboardList } from 'lucide-react'
 import { CardShell, Segmented, Pager, usePager, Tag, TeamLogo, PositionBadge } from './ui'
 import { PlayerThumb } from './nfl/shared'
 
@@ -153,11 +153,39 @@ export function TeamTransactionsCard({ team, onOpenPlayer }) {
 
 // Aba do Player Profile: todas as movimentações do jogador na liga (Sleeper),
 // da mais recente para a mais antiga.
-export function PlayerTransactionsCard({ playerId }) {
-  const { data, loading } = useTransactions()
+// Draft da liga (planilha DRAFT_BOARD), buscado uma vez por página
+let draftPromise = null
+function useDraftBoard() {
+  const [state, setState] = useState({ rows: [], loading: true })
+  useEffect(() => {
+    let cancelled = false
+    if (!draftPromise) {
+      draftPromise = fetch('/api/sheet/DRAFT_BOARD')
+        .then(r => (r.ok ? r.json() : []))
+        .then(d => (Array.isArray(d) ? d : []))
+        .catch(() => { draftPromise = null; return [] })
+    }
+    draftPromise.then(rows => { if (!cancelled) setState({ rows, loading: false }) })
+    return () => { cancelled = true }
+  }, [])
+  return state
+}
+
+// Nome normalizado ("Josh Allen Jr." → "josh allen") e abreviado ("j allen")
+const normName = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  .replace(/[.'’]/g, '').replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
+const abbrName = n => { const parts = n.split(' '); return parts.length > 1 ? `${parts[0][0]} ${parts.slice(1).join(' ')}` : n }
+
+// Linha do tempo do jogador na liga: escolhas no draft (planilha) e todas as
+// transações do Sleeper (trades, waivers, free agents, dispensas).
+export function PlayerTransactionsCard({ playerId, names = [] }) {
+  const { data, loading: txLoading } = useTransactions()
+  const { rows: draftRows, loading: draftLoading } = useDraftBoard()
+  const loading = txLoading || draftLoading
   const id = String(playerId || '')
   const events = []
   ;(data?.transactions || []).forEach(t => {
+    if (!id) return
     const into = t.moves.find(m => m.adds.some(p => p.id === id))
     const out = t.moves.find(m => m.drops.some(p => p.id === id))
     if (!into && !out) return
@@ -168,20 +196,45 @@ export function PlayerTransactionsCard({ playerId }) {
     if (into) events.push({ t, kind: 'add', team: into.team, text: t.type === 'waiver' ? `Claimed off waivers by ${into.team}` : `Signed as a free agent by ${into.team}`, sub: t.type === 'waiver' && t.bid ? `$${t.bid} bid` : '' })
     if (out) events.push({ t, kind: 'drop', team: out.team, text: `Released by ${out.team}`, sub: '' })
   })
+  // Draft: casa pelo nome completo; só com o nome abreviado ("J. Allen"), pela abreviação
+  const normed = names.map(normName).filter(Boolean)
+  const fulls = new Set(normed.filter(n => n.split(' ')[0]?.length > 1))
+  const abbrs = new Set(normed.map(abbrName))
+  draftRows
+    .filter(r => {
+      const n = normName(r?.Player)
+      if (!n) return false
+      return fulls.size ? fulls.has(n) : abbrs.has(abbrName(n))
+    })
+    .sort((x, y) => Number(y?.Season) - Number(x?.Season))
+    .forEach(r => {
+      const team = String(r?.Team || '').trim()
+      const round = String(r?.Round || '').trim()
+      const pick = String(r?.Pick || '').trim()
+      events.push({
+        t: { id: `draft-${r?.Season}-${pick}` },
+        kind: 'draft',
+        team,
+        text: `Drafted by ${team}`,
+        sub: [round && `Round ${round}`, pick && `Pick #${pick}`].filter(Boolean).join(' · '),
+        meta: `${String(r?.Season || '').trim()} draft`,
+      })
+    })
   const style = {
     trade: { icon: ArrowLeftRight, cls: 'bg-[#EEF3FF] text-[#02275F]', tag: 'Trade' },
     add: { icon: Plus, cls: 'bg-[#E8F5EC] text-[#1E8E3E]', tag: 'Added' },
     drop: { icon: Minus, cls: 'bg-[#FDECEE] text-[#D01F2D]', tag: 'Dropped' },
+    draft: { icon: ClipboardList, cls: 'bg-[#FFF2B8] text-[#6B5A00]', tag: 'Draft' },
   }
   return (
     <section className="overflow-hidden rounded-xl bg-white">
       <div className="px-3 pb-2 pt-3 sm:px-4">
         <h3 className="text-[15px] font-bold text-[#111]">Transaction log</h3>
-        <div className="mt-0.5 text-[12px] text-[#6B7280]">Every move involving this player in the league · from Sleeper (2025 on)</div>
+        <div className="mt-0.5 text-[12px] text-[#6B7280]">Draft picks and every move involving this player in the league · moves from Sleeper (2025 on)</div>
       </div>
       <div className="mx-3 border-t border-[#E6E8EB] sm:mx-4" />
       {loading ? <div className="px-3 py-4 text-[13px] text-[#6B7280] sm:px-4">Loading…</div>
-        : !events.length ? <div className="px-3 py-8 text-center text-[13px] text-[#6B7280] sm:px-4">No trades, adds or drops for this player.</div>
+        : !events.length ? <div className="px-3 py-8 text-center text-[13px] text-[#6B7280] sm:px-4">No draft picks, trades, adds or drops for this player.</div>
           : (
             <ol className="relative px-3 py-3 sm:px-4">
               {/* Linha do tempo */}
@@ -198,8 +251,8 @@ export function PlayerTransactionsCard({ playerId }) {
                         {e.sub && <span className="text-[12px] text-[#6B7280]">{e.sub}</span>}
                       </div>
                       <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#9CA3AF]">
-                        <Tag tone={e.kind === 'trade' ? 'navy' : e.kind === 'add' ? 'green' : 'red'}>{st.tag}</Tag>
-                        {txMeta(e.t)}
+                        <Tag tone={e.kind === 'trade' ? 'navy' : e.kind === 'add' ? 'green' : e.kind === 'draft' ? 'gold' : 'red'}>{st.tag}</Tag>
+                        {e.meta || txMeta(e.t)}
                       </div>
                     </div>
                   </li>
