@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { PlayerNewsCard } from './nfl/PlayerNflCards'
+import { PlayerTransactionsCard } from './Transactions'
 import { ChevronDown, Check } from 'lucide-react'
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -596,6 +597,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     ...(matchup ? [['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(matchup.opponent)}`]] : []),
     ['career', 'Career'],
     ['news', 'News'],
+    ...(playerId ? [['transactions', 'Transactions']] : []),
   ]
 
   const options = key => ['All', ...Array.from(new Set(profileGames.map(x => x[key]).filter(Boolean))).sort()]
@@ -867,6 +869,9 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
 
           {/* Últimas notícias do jogador */}
           {tab === 'news' && <PlayerNewsCard playerId={playerId} emptyText="No recent ESPN news for this player." />}
+
+          {/* Movimentações do jogador na liga (trades, adds, drops) */}
+          {tab === 'transactions' && <PlayerTransactionsCard playerId={playerId} />}
 
           {/* Game log */}
           {tab === 'career' && (

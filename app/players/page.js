@@ -9,6 +9,7 @@ import PlayerProfileModal from '../components/PlayerProfileModal'
 import PlayerCutout from '../components/PlayerCutout'
 import LeagueNewsCard from '../components/nfl/LeagueNewsCard'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
+import { useTeamFocus } from '../context/TeamFocus'
 
 const BASE_URL = '/api/sheet'
 
@@ -457,6 +458,14 @@ export default function PlayersPage() {
   const [search, setSearch] = useState('')
   const [position, setPosition] = useState(['All'])
   const [teamFilter, setTeamFilter] = useState(['All'])
+  // Time em foco (filtro geral do site): vira o filtro de franquia do Archive
+  // e do Top Performances, como já acontece no Player News
+  const [teamFocus] = useTeamFocus()
+  const [appliedFocus, setAppliedFocus] = useState(null)
+  if (appliedFocus !== teamFocus) {
+    setAppliedFocus(teamFocus)
+    setTeamFilter(teamFocus ? [teamFocus] : ['All'])
+  }
   const [season, setSeason] = useState(['All'])
   const [minApps, setMinApps] = useState('')
   const [sort, setSort] = useState({ key: 'appearances', dir: 'desc' })
@@ -773,6 +782,15 @@ export default function PlayersPage() {
         <BarTab active={archiveView === 'news'} onClick={() => setArchiveView('news')}>Player News</BarTab>
       </PageBar>
 
+      {/* Aviso: a página está filtrada pelo time em foco */}
+      {teamFocus && archiveView !== 'news' && teamFilter.length === 1 && teamFilter[0] === teamFocus && (
+        <div className="mb-2 flex items-center gap-2 rounded-xl bg-[#EEF3FF] px-3 py-2 text-[12px] text-[#02275F] lg:px-4">
+          <TeamLogo name={teamFocus} size={18} />
+          <span className="min-w-0 flex-1">Showing <b>{teamFocus}</b> only · your team in the site filter</span>
+          <button type="button" onClick={() => setTeamFilter(['All'])} className="flex-shrink-0 font-semibold text-[#D01F2D] hover:underline">Show all teams</button>
+        </div>
+      )}
+
       {/* Notícias dos jogadores da liga (ESPN, RotoWire, RotoBaller, FantasyPros…) */}
       {archiveView === 'news' && <LeagueNewsCard sidebar={false} initialLimit={20} onOpenPlayer={p => p && setNewsPlayer(p)} />}
 
@@ -873,7 +891,8 @@ export default function PlayersPage() {
       )}
 
       {/* Franchise icons (mais jogos por um só time) e Journeymen (mais times diferentes) */}
-      {archiveView === 'consolidated' && filtered.length > 0 && (() => {
+      {/* Só fazem sentido sem filtro de franquia (com um time só, todos teriam 100%) */}
+      {archiveView === 'consolidated' && filtered.length > 0 && teamFilter.includes('All') && (() => {
         const icons = filtered
           .map(p => {
             const [team, apps] = Object.entries(p.teamApps || {}).sort((a, b) => b[1] - a[1])[0] || []

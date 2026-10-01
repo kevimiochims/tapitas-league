@@ -788,7 +788,7 @@ export default function DraftPage() {
                             {notes.length === 0 ? (
                                 <div className="py-16 text-center text-[13px] text-[#6B7280]">Nenhuma nota para {season}</div>
                             ) : (
-                                <article className="mx-auto max-w-[760px] px-4 py-5 text-[15px] sm:px-6">
+                                <article className="px-4 py-5 text-[15px] sm:px-6 lg:columns-2 lg:gap-12 lg:px-8 lg:[column-rule:1px_solid_#EEF0F2] [&_h1]:break-after-avoid [&_h2]:break-after-avoid [&_h3]:break-after-avoid [&_h1:first-child]:mt-0 [&_h2:first-child]:mt-0">
                                     <ReactMarkdown
                                         components={{
                                             h1: ({ children }) => <h1 className="mb-3 mt-5 text-[22px] font-bold leading-tight text-[#111]">{children}</h1>,

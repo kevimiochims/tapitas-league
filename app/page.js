@@ -10,6 +10,7 @@ import {
 import { useEffect, useMemo, memo, useState, useRef } from 'react'
 import PlayerCutout from './components/PlayerCutout'
 import { useDrawer } from './context/DrawerContext'
+import { useTeamFocus } from './context/TeamFocus'
 import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
@@ -18,7 +19,7 @@ import { resolveFactsName } from './lib/factsNames'
 import RosterAlertsCard from './components/nfl/RosterAlertsCard'
 import TrendingCard from './components/nfl/TrendingCard'
 import LeagueNewsCard from './components/nfl/LeagueNewsCard'
-import { BrandBackdrop, Podium, SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, FilterPill, Tag, TeamLogo, LoadingState, PositionBadge as UiPositionBadge } from './components/ui'
+import { BrandBackdrop, Podium, SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, FilterPill, Tag, TeamLogo, LoadingState, Pager, usePager, PositionBadge as UiPositionBadge } from './components/ui'
 
 
 // Same Sleeper player source used by the Teams Player Profile.
@@ -1337,6 +1338,9 @@ export default function TapitasLeagueHomepage() {
     return picksInRound.slice(0, 10)
   }, [draftPicks, selectedDraftRound])
 
+  // Draft na coluna da direita: 5 escolhas por página dentro da rodada
+  const draftPager = usePager(visibleDraftPicks, 5, String(selectedDraftRound))
+
   const canGoDraftPrev = draftRounds.indexOf(selectedDraftRound) > 0
   const canGoDraftNext = draftRounds.indexOf(selectedDraftRound) < draftRounds.length - 1
 
@@ -1929,8 +1933,15 @@ export default function TapitasLeagueHomepage() {
     return () => { cancelled = true }
   }, [currentSeason, gameFactsData.length, lastSheetWeek, upcomingRivalry.loaded])
 
+  // Com um time em foco (filtro geral), o spotlight mostra o confronto dele na
+  // semana; sem foco, sorteia um confronto. Trocar o foco troca o spotlight.
+  const [teamFocus] = useTeamFocus()
+  const appliedFocus = useRef(null)
   useEffect(() => {
-    if (selectedTeamA || !upcomingRivalry.loaded || !h2hData.length) return
+    if (!upcomingRivalry.loaded || !h2hData.length) return
+    const focusChanged = appliedFocus.current !== teamFocus
+    if (selectedTeamA && !focusChanged) return
+    appliedFocus.current = teamFocus
     const hasRow = (a, b) => h2hData.some(r => {
       const keys = Object.keys(r)
       return normalizeString(r[keys[0]]) === normalizeString(a) && normalizeString(r[keys[1]]) === normalizeString(b)
@@ -1939,10 +1950,18 @@ export default function TapitasLeagueHomepage() {
       ? upcomingRivalry.pairs
       : h2hData.map(r => { const keys = Object.keys(r); return [r[keys[0]], r[keys[1]]] }).filter(([a, b]) => a && b)
     if (!pairs.length) return
+    if (teamFocus) {
+      const mine = pairs.find(p => p.some(t => normalizeString(t) === normalizeString(teamFocus)))
+      if (mine) {
+        const opp = mine.find(t => normalizeString(t) !== normalizeString(teamFocus))
+        if (hasRow(teamFocus, opp) || hasRow(opp, teamFocus)) { setSelectedTeamA(teamFocus); setSelectedTeamB(opp); return }
+      }
+    }
+    if (selectedTeamA && !teamFocus) return
     const [a, b] = pairs[Math.floor(Math.random() * pairs.length)]
     if (hasRow(a, b)) { setSelectedTeamA(a); setSelectedTeamB(b) }
     else if (hasRow(b, a)) { setSelectedTeamA(b); setSelectedTeamB(a) }
-  }, [upcomingRivalry, h2hData, selectedTeamA])
+  }, [upcomingRivalry, h2hData, selectedTeamA, teamFocus])
 
   // Destaques da semana: jogos em destaque + melhores jogadores no mesmo card,
   // em duas seções com título próprio.
@@ -1999,7 +2018,7 @@ export default function TapitasLeagueHomepage() {
   )
 
   const newsCard = (
-    <CardShell title="Latest news" subtitle="Memes, recaps and news" className="lg:mb-0 lg:h-full" action={<Link href="/news" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All news</Link>}>
+    <CardShell title="Tapitas News" subtitle="Memes, recaps and news from the league" action={<Link href="/news" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All news</Link>}>
       {newsLoading ? <LoadingState /> : featuredNewsPosts.length === 0 ? (
         <div className="py-10 text-center text-[13px] text-[#6B7280]">No posts yet</div>
       ) : (
@@ -2040,7 +2059,6 @@ export default function TapitasLeagueHomepage() {
   const draftCard = draftPicks.length > 0 && (
     <CardShell
       title={`${draftSeason} Draft`}
-      className="lg:mb-0 lg:flex lg:h-full lg:flex-col"
       subtitle={`Round ${selectedDraftRound} · tap a player for his profile`}
       action={
         <div className="flex flex-shrink-0 items-center gap-1">
@@ -2050,8 +2068,7 @@ export default function TapitasLeagueHomepage() {
         </div>
       }
     >
-      {/* Desktop (meia linha ao lado das notícias): 2 linhas de 5, sem rolagem */}
-      <div ref={draftScrollRef} className="scroll-hide flex gap-2 overflow-x-auto p-3 lg:grid lg:flex-1 lg:grid-cols-5 lg:content-center lg:gap-x-2 lg:gap-y-4 lg:overflow-visible lg:p-4">
+      <div ref={draftScrollRef} className="scroll-hide flex gap-2 overflow-x-auto p-3">
         {visibleDraftPicks.map(pick => (
           <DraftPickTile key={pick.pick} pick={pick} playerLookup={playerLookup} onOpenPlayer={(draftPick, data) => setSelectedDraftPlayer({ pick: draftPick, data })} />
         ))}
@@ -2060,8 +2077,45 @@ export default function TapitasLeagueHomepage() {
     </CardShell>
   )
 
+  // Versão compacta do draft para a coluna da direita (desktop)
+  const draftRoundNav = (
+    <div className="flex flex-shrink-0 items-center gap-1">
+      <button type="button" onClick={() => goDraftRound(-1)} disabled={!canGoDraftPrev} aria-label="Previous round" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4F5F7] text-[#111] hover:bg-[#ECEEF1] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+      <span className="min-w-[30px] text-center text-[12px] tabular-nums text-[#3F4757]">R{selectedDraftRound}</span>
+      <button type="button" onClick={() => goDraftRound(1)} disabled={!canGoDraftNext} aria-label="Next round" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4F5F7] text-[#111] hover:bg-[#ECEEF1] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+    </div>
+  )
+  const draftSideCard = draftPicks.length > 0 && (
+    <CardShell title={`${draftSeason} Draft`} subtitle={`Round ${selectedDraftRound}`} sidebar action={draftRoundNav}>
+      <div {...draftPager.listProps} className="py-1">
+        {draftPager.visible.map(pick => {
+          const data = getPlayerDataByFullName(pick.player, playerLookup)
+          const isDef = String(pick.position || '').toUpperCase() === 'DEF'
+          const photo = isDef ? getNFLTeamLogo(pick.player) : data?.playerId ? `https://sleepercdn.com/content/nfl/players/thumb/${data.playerId}.jpg` : null
+          return (
+            <button key={pick.pick} type="button" onClick={() => setSelectedDraftPlayer({ pick, data })} className="group flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-black/[0.03] lg:px-4">
+              <span className="w-8 flex-shrink-0 text-[11px] font-semibold tabular-nums text-[#9CA3AF]">#{pick.pick}</span>
+              <span className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-[#F4F5F7] ring-1 ring-[#E6E8EB]">
+                {photo && <img src={photo} alt="" className={`h-full w-full ${isDef ? 'object-contain p-1' : 'object-cover'}`} />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{data?.shortName || pick.player}</span>
+                  <UiPositionBadge position={pick.position} />
+                </span>
+                <span className="mt-0.5 block truncate text-[11px] text-[#6B7280]">{pick.team}</span>
+              </span>
+              <TeamLogo name={pick.team} size={20} />
+            </button>
+          )
+        })}
+      </div>
+      {draftPager.totalPages > 1 && <Pager {...draftPager.pagerProps} />}
+      <div className="border-t border-[#EEF0F2] py-2 text-center"><Link href="/draft" className="text-[12px] font-medium text-[#D01F2D] hover:underline">Full draft board</Link></div>
+    </CardShell>
+  )
+
   // ── Listas (usadas nos cards do desktop e nos cards com abas do mobile) ──
-  const rankBadge = (n, gold) => <span className={`w-5 text-center text-[13px] font-bold tabular-nums ${gold ? 'text-[#B8860B]' : 'text-[#111]'}`}>{n}</span>
   const cardLink = (href, label) => <Link href={href} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">{label}</Link>
 
   // ── Rivalry spotlight: pôster "versus" dividido na diagonal ─────────
@@ -2109,19 +2163,33 @@ export default function TapitasLeagueHomepage() {
   )
 
 
-  const powerList = (
-    <div className="py-1 lg:py-2">
-      {prLoading ? <LoadingState /> : prData.map(row => (
-        <StatRow
-          key={row.team}
-          href={`/teams?team=${encodeURIComponent(row.team)}`}
-          left={<span className="flex items-center gap-2">{rankBadge(row.rank, row.rank === 1)}<TeamLogo name={row.team} size={22} /></span>}
-          title={row.team}
-          value={row.delta > 0 ? `▲ ${row.delta}` : row.delta < 0 ? `▼ ${Math.abs(row.delta)}` : '–'}
-          valueClass={row.delta > 0 ? 'text-[11px] text-[#1E8E3E]' : row.delta < 0 ? 'text-[11px] text-[#D01F2D]' : 'text-[11px] text-[#9CA3AF]'}
-        />
-      ))}
+  // Linhas no mesmo padrão (e espaçamento) do Standings
+  const compactRow = (key, href, rank, team, value, valueClass = 'text-[13px] font-semibold text-[#111]') => (
+    <Link key={key} href={href} className="group grid grid-cols-[20px_minmax(0,1fr)_56px] items-center gap-2 px-3 py-1.5 transition-colors hover:bg-black/[0.03] lg:px-4">
+      <span className={`text-[13px] font-bold tabular-nums ${rank === 1 ? 'text-[#B8860B]' : 'text-[#111]'}`}>{rank}</span>
+      <span className="flex min-w-0 items-center gap-2"><TeamLogo name={team} size={20} /><span className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">{team}</span></span>
+      <span className={`text-right tabular-nums ${valueClass}`}>{value}</span>
+    </Link>
+  )
+  const compactHeader = (last) => (
+    <div className="grid grid-cols-[20px_minmax(0,1fr)_56px] gap-2 px-3 pb-1 pt-2 text-[11px] text-[#6B7280] lg:px-4">
+      <span>#</span><span>Team</span><span className="text-right">{last}</span>
     </div>
+  )
+  const powerList = (
+    <>
+      {compactHeader('Move')}
+      <div className="pb-1 lg:pb-2">
+        {prLoading ? <LoadingState /> : prData.map(row => compactRow(
+          row.team,
+          `/teams?team=${encodeURIComponent(row.team)}`,
+          row.rank,
+          row.team,
+          row.delta > 0 ? `▲ ${row.delta}` : row.delta < 0 ? `▼ ${Math.abs(row.delta)}` : '–',
+          row.delta > 0 ? 'text-[11px] font-semibold text-[#1E8E3E]' : row.delta < 0 ? 'text-[11px] font-semibold text-[#D01F2D]' : 'text-[11px] text-[#9CA3AF]',
+        ))}
+      </div>
+    </>
   )
 
   const standingsSubtitle = `${currentSeason} · ${isFinalStandings ? 'final' : currentWeekLabel ? `through week ${currentWeekLabel}` : 'regular season'}`
@@ -2151,17 +2219,12 @@ export default function TapitasLeagueHomepage() {
     </div>
   )
   const leadersList = (
-    <div className="py-1 lg:py-2">
-      {standings.slice(0, 10).map((t, i) => (
-        <StatRow
-          key={t.team}
-          href={`/teams?team=${encodeURIComponent(t.team)}`}
-          left={<span className="flex items-center gap-2">{rankBadge(i + 1, i === 0)}<TeamLogo name={t.team} size={22} /></span>}
-          title={t.team}
-          value={formatLeaderValue(valueForSub(t, sortSubOpt.key))}
-        />
-      ))}
-    </div>
+    <>
+      {compactHeader(sortSubOpt.label.length > 8 ? 'Value' : sortSubOpt.label)}
+      <div className="pb-1 lg:pb-2">
+        {standings.slice(0, 10).map((t, i) => compactRow(t.team, `/teams?team=${encodeURIComponent(t.team)}`, i + 1, t.team, formatLeaderValue(valueForSub(t, sortSubOpt.key))))}
+      </div>
+    </>
   )
 
   // Rankings, standings e líderes num card só com abas (desktop e mobile).
@@ -2195,7 +2258,7 @@ export default function TapitasLeagueHomepage() {
         if (opt) setSelectedMatchupKey(opt.key)
       }} />}
     >
-      <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_340px] xl:gap-5">
+      <div data-sticky-cols className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_340px] xl:gap-5">
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
           <LeagueNewsCard onOpenPlayer={openNflPlayer} />
           {tablesCard}
@@ -2207,9 +2270,9 @@ export default function TapitasLeagueHomepage() {
           {/* Ordem no celular: notícias de jogadores → rivalry → lesões → news → rankings → trending → draft */}
           <div className="lg:hidden"><LeagueNewsCard onOpenPlayer={openNflPlayer} /></div>
           {rivalryCard}
+          <div className="lg:hidden"><RosterAlertsCard onOpenPlayer={openNflPlayer} /></div>
+          {newsCard}
           <div className="lg:hidden">
-            <RosterAlertsCard onOpenPlayer={openNflPlayer} />
-            {newsCard}
             {tablesCard}
             <TrendingCard onOpenPlayer={openNflPlayer} />
             {draftCard}
@@ -2219,13 +2282,8 @@ export default function TapitasLeagueHomepage() {
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
           <RosterAlertsCard onOpenPlayer={openNflPlayer} />
           <TrendingCard onOpenPlayer={openNflPlayer} />
+          {draftSideCard}
         </aside>
-      </div>
-
-      {/* Desktop: notícias e draft lado a lado (metade cada), abaixo das três colunas */}
-      <div className="mb-2 hidden lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-4 xl:gap-5">
-        {newsCard}
-        {draftCard}
       </div>
 
       <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={leagueStats.allSeasons} />

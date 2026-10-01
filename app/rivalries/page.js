@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTeamFocus } from '../context/TeamFocus'
 import { ChevronDown, ChevronLeft, Flame, Swords } from 'lucide-react'
 import { PageShell, PageBar, BarTab, CardShell, FilterPill, Tag, TeamLogo, VersusPoster, TaleOfTape } from '../components/ui'
 
@@ -505,18 +506,47 @@ export default function RivalriesPage() {
   AUTO SELECT
   ===================================================== */
 
-  // Seleção inicial: par vindo da URL (ex.: link da página Teams) ou a
-  // rivalidade do topo da lista (desktop e celular).
+  // Confronto da semana do time em foco (filtro geral), vindo do Sleeper
+  const [teamFocus] = useTeamFocus()
+  const [focusOpp, setFocusOpp] = useState({ team: null, opp: null, loaded: false })
   useEffect(() => {
-    if (!rivalries.length || selected) return
+    if (!teamFocus) return
+    let cancelled = false
+    fetch('/api/league/week')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (cancelled) return
+        const m = (d?.matchups || []).find(x => x.teams.some(t => normalizeString(t.team) === normalizeString(teamFocus)))
+        const opp = m?.teams.find(t => normalizeString(t.team) !== normalizeString(teamFocus))?.team || null
+        setFocusOpp({ team: teamFocus, opp, loaded: true })
+      })
+      .catch(() => { if (!cancelled) setFocusOpp({ team: teamFocus, opp: null, loaded: true }) })
+    return () => { cancelled = true }
+  }, [teamFocus])
+
+  // Seleção inicial: par vindo da URL (ex.: link da página Teams); com time em
+  // foco, o confronto dele na semana; senão a rivalidade do topo da lista.
+  const appliedFocus = useRef(null)
+  useEffect(() => {
+    if (!rivalries.length) return
+    const findPair = (a, b) => rivalries.find(r => [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(a)) && [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(b)))
+    const orient = (match, a) => (normalizeString(match.teamA) === normalizeString(a) ? match : flipRivalry(match))
     if (initialPair) {
       const [a, b] = initialPair
-      const match = rivalries.find(r => [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(a)) && [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(b)))
+      const match = findPair(a, b)
       setInitialPair(null)
-      if (match) { setSelected(normalizeString(match.teamA) === normalizeString(a) ? match : flipRivalry(match)); return }
+      appliedFocus.current = teamFocus
+      if (match) { setSelected(orient(match, a)); return }
     }
-    setSelected(rivalries[0])
-  }, [rivalries, selected, initialPair])
+    // Time em foco: espera o confronto da semana chegar e aplica uma vez por foco
+    if (teamFocus && appliedFocus.current !== teamFocus) {
+      if (focusOpp.team !== teamFocus || !focusOpp.loaded) return
+      appliedFocus.current = teamFocus
+      const match = (focusOpp.opp && findPair(teamFocus, focusOpp.opp)) || rivalries.find(r => [r.teamA, r.teamB].some(t => normalizeString(t) === normalizeString(teamFocus)))
+      if (match) { setSelected(orient(match, teamFocus)); return }
+    }
+    if (!selected) setSelected(rivalries[0])
+  }, [rivalries, selected, initialPair, teamFocus, focusOpp])
 
   /* =====================================================
   HISTORY
@@ -980,7 +1010,7 @@ RENDER
         ))}
       </PageBar>
 
-      <div className="lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-5">
+      <div data-sticky-cols className="lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-5">
         <aside className={`lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] lg:block ${showList || !selected ? '' : 'hidden'}`}>{listCard}</aside>
         <div className={`min-w-0 lg:block ${showList ? 'hidden' : ''}`}>
           {detail || (

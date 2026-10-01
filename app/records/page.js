@@ -867,10 +867,12 @@ function RecordsPageContent() {
     const mostWeeklyHigh23 = mkWeeklyHighRecord(weeklyHighMap23, weeklyHighYears23)
 
     // Melhor média de pontos por jogo (semanas simples, todas as fases),
-    // só franquias atuais
+    // só franquias atuais e só de 2023 em diante: antes os elencos tinham outro
+    // tamanho (2014–16 menores; 2021–22 maiores e 8 franquias), o que distorce
+    // a média de quem jogou essas temporadas.
     const currentSet = new Set(allTime.map(r => normalizeTeamName(String(r?.Team || '').trim())))
     const avgAcc = {}
-    games.filter(g => !isDoubleWeek(g) && parseNumber(g?.PF) > 0).forEach(g => {
+    games.filter(g => !isDoubleWeek(g) && parseNumber(g?.PF) > 0 && Number(String(g?.Season || '').trim()) >= 2023).forEach(g => {
       const team = String(g?.Team || '').trim()
       if (!currentSet.has(normalizeTeamName(team))) return
       if (!avgAcc[team]) avgAcc[team] = { sum: 0, n: 0 }
@@ -1339,10 +1341,11 @@ function RecordsPageContent() {
     }
 
     // Most games over 200 pts — deduplicate per team+season+week (not matchup)
-    // so both sides of a game are counted independently
+    // so both sides of a game are counted independently. Só de 2023 em diante,
+    // pelo mesmo motivo da média: o tamanho do elenco mudou ao longo dos anos.
     const over200 = {}
     const over200Seen = new Set()
-    games.filter(g => !isDoubleWeek(g)).forEach(g => {
+    games.filter(g => !isDoubleWeek(g) && Number(String(g?.Season || '').trim()) >= 2023).forEach(g => {
       const team = String(g?.Team || '').trim()
       if (!currentTeams.has(normalizeTeamName(team))) return
       const key = `${team}|${String(g?.Season || '')}|${String(g?.Week || '')}`
@@ -2101,8 +2104,8 @@ function RecordsPageContent() {
 
                 <RecordSection title="Scoring">
                   <RecordCard label="Most Points All-Time" value={franchiseRecords.mostPF?.value} sub={franchiseRecords.mostPF?.teams} team={franchiseRecords.mostPF?.teams} accent="emerald" icon={Activity} top5={franchiseRecords.mostPF?.top5} />
-                  <RecordCard label="Best Points Average" value={franchiseRecords.bestAvg?.value} sub={franchiseRecords.bestAvg?.teams} team={franchiseRecords.bestAvg?.teams} sub2="Per game · single weeks · all stages" accent="cyan" icon={TrendingUp} top5={franchiseRecords.bestAvg?.top5} />
-                  <RecordCard label="Most Games Over 200 pts" value={gameRecords.most200?.value} sub={gameRecords.most200?.teams} team={gameRecords.most200?.teams} sub2="Single weeks only · all stages" accent="orange" icon={Zap} top5={gameRecords.most200?.top5} />
+                  <RecordCard label="Best Points Average ('23 on)" value={franchiseRecords.bestAvg?.value} sub={franchiseRecords.bestAvg?.teams} team={franchiseRecords.bestAvg?.teams} sub2="Per game · 2023+ · current roster format" accent="cyan" icon={TrendingUp} top5={franchiseRecords.bestAvg?.top5} />
+                  <RecordCard label="Most 200+ Games ('23 on)" value={gameRecords.most200?.value} sub={gameRecords.most200?.teams} team={gameRecords.most200?.teams} sub2="Single weeks · 2023+ · current roster format" accent="orange" icon={Zap} top5={gameRecords.most200?.top5} />
                 </RecordSection>
 
                 <RecordSection title="Weekly High Scorer (RS)">

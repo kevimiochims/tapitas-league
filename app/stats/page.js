@@ -7,6 +7,7 @@ import { ChevronRight, Activity, Swords, Flame } from 'lucide-react'
 import { HighlightCards, HighlightIcon, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, StableHeight, LoadingState } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
+import { useTeamFocus } from '../context/TeamFocus'
 
 const BASE_URL = '/api/sheet'
 
@@ -81,7 +82,7 @@ async function safeFetch(url) {
 // ── Gráficos do painel (SVG simples, sem biblioteca) ─────────────────
 
 // Barras horizontais com escudo do time.
-function HBarChart({ rows, format = v => v, highlightTop = true, center = null }) {
+function HBarChart({ rows, format = v => v, highlightTop = true, center = null, focus = '' }) {
   const max = Math.max(...rows.map(r => Math.abs(r.value)), 1)
   const span = center === null ? max : Math.max(...rows.map(r => Math.abs(r.value - center)), 1)
   return (
@@ -90,7 +91,7 @@ function HBarChart({ rows, format = v => v, highlightTop = true, center = null }
         const positive = center === null || r.value >= center
         const width = center === null ? (r.value / max) * 100 : (Math.abs(r.value - center) / span) * 50
         return (
-          <a key={r.team} href={`/teams?team=${encodeURIComponent(r.team)}`} className="group grid grid-cols-[112px_minmax(0,1fr)_56px] items-center gap-2 sm:grid-cols-[150px_minmax(0,1fr)_60px]">
+          <a key={r.team} href={`/teams?team=${encodeURIComponent(r.team)}`} className={`group grid grid-cols-[112px_minmax(0,1fr)_56px] items-center gap-2 rounded-md sm:grid-cols-[150px_minmax(0,1fr)_60px] ${r.team === focus ? '-mx-1.5 bg-[#FFF8E1] px-1.5 py-0.5 ring-1 ring-[#E8C766]' : ''}`}>
             <span className="flex min-w-0 items-center gap-1.5">
               <TeamLogo name={r.team} size={18} />
               <span className="truncate text-[12px] font-medium text-[#111] group-hover:text-[#D01F2D]">{r.team}</span>
@@ -113,7 +114,7 @@ function HBarChart({ rows, format = v => v, highlightTop = true, center = null }
 // Colunas verticais com rótulo embaixo e valor em cima.
 // Mapa de calor: posição final de cada franquia em cada temporada.
 // Campeão em dourado, depois tons de azul até o último colocado em vermelho.
-function FinishHeatmap({ history, teams }) {
+function FinishHeatmap({ history, teams, focus = '' }) {
   const seasons = [...new Set(history.map(r => String(r?.Season || '').trim()).filter(Boolean))].sort((a, b) => Number(a) - Number(b))
   const lastBySeason = Object.fromEntries(seasons.map(sn => [sn, Math.max(0, ...history.filter(r => String(r?.Season).trim() === sn).map(r => parseNumber(r?.Standing)))]))
   const cellStyle = (standing, last) => {
@@ -140,7 +141,7 @@ function FinishHeatmap({ history, teams }) {
         <tbody>
           {rows.map(row => (
             <tr key={row.team}>
-              <td className="sticky left-0 z-10 bg-white pr-2">
+              <td className={`sticky left-0 z-10 pr-2 ${row.team === focus ? 'bg-[#FFF8E1]' : 'bg-white'}`}>
                 <a href={`/teams?team=${encodeURIComponent(row.team)}`} className="flex min-w-0 items-center gap-1.5 text-[12px] font-medium text-[#111] hover:text-[#D01F2D]">
                   <TeamLogo name={row.team} size={18} />
                   <span className="max-w-[120px] truncate">{row.team}</span>
@@ -295,6 +296,10 @@ function StatsPageContent() {
   const [tab, setTab] = useState('Overall')
   const [season, setSeason] = useState('All-Time')
   const [chartTeam, setChartTeam] = useState('Moneyball')
+  // Time em foco (filtro geral): destacado nos gráficos e tabelas e já
+  // escolhido no Team Evolution e no filtro de time do Game Log
+  const [teamFocus] = useTeamFocus()
+  const [appliedFocus, setAppliedFocus] = useState(null)
   const [page, setPage] = useState(0)
   const [sortCol, setSortCol] = useState('W')
   const [sortDir, setSortDir] = useState('desc')
@@ -306,6 +311,10 @@ function StatsPageContent() {
   // Game Log database controls
   const [gfSeason, setGfSeason] = useState([])
   const [gfTeam, setGfTeam] = useState([])
+  if (appliedFocus !== teamFocus) {
+    setAppliedFocus(teamFocus)
+    if (teamFocus) { setChartTeam(teamFocus); setGfTeam([teamFocus]) } else setGfTeam([])
+  }
   const [gfOpponent, setGfOpponent] = useState([])
   const [gfStage, setGfStage] = useState([])
   const [gfResult, setGfResult] = useState([])
@@ -902,7 +911,7 @@ function StatsPageContent() {
 
       <CardShell title="Finishing positions" subtitle="Every franchise, every season · 🏆 champion · 🦄 last place · darker blue = higher finish">
         <div className="px-2 py-3 lg:px-3">
-          <FinishHeatmap history={historyData} teams={[...allTimeData].sort((a, b) => parseNumber(b?.W) - parseNumber(a?.W)).map(r => String(r?.Team || '').trim()).filter(Boolean)} />
+          <FinishHeatmap focus={teamFocus} history={historyData} teams={[...allTimeData].sort((a, b) => parseNumber(b?.W) - parseNumber(a?.W)).map(r => String(r?.Team || '').trim()).filter(Boolean)} />
         </div>
       </CardShell>
 
@@ -918,11 +927,11 @@ function StatsPageContent() {
         </CardShell>
 
         <CardShell title="Points per game" subtitle="All-time · single weeks">
-          <HBarChart rows={overview.ppg} format={v => v.toFixed(1)} />
+          <HBarChart focus={teamFocus} rows={overview.ppg} format={v => v.toFixed(1)} />
         </CardShell>
 
         <CardShell title="Win % all-time" subtitle="Green above .500 · red below">
-          <HBarChart rows={overview.winPct} format={v => `${v.toFixed(1)}%`} center={50} />
+          <HBarChart focus={teamFocus} rows={overview.winPct} format={v => `${v.toFixed(1)}%`} center={50} />
         </CardShell>
 
         <CardShell title="Score distribution" subtitle="How many weekly scores fall in each 20-point range">
@@ -932,7 +941,7 @@ function StatsPageContent() {
         </CardShell>
 
         <CardShell title="Playoff appearances" subtitle={`All-time${overview.titles.length ? ` · ${overview.titles.reduce((a, t) => a + t.value, 0)} titles handed out` : ''}`}>
-          <HBarChart rows={overview.playoffApps} />
+          <HBarChart focus={teamFocus} rows={overview.playoffApps} />
         </CardShell>
       </div>
     </>
@@ -998,7 +1007,7 @@ function StatsPageContent() {
                         const rank = page * PER_PAGE + i + 1
                         const pos = season !== 'All-Time' && row.standing ? row.standing : rank
                         return (
-                          <tr key={row.team} onClick={() => router.push(`/teams?team=${encodeURIComponent(row.team)}`)} className="group cursor-pointer border-b border-[#F1F2F4] bg-white transition-colors hover:bg-[#F7F8FA]">
+                          <tr key={row.team} onClick={() => router.push(`/teams?team=${encodeURIComponent(row.team)}`)} className={`group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] ${row.team === teamFocus ? 'bg-[#FFF8E1]' : 'bg-white'}`}>
                             <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5 text-[13px] font-semibold tabular-nums lg:px-4">
                               {/* 1º em dourado, zona de playoff (top 6) em azul */}
                               <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1 ${pos === 1 ? 'bg-[#B8860B] text-white' : pos <= 6 ? 'bg-[#02275F] text-white' : 'bg-[#F1F2F4] text-[#3F4757]'}`}>{pos}</span>

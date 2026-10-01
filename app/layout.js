@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import MobileDrawer from "./components/MobileDrawer";
 import { DrawerProvider } from "./context/DrawerContext";
+import StickyColumns from "./components/StickyColumns";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -22,6 +23,7 @@ export default function RootLayout({ children }) {
       <body className="bg-white text-[#111]">
         <DrawerProvider>
           <MobileDrawer />
+          <StickyColumns />
           {children}
         </DrawerProvider>
       </body>

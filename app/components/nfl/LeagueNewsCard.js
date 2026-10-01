@@ -17,7 +17,7 @@ function timeAgo(iso) {
 
 // Últimas notícias sobre jogadores dos elencos da liga. A primeira com foto
 // aparece em destaque (foto grande com o título por cima); as outras com miniatura.
-export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar = true }) {
+export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar = true }) {
   const [state, setState] = useState({ news: [], loading: true, failed: false })
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
             const side = hero ? rest.slice(0, 3) : []
             const more = hero ? rest.slice(3) : rest
             const row = n => (
-              <div key={n.id || n.url || n.headline} className="flex gap-2.5 px-3 py-2.5 lg:px-4">
+              <div key={n.id || n.url || n.headline} className={`flex h-[76px] items-center gap-2.5 px-3 py-2.5 lg:px-4 ${n === hero ? '@3xl:hidden' : ''}`}>
                 <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="relative flex-shrink-0" aria-label={n.player?.name}>
                   {n.image
                     ? <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
@@ -73,7 +73,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
                 </button>
                 <div className="min-w-0 flex-1">
                   {n.url
-                    ? <a href={n.url} target="_blank" rel="noopener noreferrer" className="line-clamp-2 block text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]">{n.headline}</a>
+                    ? <a href={n.url} target="_blank" rel="noopener noreferrer" className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]">{n.headline}</a>
                     : <div className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111]">{n.headline}</div>}
                   <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-[#6B7280]">
                     <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
@@ -85,9 +85,14 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 6, sidebar
               </div>
             )
             return (
-              <div {...listProps} className="@container">
+              // Card lateral: sempre o espaço de uma página cheia (linhas de 76px),
+              // então a última página não encolhe o card
+              <div {...listProps} style={sidebar ? { minHeight: initialLimit * 76 } : listProps.style} className="@container">
                 <div className={hero ? '@3xl:grid @3xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)] @3xl:items-center' : ''}>
-                  {hero && <div className="px-3 pb-1 pt-2.5 lg:px-4 @3xl:pb-2.5 @3xl:pr-0"><NewsHero item={hero} meta={meta(hero)} /></div>}
+                  {/* Destaque com foto só no card largo; no estreito ele vira uma linha
+                      comum, para todas as páginas terem a mesma altura */}
+                  {hero && <div className="hidden px-3 pb-2.5 pt-2.5 lg:px-4 @3xl:block @3xl:pr-0"><NewsHero item={hero} meta={meta(hero)} /></div>}
+                  {hero && row(hero)}
                   {side.length > 0 && <div>{side.map(row)}</div>}
                 </div>
                 {more.length > 0 && <div className={`grid grid-cols-1 @3xl:grid-cols-2 ${hero ? '@3xl:border-t @3xl:border-[#F1F2F4]' : ''}`}>{more.map(row)}</div>}

@@ -30,7 +30,7 @@ export default function NewsTicker() {
       const dt = Math.min(now - last, 100) / 1000
       last = now
       if (!pausedRef.current) {
-        const speed = window.innerWidth >= 1024 ? 70 : 45
+        const speed = window.innerWidth >= 1024 ? 58 : 40
         const half = track.scrollWidth / 2
         x -= speed * dt
         if (half > 0 && -x >= half) x += half

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
-import { CardShell, Segmented, Tag, TeamLogo, PositionBadge, SkeletonRows } from '../ui'
+import { CardShell, Segmented, Tag, TeamLogo, PositionBadge, SkeletonRows, Pager, usePager } from '../ui'
 import { useTrending } from './useNflData'
 import { PlayerThumb, EmptyNote, injuryTone, injuryLabel } from './shared'
 
@@ -15,8 +15,10 @@ function compact(n) {
 export default function TrendingCard({ onOpenPlayer }) {
   const { data, loading, error } = useTrending()
   const [mode, setMode] = useState('adds')
+  const list = (data?.[mode] || []).slice(0, 15)
+  // Padrão da coluna da direita: 5 jogadores por página
+  const { visible, page, totalPages, pagerProps, listProps } = usePager(list, 5, mode)
   if (error && !data) return null
-  const list = (data?.[mode] || []).slice(0, 10)
   const up = mode === 'adds'
 
   return (
@@ -25,10 +27,11 @@ export default function TrendingCard({ onOpenPlayer }) {
         <Segmented options={[['adds', 'Most added'], ['drops', 'Most dropped']]} value={mode} onChange={setMode} />
       </div>
       {loading ? <div className="py-2"><SkeletonRows rows={5} /></div> : list.length === 0 ? <EmptyNote>No trending players right now.</EmptyNote> : (
-        <div className="py-1">
-          {list.map((p, i) => (
+        <>
+        <div {...listProps} className="py-1">
+          {visible.map((p, i) => (
             <button key={p.id} type="button" onClick={() => onOpenPlayer?.(p, p.leagueTeams[0])} className="group flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-black/[0.03] lg:px-4">
-              <span className="w-4 flex-shrink-0 text-right text-[12px] font-semibold tabular-nums text-[#9CA3AF]">{i + 1}</span>
+              <span className="w-4 flex-shrink-0 text-right text-[12px] font-semibold tabular-nums text-[#9CA3AF]">{page * 5 + i + 1}</span>
               <PlayerThumb id={p.id} name={p.name} pos={p.pos} nflTeam={p.nflTeam} size={32} />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-1.5">
@@ -51,6 +54,8 @@ export default function TrendingCard({ onOpenPlayer }) {
             </button>
           ))}
         </div>
+        {totalPages > 1 && <Pager {...pagerProps} />}
+        </>
       )}
     </CardShell>
   )

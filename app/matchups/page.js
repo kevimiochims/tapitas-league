@@ -541,6 +541,9 @@ function MatchupsPageContent() {
   const [week, setWeek] = useState('')
   const [selected, setSelected] = useState(null)
   const [showWeekRecap, setShowWeekRecap] = useState(false)
+  // Starters e Bench podem ser recolhidos (para ler o recap rapidinho)
+  const [startersOpen, setStartersOpen] = useState(true)
+  const [benchOpen, setBenchOpen] = useState(true)
   const [showPowerRankingPreview, setShowPowerRankingPreview] = useState(false)
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
 
@@ -1353,7 +1356,7 @@ function MatchupsPageContent() {
             )}
 
             {/* Grid: recap | matchup | power ranking */}
-            <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
+            <div data-sticky-cols className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
               <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{recapCard}</aside>
 
               <div className="min-w-0">
@@ -1607,7 +1610,11 @@ function MatchupsPageContent() {
                 {/* Ajustado: px-3 no mobile para economizar espaço nas bordas, px-8 no desktop */}
                 {hasPlayerData && (
                 <div className="px-2 md:px-4 py-2 border-b border-[#EEF0F2]">
-                  <div className="text-[15px] font-bold text-[#111] mb-2">Starters</div>
+                  <button type="button" onClick={() => setStartersOpen(o => !o)} aria-expanded={startersOpen} className="group mb-2 flex items-center gap-1 text-[15px] font-bold text-[#111]">
+                    Starters
+                    <ChevronRight className={`h-4 w-4 text-[#9CA3AF] transition-transform group-hover:text-[#111] ${startersOpen ? 'rotate-90' : ''}`} />
+                  </button>
+                  <div className={startersOpen ? '' : 'hidden'}>
 
                   {/* Header colunas */}
                   <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-1">
@@ -1709,6 +1716,7 @@ function MatchupsPageContent() {
                       )
                     })
                   })()}
+                  </div>
                 </div>
                 )}
 
@@ -1716,7 +1724,11 @@ function MatchupsPageContent() {
                 {hasPlayerData && (bench.length > 0 || oppBench.length > 0) && (
                   <div className="px-2 md:px-4 py-2 border-b border-[#EEF0F2] bg-[#F4F5F7]">
                     {/* Banco de reservas com fundo cinza, para diferenciar dos titulares */}
-                    <div className="text-[15px] font-bold text-[#111] mb-2">Bench</div>
+                    <button type="button" onClick={() => setBenchOpen(o => !o)} aria-expanded={benchOpen} className="group mb-2 flex items-center gap-1 text-[15px] font-bold text-[#111]">
+                    Bench
+                    <ChevronRight className={`h-4 w-4 text-[#9CA3AF] transition-transform group-hover:text-[#111] ${benchOpen ? 'rotate-90' : ''}`} />
+                  </button>
+                  <div className={benchOpen ? '' : 'hidden'}>
 
                     <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-1">
                       <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-[#6B7280] pb-2 border-b border-[#EEF0F2] truncate">
@@ -1809,6 +1821,7 @@ function MatchupsPageContent() {
                         </React.Fragment>
                       )
                     })}
+                  </div>
                   </div>
                 )}
 

@@ -792,7 +792,7 @@ export default function HistoryPage() {
             <Tabs tabs={[['champion', '🏆 Champion story'], ['unicorn', '🦄 Unicorn story']]} value={view} onChange={setView} />
           </div>
 
-          <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
+          <div data-sticky-cols className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
             <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
               {championsCard}
               {unicornsCard}

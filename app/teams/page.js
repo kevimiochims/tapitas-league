@@ -426,6 +426,8 @@ export default function TeamsPage() {
   const [logHighestOnly, setLogHighestOnly] = useState(false)
   const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
   const [profileTab, setProfileTab] = useState(null)
+  // Jogador do Sleeper que nunca jogou pela franquia (fora do Player Archive)
+  const [nflProfile, setNflProfile] = useState(null)
   const [playerSearch, setPlayerSearch] = useState('')
   const [playerPositionFilter, setPlayerPositionFilter] = useState('All')
   const [playerSort, setPlayerSort] = useState('Appearances')
@@ -1381,11 +1383,12 @@ export default function TeamsPage() {
     const clearLogFilters = () => { setLogSeason('All'); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false) }
     // Paginação lateral (20 por página) no Game Log e no Player Archive
     const PAGE_SIZE = 20
-    const logPages = Math.max(1, Math.ceil(filteredLog.length / PAGE_SIZE))
+    const LOG_PAGE_SIZE = 25
+    const logPages = Math.max(1, Math.ceil(filteredLog.length / LOG_PAGE_SIZE))
     const playerPages = Math.max(1, Math.ceil(filteredPlayers.length / PAGE_SIZE))
     const logPageSafe = Math.min(logPage, logPages - 1)
     const playerPageSafe = Math.min(playerPage, playerPages - 1)
-    const visibleLog = filteredLog.slice(logPageSafe * PAGE_SIZE, (logPageSafe + 1) * PAGE_SIZE)
+    const visibleLog = filteredLog.slice(logPageSafe * LOG_PAGE_SIZE, (logPageSafe + 1) * LOG_PAGE_SIZE)
     const visiblePlayers = filteredPlayers.slice(playerPageSafe * PAGE_SIZE, (playerPageSafe + 1) * PAGE_SIZE)
 
     // ── Team switcher (same strip pattern as the Matchups scoreboard) ──
@@ -1643,7 +1646,7 @@ export default function TeamsPage() {
               {filteredLog.length === 0 && <div className="py-12 text-center text-[13px] text-[#6B7280]">No games match these filters</div>}
             </StableHeight>
             {logPages > 1 && (
-              <Pager page={logPageSafe} totalPages={logPages} total={filteredLog.length} pageSize={PAGE_SIZE} onPrev={() => setLogPage(Math.max(0, logPageSafe - 1))} onNext={() => setLogPage(Math.min(logPages - 1, logPageSafe + 1))} />
+              <Pager page={logPageSafe} totalPages={logPages} total={filteredLog.length} pageSize={LOG_PAGE_SIZE} onPrev={() => setLogPage(Math.max(0, logPageSafe - 1))} onNext={() => setLogPage(Math.min(logPages - 1, logPageSafe + 1))} />
             )}
           </div>
         </CardShell>
@@ -1720,12 +1723,32 @@ export default function TeamsPage() {
         initialTab={profileTab}
         onClose={closePlayerProfile}
       />
+    ) : nflProfile ? (
+      <PlayerProfileModal
+        key={`nfl-${nflProfile.id}`}
+        rawName={resolveFactsName(buildFactsNameIndex(games), nflProfile)}
+        displayName={nflProfile.name}
+        position={nflProfile.pos}
+        playerId={nflProfile.id}
+        games={games}
+        initialTeams={[selected.team]}
+        initialTab={profileTab}
+        onClose={() => setNflProfile(null)}
+      />
     ) : null
 
-    // Trades e adds/drops do time (Sleeper); o jogador abre o Player Profile
-    const transactionsCard = <TeamTransactionsCard team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`, selected.team)} />
+    // Jogador vindo do Sleeper (transações, status do elenco): se ele está no
+    // Player Archive do time abre por ali; senão abre direto pelo ID do Sleeper
+    // (ex.: recém-chegado que ainda não jogou pela franquia)
+    const openSleeperPlayer = (p, tab = null) => {
+      if (!p || String(p.pos || '').toUpperCase() === 'DEF') return
+      const key = `raw:${resolveFactsName(buildFactsNameIndex(games), p)}`
+      if (playerArchive.some(x => x.archiveKey === key)) openPlayerProfile(key, selected.team, tab)
+      else { setProfileTab(tab); setNflProfile(p) }
+    }
+    const transactionsCard = <TeamTransactionsCard team={selected.team} onOpenPlayer={p => openSleeperPlayer(p)} />
 
-    const rosterStatusCard = <TeamNflNotice team={selected.team} onOpenPlayer={p => openPlayerProfile(`raw:${resolveFactsName(buildFactsNameIndex(games), p)}`, selected.team, p.focus || null)} />
+    const rosterStatusCard = <TeamNflNotice team={selected.team} onOpenPlayer={p => openSleeperPlayer(p, p.focus || null)} />
 
     const mobileTabs = [['overview', 'Overview'], ['games', 'Game Log'], ['players', 'Players'], ['h2h', 'H2H']]
 
@@ -1744,7 +1767,7 @@ export default function TeamsPage() {
 
         {/* Grid: status do elenco + records + jogadores | game log | temporadas + head to head.
             O Player Archive ocupa a linha inteira embaixo (desktop). */}
-        <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
+        <div data-sticky-cols className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
           <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
             {rosterStatusCard}
             {transactionsCard}
@@ -1918,7 +1941,7 @@ export default function TeamsPage() {
           <BarTab key={key} active={teamsSort === key} onClick={() => setTeamsSort(key)}>{label}</BarTab>
         ))}
       </PageBar>
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
+      <div data-sticky-cols className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
         <div className="min-w-0">{teamsGrid}</div>
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC]">{championsCard}</aside>
       </div>

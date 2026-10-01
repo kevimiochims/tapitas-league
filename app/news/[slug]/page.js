@@ -98,7 +98,7 @@ export default function NewsArticle() {
 
     return (
         <PageShell>
-            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
+            <div data-sticky-cols className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
                 <article className="mb-2 overflow-hidden rounded-xl bg-white">
                     {/* Título */}
                     <div className="px-4 pb-4 pt-4 sm:px-8 sm:pt-6">

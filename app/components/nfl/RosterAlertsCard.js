@@ -19,7 +19,7 @@ export default function RosterAlertsCard({ onOpenPlayer }) {
   const list = all
     .filter(p => filter === 'all' || p.starter)
     .sort((a, b) => injuryRank(a.injury.status) - injuryRank(b.injury.status) || Number(b.starter) - Number(a.starter) || a.name.localeCompare(b.name))
-  const { visible, totalPages, pagerProps, listProps } = usePager(list, 8, `${filter}|${team}`)
+  const { visible, totalPages, pagerProps, listProps } = usePager(list, 5, `${filter}|${team}`)
 
   if (error && !data) return null
 

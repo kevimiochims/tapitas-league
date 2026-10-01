@@ -104,8 +104,6 @@ export default function NewsPage() {
         ))}
       </PageBar>
 
-      <NewsTicker />
-
       {loading ? (
         <div className="space-y-2">
           <Skeleton className="h-[260px] w-full rounded-xl sm:h-[380px]" />
@@ -138,7 +136,10 @@ export default function NewsPage() {
             </button>
           )}
 
-          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
+          {/* Letreiro de manchetes da NFL entre o destaque e a lista */}
+          <NewsTicker />
+
+          <div data-sticky-cols className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
             <div className="min-w-0">
               {rest.length > 0 && (
                 <CardShell title="Latest" subtitle={filter === 'Todos' ? 'All stories, newest first' : `${filter} · newest first`}>

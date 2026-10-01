@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTeamFocus } from '../context/TeamFocus'
 import {
   TrendingUp,
   TrendingDown,
@@ -204,6 +205,7 @@ function PowerRankingsPageContent() {
 
   const searchParams = useSearchParams()
   const urlSeason = searchParams.get('season')
+  const [teamFocus] = useTeamFocus()
   const urlWeek = searchParams.get('week')
 
   const [games, setGames] = useState([])
@@ -925,12 +927,13 @@ function PowerRankingsPageContent() {
         )
       })()}
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-5">
+      <div data-sticky-cols className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-5">
         <div className="min-w-0">
           <CardShell title="Power Rankings" subtitle={`${season} · Week ${week} · tap a team for details`}>
             <div>
               {rankings.map((team, ti) => {
                 const tier = tierOf(team.rank)
+                const isFocus = team.team === teamFocus
                 const newTier = ti === 0 || tierOf(rankings[ti - 1].rank).label !== tier.label
                 const expandedOpen = expanded === team.team
                 const seasonResults = getSeasonResults(team.team)
@@ -947,7 +950,7 @@ function PowerRankingsPageContent() {
                       <span className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: tier.color === '#9CA3AF' ? '#6B7280' : tier.color }}>{tier.label}</span>
                     </div>
                   )}
-                  <div className={`relative border-b border-[#F1F2F4] last:border-b-0 ${expandedOpen ? 'bg-[#F9FAFB]' : ''}`}>
+                  <div className={`relative border-b border-[#F1F2F4] last:border-b-0 ${expandedOpen ? 'bg-[#F9FAFB]' : team.team === teamFocus ? 'bg-[#FFF8E1]' : ''}`}>
                     <span className="absolute inset-y-0 left-0 w-[3px]" style={{ background: tier.color }} />
                     <button onClick={() => setExpanded(expandedOpen ? null : team.team)} className="group flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-[#F7F8FA] lg:gap-4 lg:px-4">
                       <div className="w-9 flex-shrink-0 text-center">
@@ -958,6 +961,7 @@ function PowerRankingsPageContent() {
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-center gap-1.5">
                           <span className="truncate text-[14px] font-semibold text-[#111] group-hover:text-[#D01F2D] sm:text-[15px]">{team.team}</span>
+                          {isFocus && <span className="flex-shrink-0 rounded bg-[#B8860B] px-1.5 py-0.5 text-[10px] font-semibold text-white">Your team</span>}
                           {team.rank === 1 && <Star className="h-3.5 w-3.5 flex-shrink-0 fill-[#F5C518] text-[#F5C518]" />}
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[#6B7280]">
@@ -1068,7 +1072,7 @@ function PowerRankingsPageContent() {
           {raceSeries.length > 0 && (
             <CardShell title="Season race" subtitle={`${season} · rank week by week · tap a line`} sidebar>
               <div className="px-2 pb-3 pt-3 lg:px-3">
-                <BumpChart weeks={raceWeeks} series={raceSeries} active={expanded} onPick={team => setExpanded(team)} />
+                <BumpChart weeks={raceWeeks} series={raceSeries} active={expanded || teamFocus} onPick={team => setExpanded(team)} />
               </div>
             </CardShell>
           )}

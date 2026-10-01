@@ -33,13 +33,16 @@ export function formatTxDate(ms) {
 const txMeta = t => `${t.season}${t.week ? ` · Week ${t.week}` : ' · Preseason'}${t.date ? ` · ${formatTxDate(t.date)}` : ''}`
 
 function PlayerLine({ p, onOpenPlayer, tone, compact = false }) {
+  // Defesas não têm Player Profile no site: a linha não é clicável
+  const isDef = String(p.pos || '').toUpperCase() === 'DEF'
+  const Wrap = isDef ? 'div' : 'button'
   return (
-    <button type="button" onClick={() => onOpenPlayer?.(p)} className="group flex w-full min-w-0 items-center gap-2 py-1 text-left">
+    <Wrap {...(isDef ? {} : { type: 'button', onClick: () => onOpenPlayer?.(p) })} className={`flex w-full min-w-0 items-center gap-2 py-1 text-left ${isDef ? '' : 'group'}`}>
       <PlayerThumb id={p.id} name={p.name} pos={p.pos} nflTeam={p.nflTeam} size={28} />
       <span className={`min-w-0 truncate text-[13px] font-medium group-hover:text-[#D01F2D] ${tone === 'out' ? 'text-[#6B7280] line-through decoration-[#D01F2D]/40' : 'text-[#111]'}`}>{p.name}</span>
       <PositionBadge position={p.pos} />
       {p.nflTeam && !compact && <span className="flex-shrink-0 text-[11px] text-[#9CA3AF]">{p.nflTeam}</span>}
-    </button>
+    </Wrap>
   )
 }
 
@@ -132,7 +135,7 @@ export function TeamTransactionsCard({ team, onOpenPlayer }) {
   const { visible, totalPages, pagerProps, listProps } = usePager(list, tab === 'trade' ? 2 : 5, `${team}|${tab}`)
   if (!loading && !mine.length) return null
   return (
-    <CardShell title="Transactions" subtitle={loading ? 'Loading…' : `From Sleeper · ${mine.length} moves`} sidebar action={<a href="/trades" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All</a>}>
+    <CardShell title="Transactions" subtitle={loading ? 'Loading…' : `From Sleeper · ${mine.length} moves`} sidebar action={<a href="/transactions" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All</a>}>
       <div className="px-3 pt-2.5 lg:px-4">
         <Segmented options={[['trade', `Trades ${trades.length}`], ['moves', `Moves ${moves.length}`]]} value={tab} onChange={setTab} />
       </div>
@@ -145,5 +148,65 @@ export function TeamTransactionsCard({ team, onOpenPlayer }) {
       )}
       {totalPages > 1 && <Pager {...pagerProps} />}
     </CardShell>
+  )
+}
+
+// Aba do Player Profile: todas as movimentações do jogador na liga (Sleeper),
+// da mais recente para a mais antiga.
+export function PlayerTransactionsCard({ playerId }) {
+  const { data, loading } = useTransactions()
+  const id = String(playerId || '')
+  const events = []
+  ;(data?.transactions || []).forEach(t => {
+    const into = t.moves.find(m => m.adds.some(p => p.id === id))
+    const out = t.moves.find(m => m.drops.some(p => p.id === id))
+    if (!into && !out) return
+    if (t.type === 'trade') {
+      events.push({ t, kind: 'trade', team: into?.team, from: out?.team, text: `Traded to ${into?.team || '—'}`, sub: out ? `from ${out.team}` : '' })
+      return
+    }
+    if (into) events.push({ t, kind: 'add', team: into.team, text: t.type === 'waiver' ? `Claimed off waivers by ${into.team}` : `Signed as a free agent by ${into.team}`, sub: t.type === 'waiver' && t.bid ? `$${t.bid} bid` : '' })
+    if (out) events.push({ t, kind: 'drop', team: out.team, text: `Released by ${out.team}`, sub: '' })
+  })
+  const style = {
+    trade: { icon: ArrowLeftRight, cls: 'bg-[#EEF3FF] text-[#02275F]', tag: 'Trade' },
+    add: { icon: Plus, cls: 'bg-[#E8F5EC] text-[#1E8E3E]', tag: 'Added' },
+    drop: { icon: Minus, cls: 'bg-[#FDECEE] text-[#D01F2D]', tag: 'Dropped' },
+  }
+  return (
+    <section className="overflow-hidden rounded-xl bg-white">
+      <div className="px-3 pb-2 pt-3 sm:px-4">
+        <h3 className="text-[15px] font-bold text-[#111]">Transaction log</h3>
+        <div className="mt-0.5 text-[12px] text-[#6B7280]">Every move involving this player in the league · from Sleeper (2025 on)</div>
+      </div>
+      <div className="mx-3 border-t border-[#E6E8EB] sm:mx-4" />
+      {loading ? <div className="px-3 py-4 text-[13px] text-[#6B7280] sm:px-4">Loading…</div>
+        : !events.length ? <div className="px-3 py-8 text-center text-[13px] text-[#6B7280] sm:px-4">No trades, adds or drops for this player.</div>
+          : (
+            <ol className="relative px-3 py-3 sm:px-4">
+              {/* Linha do tempo */}
+              <span className="absolute bottom-5 left-[29px] top-5 w-px bg-[#E6E8EB] sm:left-[33px]" />
+              {events.map((e, i) => {
+                const st = style[e.kind]
+                return (
+                  <li key={`${e.t.id}-${i}`} className="relative flex items-start gap-3 py-2">
+                    <span className={`relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ring-4 ring-white ${st.cls}`}><st.icon className="h-4 w-4" strokeWidth={2.5} /></span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        {e.team && <TeamLogo name={e.team} size={18} />}
+                        <span className="text-[13px] font-semibold text-[#111]">{e.text}</span>
+                        {e.sub && <span className="text-[12px] text-[#6B7280]">{e.sub}</span>}
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#9CA3AF]">
+                        <Tag tone={e.kind === 'trade' ? 'navy' : e.kind === 'add' ? 'green' : 'red'}>{st.tag}</Tag>
+                        {txMeta(e.t)}
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          )}
+    </section>
   )
 }
