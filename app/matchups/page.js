@@ -1423,12 +1423,14 @@ function MatchupsPageContent() {
                             <span className="text-xs font-semibold text-[#6B7280]">
                               {teamRecord.w}–{teamRecord.l}
                             </span>
+                            {teamStreak && (
                             <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${teamStreak.startsWith('W')
                               ? 'text-white bg-[#1E8E3E]'
                               : 'text-white bg-[#D01F2D]'
                               }`}>
                               {teamStreak}
                             </span>
+                            )}
                           </div>
                           {isHistoricTeamScore(teamPF) && (
                             <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
@@ -1477,12 +1479,14 @@ function MatchupsPageContent() {
                             <span className="text-xs font-semibold text-[#6B7280]">
                               {oppRecord.w}–{oppRecord.l}
                             </span>
+                            {oppStreak && (
                             <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${oppStreak.startsWith('W')
                               ? 'text-white bg-[#1E8E3E]'
                               : 'text-white bg-[#D01F2D]'
                               }`}>
                               {oppStreak}
                             </span>
+                            )}
                           </div>
                           {isHistoricTeamScore(teamPA) && (
                             <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
@@ -1751,7 +1755,7 @@ function MatchupsPageContent() {
             displayName={selectedPlayerProfile.displayName}
             position={selectedPlayerProfile.position}
             playerId={getPlayerData(selectedPlayerProfile.rawName, selectedPlayerProfile.position, playerLookup)?.playerId || getPlayerId(selectedPlayerProfile.rawName, playerLookup)}
-            games={games}
+            games={games.filter(g => g?.Source !== 'sleeper')}
             initialTeams={[selectedPlayerProfile.team]}
             matchup={{
               season: selectedPlayerProfile.season,

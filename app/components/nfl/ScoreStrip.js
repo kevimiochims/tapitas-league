@@ -164,7 +164,7 @@ function TapitasChip({ season, status, m }) {
 }
 
 // Seletor de semana discreto: só o texto e uma seta leve (como os números da Home)
-function WeekSelect({ week, onChange }) {
+function WeekSelect({ week, onChange, maxWeek }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -181,7 +181,7 @@ function WeekSelect({ week, onChange }) {
       </button>
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-28 overflow-y-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5">
-          {WEEKS.map(w => (
+          {WEEKS.filter(w => !maxWeek || Number(w) <= maxWeek).map(w => (
             <button
               key={w}
               type="button"
@@ -197,14 +197,14 @@ function WeekSelect({ week, onChange }) {
   )
 }
 
-function SectionLabel({ logo, name, week, onWeek, live }) {
+function SectionLabel({ logo, name, week, onWeek, live, maxWeek }) {
   return (
     <div className="flex w-[6.5rem] flex-shrink-0 flex-col items-start justify-center gap-1 border-r border-[#EEF0F2] py-1.5 pl-3 pr-2">
       <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#111]">
         <img src={logo} alt="" className="h-4 w-4 object-contain" />{name}
         {live && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" title="Live" />}
       </span>
-      <WeekSelect week={week} onChange={onWeek} />
+      <WeekSelect week={week} onChange={onWeek} maxWeek={maxWeek} />
     </div>
   )
 }
@@ -236,6 +236,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
             week={nflWeek || nfl.data?.week}
             onWeek={w => { setNflWeek(Number(w)); setOpenId(null) }}
             live={nfl.data?.live}
+            maxWeek={nfl.data?.currentWeek || tap.data?.currentWeek}
           />
           <div className={chipsRow}>
             {nfl.loading && skeleton(4)}
@@ -250,6 +251,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
             week={tapWeek || tap.data?.week}
             onWeek={w => { setTapWeek(Number(w)); onTapitasWeek?.(Number(w)) }}
             live={tap.data?.live}
+            maxWeek={tap.data?.currentWeek || nfl.data?.currentWeek}
           />
           <div className={chipsRow}>
             {tap.loading && skeleton(5)}

@@ -36,3 +36,13 @@ export function isWeekFinal(seasonStartDate, week, now = Date.now()) {
   if (!start) return true
   return now >= start.getTime() + 6 * DAY + 1 * 3600000
 }
+
+// Kickoff da temporada pela regra da NFL: a quinta-feira depois do Labor Day
+// (primeira segunda de setembro). Usado quando o Sleeper não informa a data.
+export function kickoffDate(season) {
+  const year = Number(season)
+  if (!year) return null
+  const sept1 = new Date(Date.UTC(year, 8, 1))
+  const laborDay = 1 + ((8 - sept1.getUTCDay()) % 7) // 1ª segunda de setembro
+  return `${year}-09-${String(laborDay + 3).padStart(2, '0')}`
+}

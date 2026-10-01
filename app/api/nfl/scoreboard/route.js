@@ -68,5 +68,6 @@ export async function GET(request) {
   }))
 
   const live = games.some(g => g.state === 'in')
-  return Response.json({ ...board, games, live }, { headers: cdnHeaders(live ? 30 : 300) })
+  const state = await getNflState().catch(() => null)
+  return Response.json({ ...board, games, live, currentWeek: state?.week || null }, { headers: cdnHeaders(live ? 30 : 300) })
 }

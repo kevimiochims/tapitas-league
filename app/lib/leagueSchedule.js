@@ -138,9 +138,10 @@ function abbreviate(name, pos) {
   return `${parts[0][0]}. ${parts.slice(1).join(' ')}`
 }
 
-// Linhas no formato da aba GAME_FACTS_ALL para as semanas da temporada atual que
-// ainda não estão na planilha (semana em andamento e futuras), montadas com as
-// escalações do Sleeper. A página Matchups junta essas linhas às da planilha.
+// Linhas no formato da aba GAME_FACTS_ALL para a semana em andamento (e alguma
+// semana já encerrada que ainda não foi para a planilha), montadas com as
+// escalações do Sleeper. A página Matchups junta essas linhas às da planilha só
+// para exibir o confronto; elas não entram em estatísticas.
 export function getSleeperSeasonRows() {
   return cached('league:sleeper-rows', 60, async () => {
     const [info, state, sheetRows, sheetNames, players] = await Promise.all([
@@ -154,7 +155,7 @@ export function getSleeperSeasonRows() {
     if (!season) return []
     const lastRegular = info.playoffWeekStart ? info.playoffWeekStart - 1 : 17
     const inSheet = new Set(sheetRows
-      .filter(r => Number(r?.Season) === Number(season) && (Number(r?.PF) || 0) > 0)
+      .filter(r => Number(r?.Season) === Number(season) && num(r?.PF) > 0)
       .flatMap(r => weekNumbers(r?.Week)))
     const currentWeek = state?.seasonType === 'regular' ? state.week : state?.seasonType === 'pre' ? 1 : null
     // Todas as semanas da temporada que ainda não estão (terminadas) na planilha
@@ -166,7 +167,10 @@ export function getSleeperSeasonRows() {
     }
     const rows = []
     const weeks = []
-    for (let week = startWeek; week <= lastRegular; week++) if (!inSheet.has(week)) weeks.push(week)
+    // Só até a semana em andamento: semanas futuras não entram (nada de 0 a 0
+    // no game log nem confrontos que ainda não aconteceram)
+    const lastWeek = Math.min(lastRegular, currentWeek || 0)
+    for (let week = startWeek; week <= lastWeek; week++) if (!inSheet.has(week)) weeks.push(week)
     const allMatchups = await Promise.all(weeks.map(w => getSleeperWeek(w).catch(() => [])))
     const isLive = currentWeek && weeks.includes(currentWeek) ? await getLiveStarterCheck() : () => false
     weeks.forEach((week, wi) => {

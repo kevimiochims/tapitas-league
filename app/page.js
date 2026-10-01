@@ -1615,35 +1615,47 @@ export default function TapitasLeagueHomepage() {
   const selectedRivalry = useMemo(() => {
     if (!selectedTeamA || !selectedTeamB) return null
 
-    const row = h2hData.find((r) => {
-      const keys = Object.keys(r)
-      const a = String(r[keys[0]] || '').trim()
-      const b = String(r[keys[1]] || '').trim()
-      return (
-        normalizeString(a) === normalizeString(selectedTeamA) &&
-        normalizeString(b) === normalizeString(selectedTeamB)
-      )
-    })
+    // Confronto direto calculado a partir da GAME_FACTS_ALL, que já chega sem as
+    // semanas em andamento (a aba HEAD_TO_HEAD_SORTED da planilha pode incluir
+    // placares parciais da semana atual).
+    const weekNum = w => Math.max(0, ...(String(w || '').match(/\d+/g) || ['0']).map(Number))
+    const pairGames = (gameFactsData || [])
+      .filter(g =>
+        normalizeString(g?.Team) === normalizeString(selectedTeamA) &&
+        normalizeString(g?.Opponent) === normalizeString(selectedTeamB) &&
+        (parseNumber(g?.PF) > 0 || parseNumber(g?.PA) > 0))
+      .sort((a, b) => (Number(a?.Season) - Number(b?.Season)) || (weekNum(a?.Week) - weekNum(b?.Week)))
+    if (!pairGames.length) return null
 
-    if (!row) return null
+    const resultOf = g => {
+      const r = String(g?.Result || '').trim().toUpperCase()
+      if (r === 'W' || r === 'L' || r === 'T') return r
+      const pf = parseNumber(g?.PF), pa = parseNumber(g?.PA)
+      return pf > pa ? 'W' : pf < pa ? 'L' : 'T'
+    }
+    const isPlayoff = g => {
+      const stage = String(g?.GameStage || g?.GameType || '').toLowerCase()
+      return /playoff|semi|final|quarter|champ|wild/.test(stage) && !/consol|toilet|loser/.test(stage)
+    }
+    const winsA = pairGames.filter(g => resultOf(g) === 'W').length
+    const winsB = pairGames.filter(g => resultOf(g) === 'L').length
+    const poWinsA = pairGames.filter(g => isPlayoff(g) && resultOf(g) === 'W').length
+    const poWinsB = pairGames.filter(g => isPlayoff(g) && resultOf(g) === 'L').length
+    const avgMargin = (pairGames.reduce((sum, g) => sum + parseNumber(g?.PF) - parseNumber(g?.PA), 0) / pairGames.length).toFixed(2)
 
-    const lastMatch = String(row['Last Match'] || row['last match'] || '')
-    const scoreMatch = lastMatch.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/)
-    const weekMatch = lastMatch.match(/Week\s*([\d][\d\-\/]*)/i) || lastMatch.match(/\bW(\d[\d\-\/]*)\b/i)
-    const yearMatch = lastMatch.match(/(20\d{2})/)
-
-    const winsA = parseNumber(
-      row['A W'] || row['A_W'] || row['A_WINS'] || row['A Wins'] || row['A'] || 0
-    )
-    const winsB = parseNumber(
-      row['B W'] || row['B_W'] || row['B_WINS'] || row['B Wins'] || row['B'] || 0
-    )
-    const poWinsA = parseNumber(row['A PO_W'] || 0)
-    const poWinsB = parseNumber(row['B PO_W'] || 0)
-    const avgMargin = String(
-      row['Avg Margin'] || row['AVG_MARGIN'] || row['Average Margin'] || row['Margin'] || '0.0'
-    )
-    const streak = String(row['Current Streak'] || '--')
+    const last = pairGames[pairGames.length - 1]
+    const lastResult = resultOf(last)
+    let streakLen = 0
+    for (let i = pairGames.length - 1; i >= 0 && resultOf(pairGames[i]) === lastResult; i--) streakLen++
+    const currentStreak = lastResult === 'W'
+      ? { streakA: `W${streakLen}`, streakB: `L${streakLen}`, streakCount: streakLen, winner: 'A' }
+      : lastResult === 'L'
+        ? { streakA: `L${streakLen}`, streakB: `W${streakLen}`, streakCount: streakLen, winner: 'B' }
+        : { streakA: '—', streakB: '—', streakCount: streakLen, winner: null }
+    const lastMeetingInfo = {
+      score: `${parseNumber(last?.PF).toFixed(2)} vs ${parseNumber(last?.PA).toFixed(2)}`,
+      meta: `Week ${String(last?.Week || '').trim()} · ${String(last?.Season || '').trim()}`,
+    }
 
     const totalGames = winsA + winsB
     const recordGap = Math.abs(winsA - winsB)
@@ -1692,58 +1704,6 @@ export default function TapitasLeagueHomepage() {
       return mappings[n] || String(name).split(' ')[0]
     }
 
-    const parseCurrentStreak = (rawStreak, teamA, teamB) => {
-      const raw = String(rawStreak || '').trim()
-      if (!raw) {
-        return { streakA: '—', streakB: '—', streakCount: null, winner: null }
-      }
-
-      const match = raw.match(/\bW\s*(\d+)\b|\bW(\d+)\b/i)
-      const count = match?.[1] || match?.[2]
-
-      if (!count) {
-        return { streakA: '—', streakB: '—', streakCount: null, winner: null }
-      }
-
-      const normRaw = normalizeString(raw)
-      const normA = normalizeString(teamA)
-      const normB = normalizeString(teamB)
-      const normShortA = normalizeString(shortName(teamA))
-      const normShortB = normalizeString(shortName(teamB))
-
-      const mentionsA =
-        normRaw.includes(normA) || normRaw.includes(normShortA)
-
-      const mentionsB =
-        normRaw.includes(normB) || normRaw.includes(normShortB)
-
-      if (mentionsA && !mentionsB) {
-        return {
-          streakA: `W${count}`,
-          streakB: `L${count}`,
-          streakCount: Number(count),
-          winner: 'A',
-        }
-      }
-
-      if (mentionsB && !mentionsA) {
-        return {
-          streakA: `L${count}`,
-          streakB: `W${count}`,
-          streakCount: Number(count),
-          winner: 'B',
-        }
-      }
-
-      return {
-        streakA: '—',
-        streakB: '—',
-        streakCount: Number(count),
-        winner: null,
-      }
-    }
-
-    const currentStreak = parseCurrentStreak(streak, selectedTeamA, selectedTeamB)
 
     return {
       teamA: selectedTeamA,
@@ -1758,18 +1718,9 @@ export default function TapitasLeagueHomepage() {
       streakB: currentStreak.streakB,
       streakWinner: currentStreak.winner,
       streakCount: currentStreak.streakCount,
-      lastMeeting: {
-        score: scoreMatch ? `${scoreMatch[1]} vs ${scoreMatch[2]}` : '-- vs --',
-        meta: (weekMatch || yearMatch)
-          ? `${weekMatch ? `Week ${weekMatch[1]}` : ''} ${yearMatch ? `· ${yearMatch[1]}` : ''}`.trim()
-          : '',
-      },
-      biggestA: String(row['Biggest Win Team A'] || row['biggest_win_a'] || '—'),
-      biggestB: String(row['Biggest Win Team B'] || row['biggest_win_b'] || '—'),
-      bestStreakA: String(row['Best Streak Team A'] || row['best_streak_a'] || '—'),
-      bestStreakB: String(row['Best Streak Team B'] || row['best_streak_b'] || '—'),
+      lastMeeting: lastMeetingInfo,
     }
-  }, [h2hData, selectedTeamA, selectedTeamB])
+  }, [gameFactsData, selectedTeamA, selectedTeamB])
 
   useEffect(() => {
     if (!draftScrollRef.current) return

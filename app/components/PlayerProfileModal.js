@@ -307,6 +307,9 @@ function formatCompactPlayerStatGroups(stats, pos) {
 
 const STAT_GROUP_LABELS = { PASS: 'Passing', RUSH: 'Rushing', REC: 'Receiving', KICK: 'Kicking', DEF: 'Defense' }
 
+// Altura do título do card Game Log (título + subtítulo + divisória)
+const GAME_LOG_HEADER_PX = 64
+
 // Card branco no padrão das páginas (título + subtítulo + divisória).
 function ProfileCard({ title, subtitle, right, children }) {
   return (
@@ -867,9 +870,10 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
           {/* Game log */}
           {tab === 'career' && (
           <ProfileCard title="Game Log" subtitle={`${sorted.length} of ${profileGames.length} games · click a row to open the matchup`}>
-            {/* A página rola até o game log encostar no topo; daí em diante só as
-                linhas rolam, com o cabeçalho (Season, Week…) fixo. */}
-            <div className="overflow-auto overscroll-contain" style={bodyHeight ? { maxHeight: bodyHeight } : undefined}>
+            {/* A janela rola até o card do Game Log encostar no topo (título visível);
+                daí em diante só as linhas rolam, com o cabeçalho (Season, Week…)
+                fixo. No topo da tabela, o scroll volta a mover a janela. */}
+            <div className="overflow-auto" style={bodyHeight ? { maxHeight: Math.max(200, bodyHeight - GAME_LOG_HEADER_PX) } : undefined}>
               <table className="w-full min-w-[760px]">
                 <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_#EEF0F2]">
                   <tr className="border-b border-[#EEF0F2]">

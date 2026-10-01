@@ -1,6 +1,6 @@
 import { cached, fetchJson } from './cache'
 import { normalizeNflTeam } from './nflTeams'
-import { displayWeek } from './nflCalendar'
+import { displayWeek, kickoffDate } from './nflCalendar'
 
 const API = 'https://api.sleeper.app'
 
@@ -13,7 +13,7 @@ export async function getNflState() {
       season: String(raw?.season || raw?.league_season || ''),
       seasonType: String(raw?.season_type || ''),
       sleeperWeek: Number(raw?.display_week || raw?.week || 0),
-      seasonStartDate: raw?.season_start_date || null,
+      seasonStartDate: raw?.season_start_date || kickoffDate(raw?.season || raw?.league_season),
     }
   })
   const week = (s.seasonStartDate && displayWeek(s.seasonStartDate)) || s.sleeperWeek
