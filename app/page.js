@@ -2189,7 +2189,9 @@ export default function TapitasLeagueHomepage() {
       headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}
       wide
       topBar={<ScoreStrip onTapitasWeek={week => {
+        // Semana sem dados ainda (ex.: a atual): volta para a última semana disponível
         const opt = matchupOptions.find(o => Number(o.week) === week && String(o.season) === String(currentSeason))
+          || matchupOptions[matchupOptions.length - 1]
         if (opt) setSelectedMatchupKey(opt.key)
       }} />}
     >

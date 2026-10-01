@@ -173,7 +173,7 @@ function FinishHeatmap({ history, teams }) {
 }
 
 function ColumnChart({ data, format = v => v, labelFormat = l => l, fontSize = 11, height = 180, width = 640, accentIndex = -1, line = null }) {
-  const W = width, H = height, padB = 26, padT = 20, padX = 8
+  const W = width, H = height, padB = 26, padT = line ? 30 : 20, padX = 8
   const max = Math.max(...data.map(d => d.value), ...(line ? data.map(d => d[line.key] || 0) : []), 1)
   const bw = (W - padX * 2) / data.length
   const y = v => padT + (1 - v / max) * (H - padT - padB)
@@ -186,7 +186,10 @@ function ColumnChart({ data, format = v => v, labelFormat = l => l, fontSize = 1
         return (
           <g key={d.label}>
             <rect x={x} y={y(d.value)} width={w} height={H - padB - y(d.value)} rx="3" fill={i === accentIndex ? '#B8860B' : '#02275F'} opacity={i === accentIndex ? 1 : 0.9} />
-            <text x={x + w / 2} y={y(d.value) - 5} textAnchor="middle" fontSize={fontSize} fontWeight="600" fill="#111">{format(d.value)}</text>
+            {/* Se a linha passa colada no topo da barra, o valor da barra vai para dentro dela */}
+            {line && y(d.value) - y(d[line.key] || 0) < fontSize * 2.2 && H - padB - y(d.value) > fontSize * 1.8
+              ? <text x={x + w / 2} y={y(d.value) + fontSize + 4} textAnchor="middle" fontSize={fontSize} fontWeight="600" fill="#fff">{format(d.value)}</text>
+              : <text x={x + w / 2} y={y(d.value) - 5} textAnchor="middle" fontSize={fontSize} fontWeight="600" fill="#111">{format(d.value)}</text>}
             <text x={x + w / 2} y={H - 8} textAnchor="middle" fontSize={fontSize} fill="#6B7280">{labelFormat(d.label)}</text>
           </g>
         )
@@ -195,6 +198,10 @@ function ColumnChart({ data, format = v => v, labelFormat = l => l, fontSize = 1
         <>
           <polyline points={linePoints} fill="none" stroke="#D01F2D" strokeWidth="2" strokeLinejoin="round" />
           {data.map((d, i) => <circle key={i} cx={padX + bw * i + bw / 2} cy={y(d[line.key] || 0)} r="3" fill="#D01F2D" />)}
+          {/* Valor da linha em cada ponto (ex.: maior pontuação da temporada) */}
+          {data.map((d, i) => d[line.key] ? (
+            <text key={`v${i}`} x={padX + bw * i + bw / 2} y={y(d[line.key]) - 8} textAnchor="middle" fontSize={fontSize} fontWeight="600" fill="#D01F2D" stroke="#fff" strokeWidth="3" paintOrder="stroke">{(line.format || format)(d[line.key])}</text>
+          ) : null)}
         </>
       )}
     </svg>
@@ -907,10 +914,10 @@ function StatsPageContent() {
       </CardShell>
 
       <div className="grid gap-2 lg:grid-cols-2">
-        <CardShell title="Scoring by season" subtitle="Average points per team per week · red line = highest score" className="lg:col-span-2">
+        <CardShell title="Scoring by season" subtitle="Bars: average points per team per week · red line: highest single score of the season" className="lg:col-span-2">
           {/* Desktop: gráfico largo · celular: versão própria com letras legíveis */}
           <div className="hidden px-2 pb-2 pt-3 md:block lg:px-3">
-            <ColumnChart data={overview.seasonScoring} width={1200} height={220} format={v => v.toFixed(0)} line={{ key: 'max' }} accentIndex={overview.seasonScoring.reduce((best, d, i, arr) => d.value > arr[best].value ? i : best, 0)} />
+            <ColumnChart data={overview.seasonScoring} width={1200} height={220} format={v => v.toFixed(0)} line={{ key: 'max', format: v => v.toFixed(1) }} accentIndex={overview.seasonScoring.reduce((best, d, i, arr) => d.value > arr[best].value ? i : best, 0)} />
           </div>
           <div className="px-1 pb-2 pt-3 md:hidden">
             <ColumnChart data={overview.seasonScoring} width={360} height={240} fontSize={10} format={v => v.toFixed(0)} labelFormat={l => `'${String(l).slice(-2)}`} line={{ key: 'max' }} accentIndex={overview.seasonScoring.reduce((best, d, i, arr) => d.value > arr[best].value ? i : best, 0)} />

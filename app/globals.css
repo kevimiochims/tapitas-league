@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  /* Fundo fora da página (aparece no "arrasto" do celular): branco, como o header */
-  --background: #FFFFFF;
+  /* Fundo fora da página (aparece no "arrasto" do celular): preto, como o header e o rodapé */
+  --background: #0B0D12;
   --foreground: #111111;
 }
 
 html,
 body {
-  background-color: #FFFFFF;
+  background-color: #0B0D12;
 }
 
 body {

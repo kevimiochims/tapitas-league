@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { BrandBackdrop, PageShell, PageBar, BarTab, LeaderCard, LoadingState, TeamLogo, PositionBadge as UiPositionBadge } from '../components/ui'
+import { PageShell, PageBar, BarTab, LeaderCard, LoadingState, TeamLogo, PositionBadge as UiPositionBadge } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import React, { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -383,70 +383,156 @@ function RecordSection({ title, index = 0, children }) {
   )
 }
 
-// Seções de uma aba: índice fixo à esquerda (desktop) ou atalhos no topo
-// (celular), e as seções numeradas para alternar os tons entre elas.
-function Sections({ children }) {
+// Seções de uma aba com filtro no topo: "All" mostra todas, e cada chip
+// mostra só aquela seção (sem precisar rolar a página atrás dela).
+function Sections({ children, filter = 'All', onFilter }) {
   const all = React.Children.toArray(children)
-  const titles = all.filter(c => React.isValidElement(c) && c.type === RecordSection).map(c => c.props.title)
-  const [active, setActive] = useState(titles[0])
-  const titlesKey = titles.join('|')
-
-  useEffect(() => {
-    const els = titlesKey.split('|').map(t => document.getElementById(`rec-${slug(t)}`)).filter(Boolean)
-    if (!els.length || typeof IntersectionObserver === 'undefined') return
-    const obs = new IntersectionObserver(entries => {
-      const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
-      if (visible) setActive(titlesKey.split('|').find(t => `rec-${slug(t)}` === visible.target.id))
-    }, { rootMargin: '-10% 0px -70% 0px' })
-    els.forEach(el => obs.observe(el))
-    return () => obs.disconnect()
-  }, [titlesKey])
-
-  const jump = t => {
-    setActive(t)
-    document.getElementById(`rec-${slug(t)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  const sectionsOnly = all.filter(c => React.isValidElement(c) && c.type === RecordSection)
+  const titles = sectionsOnly.map(c => c.props.title)
+  const active = titles.includes(filter) ? filter : 'All'
+  const countOf = c => React.Children.toArray(c.props.children).filter(Boolean).length
+  const total = sectionsOnly.reduce((n, c) => n + countOf(c), 0)
 
   let n = 0
-  const sections = all.map(child => React.isValidElement(child) && child.type === RecordSection ? React.cloneElement(child, { index: n++ }) : child)
+  const sections = all
+    .map(child => React.isValidElement(child) && child.type === RecordSection ? React.cloneElement(child, { index: n++ }) : child)
+    .filter(child => active === 'All' || !(React.isValidElement(child) && child.type === RecordSection) || child.props.title === active)
+
+  const chip = (key, label, count) => (
+    <button
+      key={key}
+      type="button"
+      onClick={() => onFilter?.(key)}
+      aria-pressed={active === key}
+      className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] transition-colors ${active === key ? 'bg-[#02275F] font-semibold text-white' : 'bg-white text-[#3F4757] ring-1 ring-[#E6E8EB] hover:ring-[#02275F]/40'}`}
+    >
+      {label}
+      <span className={`text-[11px] tabular-nums ${active === key ? 'text-white/70' : 'text-[#9CA3AF]'}`}>{count}</span>
+    </button>
+  )
 
   return (
-    <div className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:gap-5">
-      <nav className="sticky top-3 hidden rounded-xl bg-white py-2 lg:block">
-        <div className="px-4 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">In this chapter</div>
-        {titles.map((t, i) => (
+    <div>
+      {titles.length > 1 && (
+        <div className="scroll-hide mb-2 flex gap-1.5 overflow-x-auto px-1 sm:px-0 lg:flex-wrap">
+          {chip('All', 'All', total)}
+          {sectionsOnly.map(c => chip(c.props.title, c.props.title, countOf(c)))}
+        </div>
+      )}
+      {sections}
+    </div>
+  )
+}
+
+const stripParens = v => String(v || '').replace(/\s*\(.*?\)\s*/g, '').trim()
+
+// Um destaque do hero a partir de um recorde (o #1 do top 5, ou o primeiro detentor)
+function heroTile(rec, { label, section, tab, value, sub }) {
+  if (!rec) return null
+  const lead = Array.isArray(rec.top5) ? rec.top5[0] : null
+  const leadLabel = lead ? (Array.isArray(lead.label) ? lead.label.join(', ') : String(lead.label || '')) : ''
+  const holder = stripParens(leadLabel || (Array.isArray(rec.teams) ? rec.teams[0] : rec.teams) || '')
+  const ties = Array.isArray(rec.teams) ? rec.teams.length : 0
+  const v = value ?? lead?.value ?? rec.value
+  if (v === undefined || v === null || v === '' || !holder) return null
+  return {
+    label, section, tab,
+    value: v,
+    holder,
+    pair: holder.includes(' vs ') ? holder.split(' vs ').slice(0, 2) : null,
+    playerId: lead?.playerId || null,
+    position: lead?.position || null,
+    sub: sub || (ties > 1 ? `${ties}-way tie` : (lead?.sub || lead?.meta || (Array.isArray(rec.sub2) ? rec.sub2.filter(Boolean).join(' · ') : rec.sub2) || '')),
+  }
+}
+
+function HeroHolder({ tile, size = 18 }) {
+  if (tile.pair) return <VersusLogos teams={tile.pair} size={size} />
+  if (tile.playerId) return null
+  return <span className="flex-shrink-0 rounded-full bg-white p-px"><TeamLogo name={tile.holder} size={size} /></span>
+}
+
+// Hero da Record Book: muda com a aba. Um recorde principal em destaque e
+// mais quatro ao lado; cada um leva à seção dele (aplica o filtro).
+function RecordsHero({ tab, tiles, onPick }) {
+  const meta = TABS.find(t => t.key === tab) || TABS[0]
+  const [feature, ...rest] = tiles.filter(Boolean)
+  const small = rest.slice(0, 4)
+  const Icon = meta.Icon
+  return (
+    <div className="relative mb-2 overflow-hidden rounded-xl bg-[#02275F] text-white">
+      <Icon className="pointer-events-none absolute -right-6 -top-6 h-40 w-40 text-white/[0.04]" strokeWidth={1.5} />
+      <div className="relative flex items-end justify-between gap-3 px-4 pt-4 sm:px-5">
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#E8C766]">The Record Book · since 2014</div>
+          <div className="mt-0.5 flex items-center gap-2 text-[22px] font-bold leading-tight sm:text-[26px]">
+            <Icon className="h-5 w-5 flex-shrink-0 text-white/70 sm:h-6 sm:w-6" />
+            {meta.label}
+          </div>
+          <div className="mt-0.5 text-[12px] text-white/65 sm:text-[13px]">{meta.blurb}</div>
+        </div>
+      </div>
+      {feature ? (
+        <div className="relative mt-3 grid grid-cols-2 gap-px bg-white/10 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-2">
           <button
-            key={t}
             type="button"
-            onClick={() => jump(t)}
-            className={`flex w-full items-center gap-2 px-4 py-1.5 text-left text-[13px] transition-colors ${active === t ? 'bg-[#F4F6FA] font-semibold text-[#02275F] shadow-[inset_3px_0_0_#02275F]' : 'text-[#3F4757] hover:bg-[#F7F8FA] hover:text-[#111]'}`}
+            onClick={() => onPick(feature)}
+            className="group relative col-span-2 min-h-[132px] overflow-hidden bg-[#032C6B] px-4 py-4 text-left transition-colors hover:bg-[#06357C] sm:px-5 lg:col-span-1 lg:row-span-2 lg:min-h-[200px]"
           >
-            <span className="w-4 flex-shrink-0 text-[11px] tabular-nums text-[#9CA3AF]">{i + 1}</span>
-            <span className="min-w-0 truncate">{t}</span>
+            {feature.playerId ? (
+              <div className="pointer-events-none absolute -right-2 bottom-0"><PlayerCutout sleeperId={feature.playerId} name={feature.holder} className="h-[128px] lg:h-[190px]" fallback={false} /></div>
+            ) : feature.pair ? (
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 opacity-95"><VersusLogos teams={feature.pair} size={56} /></div>
+            ) : (
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white p-1 shadow-lg lg:right-5"><TeamLogo name={feature.holder} size={72} /></div>
+            )}
+            <div className="relative flex h-full max-w-[62%] flex-col justify-end">
+              <div className="inline-flex w-fit items-center gap-1 rounded-full bg-[#E8C766] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#02275F]"><Trophy className="h-3 w-3" />{feature.label}</div>
+              <div className="mt-2 text-[40px] font-bold leading-none tabular-nums lg:text-[52px]">{feature.value}</div>
+              <div className="mt-2 flex min-w-0 items-center gap-1.5">
+                {feature.position && <PositionBadge position={feature.position} />}
+                <span className="truncate text-[15px] font-semibold">{feature.holder}</span>
+              </div>
+              {feature.sub && <div className="mt-0.5 line-clamp-2 text-[12px] text-white/60">{feature.sub}</div>}
+            </div>
           </button>
-        ))}
-      </nav>
-      <div className="min-w-0">
-        <div className="scroll-hide mb-2 flex gap-1.5 overflow-x-auto lg:hidden">
-          {titles.map(t => (
-            <button key={t} type="button" onClick={() => jump(t)} className={`h-8 flex-shrink-0 whitespace-nowrap rounded-full px-3 text-[12px] ${active === t ? 'bg-[#02275F] font-semibold text-white' : 'bg-white text-[#3F4757]'}`}>{t}</button>
+          {small.map(t => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => onPick(t)}
+              className="group relative min-w-0 overflow-hidden bg-[#02275F] px-4 py-3 text-left transition-colors hover:bg-[#06357C] sm:px-5"
+            >
+              {t.playerId && <div className="pointer-events-none absolute -right-3 bottom-0 opacity-90"><PlayerCutout sleeperId={t.playerId} name={t.holder} className="h-[84px]" fallback={false} /></div>}
+              <div className={`relative ${t.playerId ? 'pr-12' : ''}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{t.label}</span>
+                  <ChevronRight className="hidden h-3.5 w-3.5 flex-shrink-0 text-white/30 transition-colors group-hover:text-white/70 sm:block" />
+                </div>
+                <div className="mt-1 text-[24px] font-bold leading-none tabular-nums sm:text-[26px]">{t.value}</div>
+                <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+                  <HeroHolder tile={t} size={16} />
+                  <span className="truncate text-[12px] font-semibold sm:text-[13px]">{t.holder}</span>
+                </div>
+                {t.sub && <div className="mt-0.5 truncate text-[11px] text-white/55">{t.sub}</div>}
+              </div>
+            </button>
           ))}
         </div>
-        {sections}
-      </div>
+      ) : <div className="h-4" />}
     </div>
   )
 }
 
 const TABS = [
-  { key: 'franchise', label: 'Franchise', Icon: Shield },
-  { key: 'streaks', label: 'Streaks', Icon: Flame },
-  { key: 'games', label: 'Games', Icon: Activity },
-  { key: 'players', label: 'Players', Icon: Users },
-  { key: 'seasons', label: 'Seasons', Icon: Star },
-  { key: 'rivalry', label: 'Rivalries', Icon: Swords },
-  { key: 'glory', label: 'Glory', Icon: Trophy },
-  { key: 'shame', label: 'Shame', Icon: Skull },
+  { key: 'franchise', blurb: 'All-time franchise marks: wins, playoffs, scoring.', label: 'Franchise', Icon: Shield },
+  { key: 'streaks', blurb: 'The hottest runs and the coldest slumps.', label: 'Streaks', Icon: Flame },
+  { key: 'games', blurb: 'Single-week highs, lows and the wildest finishes.', label: 'Games', Icon: Activity },
+  { key: 'players', blurb: 'The players who carried Tapitas rosters.', label: 'Players', Icon: Users },
+  { key: 'seasons', blurb: 'The best and worst seasons on record.', label: 'Seasons', Icon: Star },
+  { key: 'rivalry', blurb: 'Head-to-head history between franchises.', label: 'Rivalries', Icon: Swords },
+  { key: 'glory', blurb: 'Rings and finals: who owns the league.', label: 'Glory', Icon: Trophy },
+  { key: 'shame', blurb: 'The marks nobody wants to hold.', label: 'Shame', Icon: Skull },
 ]
 
 // useSearchParams precisa de um Suspense em volta nas páginas estáticas
@@ -471,6 +557,9 @@ function RecordsPageContent() {
     const t = searchParams.get('tab')
     return TABS.some(x => x.key === t) ? t : 'franchise'
   })
+  // Filtro de seção dentro da aba ("All" mostra todas); volta para All ao trocar de aba
+  const [section, setSection] = useState('All')
+  const pickTab = key => { setTab(key); setSection('All') }
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [allSeasons, setAllSeasons] = useState([])
 
@@ -1843,61 +1932,79 @@ function RecordsPageContent() {
     }
   }, [history, allTime])
 
+  // Destaques do hero por aba (o primeiro é o recorde principal)
+  const rsRecord = r => r ? `${parseNumber(r.RS_W)}–${parseNumber(r.RS_L)}` : undefined
+  const heroTiles = {
+    franchise: [
+      heroTile(franchiseRecords.mostWins, { label: 'Most wins all-time', section: 'All-Time Wins & Losses', tab: 'franchise' }),
+      heroTile(franchiseRecords.bestWinPct, { label: 'Best win %', section: 'All-Time Wins & Losses', tab: 'franchise' }),
+      heroTile(franchiseRecords.mostTitles, { label: 'Most titles', section: 'Championship Leaders', tab: 'glory' }),
+      heroTile(franchiseRecords.mostPF, { label: 'Most points all-time', section: 'Scoring', tab: 'franchise' }),
+      heroTile(franchiseRecords.mostPoApps, { label: 'Most playoff apps', section: 'Playoff Dominance', tab: 'franchise' }),
+    ],
+    streaks: [
+      heroTile(streakRecords.bestWTotal, { label: 'Longest win streak', section: 'All-Time Win Streaks', tab: 'streaks' }),
+      heroTile(streakRecords.bestLTotal, { label: 'Longest losing streak', section: 'All-Time Loss Streaks', tab: 'streaks' }),
+      heroTile(streakRecords.bestSeasonW, { label: 'Best in one season', section: 'Single Season Streaks', tab: 'streaks' }),
+      heroTile(streakRecords.bestSeasonL, { label: 'Worst in one season', section: 'Single Season Streaks', tab: 'streaks' }),
+      heroTile(streakRecords.bestWRS, { label: 'Win streak (reg season)', section: 'All-Time Win Streaks', tab: 'streaks' }),
+    ],
+    games: [
+      heroTile(gameRecords.highNoDouble, { label: 'Highest score', section: 'Highest Scores — Single Weeks Only', tab: 'games' }),
+      heroTile(gameRecords.highAll, { label: 'Highest (double weeks)', section: 'Highest Scores — Including Double Weeks', tab: 'games' }),
+      heroTile(gameRecords.lowSingle, { label: 'Lowest score', section: 'Lowest Scores', tab: 'games' }),
+      heroTile(gameRecords.biggestNoDouble, { label: 'Biggest win', section: 'Notable Games', tab: 'games' }),
+      heroTile(gameRecords.closestNoDouble, { label: 'Closest game', section: 'Notable Games', tab: 'games' }),
+    ],
+    players: [
+      heroTile(playerRecords?.all?.bestPts, { label: 'Best player game', section: 'Most Points', tab: 'players' }),
+      heroTile(playerRecords?.all?.avgPts, { label: 'Best average', section: 'Best Average', tab: 'players' }),
+      heroTile(playerRecords?.all?.mostStarted, { label: 'Most started', section: 'Most Started', tab: 'players' }),
+      heroTile(playerRecords?.all?.mostRostered, { label: 'Most rostered', section: 'Most Rostered', tab: 'players' }),
+      heroTile(playerRecords?.from23?.bestPts, { label: 'Best game since 2023', section: 'Most Points', tab: 'players' }),
+    ],
+    seasons: [
+      heroTile(seasonRecords.byWin, { label: 'Best reg season record', section: 'Best Records', tab: 'seasons', value: rsRecord(seasonRecords.byWin?.value) }),
+      heroTile(seasonRecords.byPF, { label: 'Most points in a season', section: 'Most Points in a Season (RS)', tab: 'seasons' }),
+      heroTile(seasonRecords.avgHigh, { label: 'Best avg per week', section: 'Best Avg Points/Week in a Season (RS)', tab: 'seasons' }),
+      heroTile(seasonRecords.byLoss, { label: 'Worst reg season record', section: 'Worst Records', tab: 'seasons', value: rsRecord(seasonRecords.byLoss?.value) }),
+      heroTile(seasonRecords.byLowPF, { label: 'Fewest points in a season', section: 'Fewest Points in a Season (RS)', tab: 'seasons' }),
+    ],
+    rivalry: [
+      heroTile(rivalryRecords.mostGames, { label: 'Most played rivalry', section: 'Most Played', tab: 'rivalry' }),
+      heroTile(rivalryRecords.bestH2HStreak, { label: 'Longest H2H streak', section: 'H2H Streaks', tab: 'rivalry' }),
+      heroTile(rivalryRecords.mostBalanced, { label: 'Most balanced', section: 'Dominance & Balance', tab: 'rivalry' }),
+      heroTile(rivalryRecords.highestMargin, { label: 'Most one-sided', section: 'Dominance & Balance', tab: 'rivalry' }),
+      heroTile(rivalryRecords.lowestMargin, { label: 'Closest margins', section: 'Dominance & Balance', tab: 'rivalry' }),
+    ],
+    glory: [
+      heroTile(gloryRecords.mostTitles, { label: 'Most titles', section: 'Championship Leaders', tab: 'glory' }),
+      heroTile(gloryRecords.mostFinals, { label: 'Most finals apps', section: 'Championship Leaders', tab: 'glory' }),
+      heroTile(franchiseRecords.mostPoW, { label: 'Most playoff wins', section: 'Playoff Dominance', tab: 'franchise' }),
+      heroTile(franchiseRecords.mostPoApps, { label: 'Most playoff apps', section: 'Playoff Dominance', tab: 'franchise' }),
+      heroTile(franchiseRecords.mostWeeklyHigh, { label: 'Most weekly highs', section: 'Weekly High Scorer (RS)', tab: 'franchise' }),
+    ],
+    shame: [
+      heroTile(gloryRecords.mostUnicorn, { label: 'Most unicorn years', section: 'Unicorn Leaders', tab: 'shame' }),
+      heroTile(franchiseRecords.mostLosses, { label: 'Most losses all-time', section: 'All-Time Wins & Losses', tab: 'franchise' }),
+      heroTile(streakRecords.bestLTotal, { label: 'Longest losing streak', section: 'All-Time Loss Streaks', tab: 'streaks' }),
+      heroTile(gameRecords.lowSingle, { label: 'Lowest score', section: 'Lowest Scores', tab: 'games' }),
+      heroTile(seasonRecords.byLowPF, { label: 'Fewest points in a season', section: 'Fewest Points in a Season (RS)', tab: 'seasons' }),
+    ],
+  }
+
   return (
     <PageShell headerProps={{ onSummaryOpen: () => setDrawerOpen(true) }}>
       <PageBar title="Record Book">
         {TABS.map(t => (
-          <BarTab key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
+          <BarTab key={t.key} active={tab === t.key} onClick={() => pickTab(t.key)}>
             <t.Icon className="h-3.5 w-3.5" />
             {t.label}
           </BarTab>
         ))}
       </PageBar>
 
-        {/* Hero: os recordes mais famosos da liga (cada um leva à sua aba) */}
-        {!loading && (() => {
-          const firstName = v => (Array.isArray(v) ? v[0] : v) || '—'
-          const best = playerRecords?.all?.bestPts?.top5?.[0]
-          const tiles = [
-            { key: 'franchise', label: 'Most titles', value: franchiseRecords.mostTitles?.value, team: firstName(franchiseRecords.mostTitles?.teams), sub: (franchiseRecords.mostTitles?.teams || []).length > 1 ? `${franchiseRecords.mostTitles.teams.length}-way tie` : 'Championships' },
-            { key: 'games', label: 'Highest score', value: gameRecords.highNoDouble?.value, team: firstName(gameRecords.highNoDouble?.teams), sub: gameRecords.highNoDouble?.sub2 || 'Single week' },
-            { key: 'streaks', label: 'Longest win streak', value: streakRecords.bestWTotal?.value, team: firstName(streakRecords.bestWTotal?.teams)?.replace(/\s*\(.*?\)\s*/g, '').trim(), sub: 'Consecutive wins' },
-            best && { key: 'players', label: 'Best player game', value: best.value, player: best, sub: best.meta || best.sub || '' },
-          ].filter(Boolean)
-          return (
-            <div className="relative mb-3 overflow-hidden rounded-xl text-white">
-              <BrandBackdrop />
-              <div className="relative flex items-center justify-between gap-3 px-4 pt-4 sm:px-5">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#E8C766]">Tapitas League · since 2014</div>
-                  <div className="mt-0.5 text-[20px] font-bold leading-tight sm:text-[24px]">The Record Book</div>
-                </div>
-                <Trophy className="h-8 w-8 flex-shrink-0 text-white/15 sm:h-10 sm:w-10" />
-              </div>
-              <div className="relative mt-3 grid grid-cols-2 border-t border-white/10 lg:grid-cols-4">
-                {tiles.map((t, i) => (
-                  <button
-                    key={t.label}
-                    type="button"
-                    onClick={() => setTab(t.key)}
-                    className={`group relative min-w-0 overflow-hidden px-4 py-3.5 text-left transition-colors hover:bg-white/5 sm:px-5 ${i % 2 === 1 ? 'border-l border-white/10' : ''} ${i >= 2 ? 'border-t border-white/10 lg:border-t-0' : ''} ${i === 2 ? 'lg:border-l' : ''}`}
-                  >
-                    {t.player && <div className="absolute -right-3 bottom-0 opacity-90"><PlayerCutout sleeperId={t.player.playerId} name={t.player.label} className="h-[96px]" fallback={false} /></div>}
-                    <div className={`relative ${t.player ? 'pr-16' : ''}`}>
-                      <div className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-white/65">{t.label}</div>
-                      <div className="mt-1 text-[28px] font-bold leading-none tabular-nums sm:text-[32px]">{t.value ?? '—'}</div>
-                      <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
-                        {t.team && <span className="flex-shrink-0 rounded-full bg-white p-px"><TeamLogo name={t.team} size={16} /></span>}
-                        <span className="truncate text-[13px] font-semibold">{t.team || (Array.isArray(t.player?.label) ? t.player.label.join(', ') : t.player?.label)}</span>
-                      </div>
-                      <div className="mt-0.5 truncate text-[11px] text-white/60">{t.sub}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )
-        })()}
+        {!loading && <RecordsHero tab={tab} tiles={heroTiles[tab] || []} onPick={t => { setTab(t.tab); setSection(t.section) }} />}
 
         {loading ? (
           <LoadingState />
@@ -1906,7 +2013,7 @@ function RecordsPageContent() {
 
             {/* FRANCHISE */}
             {tab === 'franchise' && (
-              <Sections>
+              <Sections filter={section} onFilter={setSection}>
                 <RecordSection title="All-Time Wins & Losses">
                   <RecordCard label="Most Wins All-Time" value={franchiseRecords.mostWins?.value} sub={franchiseRecords.mostWins?.teams} team={franchiseRecords.mostWins?.teams} accent="gold" icon={Trophy} top5={franchiseRecords.mostWins?.top5} />
                   <RecordCard label="Most Losses All-Time" value={franchiseRecords.mostLosses?.value} sub={franchiseRecords.mostLosses?.teams} team={franchiseRecords.mostLosses?.teams} accent="red" icon={TrendingDown} top5={franchiseRecords.mostLosses?.top5} />
@@ -1951,7 +2058,7 @@ function RecordsPageContent() {
 
             {/* STREAKS */}
             {tab === 'streaks' && (
-              <Sections>
+              <Sections filter={section} onFilter={setSection}>
                 <RecordSection title="All-Time Win Streaks">
                   <RecordCard label="Best Winning Streak (Total)" value={streakRecords.bestWTotal?.value} sub={streakRecords.bestWTotal?.teams} team={streakRecords.bestWTotal?.teams} accent="gold" icon={Flame} top5={streakRecords.bestWTotal?.top5} />
                   <RecordCard label="Best Winning Streak (Reg Season)" value={streakRecords.bestWRS?.value} sub={streakRecords.bestWRS?.teams} team={streakRecords.bestWRS?.teams} accent="emerald" icon={Flame} top5={streakRecords.bestWRS?.top5} />
@@ -1971,7 +2078,7 @@ function RecordsPageContent() {
 
             {/* GAMES */}
             {tab === 'games' && (
-              <Sections>
+              <Sections filter={section} onFilter={setSection}>
                 <RecordSection title="Highest Scores — Including Double Weeks">
                   <RecordCard label="All-Time" value={gameRecords.highAll?.value} sub={gameRecords.highAll?.teams} team={gameRecords.highAll?.teams} sub2={gameRecords.highAll?.sub2} sub2Href={gameRecords.highAll?.sub2Href} accent="gold" icon={Flame} top5={gameRecords.highAll?.top5} />
                   <RecordCard label="Reg Season" value={gameRecords.highReg?.value} sub={gameRecords.highReg?.teams} team={gameRecords.highReg?.teams} sub2={gameRecords.highReg?.sub2} sub2Href={gameRecords.highReg?.sub2Href} accent="cyan" icon={Flame} top5={gameRecords.highReg?.top5} />
@@ -2000,7 +2107,7 @@ function RecordsPageContent() {
 
             {/* PLAYERS */}
             {tab === 'players' && (
-              <Sections>
+              <Sections filter={section} onFilter={setSection}>
                 {[
                   ['mostRostered', 'Most Rostered', 'gold', Users],
                   ['mostStarted', 'Most Started', 'cyan', Star],
@@ -2033,7 +2140,7 @@ function RecordsPageContent() {
 
             {/* SEASONS */}
             {tab === 'seasons' && (
-              <Sections>
+              <Sections filter={section} onFilter={setSection}>
                 <RecordSection title="Best Records">
                   <RecordCard label="Best RS Record" value={`${parseNumber(seasonRecords.byWin?.value?.RS_W)}–${parseNumber(seasonRecords.byWin?.value?.RS_L)}`} sub={seasonRecords.byWin?.teams} team={seasonRecords.byWin?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="gold" icon={Trophy} top5={seasonRecords.byWin?.top5?.map(r => ({ ...r, value: `${r.value}W` }))} />
                   <RecordCard label="Best Overall Record" value={`${parseNumber(seasonRecords.byTotW?.value?.W)}–${parseNumber(seasonRecords.byTotW?.value?.L)}`} sub={seasonRecords.byTotW?.teams} team={seasonRecords.byTotW?.teams?.map(t => String(t).replace(/\s*\(.*?\)\s*/g, '').trim())} accent="cyan" icon={Star} top5={seasonRecords.byTotW?.top5?.map(r => ({ ...r, value: `${r.value}W` }))} />
@@ -2084,7 +2191,7 @@ function RecordsPageContent() {
 
             {/* RIVALRY */}
             {tab === 'rivalry' && (
-              <Sections>
+              <Sections filter={section} onFilter={setSection}>
                 <RecordSection title="Most Played">
                   <RecordCard label="Most H2H Games" value={rivalryRecords.mostGames?.value} sub={rivalryRecords.mostGames?.teams} accent="gold" icon={Swords} top5={rivalryRecords.mostGames?.top5} subHref={rivalryRecords.mostGames?.subHref} wide />
                 </RecordSection>
@@ -2103,7 +2210,7 @@ function RecordsPageContent() {
 
             {/* GLORY */}
             {tab === 'glory' && (
-              <Sections>
+              <Sections filter={section} onFilter={setSection}>
                 <RecordSection title="Championship Leaders">
                   <RecordCard label="Most Titles" value={gloryRecords.mostTitles?.value} sub={gloryRecords.mostTitles?.teams} team={gloryRecords.mostTitles?.teams} accent="gold" icon={Trophy} top5={gloryRecords.mostTitles?.top5} />
                   <RecordCard label="Most Finals Apps" value={gloryRecords.mostFinals?.value} sub={gloryRecords.mostFinals?.teams} team={gloryRecords.mostFinals?.teams} accent="purple" icon={Star} top5={gloryRecords.mostFinals?.top5} />
@@ -2113,7 +2220,7 @@ function RecordsPageContent() {
 
             {/* SHAME */}
             {tab === 'shame' && (
-              <Sections>
+              <Sections filter={section} onFilter={setSection}>
                 <RecordSection title="Unicorn Leaders">
                   <RecordCard label="Most Unicorn Years 🦄" value={gloryRecords.mostUnicorn?.value} sub={gloryRecords.mostUnicorn?.teams} team={gloryRecords.mostUnicorn?.teams} accent="slate" icon={Skull} top5={gloryRecords.mostUnicorn?.top5} />
                 </RecordSection>

@@ -18,7 +18,7 @@ export default function MobileDrawer() {
   return (
     <>
       {/* BARRA DO TOPO (mobile): menu à esquerda sobre o bloco azul do Header, slot da página à direita */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex h-11 items-center justify-between lg:hidden">
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex h-11 items-center justify-between lg:hidden">
         <button
           onClick={() => setOpen(true)}
           aria-label="Open menu"
