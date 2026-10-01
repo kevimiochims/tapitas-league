@@ -232,11 +232,9 @@ function teamAngles({ rows, team, opp, g, oppG, weekRows, seasonRows }) {
   }
   const flop = starters.filter(p => p.slot !== 'K' && p.slot !== 'DEF').sort((a, b) => a.pts - b.pts)[0]
   if (flop && flop.pts <= 3) angles.push({ w: 2, text: flop.pts === 0 ? `${flop.name} (${flop.slot}) zerou como titular de ${team}.` : `${flop.name} (${flop.slot}) fez só ${f2(flop.pts)} pontos como titular de ${team}.` })
-  const benchTop = [...bench].sort((a, b) => b.pts - a.pts)[0]
-  const maxPF = num(field(g, 'MaxPF', 'Max_PF', 'Ideal', 'Pontuação Ideal'))
-  if (r === 'L' && maxPF && maxPF > pa && benchTop && benchTop.pts >= 15) {
-    angles.push({ w: 2, text: `Curiosidade (usar com cuidado, não é prova de erro): a escalação ideal de ${team} somaria ${f2(maxPF)}, mais que os ${f2(pa)} do adversário. No banco, ${benchTop.name} fez ${f2(benchTop.pts)}.` })
-  }
+  // Banco e escalação ideal ficam de fora dos ganchos de propósito: a IA tendia
+  // a sugerir trocas impossíveis ("era só pôr o QB do banco"). O banco segue nas
+  // ESCALAÇÕES para quem quiser olhar.
 
   // Margem
   if (r === 'W' && margin < 5) angles.push({ w: 3, text: `Vitória por apenas ${f2(margin)} pontos.` })
@@ -375,7 +373,8 @@ export async function buildMatchupContext({ season, week, team, opp }) {
 
   // Campeão atual (última temporada encerrada antes desta)
   const lastSeason = Object.keys(hon).filter(s => Number(s) < Number(season) && hon[s].champion).sort((x, y) => Number(y) - Number(x))[0]
-  const defending = lastSeason && [a, b].find(t => norm(t) === norm(hon[lastSeason].champion))
+  const currentChampion = lastSeason ? { team: hon[lastSeason].champion, season: lastSeason } : null
+  const defending = currentChampion && [a, b].find(t => norm(t) === norm(currentChampion.team))
   if (defending) angles.push({ w: 1, text: `${defending} é o atual campeão (${lastSeason}).` })
 
   // Outros jogos da semana (contexto curto)
@@ -407,6 +406,7 @@ export async function buildMatchupContext({ season, week, team, opp }) {
     angles: angles.sort((x, y) => y.w - x.w),
     franchises: [a, b].map(t => franchiseLine(t, hon, previousRows)),
     honors: hon,
+    currentChampion,
     otherGames: others,
     previousRecaps: [a, b].map(prevRecap).filter(Boolean),
   }
@@ -476,6 +476,14 @@ export function renderContext(ctx) {
   })
   lines.push('')
   lines.push('## FRANQUIAS (só até esta semana)')
+  if (ctx.currentChampion) {
+    const cc = ctx.currentChampion
+    lines.push(`ATUAL CAMPEÃO: ${cc.team} (campeão de ${cc.season}). Só ${cc.team} pode ser chamado de "atual campeão" ou "defensor do título"; qualquer outro campeão é apenas "campeão de [ano]".`)
+    ctx.teams.filter(t => norm(t) !== norm(cc.team)).forEach(t => {
+      const titles = Object.entries(ctx.honors).filter(([, h]) => norm(h.champion) === norm(t)).map(([y]) => y)
+      if (titles.length) lines.push(`ATENÇÃO: ${t} NÃO é o atual campeão (foi campeão em ${titles.join(', ')}).`)
+    })
+  }
   ctx.franchises.forEach(f => lines.push(`- ${f}`))
   const hon = Object.entries(ctx.honors).sort((x, y) => Number(x[0]) - Number(y[0]))
   if (hon.length) {
