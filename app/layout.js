@@ -11,15 +11,15 @@ export const metadata = {
   description: "Fantasy Football League",
 };
 
-// Cor da barra do navegador no celular (combina com o header preto)
+// Cor da barra do navegador no celular (combina com o header branco)
 export const viewport = {
-  themeColor: '#0B0D12',
+  themeColor: '#FFFFFF',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-[#0B0D12] text-[#111]">
+      <body className="bg-white text-[#111]">
         <DrawerProvider>
           <MobileDrawer />
           {children}

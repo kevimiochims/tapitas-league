@@ -12,7 +12,7 @@ export default function Header({ rightSlot, onSummaryOpen, flush = false }) {
   const showSummary = SUMMARY_PAGES.includes(pathname)
 
   return (
-    <header className={`sticky top-0 z-40 w-full bg-[#0B0D12] ${flush ? '' : 'mb-2'}`}>
+    <header className={`sticky top-0 z-40 w-full border-b border-[#E6E8EB] bg-white ${flush ? '' : 'mb-2'}`}>
       <div className="flex h-11 items-stretch">
         {/* Bloco azul (cor do TL do logo) com a marca. No mobile, o botão do menu (MobileDrawer) fica sobre a área da esquerda. */}
         <a
@@ -43,8 +43,8 @@ export default function Header({ rightSlot, onSummaryOpen, flush = false }) {
                 aria-current={isActive ? 'page' : undefined}
                 className={`relative flex shrink-0 items-center whitespace-nowrap px-2.5 text-[13px] font-medium transition-colors xl:px-3.5 xl:text-[14px] ${
                   isActive
-                    ? 'font-semibold text-white after:absolute after:inset-x-2.5 after:bottom-0 after:h-[3px] after:rounded-t after:bg-[#D01F2D] xl:after:inset-x-3.5'
-                    : 'text-white/65 hover:text-white'
+                    ? 'font-semibold text-[#02275F] after:absolute after:inset-x-2.5 after:bottom-0 after:h-[3px] after:rounded-t after:bg-[#02275F] xl:after:inset-x-3.5'
+                    : 'text-[#4B5563] hover:text-[#02275F]'
                 }`}
               >
                 {label}
