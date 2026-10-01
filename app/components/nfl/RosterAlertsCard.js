@@ -6,6 +6,13 @@ import { useLeagueStatus } from './useNflData'
 import { PlayerThumb, EmptyNote, injuryRank, injuryTone, injuryLabel } from './shared'
 import { useFocusFilter } from '../../context/TeamFocus'
 
+// Dia do relatório de lesão ("28 set")
+const injuryDay = ts => {
+  if (!ts) return ''
+  const d = new Date(ts)
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')
+}
+
 // Lesões dos elencos da liga (Sleeper), com filtro por franquia
 export default function RosterAlertsCard({ onOpenPlayer }) {
   const { data, loading, error } = useLeagueStatus()
@@ -18,7 +25,8 @@ export default function RosterAlertsCard({ onOpenPlayer }) {
     .flatMap(t => t.players.filter(p => p.injury).map(p => ({ ...p, fantasyTeam: t.team })))
   const list = all
     .filter(p => filter === 'all' || p.starter)
-    .sort((a, b) => injuryRank(a.injury.status) - injuryRank(b.injury.status) || Number(b.starter) - Number(a.starter) || a.name.localeCompare(b.name))
+    // Mais recentes primeiro (data do relatório de lesão); sem data vão para o fim
+    .sort((a, b) => (b.injury.date || 0) - (a.injury.date || 0) || injuryRank(a.injury.status) - injuryRank(b.injury.status) || Number(b.starter) - Number(a.starter) || a.name.localeCompare(b.name))
   const { visible, totalPages, pagerProps, listProps } = usePager(list, 5, `${filter}|${team}`)
 
   if (error && !data) return null
@@ -59,7 +67,7 @@ export default function RosterAlertsCard({ onOpenPlayer }) {
                       <PositionBadge position={p.pos} />
                     </div>
                     <div className="truncate text-[11px] text-[#6B7280]">
-                      {[p.nflTeam, p.injury.bodyPart, p.reserve ? 'IR slot' : p.starter ? 'Starter' : 'Bench'].filter(Boolean).join(' · ')}
+                      {[p.nflTeam, p.injury.bodyPart, p.reserve ? 'IR slot' : p.starter ? 'Starter' : 'Bench', injuryDay(p.injury.date)].filter(Boolean).join(' · ')}
                     </div>
                   </div>
                   <div className="flex flex-shrink-0 flex-col items-end gap-1">

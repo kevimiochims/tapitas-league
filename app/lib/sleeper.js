@@ -36,6 +36,8 @@ export function getSleeperPlayers() {
         injuryStatus: p.injury_status || null,
         injuryBodyPart: p.injury_body_part || null,
         injuryNotes: p.injury_notes || null,
+        // Data do relatório de lesão: início da lesão ou, sem ela, a última notícia do jogador
+        injuryDate: p.injury_status ? (Date.parse(p.injury_start_date || '') || Number(p.news_updated) || null) : null,
         espnId: p.espn_id ? String(p.espn_id) : null,
         gsisId: p.gsis_id ? String(p.gsis_id).trim() : null,
       })

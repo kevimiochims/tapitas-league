@@ -40,7 +40,7 @@ export function getLeagueStatus() {
           nflTeam,
           starter: p.starter,
           reserve: Boolean(p.reserve),
-          injury: info?.injuryStatus ? { status: info.injuryStatus, bodyPart: info.injuryBodyPart, notes: info.injuryNotes } : null,
+          injury: info?.injuryStatus ? { status: info.injuryStatus, bodyPart: info.injuryBodyPart, notes: info.injuryNotes, date: info.injuryDate || null } : null,
           byeThisWeek: Boolean(nflTeam && byeNow.includes(nflTeam)),
           byeNextWeek: Boolean(nflTeam && byeNext.includes(nflTeam)),
         }
