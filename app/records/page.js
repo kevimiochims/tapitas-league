@@ -452,74 +452,83 @@ function HeroHolder({ tile, size = 18 }) {
   return <span className="flex-shrink-0 rounded-full bg-white p-px"><TeamLogo name={tile.holder} size={size} /></span>
 }
 
-// Hero da Record Book: muda com a aba. Um recorde principal em destaque e
-// mais quatro ao lado; cada um leva à seção dele (aplica o filtro).
+// Hero da Record Book no formato do hero da Home: um card de altura fixa
+// que passa pelos recordes principais da aba (pontos embaixo, arrastar no
+// celular, troca sozinho). O botão leva à seção do recorde.
 function RecordsHero({ tab, tiles, onPick }) {
   const meta = TABS.find(t => t.key === tab) || TABS[0]
-  const [feature, ...rest] = tiles.filter(Boolean)
-  const small = rest.slice(0, 4)
+  const list = tiles.filter(Boolean)
+  const [i, setI] = useState(0)
+  const touchX = React.useRef(null)
+  const count = list.length
+
+  useEffect(() => {
+    if (count < 2) return
+    const id = setInterval(() => setI(v => (v + 1) % count), 7000)
+    return () => clearInterval(id)
+  }, [count, i])
+
+  const t = list[Math.min(i, count - 1)]
   const Icon = meta.Icon
+  const go = d => count && setI(v => (v + d + count) % count)
+
   return (
-    <div className="relative mb-2 overflow-hidden rounded-xl bg-[#02275F] text-white">
-      <Icon className="pointer-events-none absolute -right-6 -top-6 h-40 w-40 text-white/[0.04]" strokeWidth={1.5} />
-      <div className="relative flex items-end justify-between gap-3 px-4 pt-4 sm:px-5">
-        <div className="min-w-0">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#E8C766]">The Record Book · since 2014</div>
-          <div className="mt-0.5 flex items-center gap-2 text-[22px] font-bold leading-tight sm:text-[26px]">
-            <Icon className="h-5 w-5 flex-shrink-0 text-white/70 sm:h-6 sm:w-6" />
-            {meta.label}
-          </div>
-          <div className="mt-0.5 text-[12px] text-white/65 sm:text-[13px]">{meta.blurb}</div>
+    <div
+      className="relative mb-2 overflow-hidden rounded-xl bg-[#02275F] text-white"
+      onTouchStart={e => { touchX.current = e.touches[0].clientX }}
+      onTouchEnd={e => {
+        if (touchX.current == null) return
+        const diff = touchX.current - e.changedTouches[0].clientX
+        if (Math.abs(diff) > 50) go(diff > 0 ? 1 : -1)
+        touchX.current = null
+      }}
+    >
+      {/* Arte da direita: jogador, confronto ou logo do time; sem detentor, o ícone da aba */}
+      {t?.playerId ? (
+        <div className="pointer-events-none absolute bottom-0 right-2 sm:right-8"><PlayerCutout sleeperId={t.playerId} name={t.holder} className="h-[150px] opacity-90 sm:h-[180px] sm:opacity-100" fallback={false} /></div>
+      ) : t?.pair ? (
+        <div className="pointer-events-none absolute right-5 top-1/2 hidden -translate-y-1/2 sm:block sm:right-10"><VersusLogos teams={t.pair} size={64} /></div>
+      ) : t ? (
+        <div className="pointer-events-none absolute right-5 top-1/2 hidden -translate-y-1/2 rounded-full bg-white p-1 shadow-lg sm:block sm:right-10"><TeamLogo name={t.holder} size={88} /></div>
+      ) : null}
+      <Icon className="pointer-events-none absolute -right-6 -top-6 h-36 w-36 text-white/[0.05]" strokeWidth={1.5} />
+
+      <div className="relative flex h-[190px] flex-col justify-center px-5 py-5 sm:h-[200px] sm:px-8">
+        <div className="flex items-center gap-1.5 text-[12px] font-medium text-white/70">
+          <Icon className="h-3.5 w-3.5" />
+          <span className="truncate">Record Book · {meta.label}{t ? ` · ${t.label}` : ''}</span>
         </div>
-      </div>
-      {feature ? (
-        <div className="relative mt-3 grid grid-cols-2 gap-px bg-white/10 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-2">
-          <button
-            type="button"
-            onClick={() => onPick(feature)}
-            className="group relative col-span-2 min-h-[132px] overflow-hidden bg-[#032C6B] px-4 py-4 text-left transition-colors hover:bg-[#06357C] sm:px-5 lg:col-span-1 lg:row-span-2 lg:min-h-[200px]"
-          >
-            {feature.playerId ? (
-              <div className="pointer-events-none absolute -right-2 bottom-0"><PlayerCutout sleeperId={feature.playerId} name={feature.holder} className="h-[128px] lg:h-[190px]" fallback={false} /></div>
-            ) : feature.pair ? (
-              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 opacity-95"><VersusLogos teams={feature.pair} size={56} /></div>
-            ) : (
-              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white p-1 shadow-lg lg:right-5"><TeamLogo name={feature.holder} size={72} /></div>
-            )}
-            <div className="relative flex h-full max-w-[62%] flex-col justify-end">
-              <div className="inline-flex w-fit items-center gap-1 rounded-full bg-[#E8C766] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#02275F]"><Trophy className="h-3 w-3" />{feature.label}</div>
-              <div className="mt-2 text-[40px] font-bold leading-none tabular-nums lg:text-[52px]">{feature.value}</div>
-              <div className="mt-2 flex min-w-0 items-center gap-1.5">
-                {feature.position && <PositionBadge position={feature.position} />}
-                <span className="truncate text-[15px] font-semibold">{feature.holder}</span>
-              </div>
-              {feature.sub && <div className="mt-0.5 line-clamp-2 text-[12px] text-white/60">{feature.sub}</div>}
+        {t ? (
+          <>
+            <div className="mt-1.5 flex items-baseline gap-3 pr-24 sm:pr-40">
+              <span className="text-[34px] font-bold leading-none tabular-nums tracking-tight sm:text-[40px]">{t.value}</span>
             </div>
-          </button>
-          {small.map(t => (
-            <button
-              key={t.label}
-              type="button"
-              onClick={() => onPick(t)}
-              className="group relative min-w-0 overflow-hidden bg-[#02275F] px-4 py-3 text-left transition-colors hover:bg-[#06357C] sm:px-5"
-            >
-              {t.playerId && <div className="pointer-events-none absolute -right-3 bottom-0 opacity-90"><PlayerCutout sleeperId={t.playerId} name={t.holder} className="h-[84px]" fallback={false} /></div>}
-              <div className={`relative ${t.playerId ? 'pr-12' : ''}`}>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{t.label}</span>
-                  <ChevronRight className="hidden h-3.5 w-3.5 flex-shrink-0 text-white/30 transition-colors group-hover:text-white/70 sm:block" />
-                </div>
-                <div className="mt-1 text-[24px] font-bold leading-none tabular-nums sm:text-[26px]">{t.value}</div>
-                <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
-                  <HeroHolder tile={t} size={16} />
-                  <span className="truncate text-[12px] font-semibold sm:text-[13px]">{t.holder}</span>
-                </div>
-                {t.sub && <div className="mt-0.5 truncate text-[11px] text-white/55">{t.sub}</div>}
-              </div>
-            </button>
+            <div className="mt-1.5 flex min-w-0 items-center gap-1.5 pr-24 sm:pr-40">
+              {t.position && <PositionBadge position={t.position} />}
+              {!t.playerId && <span className="flex flex-shrink-0 sm:hidden"><HeroHolder tile={t} size={18} /></span>}
+              <span className="truncate text-[16px] font-semibold sm:text-[18px]">{t.holder}</span>
+            </div>
+            {t.sub && <p className="mt-0.5 truncate pr-24 text-[13px] text-white/70 sm:pr-40">{t.sub}</p>}
+            <div className="mt-3">
+              <button type="button" onClick={() => onPick(t)} className="inline-flex h-8 items-center gap-1 rounded-full bg-white px-3.5 text-[12px] font-semibold text-[#02275F] transition-colors hover:bg-white/90">
+                See the record <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h1 className="mt-1.5 text-[30px] font-bold leading-tight tracking-tight">{meta.label}</h1>
+            <p className="mt-1 text-[14px] text-white/75">{meta.blurb}</p>
+          </>
+        )}
+      </div>
+      {count > 1 && (
+        <div className="absolute bottom-3 right-4 flex gap-1.5">
+          {list.map((_, k) => (
+            <button key={k} type="button" aria-label={`Record ${k + 1}`} onClick={() => setI(k)} className={`h-1.5 rounded-full transition-all ${k === i ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
           ))}
         </div>
-      ) : <div className="h-4" />}
+      )}
     </div>
   )
 }
@@ -2004,7 +2013,7 @@ function RecordsPageContent() {
         ))}
       </PageBar>
 
-        {!loading && <RecordsHero tab={tab} tiles={heroTiles[tab] || []} onPick={t => { setTab(t.tab); setSection(t.section) }} />}
+        {!loading && <RecordsHero key={tab} tab={tab} tiles={heroTiles[tab] || []} onPick={t => { setTab(t.tab); setSection(t.section) }} />}
 
         {loading ? (
           <LoadingState />

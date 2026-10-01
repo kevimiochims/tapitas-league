@@ -30,13 +30,13 @@ export function PageShell({ children, loading = false, headerProps, topBar, wide
   )
 }
 
-// Rodapé preto em todas as páginas: o fim da página (e a área que aparece
-// ao "arrastar" no celular) fica preto, igual ao header.
+// Rodapé branco em todas as páginas: o fim da página (e a área que aparece
+// ao "arrastar" no celular) fica branco, igual ao topo com o header.
 export function SiteFooter() {
   return (
-    <footer className="mt-auto bg-[#0B0D12]">
-      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-5 text-[12px] text-white/55">
-        <span className="font-semibold text-white">Tapitas League</span>
+    <footer className="mt-auto border-t border-[#E6E8EB] bg-white">
+      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-5 text-[12px] text-[#6B7280]">
+        <span className="font-semibold text-[#111]">Tapitas League</span>
         <span>Est. 2014 · Fantasy Football</span>
       </div>
     </footer>
