@@ -1,9 +1,9 @@
 // Calendário das rodadas da NFL usado pelo site.
 // - A semana N começa na quarta-feira (a semana anterior fica em destaque
 //   durante toda a terça, com os resultados).
-// - O confronto da semana N só termina na madrugada de terça, depois do último
-//   jogo da rodada (Monday Night). Antes disso a semana está em andamento e não
-//   pode entrar em resultados, sequências nem confrontos diretos.
+// - O confronto da semana N termina na madrugada de terça, depois do Monday
+//   Night (usado só para o rótulo Final / In progress dos placares do Sleeper).
+// As estatísticas vêm só da GAME_FACTS_ALL; este calendário não filtra a planilha.
 // Horários em UTC: a semana vira na quarta 09:00 UTC; o confronto termina na
 // terça 06:00 UTC (03:00 em Brasília).
 

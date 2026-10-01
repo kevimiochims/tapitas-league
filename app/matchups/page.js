@@ -1084,7 +1084,9 @@ function MatchupsPageContent() {
 
   const mobilePanelOpen = showWeekRecap || showPowerRankingPreview
 
-  const recapCard = weekRecap ? (
+  // Semana sem pontos (ainda não começou): sem Week Recap
+  const weekHasPoints = matchups.some(g => parseNumber(g?.PF) > 0 || parseNumber(g?.PA) > 0)
+  const recapCard = weekRecap && weekHasPoints ? (
     <CardShell title="Week Recap" subtitle={`${season} · Week ${week}`}>
       <CardGroup label="Teams" first>
         <StatRow
@@ -1321,10 +1323,10 @@ function MatchupsPageContent() {
                       if (!selected && matchups[0]) setSelected(matchups[0])
                     },
                   },
-                  {
+                  ...(recapCard ? [{
                     key: 'recap', label: 'Week Recap', active: showWeekRecap,
                     onClick: () => { setShowWeekRecap(true); setShowPowerRankingPreview(false) },
-                  },
+                  }] : []),
                   {
                     key: 'pr', label: 'Power Rankings', active: showPowerRankingPreview,
                     onClick: () => { setShowPowerRankingPreview(true); setShowWeekRecap(false) },

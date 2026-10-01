@@ -1,5 +1,4 @@
 import { SHEET_TABS, SHEET_TTL, getSheetRows } from '@/app/lib/sheets'
-import { getFinishedGameFacts } from '@/app/lib/gameFacts'
 
 export async function GET(_request, { params }) {
   const { tab } = await params
@@ -9,8 +8,7 @@ export async function GET(_request, { params }) {
   }
 
   try {
-    // GAME_FACTS_ALL sai sem as semanas em andamento (ver lib/gameFacts)
-    const rows = tab === 'GAME_FACTS_ALL' ? await getFinishedGameFacts() : await getSheetRows(tab)
+    const rows = await getSheetRows(tab)
     return Response.json(rows, {
       headers: {
         // CDN guarda por SHEET_TTL e pode servir a versão anterior por até

@@ -3,7 +3,6 @@ import { getSheetRows } from './sheets'
 import { getLeagueRosters, getSheetNames, SLEEPER_LEAGUE_ID } from './leagueRosters'
 import { getNflState, getSleeperPlayers } from './sleeper'
 import { getScoreboard } from './espn'
-import { getFinishedGameFacts } from './gameFacts'
 import { isWeekFinal } from './nflCalendar'
 
 // Calendário e placares da Tapitas League por semana.
@@ -40,7 +39,7 @@ function sheetGameType(row) {
 
 // Confrontos de uma semana na planilha (uma linha por time; juntamos os pares)
 async function getSheetWeek(season, week) {
-  const rows = await getFinishedGameFacts()
+  const rows = await getSheetRows('GAME_FACTS_ALL')
   const pairs = new Map()
   rows.forEach(r => {
     if (Number(r?.Season) !== Number(season) || !weekNumbers(r?.Week).includes(week)) return
@@ -147,7 +146,7 @@ export function getSleeperSeasonRows() {
     const [info, state, sheetRows, sheetNames, players] = await Promise.all([
       getLeagueInfo(),
       getNflState().catch(() => null),
-      getFinishedGameFacts(),
+      getSheetRows('GAME_FACTS_ALL'),
       getSheetNames(),
       getSleeperPlayers(),
     ])

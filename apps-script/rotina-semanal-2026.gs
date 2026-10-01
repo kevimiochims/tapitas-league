@@ -1,11 +1,42 @@
+// =============================================================================
+// ROTINA SEMANAL — é esta função que o gatilho (e você, no botão Executar)
+// deve chamar. No editor do Apps Script, confira se "executaRotinaSemanal"
+// está selecionada na lista de funções antes de clicar em Executar.
+// =============================================================================
 function executaRotinaSemanal() {
-  // As etapas seguintes só rodam se uma semana nova foi importada agora.
-  // Assim, rodar o script duas vezes na mesma madrugada não faz nada na 2ª vez.
-  const importou = executaAutomacaoSemanal2026()
-  if (!importou) return
-  updateH2HColumns2026()
-  updateHeadToHeadStats()
-  calculatePowerRankingsV2()
+  const inicio = Date.now();
+  Logger.log('======================================================');
+  Logger.log(`ROTINA SEMANAL — início em ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`);
+  Logger.log('======================================================');
+
+  // 1) Importa a última semana encerrada. As etapas seguintes só rodam se uma
+  //    semana nova foi gravada agora (rodar duas vezes não faz nada na 2ª vez).
+  const importou = executaAutomacaoSemanal2026();
+
+  if (!importou) {
+    Logger.log('[ROTINA] Nenhuma semana nova foi gravada → H2H, Head-to-Head e Power Rankings NÃO foram executados (não há nada novo para recalcular).');
+    Logger.log(`[ROTINA] Fim (${((Date.now() - inicio) / 1000).toFixed(1)}s).`);
+    return;
+  }
+
+  // 2) Recalcula o que depende da GAME_FACTS_ALL, registrando cada etapa
+  executaEtapa_('Colunas H2H da GAME_FACTS_ALL (updateH2HColumns2026)', updateH2HColumns2026);
+  executaEtapa_('Aba de Head-to-Head (updateHeadToHeadStats)', updateHeadToHeadStats);
+  executaEtapa_('Power Rankings (calculatePowerRankingsV2)', calculatePowerRankingsV2);
+
+  Logger.log(`[ROTINA] Concluída com sucesso (${((Date.now() - inicio) / 1000).toFixed(1)}s).`);
+}
+
+// Roda uma etapa registrando início, fim, duração e erro (sem parar as demais)
+function executaEtapa_(nome, fn) {
+  const t0 = Date.now();
+  Logger.log(`[ETAPA] ▶ ${nome}...`);
+  try {
+    fn();
+    Logger.log(`[ETAPA] ✔ ${nome} (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+  } catch (err) {
+    Logger.log(`[ETAPA] ✖ ${nome} falhou: ${err && err.message ? err.message : err}`);
+  }
 }
 
 // =============================================================================
@@ -111,7 +142,7 @@ function isHomonymProneName_(fullName) {
 
 // Retorna true se uma semana nova foi gravada; false em qualquer outro caso.
 function executaAutomacaoSemanal2026() {
-  Logger.log(`=== Iniciando Verificação Semanal para ${CONFIG_2026.YEAR} ===`);
+  Logger.log(`[IMPORTAÇÃO] Verificando se há semana encerrada para importar (${CONFIG_2026.YEAR})...`);
 
   const hoje = new Date();
   const dataInicioTemporada = new Date(2026, 8, 9);
@@ -124,17 +155,19 @@ function executaAutomacaoSemanal2026() {
   // Trava: se o script já estiver rodando (duas execuções ao mesmo tempo), sai
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) {
-    Logger.log('[TRAVA] Outra execução está em andamento. Abortando.');
+    Logger.log('[IMPORTAÇÃO] Outra execução do script está em andamento. Esta foi cancelada para não gravar a semana duas vezes.');
     return false;
   }
 
   try {
     // Importa a última semana ENCERRADA, não a semana atual do Sleeper
     const currentWeek = ultimaSemanaEncerrada2026_(Date.now());
-    Logger.log(`Última semana encerrada: Semana ${currentWeek}`);
+    const estadoSleeper = fetchSleeper2026('/state/nfl');
+    Logger.log(`[IMPORTAÇÃO] Última semana encerrada pelo calendário: Semana ${currentWeek}` +
+      (estadoSleeper && estadoSleeper.week ? ` (o Sleeper está mostrando a Semana ${estadoSleeper.week}, que é a semana em andamento ou a próxima)` : ''));
 
     if (currentWeek < 1 || currentWeek > CONFIG_2026.TOTAL_WEEKS) {
-      Logger.log(`[ENCERRADO] Nenhuma semana a importar (semana ${currentWeek}).`);
+      Logger.log(`[IMPORTAÇÃO] Nenhuma semana a importar (resultado do calendário: ${currentWeek}; a temporada tem ${CONFIG_2026.TOTAL_WEEKS} semanas).`);
       return false;
     }
 
@@ -147,23 +180,24 @@ function executaAutomacaoSemanal2026() {
 
     // Verifica se já existe linha completa (com PF) para essa semana — se sim, aborta
     if (checkWeekAlreadyImported(gamesSheet, CONFIG_2026.YEAR, currentWeek)) {
-      Logger.log(`[AVISO] Os dados da Semana ${currentWeek} de ${CONFIG_2026.YEAR} já foram inseridos anteriormente. Abortando.`);
+      Logger.log(`[IMPORTAÇÃO] A Semana ${currentWeek} de ${CONFIG_2026.YEAR} já está na GAME_FACTS_ALL. Nada a fazer — a próxima semana só termina na madrugada de terça (03:00).`);
       return false;
     }
 
     const playerDict = getPlayerDict2026();
 
-    Logger.log(`Buscando confrontos da Semana ${currentWeek}...`);
+    Logger.log(`[IMPORTAÇÃO] Semana ${currentWeek} ainda não está na planilha. Buscando confrontos no Sleeper...`);
     const finalMatchups = scrapeSleeperWeekData2026(currentWeek, playerDict);
+    Logger.log(`[IMPORTAÇÃO] ${Object.keys(finalMatchups).length} confrontos encontrados no Sleeper.`);
 
     if (Object.keys(finalMatchups).length === 0) {
-      Logger.log(`[AVISO] Nenhum dado de confronto encontrado para a Semana ${currentWeek}.`);
+      Logger.log(`[IMPORTAÇÃO] O Sleeper não devolveu confrontos para a Semana ${currentWeek}. Nada foi gravado.`);
       return false;
     }
 
     // Nunca grava uma semana zerada
     if (!semanaTemPontos2026_(finalMatchups)) {
-      Logger.log(`[AVISO] A Semana ${currentWeek} veio sem pontos no Sleeper. Nada foi gravado.`);
+      Logger.log(`[IMPORTAÇÃO] A Semana ${currentWeek} veio com todos os times zerados no Sleeper. Nada foi gravado (proteção contra semana zerada).`);
       return false;
     }
 
@@ -211,14 +245,19 @@ function executaAutomacaoSemanal2026() {
     });
 
     // Deleta linhas incompletas dessa semana antes de escrever os dados reais
-    deleteIncompleteWeekRows(gamesSheet, CONFIG_2026.YEAR, currentWeek);
+    const apagadas = deleteIncompleteWeekRows(gamesSheet, CONFIG_2026.YEAR, currentWeek);
+    if (apagadas) Logger.log(`[IMPORTAÇÃO] ${apagadas} linha(s) incompleta(s) da Semana ${currentWeek} apagada(s) antes de gravar.`);
 
     if (rowsToWrite.length > 0) {
       const lastRow = gamesSheet.getLastRow();
       gamesSheet.getRange(lastRow + 1, 1, rowsToWrite.length, rowsToWrite[0].length).setValues(rowsToWrite);
-      Logger.log(`=== SUCESSO: Semana ${currentWeek} de ${CONFIG_2026.YEAR} inserida com sucesso no fim da planilha! ===`);
+      Logger.log(`[IMPORTAÇÃO] ✔ SUCESSO: Semana ${currentWeek} de ${CONFIG_2026.YEAR} gravada (${rowsToWrite.length} linhas, ${rowsToWrite.length / 2} confrontos) no fim da GAME_FACTS_ALL.`);
       return true;
     }
+    Logger.log('[IMPORTAÇÃO] Nenhuma linha montada para gravar.');
+    return false;
+  } catch (err) {
+    Logger.log(`[IMPORTAÇÃO] ✖ Erro: ${err && err.message ? err.message : err}`);
     return false;
   } finally {
     lock.releaseLock();
@@ -448,7 +487,8 @@ function checkWeekAlreadyImported(sheet, year, week) {
 
 function deleteIncompleteWeekRows(sheet, year, week) {
   const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return;
+  if (lastRow <= 1) return 0;
+  let apagadas = 0;
   const data = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
 
   // percorre de baixo pra cima para não bagunçar os índices ao deletar
@@ -458,8 +498,10 @@ function deleteIncompleteWeekRows(sheet, year, week) {
     const pf = data[i][4];
     if (rowYear === year && rowWeek === week && (pf === '' || pf === 0)) {
       sheet.deleteRow(i + 2);
+      apagadas++;
     }
   }
+  return apagadas;
 }
 
 // Lê a _PLAYER_CACHE dinamicamente pelo cabeçalho (em vez de índice fixo de
