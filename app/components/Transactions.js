@@ -117,7 +117,7 @@ export function TeamTransactionsCard({ team, onOpenPlayer }) {
   const trades = mine.filter(t => t.type === 'trade')
   const moves = mine.filter(t => t.type !== 'trade')
   const list = tab === 'trade' ? trades : moves
-  const { visible, totalPages, pagerProps } = usePager(list, tab === 'trade' ? 2 : 5, `${team}|${tab}`)
+  const { visible, totalPages, pagerProps, listProps } = usePager(list, tab === 'trade' ? 2 : 5, `${team}|${tab}`)
   if (!loading && !mine.length) return null
   return (
     <CardShell title="Transactions" subtitle={loading ? 'Loading…' : `From Sleeper · ${mine.length} moves`} sidebar action={<a href="/trades" className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All</a>}>
@@ -127,9 +127,9 @@ export function TeamTransactionsCard({ team, onOpenPlayer }) {
       {list.length === 0 ? (
         <div className="px-3 py-6 text-center text-[13px] text-[#6B7280] lg:px-4">{tab === 'trade' ? 'No trades yet.' : 'No adds or drops yet.'}</div>
       ) : tab === 'trade' ? (
-        <div className="space-y-2 p-3 lg:px-4">{visible.map(t => <TradeCard key={t.id} t={t} onOpenPlayer={onOpenPlayer} compact />)}</div>
+        <div {...listProps} className="space-y-2 p-3 lg:px-4">{visible.map(t => <TradeCard key={t.id} t={t} onOpenPlayer={onOpenPlayer} compact />)}</div>
       ) : (
-        <div className="pt-1">{visible.map(t => <MoveRow key={t.id} t={t} onOpenPlayer={onOpenPlayer} showTeam={false} />)}</div>
+        <div {...listProps} className="pt-1">{visible.map(t => <MoveRow key={t.id} t={t} onOpenPlayer={onOpenPlayer} showTeam={false} />)}</div>
       )}
       {totalPages > 1 && <Pager {...pagerProps} />}
     </CardShell>

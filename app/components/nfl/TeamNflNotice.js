@@ -26,7 +26,7 @@ export default function TeamNflNotice({ team, onOpenPlayer }) {
     .map(p => ({ ...p, byeLabel: p.byeThisWeek ? `Week ${data.week}` : `Week ${data.week + 1}` }))
     .sort((a, b) => Number(b.byeThisWeek) - Number(a.byeThisWeek) || byPosition(a, b))
   const list = tab === 'injuries' ? injured : byes
-  const { visible, totalPages, pagerProps } = usePager(list, 5, `${team}|${tab}`)
+  const { visible, totalPages, pagerProps, listProps } = usePager(list, 5, `${team}|${tab}`)
 
   if (!roster) return null
 
@@ -43,6 +43,7 @@ export default function TeamNflNotice({ team, onOpenPlayer }) {
         <EmptyNote>{tab === 'injuries' ? 'No injuries. All clear!' : 'Nobody on bye this week or next.'}</EmptyNote>
       ) : (
         <div className="pb-1 pt-1">
+          <div {...listProps}>
           {visible.map(p => (
             <button
               key={p.id || p.name}
@@ -65,6 +66,7 @@ export default function TeamNflNotice({ team, onOpenPlayer }) {
                 : <Tag tone={p.byeThisWeek ? 'red' : 'gold'}>{p.byeLabel}</Tag>}
             </button>
           ))}
+          </div>
           {totalPages > 1 && <Pager {...pagerProps} />}
         </div>
       )}

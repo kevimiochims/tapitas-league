@@ -615,11 +615,12 @@ export default function DraftPage() {
                         const featured = i === 0
                         const stealData = row.steal ? getPlayerDataByFullName(highlights.steal.player, playerLookup) : null
                         return (
-                            <div key={row.label} className={`relative min-w-0 overflow-hidden rounded-xl p-3 lg:p-4 ${featured ? 'text-white' : row.steal ? 'bg-gradient-to-br from-[#FFF2B8] via-[#FFF8DD] to-white' : 'bg-white'}`}>
+                            <div key={row.label} className={`relative min-w-0 overflow-hidden rounded-xl p-3 lg:p-4 ${featured ? 'text-white' : row.steal ? 'bg-[#FFF8DD]' : 'bg-white'}`}>
                                 {featured && <BrandBackdrop />}
-                                {/* Steal: foto recortada do jogador no canto */}
-                                {row.steal && <div className="absolute -right-2 bottom-0 opacity-90"><PlayerCutout sleeperId={stealData?.playerId} name={highlights.steal.player} className="h-[96px]" fallback={false} /></div>}
-                                <div className={`relative ${row.steal ? 'pr-16' : ''}`}>
+                                {/* Steal: foto recortada do jogador no canto (só no desktop; no celular
+                                    ela tomava o espaço do texto e fica só o avatar) */}
+                                {row.steal && <div className="absolute -right-2 bottom-0 hidden opacity-90 lg:block"><PlayerCutout sleeperId={stealData?.playerId} name={highlights.steal.player} className="h-[96px]" fallback={false} /></div>}
+                                <div className={`relative ${row.steal ? 'lg:pr-16' : ''}`}>
                                     <div className={`text-[11px] font-medium ${featured ? 'font-semibold uppercase tracking-[0.12em] text-[#E8C766]' : 'text-[#6B7280]'}`}>{row.label}</div>
                                     <div className="mt-2 flex min-w-0 items-center gap-2.5">
                                         {featured ? <span className="flex-shrink-0 rounded-full bg-white p-0.5">{row.left}</span> : row.left}

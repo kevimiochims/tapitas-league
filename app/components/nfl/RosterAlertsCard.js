@@ -18,7 +18,7 @@ export default function RosterAlertsCard({ onOpenPlayer }) {
   const list = all
     .filter(p => filter === 'all' || p.starter)
     .sort((a, b) => injuryRank(a.injury.status) - injuryRank(b.injury.status) || Number(b.starter) - Number(a.starter) || a.name.localeCompare(b.name))
-  const { visible, totalPages, pagerProps } = usePager(list, 8, `${filter}|${team}`)
+  const { visible, totalPages, pagerProps, listProps } = usePager(list, 8, `${filter}|${team}`)
 
   if (error && !data) return null
 
@@ -43,6 +43,7 @@ export default function RosterAlertsCard({ onOpenPlayer }) {
             <EmptyNote>{filter === 'starters' ? 'No injured starters. Clean bill of health!' : 'No Tapitas players on the injury report.'}</EmptyNote>
           ) : (
             <div className="pb-1">
+              <div {...listProps}>
               {visible.map(p => (
                 <button
                   key={`${p.id || p.name}-${p.fantasyTeam}`}
@@ -66,6 +67,7 @@ export default function RosterAlertsCard({ onOpenPlayer }) {
                   </div>
                 </button>
               ))}
+              </div>
               {totalPages > 1 && <Pager {...pagerProps} />}
             </div>
           )}

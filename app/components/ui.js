@@ -392,6 +392,37 @@ export function Pager({ page, totalPages, total, pageSize, onPrev, onNext }) {
   )
 }
 
+// Altura estável para listas paginadas: guarda a maior altura que a lista já
+// teve e usa como altura mínima. Assim o card não muda de tamanho ao passar de
+// página (e as setas do Pager não saem do lugar). Volta ao natural quando
+// `resetKey` muda (ex.: troca de filtro). Uso: <div {...useStableHeight(key)}>.
+export function useStableHeight(resetKey = '') {
+  const ref = useRef(null)
+  const [state, setState] = useState({ key: resetKey, h: 0 })
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      const h = el.offsetHeight
+      setState(s => {
+        const base = s.key === resetKey ? s.h : 0
+        return h > base ? { key: resetKey, h } : s.key === resetKey ? s : { key: resetKey, h: 0 }
+      })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [resetKey])
+  const minHeight = state.key === resetKey && state.h ? state.h : undefined
+  return { ref, style: minHeight ? { minHeight } : undefined }
+}
+
+// Mesmo efeito em forma de componente (para listas com paginação própria):
+// <StableHeight resetKey={filtros}>…lista…</StableHeight>
+export function StableHeight({ resetKey = '', className = '', children }) {
+  const props = useStableHeight(resetKey)
+  return <div {...props} className={className}>{children}</div>
+}
+
 // Paginação lateral para listas (no lugar de "show more"): devolve a fatia
 // visível e as props do <Pager />. Volta para a 1ª página quando `resetKey` muda.
 export function usePager(items, pageSize, resetKey = '') {
@@ -399,10 +430,14 @@ export function usePager(items, pageSize, resetKey = '') {
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
   const page = Math.min(state.key === resetKey ? state.page : 0, totalPages - 1)
   const go = delta => setState({ key: resetKey, page: Math.max(0, Math.min(totalPages - 1, page + delta)) })
+  const listProps = useStableHeight(`${resetKey}|${pageSize}|${items.length}`)
   return {
     visible: items.slice(page * pageSize, (page + 1) * pageSize),
     page,
     totalPages,
+    // Vai na lista paginada: ela mantém a maior altura já vista, então o card
+    // não cresce nem encolhe ao trocar de página
+    listProps,
     pagerProps: { page, totalPages, total: items.length, pageSize, onPrev: () => go(-1), onNext: () => go(1) },
   }
 }
@@ -594,7 +629,6 @@ export function VersusPoster({ label, badge, left, right, leftControl, rightCont
       <div className="absolute inset-0 overflow-hidden rounded-t-xl">
         <div className="absolute inset-0 bg-[#02275F]" />
         <div className="absolute inset-0 bg-[#C8102E]" style={{ clipPath: 'polygon(56% 0, 100% 0, 100% 100%, 44% 100%)' }} />
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 14px)' }} />
       </div>
       <div className="relative flex items-center justify-between gap-2 px-3 pt-3 lg:px-4">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80">{label}</span>
@@ -610,20 +644,12 @@ export function VersusPoster({ label, badge, left, right, leftControl, rightCont
 }
 
 // ── Identidade visual: fundo de marca e pódio ─────────────────────────
-// Fundo azul (ou vermelho) com a textura diagonal do hero da Home. Vai dentro
+// Fundo azul (ou vermelho) em cor sólida, no padrão do hero da Home. Vai dentro
 // de um container `relative overflow-hidden`; o conteúdo usa `relative`.
-const BACKDROPS = {
-  navy: 'linear-gradient(115deg, #02275F 0%, #02275F 55%, #0A3B85 100%)',
-  red: 'linear-gradient(115deg, #B3171F 0%, #B3171F 50%, #8E1022 100%)',
-  ink: 'linear-gradient(115deg, #16274F 0%, #16274F 55%, #1F3A6E 100%)',
-}
+// Cor sólida (sem textura listrada nem degradê).
+const BACKDROPS = { navy: '#02275F', red: '#B3171F', ink: '#16274F' }
 export function BrandBackdrop({ tone = 'navy' }) {
-  return (
-    <>
-      <div className="absolute inset-0" style={{ background: BACKDROPS[tone] || BACKDROPS.navy }} />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 16px)' }} />
-    </>
-  )
+  return <div className="absolute inset-0" style={{ background: BACKDROPS[tone] || BACKDROPS.navy }} />
 }
 
 // Pódio do top 3 (2º, 1º, 3º) para usar sobre o BrandBackdrop.

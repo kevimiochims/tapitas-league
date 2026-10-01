@@ -2,6 +2,7 @@
 
 import { ExternalLink } from 'lucide-react'
 import { usePlayerNews } from './useNflData'
+import { NewsImage, NewsHero } from './shared'
 
 function Card({ title, subtitle, children }) {
   return (
@@ -40,24 +41,40 @@ export function PlayerNewsCard({ playerId, emptyText }) {
   return (
     <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more">
       {loading ? <div className="px-3 py-4 text-[13px] text-[#6B7280] sm:px-4">Loading…</div> : (
-        <div className="divide-y divide-[#F1F2F4]">
-          {news.slice(0, 10).map(n => {
-            const Tag = n.url ? 'a' : 'div'
+        <div>
+          {(() => {
+            const list = news.slice(0, 10)
+            const hero = list.find(n => n.image)
             return (
-              <Tag key={n.id} {...(n.url ? { href: n.url, target: '_blank', rel: 'noopener noreferrer' } : {})} className="group block px-3 py-2.5 transition-colors hover:bg-[#F7F8FA] sm:px-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="text-[13px] font-semibold leading-snug text-[#111] group-hover:text-[#02275F]">{n.headline}</div>
-                  {n.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#9CA3AF]" />}
+              <div className="@container">
+               <div className={hero ? '@3xl:grid @3xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] @3xl:items-start' : ''}>
+                {hero && <div className="px-3 pb-1 pt-3 sm:px-4 @3xl:pb-3 @3xl:pr-0"><NewsHero item={hero} meta={[hero.source, hero.published && timeAgo(hero.published)].filter(Boolean).join(' · ')} /></div>}
+                <div className="divide-y divide-[#F1F2F4]">
+                  {list.filter(n => n !== hero).map(n => {
+                    const Tag = n.url ? 'a' : 'div'
+                    return (
+                      <Tag key={n.id} {...(n.url ? { href: n.url, target: '_blank', rel: 'noopener noreferrer' } : {})} className="group flex gap-3 px-3 py-2.5 transition-colors hover:bg-[#F7F8FA] sm:px-4">
+                        {n.image && <span className="block h-[54px] w-[80px] flex-shrink-0 overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="text-[13px] font-semibold leading-snug text-[#111] group-hover:text-[#02275F]">{n.headline}</div>
+                            {n.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#9CA3AF]" />}
+                          </div>
+                          {n.description && <div className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-[#6B7280]">{n.description}</div>}
+                          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[#9CA3AF]">
+                            {n.source && <span className="font-semibold text-[#6B7280]">{n.source}</span>}
+                            {n.source && n.published && <span>·</span>}
+                            {n.published && <span>{timeAgo(n.published)}</span>}
+                          </div>
+                        </div>
+                      </Tag>
+                    )
+                  })}
                 </div>
-                {n.description && <div className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-[#6B7280]">{n.description}</div>}
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[#9CA3AF]">
-                  {n.source && <span className="font-semibold text-[#6B7280]">{n.source}</span>}
-                  {n.source && n.published && <span>·</span>}
-                  {n.published && <span>{timeAgo(n.published)}</span>}
-                </div>
-              </Tag>
+               </div>
+              </div>
             )
-          })}
+          })()}
         </div>
       )}
     </Card>

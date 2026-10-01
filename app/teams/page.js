@@ -9,7 +9,7 @@ import TeamNflNotice from '../components/nfl/TeamNflNotice'
 import { TeamTransactionsCard } from '../components/Transactions'
 import PlayerCutout from '../components/PlayerCutout'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
-import { BrandBackdrop, SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager } from '../components/ui'
+import { BrandBackdrop, SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager, StableHeight } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -1591,52 +1591,54 @@ export default function TeamsPage() {
             <ToggleChip active={logHighestOnly} onClick={() => setLogHighestOnly(p => !p)}>Week high</ToggleChip>
           </div>
           <div className="overflow-hidden rounded-b-xl">
-            {visibleLog.map((g, i) => {
-              const season = String(g?.Season || '').trim()
-              const showSeasonHeader = i === 0 || season !== String(visibleLog[i - 1]?.Season || '').trim()
-              const seasonRow = seasonRowBySeason.get(season)
-              const result = String(g?.Result || '').trim().toUpperCase()
-              const pf = parseWeeklyPoints(g?.PF)
-              const pa = parseWeeklyPoints(g?.PA)
-              const gType = String(g?.GameStage || '').trim()
-              const key = `${season}|${String(g?.Week || '').trim()}`
-              const isWeekHigh = gType === 'Reg Season' && pf > 0 && pf === weeklyMaxPFRS[key]
-              return (
-                <React.Fragment key={`${season}-${g.Week}-${g.Opponent}-${i}`}>
-                  {showSeasonHeader && (
-                    <div className="flex items-center justify-between bg-[#F6F7F9] px-3 py-1.5 text-[12px] lg:px-4">
-                      <span className="font-semibold text-[#111]">{season}</span>
-                      {seasonRow && <span className="tabular-nums text-[#6B7280]">{parseNumber(seasonRow.W)}–{parseNumber(seasonRow.L)}</span>}
-                    </div>
-                  )}
-                  <a href={canonicalMatchupHref(g, games)} className="group grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-2 border-b border-[#F1F2F4] px-3 py-2.5 transition-colors hover:bg-[#F7F8FA] lg:grid-cols-[64px_minmax(0,1fr)_auto] lg:gap-3 lg:px-4">
-                    <div className="text-[12px] tabular-nums text-[#6B7280]">Wk {g.Week}</div>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <TeamAvatar name={g.Opponent} size="xs" />
-                      <div className="min-w-0">
-                        <div className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">vs {shortName(g.Opponent)}</div>
-                        {(gType !== 'Reg Season' || pf >= 200 || isWeekHigh) && (
-                          <div className="mt-0.5 flex flex-wrap gap-1">
-                            {gType && gType !== 'Reg Season' && <Tag>{gType}</Tag>}
-                            {pf >= 200 && !isDoubleWeek(g) && <Tag tone="gold">200+</Tag>}
-                            {isWeekHigh && <Tag tone="navy">Week high</Tag>}
-                          </div>
-                        )}
+            <StableHeight resetKey={`log|${selected.team}|${filteredLog.length}`}>
+              {visibleLog.map((g, i) => {
+                const season = String(g?.Season || '').trim()
+                const showSeasonHeader = i === 0 || season !== String(visibleLog[i - 1]?.Season || '').trim()
+                const seasonRow = seasonRowBySeason.get(season)
+                const result = String(g?.Result || '').trim().toUpperCase()
+                const pf = parseWeeklyPoints(g?.PF)
+                const pa = parseWeeklyPoints(g?.PA)
+                const gType = String(g?.GameStage || '').trim()
+                const key = `${season}|${String(g?.Week || '').trim()}`
+                const isWeekHigh = gType === 'Reg Season' && pf > 0 && pf === weeklyMaxPFRS[key]
+                return (
+                  <React.Fragment key={`${season}-${g.Week}-${g.Opponent}-${i}`}>
+                    {showSeasonHeader && (
+                      <div className="flex items-center justify-between bg-[#F6F7F9] px-3 py-1.5 text-[12px] lg:px-4">
+                        <span className="font-semibold text-[#111]">{season}</span>
+                        {seasonRow && <span className="tabular-nums text-[#6B7280]">{parseNumber(seasonRow.W)}–{parseNumber(seasonRow.L)}</span>}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ResultBadge result={result} />
-                      <span className="w-[92px] text-right text-[13px] tabular-nums">
-                        <span className="font-semibold text-[#111]">{pf.toFixed(1)}</span>
-                        <span className="text-[#9CA3AF]"> – {pa.toFixed(1)}</span>
-                      </span>
-                      <ChevronRight className="hidden h-4 w-4 text-[#A0A5AD] sm:block" />
-                    </div>
-                  </a>
-                </React.Fragment>
-              )
-            })}
-            {filteredLog.length === 0 && <div className="py-12 text-center text-[13px] text-[#6B7280]">No games match these filters</div>}
+                    )}
+                    <a href={canonicalMatchupHref(g, games)} className="group grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-2 border-b border-[#F1F2F4] px-3 py-2.5 transition-colors hover:bg-[#F7F8FA] lg:grid-cols-[64px_minmax(0,1fr)_auto] lg:gap-3 lg:px-4">
+                      <div className="text-[12px] tabular-nums text-[#6B7280]">Wk {g.Week}</div>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <TeamAvatar name={g.Opponent} size="xs" />
+                        <div className="min-w-0">
+                          <div className="truncate text-[13px] font-medium text-[#111] group-hover:text-[#D01F2D]">vs {shortName(g.Opponent)}</div>
+                          {(gType !== 'Reg Season' || pf >= 200 || isWeekHigh) && (
+                            <div className="mt-0.5 flex flex-wrap gap-1">
+                              {gType && gType !== 'Reg Season' && <Tag>{gType}</Tag>}
+                              {pf >= 200 && !isDoubleWeek(g) && <Tag tone="gold">200+</Tag>}
+                              {isWeekHigh && <Tag tone="navy">Week high</Tag>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ResultBadge result={result} />
+                        <span className="w-[92px] text-right text-[13px] tabular-nums">
+                          <span className="font-semibold text-[#111]">{pf.toFixed(1)}</span>
+                          <span className="text-[#9CA3AF]"> – {pa.toFixed(1)}</span>
+                        </span>
+                        <ChevronRight className="hidden h-4 w-4 text-[#A0A5AD] sm:block" />
+                      </div>
+                    </a>
+                  </React.Fragment>
+                )
+              })}
+              {filteredLog.length === 0 && <div className="py-12 text-center text-[13px] text-[#6B7280]">No games match these filters</div>}
+            </StableHeight>
             {logPages > 1 && (
               <Pager page={logPageSafe} totalPages={logPages} total={filteredLog.length} pageSize={PAGE_SIZE} onPrev={() => setLogPage(Math.max(0, logPageSafe - 1))} onNext={() => setLogPage(Math.min(logPages - 1, logPageSafe + 1))} />
             )}
@@ -1667,6 +1669,7 @@ export default function TeamsPage() {
           <span className="text-right">Best</span>
         </div>
         <div className="overflow-hidden rounded-b-xl">
+          <StableHeight resetKey={`players|${selected.team}|${filteredPlayers.length}`}>
           {visiblePlayers.map(player => (
             <button
               key={player.archiveKey}
@@ -1694,6 +1697,7 @@ export default function TeamsPage() {
             </button>
           ))}
           {filteredPlayers.length === 0 && <div className="py-12 text-center text-[13px] text-[#6B7280]">No players found</div>}
+          </StableHeight>
           {playerPages > 1 && (
             <Pager page={playerPageSafe} totalPages={playerPages} total={filteredPlayers.length} pageSize={PAGE_SIZE} onPrev={() => setPlayerPage(Math.max(0, playerPageSafe - 1))} onNext={() => setPlayerPage(Math.min(playerPages - 1, playerPageSafe + 1))} />
           )}

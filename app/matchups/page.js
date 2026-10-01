@@ -1398,7 +1398,6 @@ function MatchupsPageContent() {
                       {/* Pôster dividido: time A no azul da marca, time B no vermelho (como o Rivalry) */}
                       <div className="absolute inset-0 bg-[#02275F]" />
                       <div className="absolute inset-0 bg-[#C8102E]" style={{ clipPath: 'polygon(56% 0, 100% 0, 100% 100%, 44% 100%)' }} />
-                      <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 14px)' }} />
                       <div className="relative">
 
                       {/* Badge do tipo de jogo */}
@@ -1528,9 +1527,8 @@ function MatchupsPageContent() {
                     <button
                       type="button"
                       onClick={() => openPlayerProfile(best.p, best.pos, best.side)}
-                      className="group relative flex w-full items-center gap-3 overflow-hidden border-b border-[#EEF0F2] bg-gradient-to-r from-[#FFF6D6] via-[#FFFBEF] to-white px-3 text-left md:px-4"
+                      className="group relative flex w-full items-center gap-3 overflow-hidden border-b border-[#EEF0F2] bg-[#FFF8E5] px-3 text-left md:px-4"
                     >
-                      <span className={`absolute inset-y-0 left-0 w-1 ${best.side === 'home' ? 'bg-[#02275F]' : 'bg-[#C8102E]'}`} />
                       <div className="relative -mb-px flex-shrink-0 self-end pt-2"><PlayerCutout sleeperId={data?.playerId} name={best.p.name} className="h-[76px]" /></div>
                       <div className="min-w-0 flex-1 py-2.5">
                         <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8D6A00]">⭐ Player of the game</div>
@@ -1709,7 +1707,8 @@ function MatchupsPageContent() {
 
                 {/* Bench */}
                 {hasPlayerData && (bench.length > 0 || oppBench.length > 0) && (
-                  <div className="px-2 md:px-4 py-2 border-b border-[#EEF0F2]">
+                  <div className="px-2 md:px-4 py-2 border-b border-[#EEF0F2] bg-[#F4F5F7]">
+                    {/* Banco de reservas com fundo cinza, para diferenciar dos titulares */}
                     <div className="text-[15px] font-bold text-[#111] mb-2">Bench</div>
 
                     <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 mb-1">
@@ -1727,13 +1726,13 @@ function MatchupsPageContent() {
                       const away = oppBench[i]
                       return (
                         <React.Fragment key={i}>
-                          <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 items-center border-b border-[#F1F2F4]">
+                          <div className="grid grid-cols-[1fr_1px_1fr] gap-1 md:gap-2 items-center border-b border-[#E6E8EB]">
 
                             <div onClick={() => home && openPlayerProfile(home, getDisplayPlayerPos(home?.name, 'BN', playerLookup), 'home')} role={home ? 'button' : undefined} tabIndex={home ? 0 : undefined} className={`px-1 md:px-2 py-1 min-w-0 cursor-pointer ${
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5]'
-                                  : 'bg-white')
+                                  : 'bg-[#F4F5F7]')
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
@@ -1770,7 +1769,7 @@ function MatchupsPageContent() {
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5]'
-                                  : 'bg-white')
+                                  : 'bg-[#F4F5F7]')
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">

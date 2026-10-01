@@ -36,7 +36,7 @@ export default function TradesPage() {
   const scoped = all.filter(t => (season === 'All' || t.season === season) && (team === 'All' || t.teams.includes(team)))
   const count = type => scoped.filter(t => type === 'all' || t.type === type).length
   const list = scoped.filter(t => tab === 'all' || t.type === tab)
-  const { visible, totalPages, pagerProps } = usePager(list, tab === 'trade' ? 6 : 12, `${tab}|${season}|${team}`)
+  const { visible, totalPages, pagerProps, listProps } = usePager(list, tab === 'trade' ? 6 : 12, `${tab}|${season}|${team}`)
 
   // Números do topo (respeitam os filtros de temporada e time)
   const activity = {}
@@ -100,11 +100,11 @@ export default function TradesPage() {
             {list.length === 0 ? (
               <div className="py-12 text-center text-[13px] text-[#6B7280]">No {tab === 'trade' ? 'trades' : 'moves'} for these filters.</div>
             ) : tab === 'trade' ? (
-              <div className="grid gap-2 p-3 lg:grid-cols-2 lg:p-4">
+              <div {...listProps} className="grid content-start gap-2 p-3 lg:grid-cols-2 lg:p-4">
                 {visible.map(t => <TradeCard key={t.id} t={t} onOpenPlayer={openPlayer} />)}
               </div>
             ) : (
-              <div>
+              <div {...listProps}>
                 {visible.map(t => t.type === 'trade'
                   ? <div key={t.id} className="border-b border-[#F1F2F4] p-3 lg:px-4"><TradeCard t={t} onOpenPlayer={openPlayer} /></div>
                   : <MoveRow key={t.id} t={t} onOpenPlayer={openPlayer} />)}
