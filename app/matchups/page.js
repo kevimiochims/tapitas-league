@@ -339,7 +339,7 @@ function getDisplayPlayerPos(name, pos, playerLookup) {
 }
 
 // ── Estado do jogo de cada jogador (semana em andamento) ─────────────
-// Em campo: fundo verde claro + faixa verde + relógio do jogo pulsando.
+// Em campo: fundo verde claro + borda fina verde em volta + relógio pulsando.
 // Já jogou: normal, com "Final". Ainda vai jogar: pontos apagados + horário.
 function kickoffShort(iso) {
   const d = new Date(iso)
@@ -350,7 +350,7 @@ function kickoffShort(iso) {
 }
 
 function gameCellClass(p, base, side) {
-  if (p?.gs === 'in') return `bg-[#EAF7EE] ${side === 'left' ? 'shadow-[inset_3px_0_0_#1E8E3E]' : 'shadow-[inset_-3px_0_0_#1E8E3E]'}`
+  if (p?.gs === 'in') return 'rounded-md bg-[#EAF7EE] ring-1 ring-inset ring-[#1E8E3E]/35'
   if (p?.gs === 'pre' || p?.gs === 'bye') return `${base} [&_img]:opacity-60`
   return base
 }
@@ -1761,7 +1761,7 @@ function MatchupsPageContent() {
                   {/* Legenda do estado do jogo (só na semana em andamento) */}
                   {[...starters, ...oppStarters].some(p => p.gs) && (
                     <div className="flex items-center gap-2.5 text-[10px] text-[#6B7280]">
-                      <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-[#EAF7EE] shadow-[inset_2px_0_0_#1E8E3E]" />Playing</span>
+                      <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-[#EAF7EE] ring-1 ring-inset ring-[#1E8E3E]/50" />Playing</span>
                       <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-white ring-1 ring-[#E6E8EB]" />Final</span>
                       <span className="flex items-center gap-1 text-[#9CA3AF]"><span className="h-2.5 w-2.5 rounded-sm bg-white opacity-60 ring-1 ring-[#E6E8EB]" />Yet to play</span>
                     </div>
