@@ -265,16 +265,27 @@ function executaAutomacaoSemanal2026() {
 }
 
 // =============================================================================
-// CORREÇÃO ÚNICA — ORDEM DOS TITULARES DAS SEMANAS JÁ IMPORTADAS (2026)
+// CORREÇÃO ÚNICA — ORDEM DOS TITULARES DAS SEMANAS JÁ IMPORTADAS
 // -----------------------------------------------------------------------------
 // Até a correção do scrapeSleeperWeekData2026, os titulares eram gravados pela
 // ordem do elenco e não pela vaga escalada (ex.: um WR1 aparecia no FLEX).
-// Rode esta função UMA VEZ (Executar → corrigeOrdemTitulares2026) para
-// reescrever, em todas as semanas de 2026 já na GAME_FACTS_ALL, só as colunas
-// S1..S13 e OS1..OS13 (nome e pontos) na ordem certa, vinda do Sleeper.
-// Não mexe em placar, resultado, sequências nem nas demais colunas.
+// Rode UMA VEZ cada função (Executar):
+//   corrigeOrdemTitulares2026  → temporada 2026
+//   corrigeOrdemTitulares2025  → temporada 2025
+// Ela só REORDENA os titulares que já estão na planilha (colunas S1..S13 e
+// OS1..OS13), seguindo a ordem das vagas no Sleeper. Nomes e pontos continuam
+// os mesmos, só mudam de coluna; placar, resultado e o resto não são tocados.
 // =============================================================================
 function corrigeOrdemTitulares2026() {
+  corrigeOrdemTitulares_(2026, CONFIG_2026.SLEEPER_LEAGUE_ID)
+}
+
+function corrigeOrdemTitulares2025() {
+  // Liga de 2025 no Sleeper (mesmos times com os mesmos números de roster)
+  corrigeOrdemTitulares_(2025, '1249936175641149440')
+}
+
+function corrigeOrdemTitulares_(year, leagueId) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('GAME_FACTS_ALL');
   const values = sheet.getDataRange().getValues();
@@ -283,36 +294,58 @@ function corrigeOrdemTitulares2026() {
   const iSeason = col('Season'), iWeek = col('Week'), iTeam = col('Team'), iOpp = col('Opponent');
   const playerDict = getPlayerDict2026();
   const weeksCache = {};
+  const norm = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
   let fixedRows = 0;
+
+  // Reordena um bloco (S ou OS): a ordem vem do Sleeper; nome e pontos vêm da planilha
+  const reorder = (row, prefix, sleeperStarters) => {
+    const c0 = col(`${prefix}1_Name`);
+    if (c0 === -1) return false;
+    const current = [];
+    for (let i = 0; i < 13; i++) {
+      const name = String(row[c0 + i * 2] || '').trim();
+      if (name && name !== '--empty--') current.push({ name, pts: row[c0 + i * 2 + 1] });
+    }
+    const pool = current.slice();
+    const ordered = sleeperStarters.map(p => {
+      if (!p || p.name === '--empty--') return null;
+      let k = pool.findIndex(x => x.name === p.name);
+      if (k === -1) k = pool.findIndex(x => norm(x.name) === norm(p.name));
+      return k === -1 ? undefined : pool.splice(k, 1)[0];
+    });
+    // Quem não casou pelo nome ocupa as vagas que sobraram, na ordem antiga
+    const filled = ordered.map(x => (x === undefined ? pool.shift() || null : x));
+    pool.forEach(x => filled.push(x));
+    const out = [];
+    for (let i = 0; i < 13; i++) {
+      const x = filled[i];
+      out.push(x ? x.name : '', x ? x.pts : '');
+    }
+    const before = [];
+    for (let i = 0; i < 26; i++) before.push(row[c0 + i]);
+    if (before.join('|') === out.join('|')) return false;
+    sheet.getRange(row.__r + 1, c0 + 1, 1, 26).setValues([out]);
+    return true;
+  };
 
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
-    if (Number(row[iSeason]) !== CONFIG_2026.YEAR) continue;
+    row.__r = r;
+    if (Number(row[iSeason]) !== year) continue;
     const week = parseInt(String(row[iWeek]), 10);
     if (!week) continue;
-    if (!weeksCache[week]) weeksCache[week] = scrapeSleeperWeekData2026(week, playerDict);
+    if (!weeksCache[week]) weeksCache[week] = scrapeSleeperWeekData2026(week, playerDict, leagueId);
     const team = String(row[iTeam]).trim();
     const opp = String(row[iOpp]).trim();
     const match = Object.values(weeksCache[week]).find(m => [m.teamA.teamName, m.teamB.teamName].includes(team) && [m.teamA.teamName, m.teamB.teamName].includes(opp));
     if (!match) continue;
     const main = match.teamA.teamName === team ? match.teamA : match.teamB;
     const other = match.teamA.teamName === team ? match.teamB : match.teamA;
-
-    const write = (prefix, starters) => {
-      for (let i = 0; i < 13; i++) {
-        const cName = col(`${prefix}${i + 1}_Name`);
-        const cPts = col(`${prefix}${i + 1}_Pts`);
-        if (cName === -1 || cPts === -1) continue;
-        const p = starters[i];
-        sheet.getRange(r + 1, cName + 1).setValue(p ? p.name : '');
-        sheet.getRange(r + 1, cPts + 1).setValue(p ? p.pts : '');
-      }
-    };
-    write('S', main.starters);
-    write('OS', other.starters);
-    fixedRows++;
+    const a = reorder(row, 'S', main.starters);
+    const b = reorder(row, 'OS', other.starters);
+    if (a || b) fixedRows++;
   }
-  Logger.log(`[CORREÇÃO] Ordem dos titulares reescrita em ${fixedRows} linhas de ${CONFIG_2026.YEAR}.`);
+  Logger.log(`[CORREÇÃO] Ordem dos titulares ajustada em ${fixedRows} linhas de ${year}.`);
 }
 
 // =============================================================================
@@ -586,9 +619,9 @@ function getPlayerDict2026() {
   return dict;
 }
 
-function scrapeSleeperWeekData2026(week, playerDict) {
+function scrapeSleeperWeekData2026(week, playerDict, leagueId) {
   const matchupsInWeek = {};
-  const data = fetchSleeper2026(`/league/${CONFIG_2026.SLEEPER_LEAGUE_ID}/matchups/${week}`);
+  const data = fetchSleeper2026(`/league/${leagueId || CONFIG_2026.SLEEPER_LEAGUE_ID}/matchups/${week}`);
   if (!data || data.length === 0) return matchupsInWeek;
 
   const grouped = {};
