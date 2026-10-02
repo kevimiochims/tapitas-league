@@ -34,12 +34,17 @@ export function resolveFactsName(index, { name, sheetName, pos } = {}) {
   const full = String(name || '').trim()
   const parts = full.split(/\s+/).filter(Boolean)
   const candidates = [full, sheetName]
-  if (pos !== 'DEF' && parts.length >= 2) {
+  if (pos === 'DEF') {
+    // Defesas: o Sleeper dá "Denver Broncos"; a planilha usa só o apelido ("Broncos")
+    if (parts.length >= 2) candidates.push(parts.slice(1).join(' '), parts[parts.length - 1])
+  } else if (parts.length >= 2) {
     candidates.push(`${parts[0][0]}. ${parts.slice(1).join(' ')}`, `${parts[0][0]}. ${parts[parts.length - 1]}`)
   }
   for (const c of candidates) {
     const hit = c && index?.get(normalizeKey(c))
     if (hit) return hit
   }
-  return sheetName || (pos !== 'DEF' && parts.length >= 2 ? `${parts[0][0]}. ${parts.slice(1).join(' ')}` : full)
+  if (sheetName) return sheetName
+  if (parts.length < 2) return full
+  return pos === 'DEF' ? parts[parts.length - 1] : `${parts[0][0]}. ${parts.slice(1).join(' ')}`
 }
