@@ -75,7 +75,7 @@ function NflChip({ game, open, onToggle, focus }) {
   const possessionTeam = game.possession ? [home, away].find(s => String(s.espnId) === String(game.possession))?.team : null
 
   return (
-    <button type="button" onClick={onToggle} className={`w-[7.5rem] flex-shrink-0 rounded-lg px-2 py-1.5 text-left transition-colors ${open ? 'bg-[#EEF3FF] ring-1 ring-[#02275F]/20' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
+    <button type="button" onClick={onToggle} className={`w-[8.5rem] flex-shrink-0 rounded-lg px-2 py-1.5 text-left transition-colors ${open ? 'bg-[#EEF3FF] ring-1 ring-[#02275F]/20' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
         <span className={`truncate ${state === 'in' ? 'text-[#D01F2D]' : 'text-[#6B7280]'}`}>
           {state === 'in' && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
@@ -169,7 +169,7 @@ function TapitasChip({ season, status, m, focus }) {
   const bWon = final && b.score > a.score
   const label = m.live ? 'Live' : status === 'final' ? 'Final' : status === 'upcoming' ? 'Upcoming' : played ? 'In progress' : 'This week'
   return (
-    <a href={matchupHref(season, m)} className={`w-[7.5rem] flex-shrink-0 rounded-lg px-2 py-1.5 transition-colors ${focus && m.teams.some(t => t.team === focus) ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
+    <a href={matchupHref(season, m)} className={`w-[8.5rem] flex-shrink-0 rounded-lg px-2 py-1.5 transition-colors ${focus && m.teams.some(t => t.team === focus) ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}>
       <div className="mb-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
         <span className={m.live ? 'text-[#D01F2D]' : 'text-[#6B7280]'}>
           {m.live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
@@ -236,7 +236,7 @@ function SectionLabel({ logo, name, week, onWeek, live, maxWeek }) {
 }
 
 const chipsRow = 'scroll-hide flex min-h-[84px] min-w-0 flex-1 items-stretch gap-1.5 overflow-x-auto p-2'
-const skeleton = n => Array.from({ length: n }).map((_, i) => <div key={i} className="w-[7.5rem] flex-shrink-0 animate-pulse rounded-lg bg-[#F4F5F7]" />)
+const skeleton = n => Array.from({ length: n }).map((_, i) => <div key={i} className="w-[8.5rem] flex-shrink-0 animate-pulse rounded-lg bg-[#F4F5F7]" />)
 
 // Placares do topo da Home: NFL à esquerda (3 jogos visíveis, o resto rola) e
 // Tapitas League à direita, cada liga com o seu seletor de semana.

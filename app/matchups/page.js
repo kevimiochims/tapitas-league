@@ -1318,7 +1318,10 @@ function MatchupsPageContent() {
                   {matchups.map((g, i) => {
                     const pf = parseNumber(g?.PF)
                     const pa = parseNumber(g?.PA)
-                    const won = String(g?.Result || '').trim().toUpperCase() === 'W'
+                    // Negrito para quem venceu; em jogo (sem resultado), para quem está na frente
+                    const result = String(g?.Result || '').trim().toUpperCase()
+                    const teamAhead = result ? result === 'W' : pf >= pa
+                    const oppAhead = result ? result === 'L' : pa >= pf
                     const isSelected = selected === g
                     const team = String(g?.Team || '').trim()
                     const opp = String(g?.Opponent || '').trim()
@@ -1334,18 +1337,17 @@ function MatchupsPageContent() {
                         }}
                         className={`min-w-[7.5rem] flex-shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-left transition-colors lg:min-w-[10.5rem] ${isSelected ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
                       >
-                        {gameType && gameType !== 'Reg Season' && (
-                          <div className="mb-0.5 text-[10px] font-medium text-[#6B7280]">{gameType}</div>
-                        )}
+                        {/* Fase do jogo em todos os cards (Regular Season, Playoffs, Final…) */}
+                        <div className="mb-0.5 text-[10px] font-medium text-[#6B7280]">{!gameType || /^reg/i.test(gameType) ? 'Regular Season' : gameType}</div>
                         <div className="flex items-center gap-1.5 text-[13px] leading-5">
                           <TeamAvatar name={team} className="h-4 w-4 flex-shrink-0 rounded-sm" textClassName="text-[6px]" />
-                          <span className={`flex-1 ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`} title={team}><span className="lg:hidden">{getTeamAbbr(team)}</span><span className="hidden lg:inline">{team}</span></span>
-                          <span className={`tabular-nums ${won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{pf > 0 ? pf.toFixed(2) : '—'}</span>
+                          <span className={`flex-1 ${teamAhead ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`} title={team}><span className="lg:hidden">{getTeamAbbr(team)}</span><span className="hidden lg:inline">{team}</span></span>
+                          <span className={`tabular-nums ${teamAhead ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{pf > 0 ? pf.toFixed(2) : '—'}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[13px] leading-5">
                           <TeamAvatar name={opp} className="h-4 w-4 flex-shrink-0 rounded-sm" textClassName="text-[6px]" />
-                          <span className={`flex-1 ${!won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`} title={opp}><span className="lg:hidden">{getTeamAbbr(opp)}</span><span className="hidden lg:inline">{opp}</span></span>
-                          <span className={`tabular-nums ${!won ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{pa > 0 ? pa.toFixed(2) : '—'}</span>
+                          <span className={`flex-1 ${oppAhead ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`} title={opp}><span className="lg:hidden">{getTeamAbbr(opp)}</span><span className="hidden lg:inline">{opp}</span></span>
+                          <span className={`tabular-nums ${oppAhead ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{pa > 0 ? pa.toFixed(2) : '—'}</span>
                         </div>
                       </button>
                     )
