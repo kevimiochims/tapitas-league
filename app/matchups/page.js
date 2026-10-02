@@ -1688,7 +1688,7 @@ function MatchupsPageContent() {
                                       : ((home?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
                                     }`}>
                                     {isHistoricPlayer(home) && <span className="text-base md:text-lg">🔥</span>}
-                                    {home ? home.pts.toFixed(1) : '—'}
+                                    {home ? home.pts.toFixed(2) : '—'}
                                   </span>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5">
@@ -1722,7 +1722,7 @@ function MatchupsPageContent() {
                                       ? 'text-[#B8860B]'
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
                                     }`}>
-                                    {away ? away.pts.toFixed(1) : '—'}
+                                    {away ? away.pts.toFixed(2) : '—'}
                                     {isHistoricPlayer(away) && <span className="text-base md:text-lg">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
@@ -1795,7 +1795,7 @@ function MatchupsPageContent() {
                                       : ((home?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
                                     }`}>
                                     {isHistoricPlayer(home) && <span className="text-sm md:text-base">🔥</span>}
-                                    {home ? home.pts.toFixed(1) : '—'}
+                                    {home ? home.pts.toFixed(2) : '—'}
                                   </span>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5">
@@ -1828,7 +1828,7 @@ function MatchupsPageContent() {
                                       ? 'text-[#B8860B]'
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
                                     }`}>
-                                    {away ? away.pts.toFixed(1) : '—'}
+                                    {away ? away.pts.toFixed(2) : '—'}
                                     {isHistoricPlayer(away) && <span className="text-sm md:text-base">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
