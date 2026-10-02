@@ -1749,7 +1749,7 @@ function MatchupsPageContent() {
                 {[
                   { key: 'matchup', label: 'Matchup' },
                   h2hBody && { key: 'h2h', label: 'Head to head' },
-                  (recap || weekRecapReady) && { key: 'recap', label: 'Game recap' },
+                  (recap || weekRecapReady) && { key: 'recap', label: 'Recaps' },
                   powerCard && { key: 'rankings', label: 'Rankings' },
                 ].filter(Boolean).map(tab => ({
                   ...tab,
