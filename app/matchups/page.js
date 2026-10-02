@@ -617,7 +617,8 @@ function MatchupsPageContent() {
   // Starters e Bench podem ser recolhidos (para ler o recap rapidinho)
   const [startersOpen, setStartersOpen] = useState(true)
   const [benchOpen, setBenchOpen] = useState(true)
-  const [showPowerRankingPreview, setShowPowerRankingPreview] = useState(false)
+  // Abas do celular: Matchup | Head to head | Game recap | Rankings
+  const [mobileTab, setMobileTab] = useState('matchup')
   // Card da direita: Power Rankings ou Standings
   const [rankTab, setRankTab] = useState('pr')
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
@@ -937,7 +938,7 @@ function MatchupsPageContent() {
     setSeason(String(g.Season).trim())
     setWeek(String(g.Week).trim())
     setSelected(g)
-    setShowPowerRankingPreview(false)
+    setMobileTab('matchup')
   }
 
   const weekRecap = useMemo(() => {
@@ -1298,7 +1299,6 @@ function MatchupsPageContent() {
   // Sufixo ordinal em português: 1º, 2º, 3º...
   const ordinalLabel = (n) => `${n}º`
 
-  const mobilePanelOpen = showPowerRankingPreview
 
   // Semana sem pontos (ainda não começou): sem Week Recap
   const weekHasPoints = matchups.some(g => parseNumber(g?.PF) > 0 || parseNumber(g?.PA) > 0)
@@ -1635,6 +1635,12 @@ function MatchupsPageContent() {
     </CardShell>
   ) : null
 
+
+  // Aba ativa no celular (se a aba escolhida não existir neste jogo, volta para Matchup)
+  const activeMobileTab = (mobileTab === 'h2h' && !h2hBody) || (mobileTab === 'recap' && !(recap || weekRecapReady)) || (mobileTab === 'rankings' && !powerCard)
+    ? 'matchup'
+    : mobileTab
+
   return (
     <main className="mx-root flex min-h-screen flex-col bg-[#EDEEF0] text-[#111]">
       <style>{`
@@ -1713,7 +1719,8 @@ function MatchupsPageContent() {
                         ref={isSelected ? activeGameRef : null}
                         onClick={() => {
                           setSelected(g)
-                                setShowPowerRankingPreview(false)
+                          // Trocar de jogo mantém a aba (Head to head / Game recap); só sai de Rankings
+                          setMobileTab(t => (t === 'rankings' ? 'matchup' : t))
                         }}
                         className={`min-w-[7.5rem] flex-shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-left transition-colors lg:min-w-[10.5rem] ${isSelected ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
                       >
@@ -1740,23 +1747,23 @@ function MatchupsPageContent() {
             {week && matchups.length > 0 && (
               <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">
                 {[
-                  {
-                    key: 'matchup', label: 'Matchup', active: !mobilePanelOpen,
-                    onClick: () => {
-                        setShowPowerRankingPreview(false)
-                      if (!selected && matchups[0]) setSelected(matchups[0])
-                    },
+                  { key: 'matchup', label: 'Matchup' },
+                  h2hBody && { key: 'h2h', label: 'Head to head' },
+                  (recap || weekRecapReady) && { key: 'recap', label: 'Game recap' },
+                  powerCard && { key: 'rankings', label: 'Rankings' },
+                ].filter(Boolean).map(tab => ({
+                  ...tab,
+                  active: activeMobileTab === tab.key,
+                  onClick: () => {
+                    setMobileTab(tab.key)
+                    if (!selected && matchups[0]) setSelected(matchups[0])
                   },
-                  {
-                    key: 'pr', label: 'Rankings', active: showPowerRankingPreview,
-                    onClick: () => setShowPowerRankingPreview(true),
-                  },
-                ].map(tab => (
+                })).map(tab => (
                   <button
                     key={tab.key}
                     type="button"
                     onClick={tab.onClick}
-                    className={`flex-1 border-b-2 px-2 py-2.5 text-[13px] transition-colors ${tab.active ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280]'}`}
+                    className={`flex-1 whitespace-nowrap border-b-2 px-1.5 py-2.5 text-[12px] transition-colors sm:px-2 sm:text-[13px] ${tab.active ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280]'}`}
                   >
                     {tab.label}
                   </button>
@@ -1771,13 +1778,15 @@ function MatchupsPageContent() {
               <div className="min-w-0">
                 {/* Painéis no mobile/tablet */}
                 <div className="lg:hidden">
-                  {showPowerRankingPreview && powerCard}
+                  {activeMobileTab === 'rankings' && powerCard}
                 </div>
 
             {/* Detalhe do matchup selecionado */}
             {selected && (
-              <div className={`mb-2 overflow-hidden rounded-xl bg-white ${mobilePanelOpen ? 'hidden lg:block' : ''}`}>
+              <div className={`mb-2 overflow-hidden rounded-xl bg-white ${activeMobileTab === 'rankings' ? 'hidden lg:block' : ''}`}>
 
+                {/* No celular, cada aba mostra só a sua parte do card */}
+                <div className={activeMobileTab === 'matchup' ? '' : 'hidden lg:block'}>
                 {/* Header do confronto */}
                 {(() => {
                   // Calcula record até aquela semana para cada time
@@ -2263,9 +2272,11 @@ function MatchupsPageContent() {
                   </div>
                 )}
 
-                {/* Head to head no celular (no desktop fica na coluna da direita) */}
-                {h2hBody && (
-                  <div className="border-t border-[#EEF0F2] lg:hidden">
+                </div>
+
+                {/* Head to head no celular, na própria aba (no desktop fica na coluna da direita) */}
+                {h2hBody && activeMobileTab === 'h2h' && (
+                  <div className="lg:hidden">
                     <div className="px-3 pt-4 text-[15px] font-bold text-[#111]">Head to head</div>
                     {h2hBody}
                   </div>
@@ -2275,7 +2286,7 @@ function MatchupsPageContent() {
                 {(recap || weekRecapReady) && (() => {
                   const showWeek = weekRecapReady && (recapView === 'week' || !recap)
                   return (
-                    <div className="px-3 py-4 md:px-4">
+                    <div className={`px-3 py-4 md:px-4 ${activeMobileTab === 'recap' ? '' : 'hidden lg:block'}`}>
                       <div className="mb-3 flex items-center gap-2">
                         <div className="min-w-0 flex-1 truncate text-[15px] font-bold text-[#111]">
                           {showWeek ? `📊 Week ${week} Recap` : '📝 Game Recap'}
