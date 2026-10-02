@@ -10,6 +10,7 @@ import PlayerCutout from '../components/PlayerCutout'
 import LeagueNewsCard from '../components/nfl/LeagueNewsCard'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
 import { useTeamFocus } from '../context/TeamFocus'
+import { useNameOwners } from '../lib/useNameOwners'
 
 const BASE_URL = '/api/sheet'
 
@@ -453,6 +454,8 @@ function formatSeasonList(seasons) {
 }
 
 export default function PlayersPage() {
+  // Dono de cada nome abreviado na liga (separa homônimos no perfil)
+  const nameOwners = useNameOwners()
   const router = useRouter()
   const [games, setGames] = useState([]), [playerLookup, setPlayerLookup] = useState(new Map()), [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -1099,7 +1102,7 @@ export default function PlayersPage() {
       {newsPlayer && (
         <PlayerProfileModal
           key={`news-${newsPlayer.id}`}
-          rawName={resolveFactsName(buildFactsNameIndex(games), newsPlayer)}
+          rawName={resolveFactsName(buildFactsNameIndex(games), newsPlayer, nameOwners)}
           displayName={newsPlayer.name}
           position={newsPlayer.pos}
           playerId={newsPlayer.id}

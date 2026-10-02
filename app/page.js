@@ -20,6 +20,7 @@ import RosterAlertsCard from './components/nfl/RosterAlertsCard'
 import TrendingCard from './components/nfl/TrendingCard'
 import LeagueNewsCard from './components/nfl/LeagueNewsCard'
 import { BrandBackdrop, Podium, SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, FilterPill, Tag, TeamLogo, LoadingState, Pager, usePager, PositionBadge as UiPositionBadge } from './components/ui'
+import { useNameOwners } from './lib/useNameOwners'
 
 
 // Same Sleeper player source used by the Teams Player Profile.
@@ -701,6 +702,8 @@ function parseBestStreak(value) {
 }
 
 export default function TapitasLeagueHomepage() {
+  // Dono de cada nome abreviado na liga (separa homônimos no perfil)
+  const nameOwners = useNameOwners()
   const [rawData, setRawData] = useState([])
   const [leagueLoading, setLeagueLoading] = useState(true)
   const [h2hData, setH2hData] = useState([])
@@ -2316,7 +2319,7 @@ export default function TapitasLeagueHomepage() {
       {selectedNflPlayer && (
         <PlayerProfileModal
           key={`nfl-${selectedNflPlayer.id || selectedNflPlayer.name}`}
-          rawName={resolveFactsName(factsNameIndex, selectedNflPlayer)}
+          rawName={resolveFactsName(factsNameIndex, selectedNflPlayer, nameOwners)}
           displayName={selectedNflPlayer.name}
           position={selectedNflPlayer.pos}
           playerId={selectedNflPlayer.id}

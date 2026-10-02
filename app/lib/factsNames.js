@@ -29,8 +29,29 @@ export function buildFactsNameIndex(games) {
   return index
 }
 
-// Nome exato na planilha para um jogador vindo do Sleeper/ESPN
-export function resolveFactsName(index, { name, sheetName, pos } = {}) {
+// Dono de cada nome na liga, pela aba _PLAYER_CACHE: nome normalizado → IDs do
+// Sleeper de quem já usou aquele nome na planilha. Serve para não confundir
+// homônimos abreviados ("R. Wilson" é o Russell, não o Roman).
+export function buildNameOwners(cacheRows) {
+  const owners = new Map()
+  ;(cacheRows || []).forEach(r => {
+    const id = String(r?.player_id || '').trim()
+    if (!id) return
+    ;[r?.name, r?.full_name].forEach(v => {
+      const key = normalizeKey(v)
+      if (!key) return
+      if (!owners.has(key)) owners.set(key, new Set())
+      owners.get(key).add(id)
+    })
+  })
+  return owners
+}
+
+// Nome exato na planilha para um jogador vindo do Sleeper/ESPN.
+// `owners` (opcional, de buildNameOwners): se o nome abreviado já pertence a
+// outro jogador da liga, não usa a abreviação. Um jogador que nunca jogou na
+// liga fica sem histórico, em vez de herdar o de um homônimo.
+export function resolveFactsName(index, { id, name, sheetName, pos } = {}, owners = null) {
   const full = String(name || '').trim()
   const parts = full.split(/\s+/).filter(Boolean)
   const candidates = [full, sheetName]
@@ -40,11 +61,22 @@ export function resolveFactsName(index, { name, sheetName, pos } = {}) {
   } else if (parts.length >= 2) {
     candidates.push(`${parts[0][0]}. ${parts.slice(1).join(' ')}`, `${parts[0][0]}. ${parts[parts.length - 1]}`)
   }
+  const playerId = String(id || '').trim()
+  const isAbbrev = c => pos !== 'DEF' && c !== full && c !== sheetName
+  const belongsToOther = c => {
+    if (!playerId || !owners) return false
+    const ids = owners.get(normalizeKey(c))
+    return Boolean(ids && ids.size && !ids.has(playerId))
+  }
   for (const c of candidates) {
     const hit = c && index?.get(normalizeKey(c))
-    if (hit) return hit
+    if (!hit) continue
+    if (isAbbrev(c) && belongsToOther(c)) continue // homônimo: o nome abreviado é de outro jogador
+    return hit
   }
   if (sheetName) return sheetName
   if (parts.length < 2) return full
-  return pos === 'DEF' ? parts[parts.length - 1] : `${parts[0][0]}. ${parts.slice(1).join(' ')}`
+  if (pos === 'DEF') return parts[parts.length - 1]
+  const abbreviated = `${parts[0][0]}. ${parts.slice(1).join(' ')}`
+  return belongsToOther(abbreviated) || belongsToOther(`${parts[0][0]}. ${parts[parts.length - 1]}`) ? full : abbreviated
 }

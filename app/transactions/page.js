@@ -8,6 +8,7 @@ import { useTransactions, TradeCard, MoveRow } from '../components/Transactions'
 import { PlayerThumb } from '../components/nfl/shared'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
 import { useFocusFilter } from '../context/TeamFocus'
+import { useNameOwners } from '../lib/useNameOwners'
 
 const TABS = [
   ['all', 'All moves'],
@@ -18,6 +19,8 @@ const TABS = [
 
 // Histórico de transações da liga (Sleeper): trades, waivers e free agents
 export default function TransactionsPage() {
+  // Dono de cada nome abreviado na liga (separa homônimos no perfil)
+  const nameOwners = useNameOwners()
   const { data, loading, error } = useTransactions()
   const [tab, setTab] = useState('all')
   const [season, setSeason] = useState('All')
@@ -194,7 +197,7 @@ export default function TransactionsPage() {
       {profile && (
         <PlayerProfileModal
           key={`tx-${profile.id}`}
-          rawName={resolveFactsName(factsIndex, profile)}
+          rawName={resolveFactsName(factsIndex, profile, nameOwners)}
           displayName={profile.name}
           position={profile.pos}
           playerId={profile.id}
