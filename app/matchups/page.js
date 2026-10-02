@@ -1541,15 +1541,17 @@ function MatchupsPageContent() {
         {powerRankingPreview.map((team, i) => {
           const streakIsWin = team.streak.startsWith('W')
           const streakIsLoss = team.streak.startsWith('L')
+          // Mesmo destaque da Standings para os dois times do confronto aberto
+          const inMatchup = matchupTeams.includes(team.team)
           return (
             <div
               key={team.team || i}
-              className="grid grid-cols-[18px_minmax(0,1fr)_38px_38px_30px] items-center gap-x-1.5 border-b border-[#F1F2F4] px-3 py-2 text-[12px] lg:px-4 lg:py-2.5 tabular-nums last:border-b-0"
+              className={`grid grid-cols-[18px_minmax(0,1fr)_38px_38px_30px] items-center gap-x-1.5 border-b border-[#F1F2F4] px-3 py-2 text-[12px] lg:px-4 lg:py-2.5 tabular-nums last:border-b-0 ${inMatchup ? 'bg-[#EAEFF7]' : ''}`}
             >
               <span className={`text-right ${team.rank <= 3 ? 'font-bold text-[#111]' : 'text-[#6B7280]'}`}>{team.rank}</span>
               <span className="flex min-w-0 items-center gap-1.5">
                 <TeamAvatar name={team.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
-                <span className="truncate text-[13px] font-medium text-[#111]">{team.team}</span>
+                <span className={`truncate text-[13px] text-[#111] ${inMatchup ? 'font-semibold' : 'font-medium'}`}>{team.team}</span>
               </span>
               <span className="text-right text-[#111]">{team.wins}-{team.losses}</span>
               <span className="text-right text-[#3F4757]" title={`AVG rank #${team.avgRank}`}>{team.avgPF.toFixed(0)}</span>
@@ -1667,12 +1669,12 @@ function MatchupsPageContent() {
             ['Biggest win', [[h2h.a, h2h.bigA], [h2h.b, h2h.bigB]].map(([team, g]) => g && {
               team, game: g,
               value: `+${Math.abs(parseNumber(g.PF) - parseNumber(g.PA)).toFixed(2)}`,
-              sub: `${g.Season} · W${g.Week} · ${parseNumber(g.PF).toFixed(2)}–${parseNumber(g.PA).toFixed(2)}`,
+              sub: [`${g.Season} · Week ${g.Week}`, `${parseNumber(g.PF).toFixed(2)} – ${parseNumber(g.PA).toFixed(2)}`],
             })],
             ['Best streak', [[h2h.a, h2h.runA], [h2h.b, h2h.runB]].map(([team, r]) => r && {
               team, game: r.last,
               value: `W${r.n}`,
-              sub: r.n > 1 ? `${r.first.Season} W${r.first.Week} – ${r.last.Season} W${r.last.Week}` : `${r.last.Season} · W${r.last.Week}`,
+              sub: r.n > 1 ? [`From ${r.first.Season} W${r.first.Week}`, `to ${r.last.Season} W${r.last.Week}`] : [`${r.last.Season} · Week ${r.last.Week}`],
             })],
           ].flatMap(([label, items]) => items.map((it, i) => it ? (
             <button
@@ -1690,7 +1692,10 @@ function MatchupsPageContent() {
                 {/* No celular o valor fica na mesma linha; na coluna estreita do desktop desce */}
                 <span className={`ml-auto flex-shrink-0 text-[16px] font-bold leading-tight tabular-nums lg:ml-0 lg:basis-full ${label === 'Biggest win' ? 'text-[#1E8E3E]' : 'text-[#02275F]'}`}>{it.value}</span>
               </div>
-              <div className="mt-0.5 truncate text-[11px] text-[#4B5563]">{it.sub}</div>
+              {/* Detalhe em até duas linhas curtas (cabe na coluna estreita do desktop sem cortar) */}
+              <div className="mt-0.5 text-[11px] leading-snug text-[#4B5563]">
+                {it.sub.map(line => <div key={line} className="truncate">{line}</div>)}
+              </div>
             </button>
           ) : <div key={`${label}-empty-${i}`} />))}
         </div>
