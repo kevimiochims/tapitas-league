@@ -11,6 +11,7 @@ import PlayerCutout from '../components/PlayerCutout'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
 import { BrandBackdrop, SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager, StableHeight } from '../components/ui'
 import { getTeamFocus } from '../context/TeamFocus'
+import { useNameOwners } from '../lib/useNameOwners'
 
 const BASE_URL = '/api/sheet'
 
@@ -406,6 +407,8 @@ const shortName = (name) => {
 }
 
 export default function TeamsPage() {
+  // Dono de cada nome abreviado na liga (separa homônimos no perfil)
+  const nameOwners = useNameOwners()
   const [allTime, setAllTime] = useState([])
   const [history, setHistory] = useState([])
   const [historyRaw, setHistoryRaw] = useState([])
@@ -1726,7 +1729,7 @@ export default function TeamsPage() {
     ) : nflProfile ? (
       <PlayerProfileModal
         key={`nfl-${nflProfile.id}`}
-        rawName={resolveFactsName(buildFactsNameIndex(games), nflProfile)}
+        rawName={resolveFactsName(buildFactsNameIndex(games), nflProfile, nameOwners)}
         displayName={nflProfile.name}
         position={nflProfile.pos}
         playerId={nflProfile.id}
@@ -1742,7 +1745,7 @@ export default function TeamsPage() {
     // (ex.: recém-chegado que ainda não jogou pela franquia)
     const openSleeperPlayer = (p, tab = null) => {
       if (!p) return
-      const key = `raw:${resolveFactsName(buildFactsNameIndex(games), p)}`
+      const key = `raw:${resolveFactsName(buildFactsNameIndex(games), p, nameOwners)}`
       if (playerArchive.some(x => x.archiveKey === key)) openPlayerProfile(key, selected.team, tab)
       else { setProfileTab(tab); setNflProfile(p) }
     }
