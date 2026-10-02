@@ -817,8 +817,8 @@ export default function TapitasLeagueHomepage() {
 
   // =============
 
-  // Hero: passa sozinho a cada 10s por 3 voltas completas e para no primeiro
-  // slide. Se o usuário trocar de slide (bolinhas ou arrastando), para também.
+  // Hero: passa sozinho a cada 10s por uma volta só (mostra os 3 slides) e para
+  // no primeiro. Se o usuário trocar de slide (bolinhas ou arrastando), para também.
   const heroAutoSteps = useRef(0)
   const [heroAutoplay, setHeroAutoplay] = useState(true)
   useEffect(() => {
@@ -826,7 +826,7 @@ export default function TapitasLeagueHomepage() {
     const timer = setTimeout(() => {
       heroAutoSteps.current += 1
       nextSlide()
-      if (heroAutoSteps.current >= totalSlides * 3) setHeroAutoplay(false)
+      if (heroAutoSteps.current >= totalSlides) setHeroAutoplay(false)
     }, 10000);
 
     return () => clearTimeout(timer);
