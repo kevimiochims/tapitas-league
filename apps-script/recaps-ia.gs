@@ -114,7 +114,8 @@ function fetchDossie_(cfg, params) {
 }
 
 // Chama o Gemini. Se o modelo principal estiver sobrecarregado (erro 503/500),
-// tenta mais uma vez após 10s; se continuar, passa para o modelo reserva
+// tenta mais uma vez após 10s; se continuar, ou se a cota do dia dele acabou
+// (erro 429), passa para o modelo reserva
 // (GEMINI_MODEL_RESERVA, padrão gemini-2.5-flash) e usa só o reserva no resto
 // desta execução, para não perder tempo insistindo num modelo lotado.
 // Devolve { texto, modelo }.
@@ -136,12 +137,14 @@ function chamaGemini_(cfg, sistema, texto) {
         return { texto: chamaGeminiUmaVez_(cfg, modelo, sistema, texto), modelo }
       } catch (e) {
         ultimoErro = e
+        // Cota do dia estourada (429): cada modelo tem a sua, então pula direto para o reserva
+        if (/Gemini 429/.test(e.message) && k < modelos.length - 1) break
         if (!/Gemini (500|503)/.test(e.message)) throw e // outros erros: não adianta insistir
       }
     }
     if (k < modelos.length - 1) {
       PRINCIPAL_LOTADO_ = true
-      Logger.log(`[GEMINI] ${modelo} continua ocupado: usando ${modelos[k + 1]} no resto desta execução.`)
+      Logger.log(`[GEMINI] ${modelo} ${/Gemini 429/.test(ultimoErro && ultimoErro.message) ? 'sem cota hoje' : 'continua ocupado'}: usando ${modelos[k + 1]} no resto desta execução.`)
     }
   }
   throw ultimoErro
