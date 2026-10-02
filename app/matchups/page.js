@@ -76,8 +76,10 @@ function extractPlayers(game, prefix) {
   for (let i = 1; i <= 13; i++) {
     const name = game?.[`${prefix}${i}_Name`]
     const pts = game?.[`${prefix}${i}_Pts`]
+    // Projeção da semana (só nas semanas em andamento, vindas do Sleeper)
+    const proj = game?.[`${prefix}${i}_Proj`]
     if (name && name !== '--empty--' && name !== '') {
-      players.push({ name: String(name).trim(), pts: parseNumber(pts) })
+      players.push({ name: String(name).trim(), pts: parseNumber(pts), proj: proj != null && proj !== '' ? parseNumber(proj) : null })
     }
   }
   return players
@@ -715,7 +717,7 @@ function MatchupsPageContent() {
 
   // Matchups da semana selecionada — deduplicados (pega só um lado de cada confronto)
   // Ao vivo: a semana em andamento vem do Sleeper e é buscada de novo a cada
-  // 20s com jogo rolando (60s no resto da semana), no mesmo ritmo do placar da
+  // 10s com jogo rolando (60s no resto da semana), no mesmo ritmo do placar da
   // Home. O confronto aberto é trocado pela versão nova, para placar e pontos
   // dos jogadores acompanharem o jogo. Falhas não interrompem; voltar para a
   // aba atualiza na hora.
@@ -728,15 +730,15 @@ function MatchupsPageContent() {
     const sameGame = (a, b) => a && b && ['Season', 'Week', 'Team', 'Opponent'].every(k => String(a?.[k] || '').trim() === String(b?.[k] || '').trim())
     const refresh = async () => {
       clearTimeout(timer)
-      const rows = await safeFetch(`/api/league/sleeper-rows?_=${Math.floor(Date.now() / 10000)}`)
+      const rows = await safeFetch(`/api/league/sleeper-rows?_=${Math.floor(Date.now() / 5000)}`)
       if (cancelled) return
       if (rows.length) {
         setGames([...sheetRowsRef.current, ...rows])
         setSelected(prev => (prev ? rows.find(r => sameGame(r, prev)) || prev : prev))
       }
-      timer = setTimeout(refresh, liveMode === 'live' ? 20000 : 60000)
+      timer = setTimeout(refresh, liveMode === 'live' ? 10000 : 60000)
     }
-    timer = setTimeout(refresh, liveMode === 'live' ? 20000 : 60000)
+    timer = setTimeout(refresh, liveMode === 'live' ? 10000 : 60000)
     const onVisible = () => { if (document.visibilityState === 'visible') refresh() }
     document.addEventListener('visibilitychange', onVisible)
     return () => { cancelled = true; clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible) }
@@ -1479,6 +1481,8 @@ function MatchupsPageContent() {
                             </span>
                             )}
                           </div>
+                          {/* Projeção do time (semana em andamento) */}
+                          {undecided && selected?.ProjPF && <div className="text-[11px] font-medium text-white/70">Proj {parseNumber(selected.ProjPF).toFixed(2)}</div>}
                           {isHistoricTeamScore(teamPF) && (
                             <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
                               <span className="text-xs">🚀</span>
@@ -1535,6 +1539,8 @@ function MatchupsPageContent() {
                             </span>
                             )}
                           </div>
+                          {/* Projeção do time (semana em andamento) */}
+                          {undecided && selected?.ProjPA && <div className="text-[11px] font-medium text-white/70">Proj {parseNumber(selected.ProjPA).toFixed(2)}</div>}
                           {isHistoricTeamScore(teamPA) && (
                             <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
                               <span className="text-xs">🚀</span>
@@ -1688,7 +1694,10 @@ function MatchupsPageContent() {
                                       : ((home?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
                                     }`}>
                                     {isHistoricPlayer(home) && <span className="text-base md:text-lg">🔥</span>}
-                                    {home ? home.pts.toFixed(2) : '—'}
+                                    <span className="flex flex-col items-end">
+                                      <span>{home ? home.pts.toFixed(2) : '—'}</span>
+                                      {home?.proj != null && <span className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">proj {home.proj.toFixed(1)}</span>}
+                                    </span>
                                   </span>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5">
@@ -1722,7 +1731,10 @@ function MatchupsPageContent() {
                                       ? 'text-[#B8860B]'
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
                                     }`}>
-                                    {away ? away.pts.toFixed(2) : '—'}
+                                    <span className="flex flex-col items-start">
+                                      <span>{away ? away.pts.toFixed(2) : '—'}</span>
+                                      {away?.proj != null && <span className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">proj {away.proj.toFixed(1)}</span>}
+                                    </span>
                                     {isHistoricPlayer(away) && <span className="text-base md:text-lg">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
@@ -1795,7 +1807,10 @@ function MatchupsPageContent() {
                                       : ((home?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
                                     }`}>
                                     {isHistoricPlayer(home) && <span className="text-sm md:text-base">🔥</span>}
-                                    {home ? home.pts.toFixed(2) : '—'}
+                                    <span className="flex flex-col items-end">
+                                      <span>{home ? home.pts.toFixed(2) : '—'}</span>
+                                      {home?.proj != null && <span className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">proj {home.proj.toFixed(1)}</span>}
+                                    </span>
                                   </span>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5">
@@ -1828,7 +1843,10 @@ function MatchupsPageContent() {
                                       ? 'text-[#B8860B]'
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
                                     }`}>
-                                    {away ? away.pts.toFixed(2) : '—'}
+                                    <span className="flex flex-col items-start">
+                                      <span>{away ? away.pts.toFixed(2) : '—'}</span>
+                                      {away?.proj != null && <span className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">proj {away.proj.toFixed(1)}</span>}
+                                    </span>
                                     {isHistoricPlayer(away) && <span className="text-sm md:text-base">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
@@ -1900,6 +1918,18 @@ function MatchupsPageContent() {
             position={selectedPlayerProfile.position}
             playerId={getPlayerData(selectedPlayerProfile.rawName, selectedPlayerProfile.position, playerLookup)?.playerId || getPlayerId(selectedPlayerProfile.rawName, playerLookup)}
             games={games.filter(g => g?.Source !== 'sleeper')}
+            liveGame={(() => {
+              // Semana em andamento (Sleeper): pontos e projeção atuais do jogador,
+              // que acompanham as atualizações automáticas da página
+              if (selected?.Source !== 'sleeper') return null
+              const isHome = selectedPlayerProfile.team === String(selected?.Team || '').trim()
+              const lists = isHome ? [[starters, 'Starter'], [bench, 'Bench']] : [[oppStarters, 'Starter'], [oppBench, 'Bench']]
+              for (const [list, status] of lists) {
+                const p = list.find(x => x.name === selectedPlayerProfile.rawName)
+                if (p) return { pts: p.pts, proj: p.proj, status }
+              }
+              return null
+            })()}
             initialTeams={[selectedPlayerProfile.team]}
             matchup={{
               season: selectedPlayerProfile.season,

@@ -4,6 +4,7 @@ import { getLeagueRosters, getSheetNames, SLEEPER_LEAGUE_ID } from './leagueRost
 import { getNflState, getSleeperPlayers } from './sleeper'
 import { getScoreboard } from './espn'
 import { isWeekFinal } from './nflCalendar'
+import { getLivePoints, getProjectedPoints } from './liveStats'
 
 // Calendário e placares da Tapitas League por semana.
 // - Semanas já registradas na planilha (GAME_FACTS_ALL): placar final da planilha.
@@ -62,22 +63,43 @@ async function getSheetWeek(season, week) {
 
 // Confrontos de uma semana no Sleeper (pares pelo matchup_id)
 export function getSleeperWeek(week) {
-  // Pontos ao vivo: guarda só 15s (o Sleeper atualiza durante os jogos)
-  return cached(`sleeper:matchups:${week}`, 15, async () => {
-    const [entries, rosters] = await Promise.all([fetchJson(`${BASE}/matchups/${week}`), getLeagueRosters()])
+  // Pontos ao vivo: guarda só 5s. Os pontos de cada jogador vêm das
+  // estatísticas ao vivo (mais rápidas que o endpoint de confrontos), com a
+  // projeção da semana junto.
+  return cached(`sleeper:matchups:${week}`, 5, async () => {
+    const info = await getLeagueInfo().catch(() => null)
+    const season = info?.season
+    const [entries, rosters, live, proj] = await Promise.all([
+      fetchJson(`${BASE}/matchups/${week}`),
+      getLeagueRosters(),
+      season ? getLivePoints(season, week).catch(() => new Map()) : new Map(),
+      season ? getProjectedPoints(season, week).catch(() => new Map()) : new Map(),
+    ])
     const teamByRoster = new Map(rosters.filter(r => r.rosterId != null).map(r => [String(r.rosterId), r.team]))
     const groups = new Map()
     ;(Array.isArray(entries) ? entries : []).forEach(e => {
       if (e?.matchup_id == null) return
       if (!groups.has(e.matchup_id)) groups.set(e.matchup_id, [])
+      const starters = (e.starters || []).map(String)
+      const players = (e.players || []).map(String)
+      // Pontos de cada jogador: estatística ao vivo quando existir
+      const playersPoints = { ...(e.players_points || {}) }
+      players.forEach(id => { if (live.has(id)) playersPoints[id] = live.get(id) })
+      const startersPoints = starters.map((id, k) => (live.has(id) ? live.get(id) : (e.starters_points || [])[k] ?? 0))
+      const liveScore = Math.round(startersPoints.reduce((sum, p) => sum + (Number(p) || 0), 0) * 100) / 100
+      const projections = {}
+      players.forEach(id => { if (proj.has(id)) projections[id] = proj.get(id) })
       groups.get(e.matchup_id).push({
         team: teamByRoster.get(String(e.roster_id)) || `Team ${e.roster_id}`,
         rosterId: e.roster_id,
-        score: num(e.custom_points ?? e.points),
-        starters: (e.starters || []).map(String),
-        players: (e.players || []).map(String),
-        startersPoints: e.starters_points || [],
-        playersPoints: e.players_points || {},
+        // Ajuste manual do comissário (custom_points) continua valendo
+        score: e.custom_points != null ? num(e.custom_points) : (live.size ? liveScore : num(e.points)),
+        projected: Math.round(starters.reduce((sum, id) => sum + (proj.get(id) || 0), 0) * 100) / 100,
+        starters,
+        players,
+        startersPoints,
+        playersPoints,
+        projections,
       })
     })
     return Array.from(groups.entries())
@@ -116,7 +138,7 @@ export async function getLeagueWeek(requestedWeek) {
     // "Live" só quando há jogo da NFL rolando com algum titular do confronto
     live: Boolean(liveIds && m.teams.some(t => t.starters.some(liveIds))),
     // Na lista resumida não mandamos a escalação completa
-    teams: m.teams.map(({ starters, startersPoints, playersPoints, players, ...t }) => t),
+    teams: m.teams.map(({ starters, startersPoints, playersPoints, players, projections, ...t }) => t),
   }))
   return { season, week, currentWeek, source: 'sleeper', status, live: matchups.some(m => m.live), matchups }
 }
@@ -143,7 +165,7 @@ function abbreviate(name, pos) {
 // escalações do Sleeper. A página Matchups junta essas linhas às da planilha só
 // para exibir o confronto; elas não entram em estatísticas.
 export function getSleeperSeasonRows() {
-  return cached('league:sleeper-rows', 15, async () => {
+  return cached('league:sleeper-rows', 5, async () => {
     const [info, state, sheetRows, sheetNames, players] = await Promise.all([
       getLeagueInfo(),
       getNflState().catch(() => null),
@@ -193,6 +215,8 @@ export function getSleeperSeasonRows() {
             GameStage: 'Regular Season',
             Status: status,
             Source: 'sleeper',
+            ProjPF: br(t.projected),
+            ProjPA: br(opp.projected),
           }
           // Escalação do time (S/B) e do adversário (OS/OB), como na planilha
           const lineup = (side, starterPrefix, benchPrefix) => {
@@ -200,10 +224,12 @@ export function getSleeperSeasonRows() {
             starters.forEach((id, k) => {
               row[`${starterPrefix}${k + 1}_Name`] = name(id)
               row[`${starterPrefix}${k + 1}_Pts`] = br(side.startersPoints?.[side.starters.indexOf(id)] ?? side.playersPoints?.[id])
+              if (side.projections?.[id] != null) row[`${starterPrefix}${k + 1}_Proj`] = br(side.projections[id])
             })
             side.players.filter(id => !starters.includes(id)).forEach((id, k) => {
               row[`${benchPrefix}${k + 1}_Name`] = name(id)
               row[`${benchPrefix}${k + 1}_Pts`] = br(side.playersPoints?.[id])
+              if (side.projections?.[id] != null) row[`${benchPrefix}${k + 1}_Proj`] = br(side.projections[id])
             })
           }
           lineup(t, 'S', 'B')

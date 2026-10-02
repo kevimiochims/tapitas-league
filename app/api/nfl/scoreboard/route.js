@@ -70,5 +70,5 @@ export async function GET(request) {
   const live = games.some(g => g.state === 'in')
   const state = await getNflState().catch(() => null)
   const pending = games.some(g => !g.completed)
-  return Response.json({ ...board, games, live, currentWeek: state?.week || null }, { headers: live ? liveHeaders(10) : pending ? liveHeaders(30) : cdnHeaders(300) })
+  return Response.json({ ...board, games, live, currentWeek: state?.week || null }, { headers: live ? liveHeaders(5) : pending ? liveHeaders(30) : cdnHeaders(300) })
 }

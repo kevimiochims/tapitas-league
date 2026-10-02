@@ -18,11 +18,11 @@ function kickoffLabel(iso) {
   return `${day} ${time}`
 }
 
-// Ritmo da atualização: jogo rolando → a cada 20s; semana em andamento (ainda
+// Ritmo da atualização: jogo rolando → a cada 10s; semana em andamento (ainda
 // vai ter jogo) → a cada 60s; semana fechada ou futura → não busca de novo.
 export function liveDelay(data) {
   if (!data) return 60000
-  if (data.live) return 20000
+  if (data.live) return 10000
   const pendingGames = Array.isArray(data.games) && data.games.some(g => !g.completed)
   const isCurrent = data.status === 'current' || (data.currentWeek && Number(data.week) === Number(data.currentWeek) && pendingGames)
   return isCurrent ? 60000 : null
@@ -39,8 +39,8 @@ function useWeekData(url) {
     const schedule = delay => { clearTimeout(timer); if (delay != null && !cancelled) timer = setTimeout(load, delay) }
     function load() {
       clearTimeout(timer)
-      // Parâmetro que muda a cada 10s: garante resposta nova, sem cópia antiga do CDN
-      const fresh = `${url}${url.includes('?') ? '&' : '?'}_=${Math.floor(Date.now() / 10000)}`
+      // Parâmetro que muda a cada 5s: garante resposta nova, sem cópia antiga do CDN
+      const fresh = `${url}${url.includes('?') ? '&' : '?'}_=${Math.floor(Date.now() / 5000)}`
       fetch(fresh, { cache: 'no-store' })
         .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json() })
         .then(data => {

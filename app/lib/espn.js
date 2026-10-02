@@ -12,7 +12,7 @@ export function getScoreboard({ week, season } = {}) {
   const query = w
     ? `?seasontype=${w > 18 ? 3 : 2}&week=${w > 18 ? w - 18 : w}${season ? `&dates=${season}` : ''}`
     : ''
-  return cached(`espn:scoreboard:${w || 'current'}:${season || ''}`, 15, async () => {
+  return cached(`espn:scoreboard:${w || 'current'}:${season || ''}`, 10, async () => {
     const data = await fetchJson(`${SITE}/scoreboard${query}`)
     const games = (data?.events || []).map(event => {
       const comp = event?.competitions?.[0] || {}

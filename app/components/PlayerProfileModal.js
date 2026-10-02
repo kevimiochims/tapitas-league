@@ -406,7 +406,7 @@ const DEFAULT_SORT = { key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: '
  * @param initialTeams franquias pré-selecionadas (padrão: todas em que ele jogou)
  * @param matchup     { season, week, team, opponent } quando aberto de um confronto
  */
-export default function PlayerProfileModal({ rawName, displayName, position, playerId, games, initialTeams, matchup, initialTab, onClose }) {
+export default function PlayerProfileModal({ rawName, displayName, position, playerId, games, initialTeams, matchup, initialTab, liveGame, onClose }) {
   const pos = String(position || '').toUpperCase()
   const [sleeperInfo, setSleeperInfo] = useState(null)
   const [weeklyStats, setWeeklyStats] = useState(null)
@@ -528,6 +528,28 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     return () => { cancelled = true }
   }, [playerId, matchup?.season, matchup?.week])
 
+  // Semana em andamento: as estatísticas da semana são buscadas de novo a cada
+  // 15s (endpoint do próprio jogador, pequeno), sem o cache do módulo
+  const isLiveWeek = Boolean(liveGame)
+  useEffect(() => {
+    if (!isLiveWeek || !playerId || !matchup) return
+    let cancelled = false
+    const week = Number.parseInt(String(matchup.week || '').split(/[-–]/)[0], 10)
+    const refresh = () => {
+      fetch(`https://api.sleeper.com/stats/nfl/player/${encodeURIComponent(playerId)}?season=${encodeURIComponent(matchup.season)}&season_type=regular&grouping=week&_=${Date.now()}`)
+        .then(r => (r.ok ? r.json() : null))
+        .then(data => {
+          if (cancelled || !data) return
+          const rows = Array.isArray(data) ? data : Object.values(data)
+          const row = rows.find(r => Number.parseInt(String(r?.week ?? ''), 10) === week)
+          if (row?.stats && Object.keys(row.stats).length) setWeeklyStats(row.stats)
+        })
+        .catch(() => {})
+    }
+    const timer = setInterval(refresh, 15000)
+    return () => { cancelled = true; clearInterval(timer) }
+  }, [isLiveWeek, playerId, matchup?.season, matchup?.week])
+
   const matchupWeeks = matchup ? String(matchup.week || '').split(/[-–]/).map(w => w.trim()).filter(Boolean) : []
   const isMatchupGame = (season, week, team, opponent) => {
     if (!matchup) return false
@@ -585,11 +607,13 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
         .sort((a, b) => (Number(b.season) - Number(a.season)) || ((parseFloat(b.week) || 0) - (parseFloat(a.week) || 0)))
     : []
   const versus = matchup ? summarize(profileGames.filter(x => normalizeTeamName(x.opponent) === normalizeTeamName(matchup.opponent))) : null
+  // Semana já na planilha: pontos dela. Semana em andamento: pontos ao vivo
+  // que a página Matchups passa em `liveGame` (Sleeper).
   const currentGame = matchup
     ? (games || []).map(g => {
         const app = extractPlayerAppearances(g).find(a => isSelf(a.name))
         return app && isMatchupGame(String(g?.Season || '').trim(), String(g?.Week || '').trim(), g?.Team, g?.Opponent) ? app : null
-      }).find(Boolean) || null
+      }).find(Boolean) || (liveGame ? { name: rawName, pts: Number(liveGame.pts) || 0, status: liveGame.status, proj: liveGame.proj } : null)
     : null
   const weeklyGroups = formatCompactPlayerStatGroups(weeklyStats, pos)
 
@@ -764,6 +788,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
                       <span className="text-[44px] font-bold leading-none tabular-nums">{currentGame ? currentGame.pts.toFixed(2) : '—'}</span>
                       <span className="text-[13px] text-white/70">fantasy pts</span>
                     </div>
+                    {currentGame?.proj != null && <div className="mt-1 text-[12px] text-white/70">Projected {Number(currentGame.proj).toFixed(2)}</div>}
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]">
                       {currentGame && <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none ${currentGame.status === 'Starter' ? 'bg-[#1E8E3E] text-white' : 'bg-white/15 text-white'}`}>{currentGame.status}</span>}
                       {diff != null && (
