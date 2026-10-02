@@ -19,9 +19,11 @@
 //   SITE_URL        = https://SEU-SITE.vercel.app   (sem barra no final)
 //   LORE_SHEET_ID   = ID da planilha privada da LORE (o trecho do link entre
 //                     /d/ e /edit). Opcional: sem ela, os recaps saem sem LORE.
-//   GEMINI_MODEL    = nome do modelo (rode listarModelos para ver os nomes)
-//   GEMINI_MODEL_RESERVA = modelo usado se o principal estiver sobrecarregado
-//                     (opcional; padrão gemini-2.5-flash)
+//   GEMINI_MODEL    = modelo preferido (opcional; rode listarModelos para ver os nomes)
+//   GEMINI_MODEL_RESERVA = segundo da fila (opcional)
+//   GEMINI_MODELOS  = (opcional) a fila inteira, separada por vírgula; se não
+//                     existir, a fila é: GEMINI_MODEL, GEMINI_MODEL_RESERVA,
+//                     gemini-3.8-flash, gemini-3.7-flash, gemini-3.6-flash, gemini-2.5-flash
 //   RECAP_TOKEN     = (opcional, não é necessário)
 // =============================================================================
 
@@ -35,8 +37,13 @@ function recapConfig_() {
     apiKey: props.getProperty('GEMINI_API_KEY'),
     site: (props.getProperty('SITE_URL') || '').replace(/\/+$/, ''),
     token: props.getProperty('RECAP_TOKEN') || '',
-    model: props.getProperty('GEMINI_MODEL') || 'gemini-2.5-flash',
-    reserva: props.getProperty('GEMINI_MODEL_RESERVA') || 'gemini-2.5-flash',
+    // Fila de modelos, do melhor para o mais disponível. GEMINI_MODELOS (lista
+    // separada por vírgula) substitui tudo; senão: GEMINI_MODEL, GEMINI_MODEL_RESERVA
+    // e os gratuitos padrão.
+    modelos: (props.getProperty('GEMINI_MODELOS')
+      ? props.getProperty('GEMINI_MODELOS').split(',')
+      : [props.getProperty('GEMINI_MODEL'), props.getProperty('GEMINI_MODEL_RESERVA'), 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'])
+      .map(m => String(m || '').trim()).filter((m, i, arr) => m && arr.indexOf(m) === i),
     loreSheetId: props.getProperty('LORE_SHEET_ID') || '',
   }
   if (!cfg.apiKey) throw new Error('Falta GEMINI_API_KEY nas Propriedades do script.')
@@ -113,21 +120,17 @@ function fetchDossie_(cfg, params) {
   return res.getContentText()
 }
 
-// Chama o Gemini. Se o modelo principal estiver sobrecarregado (erro 503/500),
-// tenta mais uma vez após 10s; se continuar, ou se a cota do dia dele acabou
-// (erro 429), passa para o modelo reserva
-// (GEMINI_MODEL_RESERVA, padrão gemini-2.5-flash) e usa só o reserva no resto
-// desta execução, para não perder tempo insistindo num modelo lotado.
-// Devolve { texto, modelo }.
-let PRINCIPAL_LOTADO_ = false
+// Chama o Gemini passando pela fila de modelos: se um estiver sobrecarregado
+// (503/500) depois de uma nova tentativa, ou sem cota do dia (429), vai para o
+// próximo. Um modelo que falhou fica de fora no resto desta execução.
+// Devolve { texto, modelo }. Se todos falharem, lança o último erro.
+const MODELOS_FORA_ = new Set()
 function chamaGemini_(cfg, sistema, texto) {
-  const modelos = [cfg.model, cfg.reserva]
-    .filter((m, i, arr) => m && arr.indexOf(m) === i)
-    .filter((m, i) => !(i === 0 && PRINCIPAL_LOTADO_ && cfg.reserva && cfg.reserva !== cfg.model))
-  let ultimoErro = null
-  for (let k = 0; k < modelos.length; k++) {
-    const modelo = modelos[k]
-    const esperas = k === modelos.length - 1 ? [0, 10000, 20000] : [0, 10000]
+  const fila = cfg.modelos.filter(m => !MODELOS_FORA_.has(m))
+  let ultimoErro = new Error('Gemini 503: nenhum modelo disponível nesta execução')
+  for (let k = 0; k < fila.length; k++) {
+    const modelo = fila[k]
+    const esperas = [0, 10000]
     for (let t = 0; t < esperas.length; t++) {
       if (esperas[t]) {
         Logger.log(`[GEMINI] ${modelo} ocupado, tentando de novo em ${esperas[t] / 1000}s...`)
@@ -137,15 +140,13 @@ function chamaGemini_(cfg, sistema, texto) {
         return { texto: chamaGeminiUmaVez_(cfg, modelo, sistema, texto), modelo }
       } catch (e) {
         ultimoErro = e
-        // Cota do dia estourada (429): cada modelo tem a sua, então pula direto para o reserva
-        if (/Gemini 429/.test(e.message) && k < modelos.length - 1) break
+        if (/Gemini 429/.test(e.message)) break // sem cota hoje: próximo modelo
         if (!/Gemini (500|503)/.test(e.message)) throw e // outros erros: não adianta insistir
       }
     }
-    if (k < modelos.length - 1) {
-      PRINCIPAL_LOTADO_ = true
-      Logger.log(`[GEMINI] ${modelo} ${/Gemini 429/.test(ultimoErro && ultimoErro.message) ? 'sem cota hoje' : 'continua ocupado'}: usando ${modelos[k + 1]} no resto desta execução.`)
-    }
+    MODELOS_FORA_.add(modelo)
+    const motivo = /Gemini 429/.test(ultimoErro.message) ? 'sem cota hoje' : 'continua ocupado'
+    Logger.log(`[GEMINI] ${modelo} ${motivo}${fila[k + 1] ? `: tentando ${fila[k + 1]}` : ''}.`)
   }
   throw ultimoErro
 }
@@ -244,7 +245,9 @@ function gerarRecapsDaLiga() {
       Utilities.sleep(RECAP_PAUSA_MS)
     } catch (e) {
       Logger.log(`[RECAP] Erro em ${team} x ${opp}: ${e.message}`)
-      if (/Gemini (429|403|400)/.test(e.message)) break
+      // Para aqui em vez de pular o jogo: a próxima execução começa deste mesmo
+      // jogo, sem deixar buraco na planilha nem bagunçar a ordem dos recaps.
+      if (/Gemini/.test(e.message)) { Logger.log('[RECAP] Parando aqui (sem buracos). Rode de novo mais tarde para continuar deste jogo.'); break }
     }
   }
   Logger.log(`[RECAP] ${feitos} recap(s) gerado(s).`)
@@ -301,7 +304,7 @@ function gerarRecapsDoPowerRanking() {
       Utilities.sleep(RECAP_PAUSA_MS)
     } catch (e) {
       Logger.log(`[PR] Erro em ${team}: ${e.message}`)
-      if (/Gemini (429|403|400)/.test(e.message)) break
+      if (/Gemini/.test(e.message)) { Logger.log('[PR] Parando aqui (sem buracos). Rode de novo mais tarde para continuar deste time.'); break }
     }
   }
   Logger.log(`[PR] ${feitos} verbete(s) gerado(s).`)
