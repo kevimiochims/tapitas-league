@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { CardShell, FilterPill, ToggleChip, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
-import { PlayerThumb, EmptyNote, NewsImage, NewsHero } from './shared'
+import { EmptyNote, NewsImage, NewsHero } from './shared'
 import { useFocusFilter } from '../../context/TeamFocus'
 
 function timeAgo(iso) {
@@ -66,11 +66,13 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
             const more = hero ? rest.slice(3) : rest
             const row = n => (
               <div key={n.id || n.url || n.headline} className={`flex h-[76px] items-center gap-2.5 px-3 py-2.5 lg:px-4 ${n === hero ? '@3xl:hidden' : ''}`}>
-                <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="relative flex-shrink-0" aria-label={n.player?.name}>
-                  {n.image
-                    ? <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
-                    : <PlayerThumb id={n.player?.id} name={n.player?.name} pos={n.player?.pos} nflTeam={n.player?.nflTeam} size={32} />}
-                </button>
+                {/* Só notícia com foto leva imagem; sem foto fica só o texto
+                    (sem misturar foto retangular com rosto redondo) */}
+                {n.image && (
+                  <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="relative flex-shrink-0" aria-label={n.player?.name}>
+                    <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
+                  </button>
+                )}
                 <div className="min-w-0 flex-1">
                   {n.url
                     ? <a href={n.url} target="_blank" rel="noopener noreferrer" className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]">{n.headline}</a>

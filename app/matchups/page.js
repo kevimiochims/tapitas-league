@@ -579,40 +579,26 @@ function normalizeTeamName(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
 
+// "16-17" → 17; "4" → 4
+function weekNum(label) {
+  const nums = String(label || '').match(/\d+/g)
+  return nums ? Math.max(...nums.map(Number)) : 0
+}
+
 // ---- Componentes de card no padrão ESPN (usados no Week Recap e no Power Ranking)
-function CardShell({ title, subtitle, children }) {
+function CardShell({ title, subtitle, action, children }) {
   return (
     <section className="mb-2 overflow-hidden rounded-xl bg-white lg:bg-[#F6F7F9]">
-      <div className="px-3 pb-2 pt-3 lg:px-4 lg:pb-3 lg:pt-4">
-        <h2 className="truncate text-[15px] font-bold leading-tight text-[#111]">{title}</h2>
-        {subtitle && <div className="mt-0.5 text-[12px] text-[#6B7280]">{subtitle}</div>}
+      <div className="flex items-start gap-2 px-3 pb-2 pt-3 lg:px-4 lg:pb-3 lg:pt-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-[15px] font-bold leading-tight text-[#111]">{title}</h2>
+          {subtitle && <div className="mt-0.5 text-[12px] text-[#6B7280]">{subtitle}</div>}
+        </div>
+        {action}
       </div>
       <div className="mx-3 border-t border-[#E6E8EB] lg:mx-4" />
       {children}
     </section>
-  )
-}
-
-function CardGroup({ label, first = false, children }) {
-  return (
-    <div className={first ? 'pt-2 lg:pt-4' : 'mt-1 border-t border-[#F1F2F4] pt-2 lg:mt-3 lg:pt-4'}>
-      <div className="px-3 pb-1 text-[11px] font-medium text-[#6B7280] lg:px-4 lg:pb-2">{label}</div>
-      {children}
-    </div>
-  )
-}
-
-function StatRow({ left, eyebrow, title, subtitle, value, valueClass = 'text-[#111]' }) {
-  return (
-    <div className="flex items-center gap-2 px-3 py-2 lg:gap-3 lg:px-4 lg:py-3">
-      {left}
-      <div className="min-w-0 flex-1">
-        {eyebrow && <div className="truncate text-[11px] text-[#6B7280]">{eyebrow}</div>}
-        <div className="truncate text-[13px] font-medium leading-tight text-[#111]">{title}</div>
-        {subtitle && <div className="truncate text-[11px] text-[#6B7280]">{subtitle}</div>}
-      </div>
-      <div className={`flex-shrink-0 text-[13px] font-semibold tabular-nums ${valueClass}`}>{value}</div>
-    </div>
   )
 }
 
@@ -625,11 +611,15 @@ function MatchupsPageContent() {
   const [season, setSeason] = useState('')
   const [week, setWeek] = useState('')
   const [selected, setSelected] = useState(null)
-  const [showWeekRecap, setShowWeekRecap] = useState(false)
+  // Game Recap ou Week Recap (mesmo espaço, o usuário escolhe) e aba do Week Recap
+  const [recapView, setRecapView] = useState('game')
+  const [weekTab, setWeekTab] = useState('players')
   // Starters e Bench podem ser recolhidos (para ler o recap rapidinho)
   const [startersOpen, setStartersOpen] = useState(true)
   const [benchOpen, setBenchOpen] = useState(true)
   const [showPowerRankingPreview, setShowPowerRankingPreview] = useState(false)
+  // Card da direita: Power Rankings ou Standings
+  const [rankTab, setRankTab] = useState('pr')
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
 
   const seasonsRef = useRef(null)
@@ -875,6 +865,80 @@ function MatchupsPageContent() {
       }))
       .sort((a, b) => a.rank - b.rank || a.team.localeCompare(b.team))
   }, [games, season, week])
+
+  // Classificação da temporada regular até a semana escolhida
+  const standings = useMemo(() => {
+    if (!season || !week) return []
+    const upTo = weekNum(week)
+    const map = new Map()
+    games.forEach(g => {
+      if (String(g?.Season || '').trim() !== season || weekNum(g?.Week) > upTo) return
+      const type = String(g?.GameType || '').trim()
+      if (type && !/^reg/i.test(type)) return
+      const result = String(g?.Result || '').trim().toUpperCase()
+      if (!['W', 'L', 'T'].includes(result)) return
+      const team = String(g?.Team || '').trim()
+      const row = map.get(team) || { team, w: 0, l: 0, t: 0, pf: 0, streak: '' }
+      if (result === 'W') row.w++
+      else if (result === 'L') row.l++
+      else row.t++
+      row.pf += parseNumber(g?.PF)
+      map.set(team, row)
+    })
+    // Sequência atual: do jogo mais recente para trás
+    map.forEach(row => {
+      const results = games
+        .filter(g => String(g?.Season || '').trim() === season && String(g?.Team || '').trim() === row.team && weekNum(g?.Week) <= upTo && ['W', 'L'].includes(String(g?.Result || '').trim().toUpperCase()) && (!String(g?.GameType || '').trim() || /^reg/i.test(String(g?.GameType).trim())))
+        .sort((a, b) => weekNum(b?.Week) - weekNum(a?.Week))
+        .map(g => String(g.Result).trim().toUpperCase())
+      let n = 0
+      while (n < results.length && results[n] === results[0]) n++
+      row.streak = results.length ? `${results[0]}${n}` : ''
+    })
+    return [...map.values()].sort((a, b) => b.w - a.w || a.l - b.l || b.pf - a.pf || a.team.localeCompare(b.team))
+  }, [games, season, week])
+
+  // Retrospecto dos dois times até o jogo escolhido (inclusive, se já acabou)
+  const headToHead = useMemo(() => {
+    if (!selected) return null
+    const a = String(selected?.Team || '').trim()
+    const b = String(selected?.Opponent || '').trim()
+    if (!a || !b) return null
+    const order = g => Number(g?.Season || 0) * 100 + weekNum(g?.Week)
+    const limit = order(selected)
+    const meetings = games
+      .filter(g => String(g?.Team || '').trim() === a && String(g?.Opponent || '').trim() === b && order(g) <= limit && ['W', 'L', 'T'].includes(String(g?.Result || '').trim().toUpperCase()))
+      .sort((x, y) => order(y) - order(x))
+    if (!meetings.length) return { a, b, meetings: [], winsA: 0, winsB: 0, ties: 0 }
+    const res = g => String(g.Result).trim().toUpperCase()
+    const isPlayoff = g => { const t = String(g?.GameType || '').trim(); return t && !/^reg|consol|place/i.test(t) }
+    const winsA = meetings.filter(g => res(g) === 'W').length
+    const winsB = meetings.filter(g => res(g) === 'L').length
+    const ties = meetings.length - winsA - winsB
+    const playoffs = meetings.filter(isPlayoff)
+    let streakN = 0
+    while (streakN < meetings.length && res(meetings[streakN]) === res(meetings[0])) streakN++
+    const streakTeam = res(meetings[0]) === 'W' ? a : res(meetings[0]) === 'L' ? b : null
+    const avgA = meetings.reduce((t, g) => t + parseNumber(g?.PF), 0) / meetings.length
+    const avgB = meetings.reduce((t, g) => t + parseNumber(g?.PA), 0) / meetings.length
+    const margin = g => parseNumber(g?.PF) - parseNumber(g?.PA)
+    const bigA = meetings.filter(g => res(g) === 'W').sort((x, y) => margin(y) - margin(x))[0] || null
+    const bigB = meetings.filter(g => res(g) === 'L').sort((x, y) => margin(x) - margin(y))[0] || null
+    return {
+      a, b, meetings, winsA, winsB, ties,
+      playoffA: playoffs.filter(g => res(g) === 'W').length,
+      playoffB: playoffs.filter(g => res(g) === 'L').length,
+      streakTeam, streakN, avgA, avgB, bigA, bigB,
+    }
+  }, [selected, games])
+
+  const openGame = (g) => {
+    if (!g) return
+    setSeason(String(g.Season).trim())
+    setWeek(String(g.Week).trim())
+    setSelected(g)
+    setShowPowerRankingPreview(false)
+  }
 
   const weekRecap = useMemo(() => {
     if (!season || !week || matchups.length === 0 || !playerLookup) return null
@@ -1234,132 +1298,340 @@ function MatchupsPageContent() {
   // Sufixo ordinal em português: 1º, 2º, 3º...
   const ordinalLabel = (n) => `${n}º`
 
-  const mobilePanelOpen = showWeekRecap || showPowerRankingPreview
+  const mobilePanelOpen = showPowerRankingPreview
 
   // Semana sem pontos (ainda não começou): sem Week Recap
   const weekHasPoints = matchups.some(g => parseNumber(g?.PF) > 0 || parseNumber(g?.PA) > 0)
-  const recapCard = weekRecap && weekHasPoints ? (
-    <CardShell title="Week Recap" subtitle={`${season} · Week ${week}`}>
-      <CardGroup label="Teams" first>
-        <StatRow
-          left={<TeamAvatar name={weekRecap.bestTeam.team} className="h-6 w-6 flex-shrink-0" textClassName="text-[8px]" />}
-          eyebrow="Best team" title={weekRecap.bestTeam.team} value={weekRecap.bestTeam.pf.toFixed(2)}
-        />
-        <StatRow
-          left={<TeamAvatar name={weekRecap.worstTeam.team} className="h-6 w-6 flex-shrink-0" textClassName="text-[8px]" />}
-          eyebrow="Worst team" title={weekRecap.worstTeam.team} value={weekRecap.worstTeam.pf.toFixed(2)}
-        />
-      </CardGroup>
+  const weekRecapReady = Boolean(weekRecap && weekHasPoints)
 
-      {weekRecap.playersOfWeek.length > 0 && (
-        <CardGroup label="Players of the week">
-          {weekRecap.playersOfWeek.map(p => (
-            <StatRow
-              key={p.pos}
-              left={<PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={28} />}
-              title={getDisplayPlayerName(p.name, p.pos, playerLookup)}
-              subtitle={[p.pos, p.team].filter(Boolean).join(' · ')}
-              value={p.pts.toFixed(2)}
-            />
-          ))}
-        </CardGroup>
-      )}
-
-      {weekRecap.benchOfWeek.length > 0 && (
-        <CardGroup label="Benchwarmers of the week">
-          {weekRecap.benchOfWeek.map(p => (
-            <StatRow
-              key={p.pos}
-              left={<PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={28} />}
-              title={getDisplayPlayerName(p.name, p.pos, playerLookup)}
-              subtitle={[p.pos, p.team].filter(Boolean).join(' · ')}
-              value={p.pts.toFixed(2)}
-              valueClass="text-[#6B7280]"
-            />
-          ))}
-        </CardGroup>
-      )}
-
-      <CardGroup label="League awards">
+  // Week Recap: fica junto do Game Recap (o usuário escolhe um ou outro) e é
+  // dividido em abas para não crescer na vertical
+  const openWeekPlayer = (p) => setSelectedPlayerProfile({
+    rawName: String(p.name).trim(),
+    playerId: p.id || null,
+    displayName: getDisplayPlayerName(p.name, p.pos, playerLookup),
+    position: getDisplayPlayerPos(p.name, p.pos, playerLookup),
+    pts: p.pts,
+    status: 'Starter',
+    team: p.team,
+    opponent: '',
+    season,
+    week,
+    gameStage: '',
+  })
+  // Overachiever / Underachiever: quem mais passou e quem mais ficou abaixo da
+  // própria projeção na semana (projeção do Sleeper, existe desde 2018)
+  const projAwards = (() => {
+    if (!weekRecapReady) return {}
+    const list = matchups.flatMap(g => {
+      const projA = g?.ProjPF ? parseNumber(g.ProjPF) : sumProj(withProj(extractPlayers(g, 'S'), true))
+      const projB = g?.ProjPA ? parseNumber(g.ProjPA) : sumProj(withProj(extractPlayers(g, 'OS'), true))
+      return [
+        { team: String(g?.Team || '').trim(), pf: parseNumber(g?.PF), proj: projA },
+        { team: String(g?.Opponent || '').trim(), pf: parseNumber(g?.PA), proj: projB },
+      ]
+    }).filter(e => e.proj > 0).map(e => ({ ...e, diff: e.pf - e.proj }))
+    if (list.length < 2) return {}
+    return {
+      over: list.reduce((a, b) => (b.diff > a.diff ? b : a)),
+      under: list.reduce((a, b) => (b.diff < a.diff ? b : a)),
+    }
+  })()
+  const signed = n => `${n >= 0 ? '+' : '−'}${Math.abs(n).toFixed(2)}`
+  const weekTabs = weekRecapReady ? [
+    weekRecap.playersOfWeek.length > 0 && ['players', 'Players'],
+    weekRecap.benchOfWeek.length > 0 && ['bench', 'Bench'],
+    ['awards', 'Awards'],
+    weekRecap.teamPerformance.length > 0 && ['lineups', 'Efficiency'],
+  ].filter(Boolean) : []
+  const activeWeekTab = weekTabs.some(([k]) => k === weekTab) ? weekTab : weekTabs[0]?.[0]
+  const weekPlayerCard = (p, bench) => (
+    <button
+      key={p.pos}
+      type="button"
+      onClick={() => openWeekPlayer(p)}
+      className="flex min-w-0 flex-col items-center rounded-xl bg-[#F6F7F9] px-1 pb-3 pt-3.5 text-center transition-colors hover:bg-[#EEF0F2]"
+    >
+      <PlayerRowAvatar name={p.name} pos={p.pos} playerLookup={playerLookup} size={52} />
+      <span className="mt-2"><UiPositionBadge position={p.pos} /></span>
+      <span className="mt-1 w-full truncate text-[12px] font-semibold text-[#111]">{getDisplayPlayerName(p.name, p.pos, playerLookup)}</span>
+      <span className="mt-0.5 flex w-full min-w-0 items-center justify-center gap-1 text-[11px] text-[#6B7280]">
+        <TeamAvatar name={p.team} className="h-3.5 w-3.5 flex-shrink-0" textClassName="text-[5px]" />
+        <span className="truncate" title={p.team}>{getTeamAbbr(p.team) || p.team}</span>
+      </span>
+      <span className={`mt-1.5 text-[18px] font-bold leading-none tabular-nums ${bench ? 'text-[#6B7280]' : 'text-[#111]'}`}>{p.pts.toFixed(2)}</span>
+    </button>
+  )
+  const weekRecapView = weekRecapReady ? (
+    <div className="@container">
+      {/* Melhor e pior time da semana */}
+      <div className="grid grid-cols-2 gap-2">
         {[
-          weekRecap.mostEfficient && { label: 'Most efficient manager', icon: '🎯', team: weekRecap.mostEfficient.team, value: weekRecap.mostEfficient.pf.toFixed(2), sub: `max ${weekRecap.mostEfficient.maxPts.toFixed(2)} · ${(weekRecap.mostEfficient.pct * 100).toFixed(1)}%` },
-          weekRecap.leastEfficient && { label: 'Least efficient manager', icon: '🪫', team: weekRecap.leastEfficient.team, value: weekRecap.leastEfficient.pf.toFixed(2), sub: `max ${weekRecap.leastEfficient.maxPts.toFixed(2)} · ${(weekRecap.leastEfficient.pct * 100).toFixed(1)}%` },
-          weekRecap.highestInLoss && { label: 'Highest score in a loss', icon: '😤', team: weekRecap.highestInLoss.team, value: weekRecap.highestInLoss.pf.toFixed(2), sub: `lost to ${weekRecap.highestInLoss.opponent}` },
-          weekRecap.lowestInWin && { label: 'Lowest score in a win', icon: '🍀', team: weekRecap.lowestInWin.team, value: weekRecap.lowestInWin.pf.toFixed(2), sub: `beat ${weekRecap.lowestInWin.opponent}` },
-          weekRecap.biggestBlowout && { label: 'Biggest blowout', icon: '💥', team: weekRecap.biggestBlowout.winner, value: weekRecap.biggestBlowout.margin.toFixed(2), sub: `vs ${weekRecap.biggestBlowout.loser} (${weekRecap.biggestBlowout.winnerScore.toFixed(2)}–${weekRecap.biggestBlowout.loserScore.toFixed(2)})` },
-          weekRecap.narrowVictory && { label: 'Narrow victory', icon: '😅', team: weekRecap.narrowVictory.winner, value: weekRecap.narrowVictory.margin.toFixed(2), sub: `vs ${weekRecap.narrowVictory.loser} (${weekRecap.narrowVictory.winnerScore.toFixed(2)}–${weekRecap.narrowVictory.loserScore.toFixed(2)})` },
-        ].filter(Boolean).map(a => (
-          <StatRow
-            key={a.label}
-            left={<span className="w-6 flex-shrink-0 text-center text-[15px] leading-none">{a.icon}</span>}
-            eyebrow={a.label} title={a.team} subtitle={a.sub} value={a.value}
-          />
+          { label: '🏆 Best team', tone: 'text-[#1E8E3E]', t: weekRecap.bestTeam },
+          { label: '💀 Worst team', tone: 'text-[#D01F2D]', t: weekRecap.worstTeam },
+        ].map(({ label, tone, t }) => (
+          // Estreito (celular): empilhado; largo: avatar, nome e pontos na mesma linha
+          <div key={label} className="flex min-w-0 flex-col gap-1.5 rounded-xl bg-[#F6F7F9] px-3 py-2.5 @md:flex-row @md:items-center @md:gap-2.5">
+            <div className="flex min-w-0 items-center gap-2 @md:contents">
+              <TeamAvatar name={t.team} className="h-8 w-8 flex-shrink-0 rounded-lg @md:h-9 @md:w-9" textClassName="text-[10px]" />
+              <div className={`whitespace-nowrap text-[11px] font-medium @md:hidden ${tone}`}>{label}</div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className={`hidden text-[11px] font-medium @md:block ${tone}`}>{label}</div>
+              <div className="truncate text-[13px] font-semibold text-[#111]">{t.team}</div>
+            </div>
+            <div className={`flex-shrink-0 text-[18px] font-bold leading-none tabular-nums ${tone}`}>{t.pf.toFixed(2)}</div>
+          </div>
         ))}
-      </CardGroup>
+      </div>
 
-      <CardGroup label="Score vs. max possible">
-        <div className="pb-2 lg:pb-3">
-          {weekRecap.teamPerformance.map((e, i) => {
-            const pct = e.maxPts > 0 ? Math.min(100, (e.pf / e.maxPts) * 100) : 0
-            return (
-              <div key={e.team} className="flex items-center gap-2 px-3 py-2 lg:gap-3 lg:px-4 lg:py-3">
-                <span className="w-4 flex-shrink-0 text-right text-[11px] text-[#6B7280]">{i + 1}</span>
-                <TeamAvatar name={e.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-[13px] font-medium text-[#111]">{e.team}</span>
-                    <span className="flex-shrink-0 text-[12px] tabular-nums text-[#111]">{e.pf.toFixed(2)}</span>
-                  </div>
-                  <div className="mt-1 h-1 w-full rounded-full bg-[#EEF0F2]">
-                    <div className="h-full rounded-full bg-[#9CA3AF]" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-                <span className="w-8 flex-shrink-0 text-right text-[11px] tabular-nums text-[#6B7280]">{pct.toFixed(0)}%</span>
-              </div>
-            )
-          })}
+      {weekTabs.length > 1 && (
+        <div className="mt-3 flex rounded-lg bg-[#F1F2F4] p-0.5 text-[12px] font-medium">
+          {weekTabs.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setWeekTab(key)}
+              className={`flex-1 rounded-md px-2 py-1.5 transition-colors ${activeWeekTab === key ? 'bg-white text-[#111] shadow-sm' : 'text-[#6B7280] hover:text-[#111]'}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-      </CardGroup>
-    </CardShell>
+      )}
+
+      <div className="mt-3">
+        {activeWeekTab === 'players' && (
+          <div className="grid grid-cols-3 gap-2 @xl:grid-cols-6">{weekRecap.playersOfWeek.map(p => weekPlayerCard(p, false))}</div>
+        )}
+        {activeWeekTab === 'bench' && (
+          <div className="grid grid-cols-3 gap-2 @xl:grid-cols-6">{weekRecap.benchOfWeek.map(p => weekPlayerCard(p, true))}</div>
+        )}
+        {activeWeekTab === 'awards' && (
+          // Cards compactos: 2 por linha (4 no card largo) para não virar lista
+          <div className="grid grid-cols-2 gap-2 @2xl:grid-cols-4">
+            {[
+              weekRecap.mostEfficient && { label: 'Most efficient', icon: '🎯', tone: 'text-[#1E8E3E]', team: weekRecap.mostEfficient.team, value: weekRecap.mostEfficient.pf.toFixed(2), sub: `${(weekRecap.mostEfficient.pct * 100).toFixed(1)}% of max ${weekRecap.mostEfficient.maxPts.toFixed(2)}` },
+              weekRecap.leastEfficient && { label: 'Least efficient', icon: '🪫', tone: 'text-[#D01F2D]', team: weekRecap.leastEfficient.team, value: weekRecap.leastEfficient.pf.toFixed(2), sub: `${(weekRecap.leastEfficient.pct * 100).toFixed(1)}% of max ${weekRecap.leastEfficient.maxPts.toFixed(2)}` },
+              projAwards.over && { label: 'Overachiever', icon: '🚀', tone: 'text-[#1E8E3E]', team: projAwards.over.team, value: signed(projAwards.over.diff), sub: `${projAwards.over.pf.toFixed(2)} vs proj ${projAwards.over.proj.toFixed(2)}` },
+              projAwards.under && { label: 'Underachiever', icon: '📉', tone: 'text-[#D01F2D]', team: projAwards.under.team, value: signed(projAwards.under.diff), sub: `${projAwards.under.pf.toFixed(2)} vs proj ${projAwards.under.proj.toFixed(2)}` },
+              weekRecap.highestInLoss && { label: 'Highest in a loss', icon: '😤', tone: 'text-[#111]', team: weekRecap.highestInLoss.team, value: weekRecap.highestInLoss.pf.toFixed(2), sub: `lost to ${weekRecap.highestInLoss.opponent}` },
+              weekRecap.lowestInWin && { label: 'Lowest in a win', icon: '🍀', tone: 'text-[#111]', team: weekRecap.lowestInWin.team, value: weekRecap.lowestInWin.pf.toFixed(2), sub: `beat ${weekRecap.lowestInWin.opponent}` },
+              weekRecap.biggestBlowout && { label: 'Biggest blowout', icon: '💥', tone: 'text-[#D01F2D]', team: weekRecap.biggestBlowout.winner, value: weekRecap.biggestBlowout.margin.toFixed(2), sub: `vs ${weekRecap.biggestBlowout.loser} · ${weekRecap.biggestBlowout.winnerScore.toFixed(2)}–${weekRecap.biggestBlowout.loserScore.toFixed(2)}` },
+              weekRecap.narrowVictory && { label: 'Narrow victory', icon: '😅', tone: 'text-[#111]', team: weekRecap.narrowVictory.winner, value: weekRecap.narrowVictory.margin.toFixed(2), sub: `vs ${weekRecap.narrowVictory.loser} · ${weekRecap.narrowVictory.winnerScore.toFixed(2)}–${weekRecap.narrowVictory.loserScore.toFixed(2)}` },
+            ].filter(Boolean).map(a => (
+              <div key={a.label} className="flex min-w-0 flex-col rounded-xl bg-[#F6F7F9] px-2.5 py-2.5">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className="flex-shrink-0 text-[14px] leading-none">{a.icon}</span>
+                  <span className="truncate text-[11px] font-medium text-[#6B7280]">{a.label}</span>
+                </div>
+                <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+                  <TeamAvatar name={a.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
+                  <span className="truncate text-[13px] font-semibold text-[#111]" title={a.team}>{a.team}</span>
+                </div>
+                <div className={`mt-1.5 text-[18px] font-bold leading-none tabular-nums ${a.tone}`}>{a.value}</div>
+                <div className="mt-1 line-clamp-2 text-[11px] leading-snug text-[#6B7280]">{a.sub}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {activeWeekTab === 'lineups' && (
+          <div>
+            <div className="pb-1 text-[11px] font-medium text-[#6B7280]">Score vs. max possible</div>
+            {weekRecap.teamPerformance.map((e, i) => {
+              const pct = e.maxPts > 0 ? Math.min(100, (e.pf / e.maxPts) * 100) : 0
+              return (
+                <div key={e.team} className="flex items-center gap-2 py-1.5 lg:gap-3">
+                  <span className="w-4 flex-shrink-0 text-right text-[11px] text-[#6B7280]">{i + 1}</span>
+                  <TeamAvatar name={e.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-[13px] font-medium text-[#111]">{e.team}</span>
+                      <span className="flex-shrink-0 text-[12px] tabular-nums text-[#111]">{e.pf.toFixed(2)} <span className="text-[#9CA3AF]">/ {e.maxPts.toFixed(2)}</span></span>
+                    </div>
+                    <div className="mt-1 h-1 w-full rounded-full bg-[#EEF0F2]">
+                      <div className="h-full rounded-full bg-[#02275F]/50" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                  <span className="w-9 flex-shrink-0 text-right text-[11px] tabular-nums text-[#6B7280]">{pct.toFixed(0)}%</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   ) : null
 
-  const prHref = `/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`
-  const powerCard = powerRankingPreview.length > 0 ? (
-    <CardShell title="Power Rankings" subtitle={`${season} · Week ${week}`}>
-      <div className="grid grid-cols-[18px_minmax(0,1fr)_36px_30px] xl:grid-cols-[18px_minmax(0,1fr)_36px_30px_34px_28px] items-center gap-x-1.5 border-b border-[#EEF0F2] px-3 py-2 text-[11px] lg:px-4 font-medium uppercase text-[#6B7280]">
+  const hasPR = powerRankingPreview.length > 0
+  const activeRankTab = rankTab === 'standings' || !hasPR ? 'standings' : 'pr'
+  const matchupTeams = [String(selected?.Team || '').trim(), String(selected?.Opponent || '').trim()]
+  const rankTabs = (
+    <div className="flex flex-shrink-0 rounded-lg bg-[#E9EBEE] p-0.5 text-[11px] font-medium">
+      {[hasPR && ['pr', 'Rankings'], ['standings', 'Standings']].filter(Boolean).map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => setRankTab(key)}
+          className={`rounded-md px-2 py-1 transition-colors ${activeRankTab === key ? 'bg-white text-[#111] shadow-sm' : 'text-[#6B7280] hover:text-[#111]'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+  const standingsBody = (
+    <>
+      <div className="grid grid-cols-[18px_minmax(0,1fr)_38px_38px_30px] items-center gap-x-1.5 border-b border-[#EEF0F2] px-3 py-2 text-[11px] font-medium uppercase text-[#6B7280] lg:px-4">
         <span className="text-right">#</span>
         <span>Team</span>
-        <span className="text-right">Rec</span>
+        <span className="text-right">W-L</span>
+        <span className="text-right">PF</span>
         <span className="text-right">Strk</span>
-        <span className="hidden text-right xl:block">Avg</span>
-        <span className="hidden text-right xl:block">Ovw</span>
       </div>
-      {powerRankingPreview.map((team, i) => {
-        const streakIsWin = team.streak.startsWith('W')
-        const streakIsLoss = team.streak.startsWith('L')
+      {standings.map((t, i) => {
+        const inMatchup = matchupTeams.includes(t.team)
         return (
-          <div
-            key={team.team || i}
-            className="grid grid-cols-[18px_minmax(0,1fr)_36px_30px] xl:grid-cols-[18px_minmax(0,1fr)_36px_30px_34px_28px] items-center gap-x-1.5 border-b border-[#F1F2F4] px-3 py-2 text-[12px] lg:px-4 lg:py-3.5 tabular-nums last:border-b-0"
-          >
-            <span className={`text-right ${team.rank <= 3 ? 'font-bold text-[#111]' : 'text-[#6B7280]'}`}>{team.rank}</span>
+          <div key={t.team} className={`grid grid-cols-[18px_minmax(0,1fr)_38px_38px_30px] items-center gap-x-1.5 border-b border-[#F1F2F4] px-3 py-2 text-[12px] tabular-nums last:border-b-0 lg:px-4 lg:py-2.5 ${inMatchup ? 'bg-[#EAEFF7]' : ''}`}>
+            <span className={`text-right ${i < 3 ? 'font-bold text-[#111]' : 'text-[#6B7280]'}`}>{i + 1}</span>
             <span className="flex min-w-0 items-center gap-1.5">
-              <TeamAvatar name={team.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
-              <span className="truncate text-[13px] font-medium text-[#111]">{team.team}</span>
+              <TeamAvatar name={t.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
+              <span className={`truncate text-[13px] text-[#111] ${inMatchup ? 'font-semibold' : 'font-medium'}`}>{t.team}</span>
             </span>
-            <span className="text-right text-[#111]">{team.wins}-{team.losses}</span>
-            <span className={`text-right font-medium ${streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#111]'}`}>{team.streak || '—'}</span>
-            <span className="hidden text-right text-[#111] xl:block" title={`AVG rank #${team.avgRank}`}>{team.avgPF.toFixed(1)}</span>
-            <span className="hidden text-right text-[#111] xl:block" title={`OVW rank #${team.ovwRank}`}>{team.ovw.toFixed(0)}</span>
+            <span className="text-right text-[#111]">{t.w}-{t.l}{t.t ? `-${t.t}` : ''}</span>
+            <span className="text-right text-[#3F4757]">{t.pf.toFixed(0)}</span>
+            <span className={`text-right font-medium ${t.streak.startsWith('W') ? 'text-[#1E8E3E]' : t.streak.startsWith('L') ? 'text-[#D01F2D]' : 'text-[#111]'}`}>{t.streak || '—'}</span>
           </div>
         )
       })}
-      <a
-        href={prHref}
-        className="block border-t border-[#E6E8EB] px-3 py-3 text-center lg:py-4 text-[13px] font-medium text-[#1D5FD1] hover:underline"
-      >
-        Full Power Rankings
-      </a>
+    </>
+  )
+
+  const prHref = `/powerrankings?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`
+  const powerCard = hasPR || standings.length > 0 ? (
+    <CardShell
+      title={activeRankTab === 'pr' ? 'Power Rankings' : 'Standings'}
+      subtitle={activeRankTab === 'pr' ? `${season} · Week ${week}` : `${season} · regular season`}
+      action={rankTabs}
+    >
+      {activeRankTab === 'pr' ? (
+        <>
+        <div className="grid grid-cols-[18px_minmax(0,1fr)_38px_38px_30px] items-center gap-x-1.5 border-b border-[#EEF0F2] px-3 py-2 text-[11px] lg:px-4 font-medium uppercase text-[#6B7280]">
+          <span className="text-right">#</span>
+          <span>Team</span>
+          <span className="text-right">Rec</span>
+          <span className="text-right">Avg</span>
+          <span className="text-right">Strk</span>
+        </div>
+        {powerRankingPreview.map((team, i) => {
+          const streakIsWin = team.streak.startsWith('W')
+          const streakIsLoss = team.streak.startsWith('L')
+          return (
+            <div
+              key={team.team || i}
+              className="grid grid-cols-[18px_minmax(0,1fr)_38px_38px_30px] items-center gap-x-1.5 border-b border-[#F1F2F4] px-3 py-2 text-[12px] lg:px-4 lg:py-2.5 tabular-nums last:border-b-0"
+            >
+              <span className={`text-right ${team.rank <= 3 ? 'font-bold text-[#111]' : 'text-[#6B7280]'}`}>{team.rank}</span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <TeamAvatar name={team.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
+                <span className="truncate text-[13px] font-medium text-[#111]">{team.team}</span>
+              </span>
+              <span className="text-right text-[#111]">{team.wins}-{team.losses}</span>
+              <span className="text-right text-[#3F4757]" title={`AVG rank #${team.avgRank}`}>{team.avgPF.toFixed(0)}</span>
+              <span className={`text-right font-medium ${streakIsWin ? 'text-[#1E8E3E]' : streakIsLoss ? 'text-[#D01F2D]' : 'text-[#111]'}`}>{team.streak || '—'}</span>
+            </div>
+          )
+        })}
+        <a
+          href={prHref}
+          className="block border-t border-[#E6E8EB] px-3 py-3 text-center lg:py-4 text-[13px] font-medium text-[#1D5FD1] hover:underline"
+        >
+          Full Power Rankings
+        </a>
+        </>
+      ) : standingsBody}
+    </CardShell>
+  ) : null
+
+  // Head to head do confronto escolhido (o recap costuma citar o retrospecto)
+  const h2h = headToHead
+  const h2hShort = name => getTeamAbbr(name) || name
+  const h2hBody = h2h ? (h2h.meetings.length === 0 ? (
+    <div className="px-3 py-3 text-[12px] text-[#6B7280] lg:px-4">First meeting between {h2h.a} and {h2h.b}.</div>
+  ) : (
+    <div className="pb-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 pt-3 lg:px-4">
+        {[h2h.a, null, h2h.b].map(team => team ? (
+          <div key={team} className="flex min-w-0 flex-col items-center gap-1 text-center">
+            <TeamAvatar name={team} className="h-9 w-9 rounded-lg" textClassName="text-[11px]" />
+            <span className="line-clamp-2 w-full text-[12px] font-semibold leading-tight text-[#111]" title={team}>{team}</span>
+          </div>
+        ) : (
+          <div key="score" className="text-center">
+            <div className="text-[26px] font-bold leading-none tabular-nums text-[#111]">
+              <span className={h2h.winsA >= h2h.winsB ? '' : 'text-[#9CA3AF]'}>{h2h.winsA}</span>
+              <span className="mx-1.5 text-[#C4C8CE]">–</span>
+              <span className={h2h.winsB >= h2h.winsA ? '' : 'text-[#9CA3AF]'}>{h2h.winsB}</span>
+            </div>
+            <div className="mt-1 text-[10px] font-medium uppercase tracking-wide text-[#6B7280]">{h2h.meetings.length} {h2h.meetings.length === 1 ? 'game' : 'games'}{h2h.ties ? ` · ${h2h.ties} tie${h2h.ties > 1 ? 's' : ''}` : ''}</div>
+          </div>
+        ))}
+      </div>
+      {/* Barra dividida nas cores do pôster (azul = time da esquerda, vermelho = direita) */}
+      <div className="mx-3 mt-2.5 flex h-1.5 overflow-hidden rounded-full bg-[#EEF0F2] lg:mx-4">
+        <div className="bg-[#02275F]" style={{ width: `${(h2h.winsA / h2h.meetings.length) * 100}%` }} />
+        <div className="ml-auto bg-[#C8102E]" style={{ width: `${(h2h.winsB / h2h.meetings.length) * 100}%` }} />
+      </div>
+      <div className="mt-2.5 grid grid-cols-3 border-y border-[#EEF0F2] text-center">
+        {[
+          ['Playoffs', `${h2h.playoffA}–${h2h.playoffB}`],
+          ['Streak', h2h.streakTeam ? `${h2hShort(h2h.streakTeam)} W${h2h.streakN}` : '—'],
+          ['Avg pts', `${h2h.avgA.toFixed(0)}–${h2h.avgB.toFixed(0)}`],
+        ].map(([label, value], i) => (
+          <div key={label} className={`px-1 py-2 ${i ? 'border-l border-[#EEF0F2]' : ''}`}>
+            <div className="text-[10px] font-medium uppercase tracking-wide text-[#6B7280]">{label}</div>
+            <div className="mt-0.5 text-[13px] font-semibold tabular-nums text-[#111]">{value}</div>
+          </div>
+        ))}
+      </div>
+      <div className="px-3 pb-0.5 pt-2 text-[11px] font-medium text-[#6B7280] lg:px-4">Last meetings</div>
+      {h2h.meetings.slice(0, 5).map(g => {
+        const r = String(g.Result).trim().toUpperCase()
+        const winner = r === 'W' ? h2h.a : r === 'L' ? h2h.b : null
+        const isCurrent = g === selected
+        const type = String(g?.GameType || '').trim()
+        return (
+          <button
+            key={`${g.Season}|${g.Week}`}
+            type="button"
+            onClick={() => openGame(g)}
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] transition-colors hover:bg-[#EEF0F2] lg:px-4 ${isCurrent ? 'bg-[#EAEFF7]' : ''}`}
+          >
+            <span className="w-[88px] flex-shrink-0 whitespace-nowrap text-[#6B7280]">{g.Season} · W{g.Week}</span>
+            {winner ? <TeamAvatar name={winner} className="h-4 w-4 flex-shrink-0" textClassName="text-[6px]" /> : <span className="h-4 w-4 flex-shrink-0" />}
+            <span className="min-w-0 flex-1 truncate tabular-nums text-[#111]">
+              <span className={r === 'W' ? 'font-semibold' : 'text-[#6B7280]'}>{parseNumber(g.PF).toFixed(2)}</span>
+              <span className="mx-1 text-[#C4C8CE]">–</span>
+              <span className={r === 'L' ? 'font-semibold' : 'text-[#6B7280]'}>{parseNumber(g.PA).toFixed(2)}</span>
+            </span>
+            {type && !/^reg/i.test(type) && <span className="max-w-[72px] flex-shrink-0 truncate text-[10px] font-medium text-[#B8860B]">{type}</span>}
+          </button>
+        )
+      })}
+      {(h2h.bigA || h2h.bigB) && (
+        <div className="mt-1 border-t border-[#EEF0F2] px-3 pt-2 text-[11px] leading-relaxed text-[#6B7280] lg:px-4">
+          {[[h2h.a, h2h.bigA], [h2h.b, h2h.bigB]].filter(([, g]) => g).map(([team, g]) => (
+            <div key={team} className="truncate">
+              Biggest win · <span className="font-medium text-[#111]">{h2hShort(team)}</span> by {Math.abs(parseNumber(g.PF) - parseNumber(g.PA)).toFixed(2)} ({g.Season} W{g.Week})
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )) : null
+  const h2hCard = h2hBody ? (
+    <CardShell title="Head to head" subtitle={h2h.meetings.length ? `All-time · since ${h2h.meetings[h2h.meetings.length - 1].Season}` : 'All-time'}>
+      {h2hBody}
     </CardShell>
   ) : null
 
@@ -1441,8 +1713,7 @@ function MatchupsPageContent() {
                         ref={isSelected ? activeGameRef : null}
                         onClick={() => {
                           setSelected(g)
-                          setShowWeekRecap(false)
-                          setShowPowerRankingPreview(false)
+                                setShowPowerRankingPreview(false)
                         }}
                         className={`min-w-[7.5rem] flex-shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-left transition-colors lg:min-w-[10.5rem] ${isSelected ? 'bg-white ring-2 ring-inset ring-[#02275F]' : 'bg-[#F4F5F7] hover:bg-[#ECEEF1]'}`}
                       >
@@ -1472,18 +1743,13 @@ function MatchupsPageContent() {
                   {
                     key: 'matchup', label: 'Matchup', active: !mobilePanelOpen,
                     onClick: () => {
-                      setShowWeekRecap(false)
-                      setShowPowerRankingPreview(false)
+                        setShowPowerRankingPreview(false)
                       if (!selected && matchups[0]) setSelected(matchups[0])
                     },
                   },
-                  ...(recapCard ? [{
-                    key: 'recap', label: 'Week Recap', active: showWeekRecap,
-                    onClick: () => { setShowWeekRecap(true); setShowPowerRankingPreview(false) },
-                  }] : []),
                   {
-                    key: 'pr', label: 'Power Rankings', active: showPowerRankingPreview,
-                    onClick: () => { setShowPowerRankingPreview(true); setShowWeekRecap(false) },
+                    key: 'pr', label: 'Rankings', active: showPowerRankingPreview,
+                    onClick: () => setShowPowerRankingPreview(true),
                   },
                 ].map(tab => (
                   <button
@@ -1498,15 +1764,14 @@ function MatchupsPageContent() {
               </div>
             )}
 
-            {/* Grid: recap | matchup | power ranking */}
-            <div data-sticky-cols className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
-              <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{recapCard}</aside>
+            {/* Grid: rankings | matchup | head to head */}
+            <div data-sticky-cols className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)_240px] lg:items-start lg:gap-4 xl:grid-cols-[320px_minmax(0,1fr)_300px] xl:gap-5">
+              <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{powerCard}</aside>
 
               <div className="min-w-0">
                 {/* Painéis no mobile/tablet */}
                 <div className="lg:hidden">
-                  {showWeekRecap && recapCard}
-                  {!showWeekRecap && showPowerRankingPreview && powerCard}
+                  {showPowerRankingPreview && powerCard}
                 </div>
 
             {/* Detalhe do matchup selecionado */}
@@ -1998,39 +2263,68 @@ function MatchupsPageContent() {
                   </div>
                 )}
 
-                {/* Recap */}
-                {recap && (
-                  <div className="px-3 py-4 md:px-4">
-                    <div className="text-[15px] font-bold text-[#111] mb-3">
-                      📝 Game Recap
-                    </div>
-                    <div className="text-[#374151] text-[14px] leading-relaxed text-left">
-                      <ReactMarkdown
-                        components={{
-                          h1: ({ children }) => <h1 className="text-lg font-bold text-[#111] mb-3 mt-5 leading-tight">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-base font-bold text-[#111] mb-2 mt-4 leading-tight">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-[15px] font-bold text-[#111] mb-2 mt-3">{children}</h3>,
-                          p: ({ children }) => <p className="text-[#3F4757] mb-3 leading-relaxed text-left">{children}</p>,
-                          strong: ({ children }) => <strong className="text-[#111] font-semibold">{children}</strong>,
-                          em: ({ children }) => <em className="text-[#D01F2D] not-italic font-bold">{children}</em>,
-                          ul: ({ children }) => <ul className="list-disc list-inside mb-3 text-[#3F4757] space-y-1">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal list-inside mb-3 text-[#3F4757] space-y-1">{children}</ol>,
-                          li: ({ children }) => <li className="text-[#3F4757]">{children}</li>,
-                          hr: () => <hr className="border-[#EEF0F2] my-4" />,
-                          blockquote: ({ children }) => <blockquote className="border-l-4 border-[#D01F2D] pl-4 my-3 text-[#3F4757] italic">{children}</blockquote>,
-                        }}
-                      >
-                        {recap}
-                      </ReactMarkdown>
-                    </div>
+                {/* Head to head no celular (no desktop fica na coluna da direita) */}
+                {h2hBody && (
+                  <div className="border-t border-[#EEF0F2] lg:hidden">
+                    <div className="px-3 pt-4 text-[15px] font-bold text-[#111]">Head to head</div>
+                    {h2hBody}
                   </div>
                 )}
+
+                {/* Game Recap ou Week Recap: o usuário escolhe qual ler */}
+                {(recap || weekRecapReady) && (() => {
+                  const showWeek = weekRecapReady && (recapView === 'week' || !recap)
+                  return (
+                    <div className="px-3 py-4 md:px-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <div className="min-w-0 flex-1 truncate text-[15px] font-bold text-[#111]">
+                          {showWeek ? `📊 Week ${week} Recap` : '📝 Game Recap'}
+                        </div>
+                        {recap && weekRecapReady && (
+                          <div className="flex flex-shrink-0 rounded-lg bg-[#F1F2F4] p-0.5 text-[12px] font-medium">
+                            {[['game', 'Game recap'], ['week', 'Week recap']].map(([key, label]) => (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() => setRecapView(key)}
+                                className={`rounded-md px-2.5 py-1 transition-colors ${(showWeek ? 'week' : 'game') === key ? 'bg-white text-[#111] shadow-sm' : 'text-[#6B7280] hover:text-[#111]'}`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {showWeek ? weekRecapView : (
+                        <div className="text-[#374151] text-[14px] leading-relaxed text-left">
+                          <ReactMarkdown
+                            components={{
+                              h1: ({ children }) => <h1 className="text-lg font-bold text-[#111] mb-3 mt-5 leading-tight">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-base font-bold text-[#111] mb-2 mt-4 leading-tight">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-[15px] font-bold text-[#111] mb-2 mt-3">{children}</h3>,
+                              p: ({ children }) => <p className="text-[#3F4757] mb-3 leading-relaxed text-left">{children}</p>,
+                              strong: ({ children }) => <strong className="text-[#111] font-semibold">{children}</strong>,
+                              em: ({ children }) => <em className="text-[#D01F2D] not-italic font-bold">{children}</em>,
+                              ul: ({ children }) => <ul className="list-disc list-inside mb-3 text-[#3F4757] space-y-1">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal list-inside mb-3 text-[#3F4757] space-y-1">{children}</ol>,
+                              li: ({ children }) => <li className="text-[#3F4757]">{children}</li>,
+                              hr: () => <hr className="border-[#EEF0F2] my-4" />,
+                              blockquote: ({ children }) => <blockquote className="border-l-4 border-[#D01F2D] pl-4 my-3 text-[#3F4757] italic">{children}</blockquote>,
+                            }}
+                          >
+                            {recap}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
 
               </div>
             )}
               </div>
 
-              <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{powerCard}</aside>
+              <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">{h2hCard}</aside>
             </div>
           </>
         )}
