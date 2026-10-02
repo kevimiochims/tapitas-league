@@ -120,14 +120,41 @@ function fetchDossie_(cfg, params) {
   return res.getContentText()
 }
 
-// Chama o Gemini passando pela fila de modelos: se um estiver sobrecarregado
-// (503/500) depois de uma nova tentativa, ou sem cota do dia (429), vai para o
-// próximo. Um modelo que falhou fica de fora no resto desta execução.
+// Memória entre execuções (Propriedades do script): modelo sem cota (429) fica
+// fora até a cota renovar (meia-noite do horário do Pacífico); modelo lotado
+// (503/500) fica fora por 30 minutos. Assim cada execução não perde minutos
+// perguntando de novo a quem já disse não.
+const LOTADO_PAUSA_MS = 30 * 60 * 1000
+const diaPacifico_ = () => Utilities.formatDate(new Date(), 'America/Los_Angeles', 'yyyy-MM-dd')
+function modeloIndisponivel_(modelo) {
+  const props = PropertiesService.getScriptProperties()
+  if (props.getProperty(`SEM_COTA_${modelo}`) === diaPacifico_()) return 'sem cota hoje'
+  const lotado = Number(props.getProperty(`LOTADO_${modelo}`) || 0)
+  if (lotado && Date.now() - lotado < LOTADO_PAUSA_MS) return 'lotado há pouco'
+  return ''
+}
+function marcaModelo_(modelo, erro) {
+  const props = PropertiesService.getScriptProperties()
+  if (/Gemini 429/.test(erro.message)) props.setProperty(`SEM_COTA_${modelo}`, diaPacifico_())
+  else props.setProperty(`LOTADO_${modelo}`, String(Date.now()))
+}
+
+// Chama o Gemini passando pela fila de modelos: pula quem está marcado como
+// indisponível; se um modelo estiver sobrecarregado (503/500) depois de uma
+// nova tentativa, ou sem cota (429), marca e vai para o próximo.
 // Devolve { texto, modelo }. Se todos falharem, lança o último erro.
 const MODELOS_FORA_ = new Set()
 function chamaGemini_(cfg, sistema, texto) {
-  const fila = cfg.modelos.filter(m => !MODELOS_FORA_.has(m))
-  let ultimoErro = new Error('Gemini 503: nenhum modelo disponível nesta execução')
+  const pulados = []
+  const fila = cfg.modelos.filter(m => {
+    if (MODELOS_FORA_.has(m)) return false
+    const motivo = modeloIndisponivel_(m)
+    if (motivo) { pulados.push(`${m} (${motivo})`); return false }
+    return true
+  })
+  if (pulados.length && !MODELOS_FORA_.size) Logger.log(`[GEMINI] Pulando: ${pulados.join(', ')}.`)
+  pulados.forEach(p => MODELOS_FORA_.add(p.split(' ')[0]))
+  let ultimoErro = new Error('Gemini 503: nenhum modelo disponível agora (todos sem cota ou lotados)')
   for (let k = 0; k < fila.length; k++) {
     const modelo = fila[k]
     const esperas = [0, 10000]
@@ -136,19 +163,29 @@ function chamaGemini_(cfg, sistema, texto) {
         Logger.log(`[GEMINI] ${modelo} ocupado, tentando de novo em ${esperas[t] / 1000}s...`)
         Utilities.sleep(esperas[t])
       }
+      const inicio = Date.now()
       try {
         return { texto: chamaGeminiUmaVez_(cfg, modelo, sistema, texto), modelo }
       } catch (e) {
         ultimoErro = e
-        if (/Gemini 429/.test(e.message)) break // sem cota hoje: próximo modelo
+        if (/Gemini 429/.test(e.message)) break // sem cota: próximo modelo
         if (!/Gemini (500|503)/.test(e.message)) throw e // outros erros: não adianta insistir
+        if (Date.now() - inicio > 30000) break // demorou para dizer "ocupado": não insiste
       }
     }
     MODELOS_FORA_.add(modelo)
-    const motivo = /Gemini 429/.test(ultimoErro.message) ? 'sem cota hoje' : 'continua ocupado'
+    marcaModelo_(modelo, ultimoErro)
+    const motivo = /Gemini 429/.test(ultimoErro.message) ? 'sem cota hoje' : 'continua ocupado (fora por 30 min)'
     Logger.log(`[GEMINI] ${modelo} ${motivo}${fila[k + 1] ? `: tentando ${fila[k + 1]}` : ''}.`)
   }
   throw ultimoErro
+}
+
+// Para recomeçar do zero (esquece quem estava sem cota/lotado)
+function limparMemoriaModelos() {
+  const props = PropertiesService.getScriptProperties()
+  Object.keys(props.getProperties()).filter(k => /^(SEM_COTA|LOTADO)_/.test(k)).forEach(k => props.deleteProperty(k))
+  Logger.log('Memória dos modelos apagada.')
 }
 
 function chamaGeminiUmaVez_(cfg, modelo, sistema, texto) {
