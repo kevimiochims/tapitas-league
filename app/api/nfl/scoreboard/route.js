@@ -3,7 +3,7 @@ import { getKickoffWeather } from '@/app/lib/weather'
 import { getLeagueRosters, rosterIndex } from '@/app/lib/leagueRosters'
 import { getLeagueInfo, getSleeperWeek } from '@/app/lib/leagueSchedule'
 import { getSleeperPlayers, getNflState } from '@/app/lib/sleeper'
-import { cdnHeaders } from '@/app/lib/cache'
+import { cdnHeaders, liveHeaders } from '@/app/lib/cache'
 
 // Jogos de uma rodada da NFL (?week=, padrão: a atual) + clima no estádio +
 // jogadores da liga em campo
@@ -69,5 +69,6 @@ export async function GET(request) {
 
   const live = games.some(g => g.state === 'in')
   const state = await getNflState().catch(() => null)
-  return Response.json({ ...board, games, live, currentWeek: state?.week || null }, { headers: cdnHeaders(live ? 30 : 300) })
+  const pending = games.some(g => !g.completed)
+  return Response.json({ ...board, games, live, currentWeek: state?.week || null }, { headers: live ? liveHeaders(10) : pending ? liveHeaders(30) : cdnHeaders(300) })
 }

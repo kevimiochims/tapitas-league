@@ -18,24 +18,47 @@ function kickoffLabel(iso) {
   return `${day} ${time}`
 }
 
-// Busca os dados da semana e, com jogos ao vivo, atualiza a cada 60s
+// Ritmo da atualização: jogo rolando → a cada 20s; semana em andamento (ainda
+// vai ter jogo) → a cada 60s; semana fechada ou futura → não busca de novo.
+export function liveDelay(data) {
+  if (!data) return 60000
+  if (data.live) return 20000
+  const pendingGames = Array.isArray(data.games) && data.games.some(g => !g.completed)
+  const isCurrent = data.status === 'current' || (data.currentWeek && Number(data.week) === Number(data.currentWeek) && pendingGames)
+  return isCurrent ? 60000 : null
+}
+
+// Busca os dados da semana e continua atualizando sozinho em horário de jogo.
+// Uma falha não interrompe as atualizações, e voltar para a aba atualiza na hora.
 function useWeekData(url) {
   const [state, setState] = useState({ url: null, data: null, error: null })
   useEffect(() => {
     let cancelled = false
     let timer = null
-    const load = () => {
-      fetch(url, { cache: 'no-store' })
+    let last = null
+    const schedule = delay => { clearTimeout(timer); if (delay != null && !cancelled) timer = setTimeout(load, delay) }
+    function load() {
+      clearTimeout(timer)
+      // Parâmetro que muda a cada 10s: garante resposta nova, sem cópia antiga do CDN
+      const fresh = `${url}${url.includes('?') ? '&' : '?'}_=${Math.floor(Date.now() / 10000)}`
+      fetch(fresh, { cache: 'no-store' })
         .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json() })
         .then(data => {
           if (cancelled) return
+          last = data
           setState({ url, data, error: null })
-          if (data?.live) timer = setTimeout(load, 60000)
+          schedule(liveDelay(data))
         })
-        .catch(error => { if (!cancelled) setState(s => ({ url, data: s.url === url ? s.data : null, error })) })
+        .catch(error => {
+          if (cancelled) return
+          setState(s => ({ url, data: s.url === url ? s.data : null, error }))
+          schedule(last ? liveDelay(last) ?? 60000 : 60000)
+        })
     }
+    const onVisible = () => { if (document.visibilityState === 'visible' && (!last || liveDelay(last) != null)) load() }
+    document.addEventListener('visibilitychange', onVisible)
     load()
-    return () => { cancelled = true; clearTimeout(timer) }
+    return () => { cancelled = true; clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible) }
   }, [url])
   const loading = state.url !== url
   return { data: loading ? null : state.data, loading, error: loading ? null : state.error }

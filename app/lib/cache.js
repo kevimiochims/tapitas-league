@@ -52,6 +52,12 @@ export async function fetchText(url, { timeoutMs = 30000, headers } = {}) {
   return res.text()
 }
 
+// Dados ao vivo (placares em jogo): o CDN guarda só alguns segundos e nunca
+// entrega uma versão mais velha que isso enquanto atualiza.
+export function liveHeaders(seconds = 10) {
+  return { 'Cache-Control': `public, s-maxage=${seconds}, stale-while-revalidate=${seconds}` }
+}
+
 // Cabeçalho de cache para o CDN: guarda por `seconds` e pode servir a versão
 // anterior enquanto atualiza ou se a fonte estiver fora do ar.
 export function cdnHeaders(seconds) {

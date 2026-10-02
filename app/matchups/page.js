@@ -715,20 +715,32 @@ function MatchupsPageContent() {
 
   // Matchups da semana selecionada — deduplicados (pega só um lado de cada confronto)
   // Ao vivo: a semana em andamento vem do Sleeper e é buscada de novo a cada
-  // minuto (mesmo ritmo do placar da Home). O confronto aberto é trocado pela
-  // versão nova, para placar e pontos dos jogadores acompanharem o jogo.
-  const hasLiveWeek = games.some(g => ['live', 'current'].includes(String(g?.Status || '').trim()))
+  // 20s com jogo rolando (60s no resto da semana), no mesmo ritmo do placar da
+  // Home. O confronto aberto é trocado pela versão nova, para placar e pontos
+  // dos jogadores acompanharem o jogo. Falhas não interrompem; voltar para a
+  // aba atualiza na hora.
+  const liveMode = games.some(g => String(g?.Status || '').trim() === 'live') ? 'live'
+    : games.some(g => String(g?.Status || '').trim() === 'current') ? 'current' : null
   useEffect(() => {
-    if (!hasLiveWeek) return
+    if (!liveMode) return
+    let cancelled = false
+    let timer = null
     const sameGame = (a, b) => a && b && ['Season', 'Week', 'Team', 'Opponent'].every(k => String(a?.[k] || '').trim() === String(b?.[k] || '').trim())
-    const timer = setInterval(async () => {
-      const rows = await safeFetch(`/api/league/sleeper-rows?m=${Math.floor(Date.now() / 60000)}`)
-      if (!rows.length) return
-      setGames([...sheetRowsRef.current, ...rows])
-      setSelected(prev => (prev ? rows.find(r => sameGame(r, prev)) || prev : prev))
-    }, 60000)
-    return () => clearInterval(timer)
-  }, [hasLiveWeek])
+    const refresh = async () => {
+      clearTimeout(timer)
+      const rows = await safeFetch(`/api/league/sleeper-rows?_=${Math.floor(Date.now() / 10000)}`)
+      if (cancelled) return
+      if (rows.length) {
+        setGames([...sheetRowsRef.current, ...rows])
+        setSelected(prev => (prev ? rows.find(r => sameGame(r, prev)) || prev : prev))
+      }
+      timer = setTimeout(refresh, liveMode === 'live' ? 20000 : 60000)
+    }
+    timer = setTimeout(refresh, liveMode === 'live' ? 20000 : 60000)
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { cancelled = true; clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible) }
+  }, [liveMode])
 
   const matchups = useMemo(() => {
     if (!season || !week) return []

@@ -62,7 +62,8 @@ async function getSheetWeek(season, week) {
 
 // Confrontos de uma semana no Sleeper (pares pelo matchup_id)
 export function getSleeperWeek(week) {
-  return cached(`sleeper:matchups:${week}`, 60, async () => {
+  // Pontos ao vivo: guarda só 15s (o Sleeper atualiza durante os jogos)
+  return cached(`sleeper:matchups:${week}`, 15, async () => {
     const [entries, rosters] = await Promise.all([fetchJson(`${BASE}/matchups/${week}`), getLeagueRosters()])
     const teamByRoster = new Map(rosters.filter(r => r.rosterId != null).map(r => [String(r.rosterId), r.team]))
     const groups = new Map()
@@ -142,7 +143,7 @@ function abbreviate(name, pos) {
 // escalações do Sleeper. A página Matchups junta essas linhas às da planilha só
 // para exibir o confronto; elas não entram em estatísticas.
 export function getSleeperSeasonRows() {
-  return cached('league:sleeper-rows', 60, async () => {
+  return cached('league:sleeper-rows', 15, async () => {
     const [info, state, sheetRows, sheetNames, players] = await Promise.all([
       getLeagueInfo(),
       getNflState().catch(() => null),
