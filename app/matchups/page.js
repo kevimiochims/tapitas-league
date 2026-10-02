@@ -71,6 +71,17 @@ function getPosColor(pos) {
 }
 
 // Extrai jogadores de uma linha do GAME_FACTS_ALL
+// Centraliza um item na sua faixa com rolagem horizontal, sem mexer na rolagem
+// vertical da página (scrollIntoView também rolava a página para cima)
+function centerInRow(el) {
+  if (!el) return
+  const row = el.closest('.overflow-x-auto')
+  if (!row) return
+  const r = row.getBoundingClientRect()
+  const e = el.getBoundingClientRect()
+  row.scrollTo({ left: row.scrollLeft + (e.left - r.left) - (row.clientWidth - e.width) / 2, behavior: 'smooth' })
+}
+
 function extractPlayers(game, prefix) {
   const players = []
   for (let i = 1; i <= 13; i++) {
@@ -633,11 +644,7 @@ function MatchupsPageContent() {
   useEffect(() => {
     if (week && activeWeekRef.current) {
       const timer = setTimeout(() => {
-        activeWeekRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center'
-        });
+        centerInRow(activeWeekRef.current)
       }, 100);
       return () => clearTimeout(timer);
     }
@@ -647,11 +654,7 @@ function MatchupsPageContent() {
   useEffect(() => {
     if (season && activeSeasonRef.current) {
       const timer = setTimeout(() => {
-        activeSeasonRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center'
-        });
+        centerInRow(activeSeasonRef.current)
       }, 100);
       return () => clearTimeout(timer);
     }
@@ -981,19 +984,16 @@ function MatchupsPageContent() {
   }, [matchups.length, season, week])
 
   // Mantém o confronto selecionado em destaque quando os jogos não cabem no frame.
+  // Depende do confronto (não do objeto): a atualização ao vivo troca o objeto
+  // a cada poucos segundos e não pode mexer na rolagem.
+  const selectedKey = selected ? ['Season', 'Week', 'Team', 'Opponent'].map(k => String(selected?.[k] || '').trim()).join('|') : ''
   useEffect(() => {
-    if (!selected || matchupsCanCenter || !matchupsFrameRef.current || !activeGameRef.current) return
+    if (!selectedKey || matchupsCanCenter || !matchupsFrameRef.current || !activeGameRef.current) return
 
-    const timer = setTimeout(() => {
-      activeGameRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      })
-    }, 120)
+    const timer = setTimeout(() => centerInRow(activeGameRef.current), 120)
 
     return () => clearTimeout(timer)
-  }, [selected, matchupsCanCenter])
+  }, [selectedKey, matchupsCanCenter])
 
   // Jogo do outro lado do confronto selecionado (para pegar os jogadores do oponente)
   const selectedOpponentGame = useMemo(() => {
@@ -1805,7 +1805,7 @@ function MatchupsPageContent() {
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                     <PlayerRowAvatar name={home?.name} playerId={home?.id} pos={pos} playerLookup={playerLookup} size={32} />
                                   </div>
-                                  <span className={`text-[15px] md:text-base font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
+                                  <span className={`text-[20px] md:text-[22px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
                                       ? 'text-[#B8860B]'
                                       : ((home?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
@@ -1844,7 +1844,7 @@ function MatchupsPageContent() {
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
-                                  <span className={`text-[15px] md:text-base font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
+                                  <span className={`text-[20px] md:text-[22px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(away)
                                       ? 'text-[#B8860B]'
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
@@ -1920,7 +1920,7 @@ function MatchupsPageContent() {
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                     <PlayerRowAvatar name={home?.name} playerId={home?.id} pos="BN" playerLookup={playerLookup} size={28} />
                                   </div>
-                                  <span className={`text-[14px] md:text-[15px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
+                                  <span className={`text-[18px] md:text-[19px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
                                       ? 'text-[#B8860B]'
                                       : ((home?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
@@ -1958,7 +1958,7 @@ function MatchupsPageContent() {
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
-                                  <span className={`text-[14px] md:text-[15px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
+                                  <span className={`text-[18px] md:text-[19px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(away)
                                       ? 'text-[#B8860B]'
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
