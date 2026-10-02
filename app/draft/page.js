@@ -36,7 +36,8 @@ function normalizePlayer(name) {
     const parts = String(name || '')
         .replace(/\./g, '')
         .trim()
-        .split(' ')
+        .split(/\s+/)
+        .filter((p, i, all) => i < 2 || i < all.length - 1 || !/^(jr|sr|ii|iii|iv|v)$/i.test(p)) // "Kenneth Walker III" = "Kenneth Walker"
 
     if (parts.length < 2) return ''
 

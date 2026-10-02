@@ -153,11 +153,12 @@ export async function getSleeperMatchup(week, team) {
 // Números no formato da planilha (vírgula decimal), como a página Matchups espera
 const br = n => (Number(n) || 0).toFixed(2).replace('.', ',')
 
-// "Alvin Kamara" → "A. Kamara" (formato dos nomes no GAME_FACTS_ALL)
-function abbreviate(name, pos) {
+// Nome no formato do GAME_FACTS_ALL: completo ("Alvin Kamara"); defesa pelo
+// apelido ("Broncos")
+function sheetStyleName(name, pos) {
   const parts = String(name || '').trim().split(/\s+/)
-  if (pos === 'DEF' || parts.length < 2) return String(name || '').trim()
-  return `${parts[0][0]}. ${parts.slice(1).join(' ')}`
+  if (pos === 'DEF' && parts.length >= 2) return parts[parts.length - 1]
+  return String(name || '').trim()
 }
 
 // Linhas no formato da aba GAME_FACTS_ALL para a semana em andamento (e alguma
@@ -185,7 +186,7 @@ export function getSleeperSeasonRows() {
 
     const name = id => {
       const info = players.get(id)
-      return sheetNames.get(id) || abbreviate(info?.name || id, info?.pos)
+      return sheetNames.get(id) || sheetStyleName(info?.name || id, info?.pos)
     }
     const rows = []
     const weeks = []

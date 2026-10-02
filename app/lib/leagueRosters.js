@@ -1,5 +1,6 @@
 import { getSheetRows } from './sheets'
 import { cached, fetchJson } from './cache'
+import { isFullNameFacts } from './factsNames'
 
 // Elencos atuais da liga. A fonte principal são os elencos da liga no Sleeper
 // (sempre atualizados). Se o Sleeper falhar, usamos a escalação mais recente
@@ -78,13 +79,20 @@ function getSheetRosters() {
   })
 }
 
-// Nome do jogador como aparece na planilha (ex.: "J. Allen"), para o Player Profile
+// Nome do jogador como aparece na planilha, para o Player Profile: o nome
+// completo ("Josh Allen"; defesas pelo apelido). Em planilha antiga, ainda
+// abreviada, a forma curta da _PLAYER_CACHE ("J. Allen").
 export async function getSheetNames() {
-  const rows = await getSheetRows('_PLAYER_CACHE').catch(() => [])
+  const [rows, games] = await Promise.all([
+    getSheetRows('_PLAYER_CACHE').catch(() => []),
+    getSheetRows('GAME_FACTS_ALL').catch(() => []),
+  ])
+  const fullNames = isFullNameFacts(games.flatMap(g => lineupNames(g, 'S')))
   const map = new Map()
   rows.forEach(r => {
     const id = String(r?.player_id || '').trim()
-    const name = String(r?.name || r?.full_name || '').trim()
+    const isDef = String(r?.position || '').toUpperCase() === 'DEF'
+    const name = String((fullNames && !isDef ? r?.full_name : r?.name) || r?.full_name || r?.name || '').trim()
     if (id && name && !map.has(id)) map.set(id, name)
   })
   return map

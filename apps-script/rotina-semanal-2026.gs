@@ -93,52 +93,13 @@ function semanaTemPontos2026_(finalMatchups) {
 }
 
 // =============================================================================
-// DESAMBIGUAÇÃO DE NOMES HOMÔNIMOS
+// NOMES DOS JOGADORES
 // -----------------------------------------------------------------------------
-// Jogadores cujo nome abreviado (1ª letra + sobrenome) colide com outro jogador
-// do mesmo sobrenome. Para esses casos, a linha grava o NOME COMPLETO em vez
-// da abreviação — assim o front-end consegue casar com o "full_name" certo na
-// _PLAYER_CACHE (e pegar o player_id/foto corretos), e só então formata para
-// exibição abreviada do jeito que quiser.
-//
-// Para adicionar um novo caso: só incluir o nome completo exatamente como
-// aparece na _PLAYER_CACHE (coluna full_name) nesta lista. Não precisa mexer
-// em mais nada.
+// A GAME_FACTS_ALL grava o NOME COMPLETO do jogador, exatamente como está na
+// _PLAYER_CACHE (coluna full_name) — ex.: "Russell Wilson" e "Roman Wilson"
+// ficam separados. Defesas continuam pelo apelido ("Broncos"). O site abrevia
+// ("R. Wilson") só na hora de exibir, onde o espaço é curto.
 // =============================================================================
-const HOMONYM_FULL_NAMES_2026 = [
-  'Javonte Williams',
-  'Jameson Williams',
-  'Jamaal Williams',
-  'Jordan Love',
-  'Jeremiyah Love',
-  'Bijan Robinson',
-  'Brian Robinson Jr.',
-  'A.J. Brown',
-  'A. St. Brown',
-  'Malik Williams',
-  'Mike Williams',
-  'Jayden Reed',
-  'James Cook',
-  'Kyle Williams',
-];
-
-function normalizeNameForMatch_(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-const HOMONYM_FULL_NAMES_SET_2026 = new Set(
-  HOMONYM_FULL_NAMES_2026.map(normalizeNameForMatch_)
-);
-
-function isHomonymProneName_(fullName) {
-  return HOMONYM_FULL_NAMES_SET_2026.has(normalizeNameForMatch_(fullName));
-}
 
 // Retorna true se uma semana nova foi gravada; false em qualquer outro caso.
 function executaAutomacaoSemanal2026() {
@@ -295,6 +256,11 @@ function corrigeOrdemTitulares_(year, leagueId) {
   const playerDict = getPlayerDict2026();
   const weeksCache = {};
   const norm = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  // "Roman Wilson" e "R. Wilson" → "rwilson" (casa nome completo com abreviado)
+  const shortKey = v => {
+    const parts = String(v || '').trim().split(/\s+/);
+    return parts.length < 2 ? norm(v) : norm(parts[0]).charAt(0) + norm(parts.slice(1).join(''));
+  };
   let fixedRows = 0;
 
   // Reordena um bloco (S ou OS): a ordem vem do Sleeper; nome e pontos vêm da planilha
@@ -311,6 +277,7 @@ function corrigeOrdemTitulares_(year, leagueId) {
       if (!p || p.name === '--empty--') return null;
       let k = pool.findIndex(x => x.name === p.name);
       if (k === -1) k = pool.findIndex(x => norm(x.name) === norm(p.name));
+      if (k === -1) k = pool.findIndex(x => shortKey(x.name) === shortKey(p.name));
       return k === -1 ? undefined : pool.splice(k, 1)[0];
     });
     // Quem não casou pelo nome ocupa as vagas que sobraram, na ordem antiga
@@ -653,27 +620,11 @@ function scrapeSleeperWeekData2026(week, playerDict, leagueId) {
         if (pos === 'DST') pos = 'DEF';
 
         const fullName = String(pInfo.fullName || pInfo.name || '').trim();
-        let formattedName = pInfo.name;
-
+        let formattedName = fullName;
         if (pos === 'DEF') {
-          const parts = formattedName.trim().split(/\s+/);
+          // Defesa: só o apelido ("Denver Broncos" → "Broncos")
+          const parts = String(pInfo.name || fullName).trim().split(/\s+/);
           formattedName = parts[parts.length - 1];
-        } else if (isHomonymProneName_(fullName)) {
-          // Nome ambíguo conhecido (ex.: "J. Williams" poderia ser Javonte,
-          // Jameson ou Jamaal) — grava o nome completo em vez de abreviar,
-          // assim o front-end consegue casar com o jogador certo.
-          formattedName = fullName;
-        } else if (formattedName.includes(' ')) {
-          const parts = formattedName.trim().split(/\s+/);
-          const firstToken = parts[0];
-
-          // Se o primeiro token já for inicial ou sigla com ponto, mantém o nome original
-          // Ex.: A.J. Brown
-          if (/^[A-Z](\.[A-Z])+\.?$/.test(firstToken) || firstToken.endsWith('.')) {
-            formattedName = formattedName;
-          } else {
-            formattedName = firstToken.charAt(0) + '. ' + parts.slice(1).join(' ');
-          }
         }
 
         const pObj = { name: formattedName, pts: pts, pos: pos };

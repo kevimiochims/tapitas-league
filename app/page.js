@@ -15,7 +15,7 @@ import Link from 'next/link'
 import SummaryDrawer from './components/SummaryDrawer'
 import PlayerProfileModal from './components/PlayerProfileModal'
 import ScoreStrip from './components/nfl/ScoreStrip'
-import { resolveFactsName } from './lib/factsNames'
+import { buildFactsNameIndex, resolveFactsName } from './lib/factsNames'
 import RosterAlertsCard from './components/nfl/RosterAlertsCard'
 import TrendingCard from './components/nfl/TrendingCard'
 import LeagueNewsCard from './components/nfl/LeagueNewsCard'
@@ -1761,23 +1761,15 @@ export default function TapitasLeagueHomepage() {
 
 
   // ── Nome do jogador do draft como ele aparece no GAME_FACTS_ALL ─────
-  // Mesma regra do perfil antigo da Home: nome completo se existir nos jogos,
-  // senão a forma abreviada "J. Allen".
-  const factsNameIndex = useMemo(() => {
-    const index = new Map()
-    ;(gameFactsData || []).forEach(g => extractPlayerAppearances(g).forEach(a => {
-      const key = normalizePlayerKey(a.name)
-      if (key && !index.has(key)) index.set(key, a.name)
-    }))
-    return index
-  }, [gameFactsData])
+  // Nome completo; em planilha antiga, abreviada, cai para "J. Allen".
+  const factsNameIndex = useMemo(() => buildFactsNameIndex(gameFactsData), [gameFactsData])
 
   const resolveDraftName = (fullName) => {
     const raw = String(fullName || '').trim()
     const exact = factsNameIndex.get(normalizePlayerKey(raw))
     if (exact) return exact
     const parts = raw.split(/\s+/).filter(Boolean)
-    if (parts.length >= 2) {
+    if (parts.length >= 2 && !factsNameIndex.fullNames) {
       const abbreviated = factsNameIndex.get(normalizePlayerKey(`${parts[0][0]}. ${parts[parts.length - 1]}`))
       if (abbreviated) return abbreviated
     }

@@ -1,6 +1,30 @@
-// Identidade dos jogadores no GAME_FACTS_ALL. A maioria está abreviada
-// ("A. Kamara"), mas quem tem homônimo está com o nome completo ("Jayden Reed").
-// Por isso a busca tenta primeiro o nome completo e só depois a abreviatura.
+// Identidade dos jogadores no GAME_FACTS_ALL. A planilha grava o nome completo
+// do Sleeper ("Alvin Kamara"; defesas pelo apelido, "Broncos"). Planilhas antigas
+// ainda abreviadas ("A. Kamara") continuam funcionando: nelas a busca tenta o
+// nome completo e depois a abreviatura.
+
+const ABBREVIATED = /^[A-Za-z]{1,2}\.\s/
+
+// A planilha já está com nomes completos? (menos da metade abreviada)
+export function isFullNameFacts(names) {
+  let abbreviated = 0
+  let total = 0
+  for (const n of names) {
+    if (!n || !String(n).includes(' ')) continue // defesas e vazios
+    total++
+    if (ABBREVIATED.test(String(n).trim())) abbreviated++
+  }
+  return total > 0 && abbreviated * 2 < total
+}
+
+// Nome para exibir onde o espaço é curto: "Roman Wilson" → "R. Wilson".
+// Siglas ("A.J. Brown") e defesas ("Broncos") ficam como estão.
+export function abbreviatePlayerName(name) {
+  const raw = String(name || '').trim()
+  const parts = raw.split(/\s+/)
+  if (parts.length < 2 || ABBREVIATED.test(raw) || /^[A-Z](\.[A-Z])+\.?$/.test(parts[0])) return raw
+  return `${parts[0][0].toUpperCase()}. ${parts.slice(1).join(' ')}`
+}
 
 function normalizeKey(value) {
   return String(value || '')
@@ -26,6 +50,7 @@ export function buildFactsNameIndex(games) {
       })
     }
   })
+  index.fullNames = isFullNameFacts(index.values())
   return index
 }
 
@@ -48,9 +73,10 @@ export function buildNameOwners(cacheRows) {
 }
 
 // Nome exato na planilha para um jogador vindo do Sleeper/ESPN.
-// `owners` (opcional, de buildNameOwners): se o nome abreviado já pertence a
-// outro jogador da liga, não usa a abreviação. Um jogador que nunca jogou na
-// liga fica sem histórico, em vez de herdar o de um homônimo.
+// Com a planilha em nomes completos, só o nome completo identifica o jogador:
+// um homônimo que nunca jogou na liga (Roman Wilson) fica sem histórico em vez
+// de herdar o de outro (Russell Wilson). Em planilha antiga, abreviada,
+// `owners` (de buildNameOwners) evita a abreviação que pertence a outro ID.
 export function resolveFactsName(index, { id, name, sheetName, pos } = {}, owners = null) {
   const full = String(name || '').trim()
   const parts = full.split(/\s+/).filter(Boolean)
@@ -58,7 +84,7 @@ export function resolveFactsName(index, { id, name, sheetName, pos } = {}, owner
   if (pos === 'DEF') {
     // Defesas: o Sleeper dá "Denver Broncos"; a planilha usa só o apelido ("Broncos")
     if (parts.length >= 2) candidates.push(parts.slice(1).join(' '), parts[parts.length - 1])
-  } else if (parts.length >= 2) {
+  } else if (parts.length >= 2 && !index?.fullNames) {
     candidates.push(`${parts[0][0]}. ${parts.slice(1).join(' ')}`, `${parts[0][0]}. ${parts[parts.length - 1]}`)
   }
   const playerId = String(id || '').trim()
@@ -77,6 +103,7 @@ export function resolveFactsName(index, { id, name, sheetName, pos } = {}, owner
   if (sheetName) return sheetName
   if (parts.length < 2) return full
   if (pos === 'DEF') return parts[parts.length - 1]
+  if (index?.fullNames) return full
   const abbreviated = `${parts[0][0]}. ${parts.slice(1).join(' ')}`
   return belongsToOther(abbreviated) || belongsToOther(`${parts[0][0]}. ${parts[parts.length - 1]}`) ? full : abbreviated
 }
