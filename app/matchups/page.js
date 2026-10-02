@@ -344,24 +344,23 @@ function gameCellClass(p, base, side) {
   return base
 }
 
+// Embaixo dos pontos: só a projeção
 function PlayerGameLine({ p }) {
-  if (!p) return null
-  const proj = p.proj != null ? `proj ${p.proj.toFixed(1)}` : null
+  if (p?.proj == null) return null
+  return <span className="mt-0.5 whitespace-nowrap text-[10px] font-medium text-[#9CA3AF]">proj {p.proj.toFixed(1)}</span>
+}
+
+// Embaixo do nome: estado do jogo da NFL (relógio ao vivo, Final, horário ou Bye)
+function PlayerGameState({ p, align = 'left' }) {
+  if (!p?.gs) return null
   const state = p.gs === 'in' ? { text: p.gt || 'Live', cls: 'font-semibold text-[#1E8E3E]', dot: true }
     : p.gs === 'post' ? { text: 'Final', cls: 'text-[#6B7280]' }
       : p.gs === 'bye' ? { text: 'Bye', cls: 'text-[#9CA3AF]' }
-        : p.gs === 'pre' ? { text: kickoffShort(p.gt), cls: 'text-[#9CA3AF]' } : null
-  if (!proj && !state) return null
+        : { text: kickoffShort(p.gt), cls: 'text-[#9CA3AF]' }
   return (
-    <span className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[10px] font-medium text-[#9CA3AF]">
-      {proj}
-      {proj && state && <span>·</span>}
-      {state && (
-        <span className={`flex items-center gap-1 ${state.cls}`}>
-          {state.dot && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#1E8E3E]" />}
-          {state.text}
-        </span>
-      )}
+    <span className={`mt-0.5 flex items-center gap-1 text-[10px] font-medium ${align === 'right' ? 'justify-end' : ''} ${state.cls}`}>
+      {state.dot && <span className="inline-block h-1.5 w-1.5 flex-shrink-0 animate-pulse rounded-full bg-[#1E8E3E]" />}
+      <span className="truncate">{state.text}</span>
     </span>
   )
 }
@@ -1823,6 +1822,7 @@ function MatchupsPageContent() {
                                     isHistoricPlayer(home) ? 'text-[#8A6600]' : 'text-[#111]'
                                     }`}>
                                     {getDisplayPlayerName(home?.name, pos, playerLookup)}
+                                    <PlayerGameState p={home} align="left" />
                                   </div>
                                   <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${getPosColor(getDisplayPlayerPos(home?.name, pos, playerLookup))} whitespace-nowrap flex-shrink-0`}>
                                     {getDisplayPlayerPos(home?.name, pos, playerLookup)}
@@ -1867,6 +1867,7 @@ function MatchupsPageContent() {
                                     isHistoricPlayer(away) ? 'text-[#8A6600]' : 'text-[#111]'
                                     }`}>
                                     {getDisplayPlayerName(away?.name, pos, playerLookup)}
+                                    <PlayerGameState p={away} align="right" />
                                   </div>
                                 </div>
                               </div>
@@ -1936,6 +1937,7 @@ function MatchupsPageContent() {
                                     isHistoricPlayer(home) ? 'text-[#8A6600]' : 'text-[#3F4757]'
                                     }`}>
                                     {getDisplayPlayerName(home?.name, 'BN', playerLookup)}
+                                    <PlayerGameState p={home} align="left" />
                                   </div>
                                   <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${getPosColor(getDisplayPlayerPos(home?.name, 'BN', playerLookup))} whitespace-nowrap flex-shrink-0`}>
                                     {getDisplayPlayerPos(home?.name, 'BN', playerLookup)}
@@ -1979,6 +1981,7 @@ function MatchupsPageContent() {
                                     isHistoricPlayer(away) ? 'text-[#8A6600]' : 'text-[#3F4757]'
                                     }`}>
                                     {getDisplayPlayerName(away?.name, 'BN', playerLookup)}
+                                    <PlayerGameState p={away} align="right" />
                                   </div>
                                 </div>
                               </div>
