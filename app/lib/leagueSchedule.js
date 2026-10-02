@@ -195,6 +195,20 @@ export function getSleeperSeasonRows() {
     for (let week = startWeek; week <= lastWeek; week++) if (!inSheet.has(week)) weeks.push(week)
     const allMatchups = await Promise.all(weeks.map(w => getSleeperWeek(w).catch(() => [])))
     const isLive = currentWeek && weeks.includes(currentWeek) ? await getLiveStarterCheck() : () => false
+    // Jogo da NFL de cada time na semana em andamento: estado (pre/in/post) e
+    // rótulo (horário do kickoff ou relógio do jogo), para a página Matchups
+    // mostrar quem está em campo, quem já jogou e quem ainda vai jogar
+    const gameByNflTeam = new Map()
+    if (currentWeek && weeks.includes(currentWeek)) {
+      const board = await getScoreboard().catch(() => ({ games: [] }))
+      ;(board.games || []).forEach(g => [g.home?.team, g.away?.team].filter(Boolean).forEach(t => gameByNflTeam.set(t, g)))
+    }
+    const gameState = (id, week) => {
+      if (week !== currentWeek) return null
+      const g = gameByNflTeam.get(players.get(String(id))?.team)
+      if (!g) return { st: 'bye', label: 'Bye' }
+      return g.state === 'in' ? { st: 'in', label: g.detail || 'Live' } : g.state === 'post' ? { st: 'post', label: 'Final' } : { st: 'pre', label: g.date || '' }
+    }
     weeks.forEach((week, wi) => {
       const matchups = allMatchups[wi]
       const weekFinal = state?.seasonStartDate ? isWeekFinal(state.seasonStartDate, week) : week < (currentWeek || 0)
@@ -221,12 +235,20 @@ export function getSleeperSeasonRows() {
           // Escalação do time (S/B) e do adversário (OS/OB), como na planilha
           const lineup = (side, starterPrefix, benchPrefix) => {
             const starters = side.starters.filter(id => id && id !== '0')
+            // ID do Sleeper e estado do jogo de cada jogador (nomes abreviados repetem)
+            const extra = (prefix, id) => {
+              row[`${prefix}_Id`] = id
+              const gs = gameState(id, week)
+              if (gs) { row[`${prefix}_GS`] = gs.st; row[`${prefix}_GT`] = gs.label }
+            }
             starters.forEach((id, k) => {
+              extra(`${starterPrefix}${k + 1}`, id)
               row[`${starterPrefix}${k + 1}_Name`] = name(id)
               row[`${starterPrefix}${k + 1}_Pts`] = br(side.startersPoints?.[side.starters.indexOf(id)] ?? side.playersPoints?.[id])
               if (side.projections?.[id] != null) row[`${starterPrefix}${k + 1}_Proj`] = br(side.projections[id])
             })
             side.players.filter(id => !starters.includes(id)).forEach((id, k) => {
+              extra(`${benchPrefix}${k + 1}`, id)
               row[`${benchPrefix}${k + 1}_Name`] = name(id)
               row[`${benchPrefix}${k + 1}_Pts`] = br(side.playersPoints?.[id])
               if (side.projections?.[id] != null) row[`${benchPrefix}${k + 1}_Proj`] = br(side.projections[id])

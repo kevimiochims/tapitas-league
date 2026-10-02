@@ -76,10 +76,17 @@ function extractPlayers(game, prefix) {
   for (let i = 1; i <= 13; i++) {
     const name = game?.[`${prefix}${i}_Name`]
     const pts = game?.[`${prefix}${i}_Pts`]
-    // Projeção da semana (só nas semanas em andamento, vindas do Sleeper)
+    // Semana em andamento (Sleeper): projeção, ID exato e estado do jogo da NFL
     const proj = game?.[`${prefix}${i}_Proj`]
     if (name && name !== '--empty--' && name !== '') {
-      players.push({ name: String(name).trim(), pts: parseNumber(pts), proj: proj != null && proj !== '' ? parseNumber(proj) : null })
+      players.push({
+        name: String(name).trim(),
+        pts: parseNumber(pts),
+        proj: proj != null && proj !== '' ? parseNumber(proj) : null,
+        id: game?.[`${prefix}${i}_Id`] ? String(game[`${prefix}${i}_Id`]) : null,
+        gs: game?.[`${prefix}${i}_GS`] || null,
+        gt: game?.[`${prefix}${i}_GT`] || null,
+      })
     }
   }
   return players
@@ -236,6 +243,27 @@ function buildPlayerLookup(rows) {
   return map
 }
 
+// Todos os jogadores com o mesmo nome abreviado (ex.: "T. Etienne" = Travis e
+// Trevor), por posição. A tabela principal guarda só um por nome.
+function buildPlayerCandidates(rows) {
+  const map = new Map()
+  rows.forEach(row => {
+    const playerId = String(row?.player_id || '').trim()
+    if (!playerId) return
+    const pos = String(row?.position || '').trim().toUpperCase()
+    const entry = { playerId, pos, team: String(row?.team || '').trim().toLowerCase(), abbreviated: String(row?.name || '').trim(), fullName: String(row?.full_name || '').trim() }
+    ;[row?.name, row?.full_name].filter(Boolean).forEach(v => {
+      const key = normalizePlayerKey(v)
+      if (!key) return
+      ;[`${key}|${pos}`, key].forEach(k => {
+        if (!map.has(k)) map.set(k, [])
+        if (!map.get(k).some(e => e.playerId === playerId)) map.get(k).push(entry)
+      })
+    })
+  })
+  return map
+}
+
 function getPlayerData(name, pos, playerLookup) {
   if (!playerLookup || !name) return null
   const baseKey = normalizePlayerKey(name)
@@ -299,14 +327,53 @@ function getDisplayPlayerPos(name, pos, playerLookup) {
   return String(pos || '').toUpperCase()
 }
 
-function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false }) {
+// ── Estado do jogo de cada jogador (semana em andamento) ─────────────
+// Em campo: fundo verde claro + faixa verde + relógio do jogo pulsando.
+// Já jogou: normal, com "Final". Ainda vai jogar: pontos apagados + horário.
+function kickoffShort(iso) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const day = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return `${day} ${time}`
+}
+
+function gameCellClass(p, base, side) {
+  if (p?.gs === 'in') return `bg-[#EAF7EE] ${side === 'left' ? 'shadow-[inset_3px_0_0_#1E8E3E]' : 'shadow-[inset_-3px_0_0_#1E8E3E]'}`
+  if (p?.gs === 'pre' || p?.gs === 'bye') return `${base} [&_img]:opacity-60`
+  return base
+}
+
+function PlayerGameLine({ p }) {
+  if (!p) return null
+  const proj = p.proj != null ? `proj ${p.proj.toFixed(1)}` : null
+  const state = p.gs === 'in' ? { text: p.gt || 'Live', cls: 'font-semibold text-[#1E8E3E]', dot: true }
+    : p.gs === 'post' ? { text: 'Final', cls: 'text-[#6B7280]' }
+      : p.gs === 'bye' ? { text: 'Bye', cls: 'text-[#9CA3AF]' }
+        : p.gs === 'pre' ? { text: kickoffShort(p.gt), cls: 'text-[#9CA3AF]' } : null
+  if (!proj && !state) return null
+  return (
+    <span className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[10px] font-medium text-[#9CA3AF]">
+      {proj}
+      {proj && state && <span>·</span>}
+      {state && (
+        <span className={`flex items-center gap-1 ${state.cls}`}>
+          {state.dot && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#1E8E3E]" />}
+          {state.text}
+        </span>
+      )}
+    </span>
+  )
+}
+
+function PlayerRowAvatar({ name, pos, playerLookup, size = 36, mirror = false, playerId: idOverride = null }) {
   const [photoFailed, setPhotoFailed] = useState(false)
   const [logoFailed, setLogoFailed] = useState(false)
 
   const data = getPlayerData(name, pos, playerLookup)
   const resolvedPos = getDisplayPlayerPos(name, pos, playerLookup)
   const isDefense = resolvedPos === 'DEF'
-  const playerId = data?.playerId
+  const playerId = idOverride || data?.playerId
   const nflTeam = data?.team
 
   useEffect(() => {
@@ -539,6 +606,7 @@ function MatchupsPageContent() {
   const [games, setGames] = useState([])
   const sheetRowsRef = useRef([])
   const [playerLookup, setPlayerLookup] = useState(new Map())
+  const [playerCandidates, setPlayerCandidates] = useState(new Map())
   const [loading, setLoading] = useState(true)
   const [season, setSeason] = useState('')
   const [week, setWeek] = useState('')
@@ -602,6 +670,7 @@ function MatchupsPageContent() {
       const data = [...sheetData, ...sleeperRows]
       setGames(data)
       setPlayerLookup(buildPlayerLookup(cacheRows))
+      setPlayerCandidates(buildPlayerCandidates(cacheRows))
 
       // Only consider seasons that have at least one played game
       const allSeasons = [...new Set(
@@ -1047,11 +1116,21 @@ function MatchupsPageContent() {
   }, [projKey, projCache])
   const projMap = projKey ? projCache[projKey] : null
   const slotPositions = getRosterPositions(season)
-  const withProj = (list, starter) => (projMap ? list.map((p, i) => {
-    if (p.proj != null) return p
-    const id = getPlayerData(p.name, starter ? slotPositions[i] : '', playerLookup)?.playerId
-    return { ...p, proj: id && projMap[id] != null ? projMap[id] : null }
-  }) : list)
+  // ID de cada jogador: o do Sleeper quando a linha traz (semana em andamento);
+  // senão pelo nome, e se o nome for ambíguo (dois "T. Etienne"), o candidato
+  // que tem projeção naquela semana. Foto, projeção e perfil usam esse ID.
+  const withProj = (list, starter) => list.map((p, i) => {
+    let id = p.id
+    if (!id) {
+      const slot = starter ? String(slotPositions[i] || '').toUpperCase() : ''
+      const key = normalizePlayerKey(p.name)
+      const cands = (slot && slot !== 'FLEX' ? playerCandidates.get(`${key}|${slot}`) : null) || playerCandidates.get(key) || []
+      const withProjection = projMap ? cands.find(c => projMap[c.playerId] > 0) : null
+      id = withProjection?.playerId || getPlayerData(p.name, starter ? slotPositions[i] : '', playerLookup)?.playerId || null
+    }
+    const proj = p.proj != null ? p.proj : projMap && id && projMap[id] != null ? projMap[id] : null
+    return { ...p, id, proj }
+  })
 
   const starters = withProj(selected ? extractPlayers(selected, 'S') : [], true)
   const bench = withProj(selected ? extractPlayers(selected, 'B') : [], false)
@@ -1070,6 +1149,7 @@ function MatchupsPageContent() {
     const opponent = teamSide === 'away' ? String(selected?.Team || '').trim() : String(selected?.Opponent || '').trim()
     setSelectedPlayerProfile({
       rawName: String(player.name).trim(),
+      playerId: player.id || null,
       displayName: getDisplayPlayerName(player.name, pos, playerLookup),
       position: getDisplayPlayerPos(player.name, pos, playerLookup),
       pts: player.pts,
@@ -1594,7 +1674,7 @@ function MatchupsPageContent() {
                   ].filter(x => x.p?.name && getDisplayPlayerPos(x.p.name, x.pos, playerLookup) !== 'DEF')
                   const best = pool.sort((a, b) => (Number(b.p.pts) || 0) - (Number(a.p.pts) || 0))[0]
                   if (!best || !(Number(best.p.pts) > 0)) return null
-                  const data = getPlayerData(best.p.name, best.pos, playerLookup)
+                  const data = best.p.id ? { playerId: best.p.id } : getPlayerData(best.p.name, best.pos, playerLookup)
                   const team = best.side === 'home' ? String(selected?.Team || '').trim() : String(selected?.Opponent || '').trim()
                   const pos = getDisplayPlayerPos(best.p.name, best.pos, playerLookup)
                   return (
@@ -1674,10 +1754,20 @@ function MatchupsPageContent() {
                 {/* Ajustado: px-3 no mobile para economizar espaço nas bordas, px-8 no desktop */}
                 {hasPlayerData && (
                 <div className="px-2 md:px-4 py-2 border-b border-[#EEF0F2]">
-                  <button type="button" onClick={() => setStartersOpen(o => !o)} aria-expanded={startersOpen} className="group mb-2 flex items-center gap-1 text-[15px] font-bold text-[#111]">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                  <button type="button" onClick={() => setStartersOpen(o => !o)} aria-expanded={startersOpen} className="group flex items-center gap-1 text-[15px] font-bold text-[#111]">
                     Starters
                     <ChevronRight className={`h-4 w-4 text-[#9CA3AF] transition-transform group-hover:text-[#111] ${startersOpen ? 'rotate-90' : ''}`} />
                   </button>
+                  {/* Legenda do estado do jogo (só na semana em andamento) */}
+                  {[...starters, ...oppStarters].some(p => p.gs) && (
+                    <div className="flex items-center gap-2.5 text-[10px] text-[#6B7280]">
+                      <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-[#EAF7EE] shadow-[inset_2px_0_0_#1E8E3E]" />Playing</span>
+                      <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-white ring-1 ring-[#E6E8EB]" />Final</span>
+                      <span className="flex items-center gap-1 text-[#9CA3AF]"><span className="h-2.5 w-2.5 rounded-sm bg-white opacity-60 ring-1 ring-[#E6E8EB]" />Yet to play</span>
+                    </div>
+                  )}
+                  </div>
                   <div className={startersOpen ? '' : 'hidden'}>
 
                   {/* Header colunas */}
@@ -1708,13 +1798,13 @@ function MatchupsPageContent() {
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5]'
-                                  : 'bg-white')
+                                  : gameCellClass(home, 'bg-white', 'left'))
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={home?.name} pos={pos} playerLookup={playerLookup} size={32} />
+                                    <PlayerRowAvatar name={home?.name} playerId={home?.id} pos={pos} playerLookup={playerLookup} size={32} />
                                   </div>
                                   <span className={`text-[15px] md:text-base font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
@@ -1724,7 +1814,7 @@ function MatchupsPageContent() {
                                     {isHistoricPlayer(home) && <span className="text-base md:text-lg">🔥</span>}
                                     <span className="flex flex-col items-end">
                                       <span>{home ? home.pts.toFixed(2) : '—'}</span>
-                                      {home?.proj != null && <span className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">proj {home.proj.toFixed(1)}</span>}
+                                      <PlayerGameLine p={home} />
                                     </span>
                                   </span>
                                 </div>
@@ -1749,7 +1839,7 @@ function MatchupsPageContent() {
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5]'
-                                  : 'bg-white')
+                                  : gameCellClass(away, 'bg-white', 'right'))
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
@@ -1761,12 +1851,12 @@ function MatchupsPageContent() {
                                     }`}>
                                     <span className="flex flex-col items-start">
                                       <span>{away ? away.pts.toFixed(2) : '—'}</span>
-                                      {away?.proj != null && <span className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">proj {away.proj.toFixed(1)}</span>}
+                                      <PlayerGameLine p={away} />
                                     </span>
                                     {isHistoricPlayer(away) && <span className="text-base md:text-lg">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={away?.name} pos={pos} playerLookup={playerLookup} size={32} mirror />
+                                    <PlayerRowAvatar name={away?.name} playerId={away?.id} pos={pos} playerLookup={playerLookup} size={32} mirror />
                                   </div>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5 w-full">
@@ -1821,13 +1911,13 @@ function MatchupsPageContent() {
                               home
                                 ? (isHistoricPlayer(home)
                                   ? 'bg-[#FFF9E5]'
-                                  : 'bg-[#F4F5F7]')
+                                  : gameCellClass(home, 'bg-[#F4F5F7]', 'left'))
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
                                 <div className="flex items-center justify-between gap-2 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={home?.name} pos="BN" playerLookup={playerLookup} size={28} />
+                                    <PlayerRowAvatar name={home?.name} playerId={home?.id} pos="BN" playerLookup={playerLookup} size={28} />
                                   </div>
                                   <span className={`text-[14px] md:text-[15px] font-semibold flex items-center gap-1 flex-shrink-0 tabular-nums leading-none ${
                                     isHistoricPlayer(home)
@@ -1837,7 +1927,7 @@ function MatchupsPageContent() {
                                     {isHistoricPlayer(home) && <span className="text-sm md:text-base">🔥</span>}
                                     <span className="flex flex-col items-end">
                                       <span>{home ? home.pts.toFixed(2) : '—'}</span>
-                                      {home?.proj != null && <span className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">proj {home.proj.toFixed(1)}</span>}
+                                      <PlayerGameLine p={home} />
                                     </span>
                                   </span>
                                 </div>
@@ -1861,7 +1951,7 @@ function MatchupsPageContent() {
                               away
                                 ? (isHistoricPlayer(away)
                                   ? 'bg-[#FFF9E5]'
-                                  : 'bg-[#F4F5F7]')
+                                  : gameCellClass(away, 'bg-[#F4F5F7]', 'right'))
                                 : 'opacity-0'
                               }`}>
                               <div style={{ display: 'grid', gridTemplateRows: 'auto auto', rowGap: 2 }} className="min-w-0">
@@ -1873,12 +1963,12 @@ function MatchupsPageContent() {
                                     }`}>
                                     <span className="flex flex-col items-start">
                                       <span>{away ? away.pts.toFixed(2) : '—'}</span>
-                                      {away?.proj != null && <span className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">proj {away.proj.toFixed(1)}</span>}
+                                      <PlayerGameLine p={away} />
                                     </span>
                                     {isHistoricPlayer(away) && <span className="text-sm md:text-base">🔥</span>}
                                   </span>
                                   <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-hidden">
-                                    <PlayerRowAvatar name={away?.name} pos="BN" playerLookup={playerLookup} size={28} mirror />
+                                    <PlayerRowAvatar name={away?.name} playerId={away?.id} pos="BN" playerLookup={playerLookup} size={28} mirror />
                                   </div>
                                 </div>
                                 <div className="min-w-0 flex items-center justify-between gap-1.5 w-full">
@@ -1944,7 +2034,7 @@ function MatchupsPageContent() {
             rawName={selectedPlayerProfile.rawName}
             displayName={selectedPlayerProfile.displayName}
             position={selectedPlayerProfile.position}
-            playerId={getPlayerData(selectedPlayerProfile.rawName, selectedPlayerProfile.position, playerLookup)?.playerId || getPlayerId(selectedPlayerProfile.rawName, playerLookup)}
+            playerId={selectedPlayerProfile.playerId || getPlayerData(selectedPlayerProfile.rawName, selectedPlayerProfile.position, playerLookup)?.playerId || getPlayerId(selectedPlayerProfile.rawName, playerLookup)}
             games={games.filter(g => g?.Source !== 'sleeper')}
             liveGame={(() => {
               // Semana em andamento (Sleeper): pontos e projeção atuais do jogador,
