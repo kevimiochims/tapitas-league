@@ -619,6 +619,8 @@ function MatchupsPageContent() {
   const [benchOpen, setBenchOpen] = useState(true)
   // Abas do celular: Matchup | Head to head | Game recap | Rankings
   const [mobileTab, setMobileTab] = useState('matchup')
+  // Página dos "Last meetings" do head to head (volta à 1ª ao trocar de confronto)
+  const [h2hPageState, setH2hPageState] = useState({ key: '', page: 0 })
   // Card da direita: Power Rankings ou Standings
   const [rankTab, setRankTab] = useState('pr')
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState(null)
@@ -925,11 +927,24 @@ function MatchupsPageContent() {
     const margin = g => parseNumber(g?.PF) - parseNumber(g?.PA)
     const bigA = meetings.filter(g => res(g) === 'W').sort((x, y) => margin(y) - margin(x))[0] || null
     const bigB = meetings.filter(g => res(g) === 'L').sort((x, y) => margin(x) - margin(y))[0] || null
+    // Maior sequência de vitórias de cada time no confronto (do mais antigo ao mais recente)
+    const bestRun = winRes => {
+      let best = null, run = []
+      ;[...meetings].reverse().forEach(g => {
+        if (res(g) === winRes) {
+          run.push(g)
+          if (!best || run.length >= best.length) best = [...run] // empate: fica a mais recente
+        } else run = []
+      })
+      return best ? { n: best.length, first: best[0], last: best[best.length - 1] } : null
+    }
+    const runA = bestRun('W')
+    const runB = bestRun('L')
     return {
       a, b, meetings, winsA, winsB, ties,
       playoffA: playoffs.filter(g => res(g) === 'W').length,
       playoffB: playoffs.filter(g => res(g) === 'L').length,
-      streakTeam, streakN, avgA, avgB, bigA, bigB,
+      streakTeam, streakN, avgA, avgB, bigA, bigB, runA, runB,
     }
   }, [selected, games])
 
@@ -1594,8 +1609,26 @@ function MatchupsPageContent() {
           </div>
         ))}
       </div>
-      <div className="px-3 pb-0.5 pt-2 text-[11px] font-medium text-[#6B7280] lg:px-4">Last meetings</div>
-      {h2h.meetings.slice(0, 5).map(g => {
+      {(() => {
+        const H2H_PAGE = 5
+        const pages = Math.max(1, Math.ceil(h2h.meetings.length / H2H_PAGE))
+        const pairKey = `${h2h.a}|${h2h.b}|${selected?.Season}|${selected?.Week}`
+        const page = h2hPageState.key === pairKey ? Math.min(h2hPageState.page, pages - 1) : 0
+        const setPage = n => setH2hPageState({ key: pairKey, page: n })
+        const rows = h2h.meetings.slice(page * H2H_PAGE, page * H2H_PAGE + H2H_PAGE)
+        return (
+          <>
+            <div className="flex items-center justify-between px-3 pb-0.5 pt-2 lg:px-4">
+              <span className="text-[11px] font-medium text-[#6B7280]">{pages > 1 ? 'Meetings' : 'Last meetings'}</span>
+              {pages > 1 && (
+                <div className="flex items-center gap-1 text-[11px] tabular-nums text-[#6B7280]">
+                  <button type="button" aria-label="Previous" disabled={page === 0} onClick={() => setPage(page - 1)} className="flex h-5 w-5 items-center justify-center rounded hover:bg-[#EEF0F2] disabled:opacity-30"><ChevronLeft className="h-3.5 w-3.5" /></button>
+                  <span>{page + 1}/{pages}</span>
+                  <button type="button" aria-label="Next" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} className="flex h-5 w-5 items-center justify-center rounded hover:bg-[#EEF0F2] disabled:opacity-30"><ChevronRight className="h-3.5 w-3.5" /></button>
+                </div>
+              )}
+            </div>
+            {rows.map(g => {
         const r = String(g.Result).trim().toUpperCase()
         const winner = r === 'W' ? h2h.a : r === 'L' ? h2h.b : null
         const isCurrent = g === selected
@@ -1605,7 +1638,7 @@ function MatchupsPageContent() {
             key={`${g.Season}|${g.Week}`}
             type="button"
             onClick={() => openGame(g)}
-            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] transition-colors hover:bg-[#EEF0F2] lg:px-4 ${isCurrent ? 'bg-[#EAEFF7]' : ''}`}
+            className={`flex h-[28px] w-full items-center gap-2 px-3 text-left text-[12px] transition-colors hover:bg-[#EEF0F2] lg:px-4 ${isCurrent ? 'bg-[#EAEFF7]' : ''}`}
           >
             <span className="w-[88px] flex-shrink-0 whitespace-nowrap text-[#6B7280]">{g.Season} · W{g.Week}</span>
             {winner ? <TeamAvatar name={winner} className="h-4 w-4 flex-shrink-0" textClassName="text-[6px]" /> : <span className="h-4 w-4 flex-shrink-0" />}
@@ -1618,12 +1651,31 @@ function MatchupsPageContent() {
           </button>
         )
       })}
-      {(h2h.bigA || h2h.bigB) && (
-        <div className="mt-1 border-t border-[#EEF0F2] px-3 pt-2 text-[11px] leading-relaxed text-[#6B7280] lg:px-4">
-          {[[h2h.a, h2h.bigA], [h2h.b, h2h.bigB]].filter(([, g]) => g).map(([team, g]) => (
-            <div key={team} className="truncate">
-              Biggest win · <span className="font-medium text-[#111]">{h2hShort(team)}</span> by {Math.abs(parseNumber(g.PF) - parseNumber(g.PA)).toFixed(2)} ({g.Season} W{g.Week})
-            </div>
+            {/* Altura fixa: a última página completa com linhas vazias (o card não muda de tamanho) */}
+            {pages > 1 && Array.from({ length: H2H_PAGE - rows.length }, (_, i) => <div key={`pad-${i}`} aria-hidden className="h-[28px]" />)}
+          </>
+        )
+      })()}
+      {(h2h.bigA || h2h.bigB || h2h.runA || h2h.runB) && (
+        <div className="mt-1 border-t border-[#EEF0F2] py-1 text-[11px] leading-relaxed text-[#6B7280]">
+          {[
+            ...[[h2h.a, h2h.bigA], [h2h.b, h2h.bigB]].filter(([, g]) => g).map(([team, g]) => ({
+              key: `big-${team}`, game: g,
+              text: <>Biggest win · <span className="font-medium text-[#111]">{h2hShort(team)}</span> by {Math.abs(parseNumber(g.PF) - parseNumber(g.PA)).toFixed(2)} ({g.Season} W{g.Week})</>,
+            })),
+            ...[[h2h.a, h2h.runA], [h2h.b, h2h.runB]].filter(([, r]) => r).map(([team, r]) => ({
+              key: `run-${team}`, game: r.last,
+              text: <>Best streak · <span className="font-medium text-[#111]">{h2hShort(team)}</span> W{r.n} ({r.n > 1 ? `${r.first.Season} W${r.first.Week} – ${r.last.Season} W${r.last.Week}` : `${r.last.Season} W${r.last.Week}`})</>,
+            })),
+          ].map(item => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => openGame(item.game)}
+              className={`block w-full truncate px-3 py-0.5 text-left transition-colors hover:bg-[#EEF0F2] lg:px-4 ${item.game === selected ? 'bg-[#EAEFF7]' : ''}`}
+            >
+              {item.text}
+            </button>
           ))}
         </div>
       )}
