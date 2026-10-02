@@ -258,11 +258,11 @@ export default function ScoreStrip({ onTapitasWeek }) {
   const matchups = focus ? [...allMatchups].sort((a, b) => Number(b.teams.some(t => t.team === focus)) - Number(a.teams.some(t => t.team === focus))) : allMatchups
   const open = games.find(g => g.id === openId)
 
-  // Jogo em evidência: o primeiro ao vivo; sem jogo rolando, o próximo a
-  // começar. A faixa rola até ele (jogos já encerrados, como o de quinta,
-  // ficam para trás). Só rola quando o jogo em foco muda, para não brigar com
-  // quem estiver rolando a faixa na mão.
-  const nflTargetId = (games.find(g => g.state === 'in') || games.find(g => !g.completed && g.state !== 'post') || null)?.id || null
+  // Jogo em evidência: só o primeiro jogo AO VIVO, e só se ele estiver fora da
+  // área visível da faixa (ex.: domingo, com o de quinta já encerrado no
+  // começo). Sem jogo ao vivo, ou com ele já à vista, a faixa não se mexe.
+  // Rola uma vez por jogo, para não brigar com quem estiver rolando na mão.
+  const nflTargetId = games.find(g => g.state === 'in')?.id || null
   const tapTarget = matchups.find(m => m.live) || null
   const tapTargetId = tapTarget ? `${tapTarget.week}-${tapTarget.teams[0].team}` : null
   const nflRowRef = useRef(null)
@@ -275,7 +275,10 @@ export default function ScoreStrip({ onTapitasWeek }) {
       const chip = row.querySelector(`[data-chip-id="${CSS.escape(String(id))}"]`)
       if (!chip) return
       scrolledTo.current[key] = id
-      row.scrollTo({ left: Math.max(0, chip.offsetLeft - row.offsetLeft - 8), behavior: 'smooth' })
+      const r = row.getBoundingClientRect()
+      const c = chip.getBoundingClientRect()
+      if (c.left >= r.left - 1 && c.right <= r.right + 1) return // já está à vista
+      row.scrollTo({ left: Math.max(0, row.scrollLeft + (c.left - r.left) - 8), behavior: 'smooth' })
     }
     focusIn(nflRowRef.current, nflTargetId, 'nfl')
     focusIn(tapRowRef.current, tapTargetId, 'tap')
