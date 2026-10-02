@@ -258,6 +258,30 @@ export default function ScoreStrip({ onTapitasWeek }) {
   const matchups = focus ? [...allMatchups].sort((a, b) => Number(b.teams.some(t => t.team === focus)) - Number(a.teams.some(t => t.team === focus))) : allMatchups
   const open = games.find(g => g.id === openId)
 
+  // Jogo em evidência: o primeiro ao vivo; sem jogo rolando, o próximo a
+  // começar. A faixa rola até ele (jogos já encerrados, como o de quinta,
+  // ficam para trás). Só rola quando o jogo em foco muda, para não brigar com
+  // quem estiver rolando a faixa na mão.
+  const nflTargetId = (games.find(g => g.state === 'in') || games.find(g => !g.completed && g.state !== 'post') || null)?.id || null
+  const tapTarget = matchups.find(m => m.live) || null
+  const tapTargetId = tapTarget ? `${tapTarget.week}-${tapTarget.teams[0].team}` : null
+  const nflRowRef = useRef(null)
+  const tapRowRef = useRef(null)
+  const mobileRowRef = useRef(null)
+  const scrolledTo = useRef({})
+  useEffect(() => {
+    const focusIn = (row, id, key) => {
+      if (!row || !id || scrolledTo.current[key] === id) return
+      const chip = row.querySelector(`[data-chip-id="${CSS.escape(String(id))}"]`)
+      if (!chip) return
+      scrolledTo.current[key] = id
+      row.scrollTo({ left: Math.max(0, chip.offsetLeft - row.offsetLeft - 8), behavior: 'smooth' })
+    }
+    focusIn(nflRowRef.current, nflTargetId, 'nfl')
+    focusIn(tapRowRef.current, tapTargetId, 'tap')
+    focusIn(mobileRowRef.current, mobileLeague === 'nfl' ? nflTargetId : tapTargetId, `m-${mobileLeague}`)
+  })
+
   // Mantém a semana ativa visível na faixa de semanas do celular
   useEffect(() => {
     const el = weeksRef.current?.querySelector('[data-active]')
@@ -268,14 +292,14 @@ export default function ScoreStrip({ onTapitasWeek }) {
     <>
       {nfl.loading && skeleton(4)}
       {!nfl.loading && !games.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">{focus && allGames.length ? `No ${focus} players in NFL games this week.` : 'No NFL games this week.'}</div>}
-      {!nfl.loading && games.map(g => <NflChip key={g.id} game={g} focus={focus} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} />)}
+      {!nfl.loading && games.map(g => <div key={g.id} data-chip-id={g.id} className="flex flex-shrink-0"><NflChip game={g} focus={focus} open={g.id === openId} onToggle={() => setOpenId(id => (id === g.id ? null : g.id))} /></div>)}
     </>
   )
   const tapChips = (
     <>
       {tap.loading && skeleton(5)}
       {!tap.loading && !matchups.length && <div className="flex items-center px-2 text-[12px] text-[#6B7280]">No Tapitas matchups this week.</div>}
-      {!tap.loading && matchups.map(m => <TapitasChip key={`${m.week}-${m.teams[0].team}`} season={tap.data.season} status={tap.data.status} m={m} focus={focus} />)}
+      {!tap.loading && matchups.map(m => <div key={`${m.week}-${m.teams[0].team}`} data-chip-id={`${m.week}-${m.teams[0].team}`} className="flex flex-shrink-0"><TapitasChip season={tap.data.season} status={tap.data.status} m={m} focus={focus} /></div>)}
     </>
   )
   const pickNflWeek = w => { setNflWeek(Number(w)); setOpenId(null) }
@@ -329,7 +353,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
           {/* Time em foco (filtro geral), ao lado das semanas */}
           <div className="flex flex-shrink-0 items-center border-l border-[#EEF0F2] px-2"><TeamFocusPicker showName="hidden sm:inline" /></div>
         </div>
-        <div className={chipsRow}>{isNfl ? nflChips : tapChips}</div>
+        <div ref={mobileRowRef} className={chipsRow}>{isNfl ? nflChips : tapChips}</div>
       </div>
 
       <div className="hidden lg:flex lg:flex-row">
@@ -342,7 +366,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
             live={nfl.data?.live}
             maxWeek={nfl.data?.currentWeek || tap.data?.currentWeek}
           />
-          <div className={chipsRow}>{nflChips}</div>
+          <div ref={nflRowRef} className={chipsRow}>{nflChips}</div>
         </div>
         <div className="flex min-w-0 flex-1">
           <SectionLabel
@@ -353,7 +377,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
             live={tap.data?.live}
             maxWeek={tap.data?.currentWeek || nfl.data?.currentWeek}
           />
-          <div className={chipsRow}>{tapChips}</div>
+          <div ref={tapRowRef} className={chipsRow}>{tapChips}</div>
         </div>
       </div>
       {open && <NflDetail game={open} focus={focus} />}

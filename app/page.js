@@ -758,11 +758,13 @@ export default function TapitasLeagueHomepage() {
 
     if (diff > threshold) {
       // swipe para esquerda -> próximo slide
+      setHeroAutoplay(false)
       setCurrentSlide((prev) => (prev + 1) % totalSlides);
     }
 
     if (diff < -threshold) {
       // swipe para direita -> slide anterior
+      setHeroAutoplay(false)
       setCurrentSlide(
         (prev) => (prev - 1 + totalSlides) % totalSlides
       );
@@ -815,11 +817,20 @@ export default function TapitasLeagueHomepage() {
 
   // =============
 
+  // Hero: passa sozinho a cada 10s por 3 voltas completas e para no primeiro
+  // slide. Se o usuário trocar de slide (bolinhas ou arrastando), para também.
+  const heroAutoSteps = useRef(0)
+  const [heroAutoplay, setHeroAutoplay] = useState(true)
   useEffect(() => {
-    const timer = setTimeout(nextSlide, 10000);
+    if (!heroAutoplay) return
+    const timer = setTimeout(() => {
+      heroAutoSteps.current += 1
+      nextSlide()
+      if (heroAutoSteps.current >= totalSlides * 3) setHeroAutoplay(false)
+    }, 10000);
 
     return () => clearTimeout(timer);
-  }, [currentSlide]);
+  }, [currentSlide, heroAutoplay]);
 
   const [leagueStats, setLeagueStats] = useState({
     franchises: 0,
@@ -1854,7 +1865,7 @@ export default function TapitasLeagueHomepage() {
       </div>
       <div className="absolute bottom-3 right-4 flex gap-1.5">
         {slides.map((_, i) => (
-          <button key={i} type="button" aria-label={`Slide ${i + 1}`} onClick={() => setCurrentSlide(i)} className={`h-1.5 rounded-full transition-all ${i === currentSlide ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
+          <button key={i} type="button" aria-label={`Slide ${i + 1}`} onClick={() => { setHeroAutoplay(false); setCurrentSlide(i) }} className={`h-1.5 rounded-full transition-all ${i === currentSlide ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
         ))}
       </div>
     </div>
