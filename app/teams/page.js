@@ -1741,7 +1741,7 @@ export default function TeamsPage() {
     // Player Archive do time abre por ali; senão abre direto pelo ID do Sleeper
     // (ex.: recém-chegado que ainda não jogou pela franquia)
     const openSleeperPlayer = (p, tab = null) => {
-      if (!p || String(p.pos || '').toUpperCase() === 'DEF') return
+      if (!p) return
       const key = `raw:${resolveFactsName(buildFactsNameIndex(games), p)}`
       if (playerArchive.some(x => x.archiveKey === key)) openPlayerProfile(key, selected.team, tab)
       else { setProfileTab(tab); setNflProfile(p) }

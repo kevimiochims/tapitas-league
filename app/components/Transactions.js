@@ -33,16 +33,13 @@ export function formatTxDate(ms) {
 const txMeta = t => `${t.season}${t.week ? ` · Week ${t.week}` : ' · Preseason'}${t.date ? ` · ${formatTxDate(t.date)}` : ''}`
 
 function PlayerLine({ p, onOpenPlayer, tone, compact = false }) {
-  // Defesas não têm Player Profile no site: a linha não é clicável
-  const isDef = String(p.pos || '').toUpperCase() === 'DEF'
-  const Wrap = isDef ? 'div' : 'button'
   return (
-    <Wrap {...(isDef ? {} : { type: 'button', onClick: () => onOpenPlayer?.(p) })} className={`flex w-full min-w-0 items-center gap-2 py-1 text-left ${isDef ? '' : 'group'}`}>
+    <button type="button" onClick={() => onOpenPlayer?.(p)} className="group flex w-full min-w-0 items-center gap-2 py-1 text-left">
       <PlayerThumb id={p.id} name={p.name} pos={p.pos} nflTeam={p.nflTeam} size={28} />
       <span className={`min-w-0 truncate text-[13px] font-medium group-hover:text-[#D01F2D] ${tone === 'out' ? 'text-[#6B7280] line-through decoration-[#D01F2D]/40' : 'text-[#111]'}`}>{p.name}</span>
       <PositionBadge position={p.pos} />
       {p.nflTeam && !compact && <span className="flex-shrink-0 text-[11px] text-[#9CA3AF]">{p.nflTeam}</span>}
-    </Wrap>
+    </button>
   )
 }
 

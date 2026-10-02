@@ -8,11 +8,29 @@ import { SLEEPER_LEAGUE_ID } from './leagueRosters'
 
 const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].map(p => `position[]=${p}`).join('&')
 
-function getScoring() {
-  return cached('sleeper:scoring', 3600, async () => {
-    const league = await fetchJson(`https://api.sleeper.app/v1/league/${SLEEPER_LEAGUE_ID}`)
-    return league?.scoring_settings || {}
+// Regras de pontuação de cada temporada da liga no Sleeper (corrente de ligas
+// via previous_league_id). Temporadas de antes do Sleeper usam as regras da
+// primeira temporada da liga lá.
+function getScoringBySeason() {
+  return cached('sleeper:scoring-by-season', 6 * 3600, async () => {
+    const bySeason = {}
+    let id = SLEEPER_LEAGUE_ID
+    let earliest = null
+    for (let i = 0; i < 15 && id && id !== '0'; i++) {
+      const league = await fetchJson(`https://api.sleeper.app/v1/league/${id}`)
+      if (league?.season && league?.scoring_settings) {
+        bySeason[String(league.season)] = league.scoring_settings
+        earliest = league.scoring_settings
+      }
+      id = league?.previous_league_id ? String(league.previous_league_id) : null
+    }
+    return { bySeason, earliest: earliest || {} }
   })
+}
+
+async function getScoring(season) {
+  const { bySeason, earliest } = await getScoringBySeason()
+  return bySeason[String(season)] || earliest
 }
 
 const pointsOf = (stats, scoring) => {
@@ -27,7 +45,7 @@ const pointsOf = (stats, scoring) => {
 async function weekPoints(kind, season, week) {
   const [rows, scoring] = await Promise.all([
     fetchJson(`https://api.sleeper.com/${kind}/nfl/${season}/${week}?season_type=regular&${POSITIONS}`, { timeoutMs: 10000 }),
-    getScoring(),
+    getScoring(season),
   ])
   const map = new Map()
   ;(Array.isArray(rows) ? rows : []).forEach(r => {
@@ -41,7 +59,8 @@ export function getLivePoints(season, week) {
   return cached(`sleeper:live-points:${season}:${week}`, 5, () => weekPoints('stats', season, week))
 }
 
-// Projeção da semana (muda pouco: guarda 10 min)
-export function getProjectedPoints(season, week) {
-  return cached(`sleeper:projections:${season}:${week}`, 600, () => weekPoints('projections', season, week))
+// Projeção da semana: muda pouco na semana atual (10 min) e nada nas antigas.
+// O Sleeper tem projeções a partir de 2018.
+export function getProjectedPoints(season, week, { past = false } = {}) {
+  return cached(`sleeper:projections:${season}:${week}`, past ? 24 * 3600 : 600, () => weekPoints('projections', season, week))
 }

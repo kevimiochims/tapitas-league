@@ -1031,10 +1031,36 @@ function MatchupsPageContent() {
   const teamBold = undecided || teamWon
   const oppBold = undecided || !teamWon
 
-  const starters = selected ? extractPlayers(selected, 'S') : []
-  const bench = selected ? extractPlayers(selected, 'B') : []
-  const oppStarters = selected ? extractPlayers(selected, 'OS') : []
-  const oppBench = selected ? extractPlayers(selected, 'OB') : []
+  // Semanas antigas (planilha): projeção da semana vinda do Sleeper (existe
+  // desde 2018, então vale de 2021 em diante). Semana em andamento já traz.
+  const projKey = selected && selected.Source !== 'sleeper' && Number(season) >= 2018 ? `${season}|${week}` : null
+  const [projCache, setProjCache] = useState({})
+  useEffect(() => {
+    if (!projKey || projCache[projKey]) return
+    const [s, w] = projKey.split('|')
+    let cancelled = false
+    fetch(`/api/league/projections?season=${encodeURIComponent(s)}&week=${encodeURIComponent(w)}`)
+      .then(r => (r.ok ? r.json() : {}))
+      .then(map => { if (!cancelled) setProjCache(c => ({ ...c, [projKey]: map || {} })) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [projKey, projCache])
+  const projMap = projKey ? projCache[projKey] : null
+  const slotPositions = getRosterPositions(season)
+  const withProj = (list, starter) => (projMap ? list.map((p, i) => {
+    if (p.proj != null) return p
+    const id = getPlayerData(p.name, starter ? slotPositions[i] : '', playerLookup)?.playerId
+    return { ...p, proj: id && projMap[id] != null ? projMap[id] : null }
+  }) : list)
+
+  const starters = withProj(selected ? extractPlayers(selected, 'S') : [], true)
+  const bench = withProj(selected ? extractPlayers(selected, 'B') : [], false)
+  const oppStarters = withProj(selected ? extractPlayers(selected, 'OS') : [], true)
+  const oppBench = withProj(selected ? extractPlayers(selected, 'OB') : [], false)
+  // Projeção total do time (soma dos titulares)
+  const sumProj = list => (list.some(p => p.proj != null) ? list.reduce((sum, p) => sum + (p.proj || 0), 0) : null)
+  const teamProj = selected?.ProjPF ? parseNumber(selected.ProjPF) : sumProj(starters)
+  const oppProj = selected?.ProjPA ? parseNumber(selected.ProjPA) : sumProj(oppStarters)
 
   const closePlayerProfile = () => setSelectedPlayerProfile(null)
 
@@ -1484,7 +1510,7 @@ function MatchupsPageContent() {
                             )}
                           </div>
                           {/* Projeção do time (semana em andamento) */}
-                          {undecided && selected?.ProjPF && <div className="text-[11px] font-medium text-white/70">Proj {parseNumber(selected.ProjPF).toFixed(2)}</div>}
+                          {teamProj != null && <div className="text-[11px] font-medium text-white/70">Proj {teamProj.toFixed(2)}</div>}
                           {isHistoricTeamScore(teamPF) && (
                             <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
                               <span className="text-xs">🚀</span>
@@ -1542,7 +1568,7 @@ function MatchupsPageContent() {
                             )}
                           </div>
                           {/* Projeção do time (semana em andamento) */}
-                          {undecided && selected?.ProjPA && <div className="text-[11px] font-medium text-white/70">Proj {parseNumber(selected.ProjPA).toFixed(2)}</div>}
+                          {oppProj != null && <div className="text-[11px] font-medium text-white/70">Proj {oppProj.toFixed(2)}</div>}
                           {isHistoricTeamScore(teamPA) && (
                             <div className="flex items-center gap-1 bg-[#F5C518] px-2 py-0.5">
                               <span className="text-xs">🚀</span>
