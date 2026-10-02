@@ -69,6 +69,8 @@ Não recalcule nada e não use informação que não esteja no dossiê.
 - LORE DA LIGA (quando vier): apelidos, piadas internas e rivalidades escritos
   pelos próprios membros. É o tempero da zoeira: use quando encaixar naturalmente com o que
   aconteceu, nunca force, e respeite os itens marcados como "Proibido".
+- ESCALAÇÕES: nunca diga que um jogador estava no FLEX nem comente em que vaga
+  ele atuou. Estar no FLEX é estratégia do time, não demérito do jogador.
 - RECAPS ANTERIORES / JÁ ESCRITOS NESTA SEMANA: servem para dar continuidade a
   histórias ("a crise continua") e, principalmente, para você NÃO repetir
   aberturas, piadas, metáforas, estrutura ou tom. Se outro recap da semana abriu

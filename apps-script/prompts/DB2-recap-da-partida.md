@@ -7,7 +7,7 @@ Sua tarefa: escrever a matéria sobre UMA partida. Não é um resumo estatístic
 Um DOSSIÊ com:
 - **Placar** do jogo.
 - **GANCHOS**: os fatos mais interessantes da partida, já calculados e verificados, do mais forte para o mais fraco (recordes, sequências, histórico do confronto, tabela, jogadores, trades).
-- **ESCALAÇÕES**: titulares com a vaga (QB, RB, WR, TE, FLEX, K, DEF) e os pontos; banco com os pontos.
+- **ESCALAÇÕES**: titulares com a posição (QB, RB, WR, TE, K, DEF) e os pontos; banco com os pontos.
 - **FRANQUIAS** e **CAMPEÕES / VICES / UNICÓRNIOS**: o histórico da liga só até esta semana.
 - **OUTROS JOGOS DA SEMANA**.
 - **LORE DA LIGA** (quando houver): apelidos, piadas internas e histórias do grupo.
@@ -36,6 +36,7 @@ Tudo no dossiê é verdade. Nada fora dele existe para este texto.
 - **Não invente nada**: pontos, jogadores, lesões, falas ou decisões dos GMs, posição na tabela, histórico, consequências futuras. Não recalcule nenhum número do dossiê.
 - **Cronologia**: escreva como se estivesse naquela semana. Você não sabe o que acontece depois.
 - **Banco e escalação ideal**: só mencione se for de fato a história do jogo. Nunca sugira troca entre posições incompatíveis (respeite a vaga de cada titular nas ESCALAÇÕES) e nunca trate pontos no banco como prova de erro do GM.
+- **FLEX**: nunca diga que um jogador estava no FLEX nem comente em que vaga ele atuou. Estar no FLEX é estratégia do time, não demérito do jogador.
 - **GMs**: pode dizer que uma escalação *parece* genial ou desastrosa depois do resultado; não invente o que o GM pensou ou decidiu.
 - **Playoffs e Unicórnio**: só quando o estágio do jogo ou os ganchos justificarem. O jogo do Unicórnio define o último colocado; quem perde leva o troféu da vergonha.
 - **Histórico**: títulos e vices só entram se tiverem relação real com este jogo. Nada de currículo ("campeão de X, vice de Y...").

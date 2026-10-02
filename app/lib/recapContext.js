@@ -61,6 +61,11 @@ const ordinal = n => `${n}º`
 // Para palavras femininas (pontuação, vitória): "a maior" / "a 3ª maior"
 const rankF = (n, word) => (n === 1 ? `a ${word}` : `a ${n}ª ${word}`)
 
+// Vaga do titular no texto do dossiê. A vaga FLEX fica de fora: estar no FLEX
+// é estratégia do time (e a ordem das vagas na planilha já veio errada), então
+// a IA não deve comentar em que vaga o jogador atuou.
+const slotLabel = p => (p.slot && p.slot !== 'FLEX' ? ` (${p.slot})` : '')
+
 // Jogadores de uma linha (titulares com a vaga, banco)
 function lineup(g) {
   const slots = rosterSlots(g.Season)
@@ -225,13 +230,13 @@ function teamAngles({ rows, team, opp, g, oppG, weekRows, seasonRows }) {
     const allPlayerPts = rows.flatMap(x => lineup(x).starters.map(p => p.pts)).sort((a, b) => b - a)
     const pr = allPlayerPts.indexOf(top.pts) + 1
     const weekPlayerPts = weekRows.flatMap(x => lineup(x).starters.map(p => p.pts)).sort((a, b) => b - a)
-    let line = `Destaque de ${team}: ${top.name} (${top.slot}) com ${f2(top.pts)} pontos (${top.pts && pf ? Math.round((top.pts / pf) * 100) : 0}% do time).`
+    let line = `Destaque de ${team}: ${top.name}${slotLabel(top)} com ${f2(top.pts)} pontos (${top.pts && pf ? Math.round((top.pts / pf) * 100) : 0}% do time).`
     if (weekPlayerPts[0] === top.pts) line += ' Maior pontuação de um jogador na semana.'
     if (pr > 0 && pr <= 25) line += ` É ${rankF(pr, 'maior pontuação')} de um jogador na história da liga.`
     angles.push({ w: pr > 0 && pr <= 25 ? 4 : 2, text: line })
   }
   const flop = starters.filter(p => p.slot !== 'K' && p.slot !== 'DEF').sort((a, b) => a.pts - b.pts)[0]
-  if (flop && flop.pts <= 3) angles.push({ w: 2, text: flop.pts === 0 ? `${flop.name} (${flop.slot}) zerou como titular de ${team}.` : `${flop.name} (${flop.slot}) fez só ${f2(flop.pts)} pontos como titular de ${team}.` })
+  if (flop && flop.pts <= 3) angles.push({ w: 2, text: flop.pts === 0 ? `${flop.name}${slotLabel(flop)} zerou como titular de ${team}.` : `${flop.name}${slotLabel(flop)} fez só ${f2(flop.pts)} pontos como titular de ${team}.` })
   // Banco e escalação ideal ficam de fora dos ganchos de propósito: a IA tendia
   // a sugerir trocas impossíveis ("era só pôr o QB do banco"). O banco segue nas
   // ESCALAÇÕES para quem quiser olhar.
@@ -470,8 +475,9 @@ export function renderContext(ctx) {
   ctx.angles.forEach(x => lines.push(`- ${x.text}`))
   lines.push('')
   lines.push('## ESCALAÇÕES')
+  lines.push('(Não comente em que vaga cada jogador atuou nem cite FLEX: a escalação é estratégia do time e não demérito do jogador.)')
   Object.entries(ctx.lineups).forEach(([t, l]) => {
-    lines.push(`${t} — titulares: ${l.starters.map(p => `${p.name} (${p.slot}) ${f2(p.pts)}`).join(', ')}`)
+    lines.push(`${t} — titulares: ${l.starters.map(p => `${p.name}${slotLabel(p)} ${f2(p.pts)}`).join(', ')}`)
     if (l.bench.length) lines.push(`${t} — banco: ${l.bench.map(p => `${p.name} ${f2(p.pts)}`).join(', ')}`)
   })
   lines.push('')

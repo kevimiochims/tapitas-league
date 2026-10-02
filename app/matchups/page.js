@@ -349,6 +349,10 @@ function kickoffShort(iso) {
   return `${day} ${time}`
 }
 
+// Semana em andamento: jogador cujo jogo ainda não aconteceu (ou de folga)
+// mostra "—" em vez de 0.00. Quem jogou e zerou continua com 0.00.
+const notPlayedYet = p => p?.gs === 'pre' || p?.gs === 'bye'
+
 function gameCellClass(p, base, side) {
   if (p?.gs === 'in') return 'rounded-md bg-[#EAF7EE] ring-1 ring-inset ring-[#1E8E3E]/35'
   if (p?.gs === 'pre' || p?.gs === 'bye') return `${base} [&_img]:opacity-60`
@@ -1812,7 +1816,7 @@ function MatchupsPageContent() {
                                     }`}>
                                     {isHistoricPlayer(home) && <span className="text-base md:text-lg">🔥</span>}
                                     <span className="flex flex-col items-end">
-                                      <span>{home ? home.pts.toFixed(2) : '—'}</span>
+                                      <span>{home && !notPlayedYet(home) ? home.pts.toFixed(2) : '—'}</span>
                                       <PlayerGameLine p={home} />
                                     </span>
                                   </span>
@@ -1850,7 +1854,7 @@ function MatchupsPageContent() {
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#111]' : 'text-[#6B7280]')
                                     }`}>
                                     <span className="flex flex-col items-start">
-                                      <span>{away ? away.pts.toFixed(2) : '—'}</span>
+                                      <span>{away && !notPlayedYet(away) ? away.pts.toFixed(2) : '—'}</span>
                                       <PlayerGameLine p={away} />
                                     </span>
                                     {isHistoricPlayer(away) && <span className="text-base md:text-lg">🔥</span>}
@@ -1927,7 +1931,7 @@ function MatchupsPageContent() {
                                     }`}>
                                     {isHistoricPlayer(home) && <span className="text-sm md:text-base">🔥</span>}
                                     <span className="flex flex-col items-end">
-                                      <span>{home ? home.pts.toFixed(2) : '—'}</span>
+                                      <span>{home && !notPlayedYet(home) ? home.pts.toFixed(2) : '—'}</span>
                                       <PlayerGameLine p={home} />
                                     </span>
                                   </span>
@@ -1964,7 +1968,7 @@ function MatchupsPageContent() {
                                       : ((away?.pts ?? 0) > 0 ? 'text-[#3F4757]' : 'text-[#6B7280]')
                                     }`}>
                                     <span className="flex flex-col items-start">
-                                      <span>{away ? away.pts.toFixed(2) : '—'}</span>
+                                      <span>{away && !notPlayedYet(away) ? away.pts.toFixed(2) : '—'}</span>
                                       <PlayerGameLine p={away} />
                                     </span>
                                     {isHistoricPlayer(away) && <span className="text-sm md:text-base">🔥</span>}
