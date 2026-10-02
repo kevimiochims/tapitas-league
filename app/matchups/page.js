@@ -535,6 +535,7 @@ function StatRow({ left, eyebrow, title, subtitle, value, valueClass = 'text-[#1
 
 function MatchupsPageContent() {
   const [games, setGames] = useState([])
+  const sheetRowsRef = useRef([])
   const [playerLookup, setPlayerLookup] = useState(new Map())
   const [loading, setLoading] = useState(true)
   const [season, setSeason] = useState('')
@@ -595,6 +596,7 @@ function MatchupsPageContent() {
         // Semana em andamento e semanas futuras da temporada atual (Sleeper)
         safeFetch('/api/league/sleeper-rows'),
       ])
+      sheetRowsRef.current = sheetData
       const data = [...sheetData, ...sleeperRows]
       setGames(data)
       setPlayerLookup(buildPlayerLookup(cacheRows))
@@ -712,6 +714,22 @@ function MatchupsPageContent() {
   }, [games, season])
 
   // Matchups da semana selecionada — deduplicados (pega só um lado de cada confronto)
+  // Ao vivo: a semana em andamento vem do Sleeper e é buscada de novo a cada
+  // minuto (mesmo ritmo do placar da Home). O confronto aberto é trocado pela
+  // versão nova, para placar e pontos dos jogadores acompanharem o jogo.
+  const hasLiveWeek = games.some(g => ['live', 'current'].includes(String(g?.Status || '').trim()))
+  useEffect(() => {
+    if (!hasLiveWeek) return
+    const sameGame = (a, b) => a && b && ['Season', 'Week', 'Team', 'Opponent'].every(k => String(a?.[k] || '').trim() === String(b?.[k] || '').trim())
+    const timer = setInterval(async () => {
+      const rows = await safeFetch(`/api/league/sleeper-rows?m=${Math.floor(Date.now() / 60000)}`)
+      if (!rows.length) return
+      setGames([...sheetRowsRef.current, ...rows])
+      setSelected(prev => (prev ? rows.find(r => sameGame(r, prev)) || prev : prev))
+    }, 60000)
+    return () => clearInterval(timer)
+  }, [hasLiveWeek])
+
   const matchups = useMemo(() => {
     if (!season || !week) return []
     const filtered = games.filter(g =>
