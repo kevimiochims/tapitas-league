@@ -1618,13 +1618,13 @@ function MatchupsPageContent() {
         const rows = h2h.meetings.slice(page * H2H_PAGE, page * H2H_PAGE + H2H_PAGE)
         return (
           <>
-            <div className="flex items-center justify-between px-3 pb-0.5 pt-2 lg:px-4">
-              <span className="text-[11px] font-medium text-[#6B7280]">{pages > 1 ? 'Meetings' : 'Last meetings'}</span>
+            <div className="flex items-center justify-between px-3 pb-1 pt-3 lg:px-4">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#3F4757]">{pages > 1 ? 'Meetings' : 'Last meetings'}</span>
               {pages > 1 && (
-                <div className="flex items-center gap-1 text-[11px] tabular-nums text-[#6B7280]">
-                  <button type="button" aria-label="Previous" disabled={page === 0} onClick={() => setPage(page - 1)} className="flex h-5 w-5 items-center justify-center rounded hover:bg-[#EEF0F2] disabled:opacity-30"><ChevronLeft className="h-3.5 w-3.5" /></button>
-                  <span>{page + 1}/{pages}</span>
-                  <button type="button" aria-label="Next" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} className="flex h-5 w-5 items-center justify-center rounded hover:bg-[#EEF0F2] disabled:opacity-30"><ChevronRight className="h-3.5 w-3.5" /></button>
+                <div className="flex items-center gap-1 text-[12px] font-medium tabular-nums text-[#3F4757]">
+                  <button type="button" aria-label="Previous" disabled={page === 0} onClick={() => setPage(page - 1)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EEF0F2] text-[#111] transition-colors hover:bg-[#E2E5E9] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                  <span className="min-w-[30px] text-center">{page + 1}/{pages}</span>
+                  <button type="button" aria-label="Next" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EEF0F2] text-[#111] transition-colors hover:bg-[#E2E5E9] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                 </div>
               )}
             </div>
@@ -1638,45 +1638,61 @@ function MatchupsPageContent() {
             key={`${g.Season}|${g.Week}`}
             type="button"
             onClick={() => openGame(g)}
-            className={`flex h-[28px] w-full items-center gap-2 px-3 text-left text-[12px] transition-colors hover:bg-[#EEF0F2] lg:px-4 ${isCurrent ? 'bg-[#EAEFF7]' : ''}`}
+            className={`flex h-[40px] w-full items-center gap-2.5 border-t border-[#F1F2F4] px-3 text-left text-[14px] transition-colors hover:bg-[#EEF0F2] lg:px-4 lg:text-[13px] ${isCurrent ? 'bg-[#EAEFF7] shadow-[inset_3px_0_0_#02275F]' : ''}`}
           >
-            <span className="w-[88px] flex-shrink-0 whitespace-nowrap text-[#6B7280]">{g.Season} · W{g.Week}</span>
-            {winner ? <TeamAvatar name={winner} className="h-4 w-4 flex-shrink-0" textClassName="text-[6px]" /> : <span className="h-4 w-4 flex-shrink-0" />}
-            <span className="min-w-0 flex-1 truncate tabular-nums text-[#111]">
-              <span className={r === 'W' ? 'font-semibold' : 'text-[#6B7280]'}>{parseNumber(g.PF).toFixed(2)}</span>
-              <span className="mx-1 text-[#C4C8CE]">–</span>
-              <span className={r === 'L' ? 'font-semibold' : 'text-[#6B7280]'}>{parseNumber(g.PA).toFixed(2)}</span>
+            <span className="w-[86px] flex-shrink-0 whitespace-nowrap font-medium text-[#3F4757] lg:w-[78px]">{g.Season} · W{g.Week}</span>
+            {winner ? <TeamAvatar name={winner} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" /> : <span className="h-5 w-5 flex-shrink-0" />}
+            <span className="min-w-0 flex-1 truncate tabular-nums">
+              <span className={r === 'W' ? 'font-bold text-[#111]' : 'text-[#4B5563]'}>{parseNumber(g.PF).toFixed(2)}</span>
+              <span className="mx-1.5 text-[#9CA3AF]">–</span>
+              <span className={r === 'L' ? 'font-bold text-[#111]' : 'text-[#4B5563]'}>{parseNumber(g.PA).toFixed(2)}</span>
             </span>
-            {type && !/^reg/i.test(type) && <span className="max-w-[72px] flex-shrink-0 truncate text-[10px] font-medium text-[#B8860B]">{type}</span>}
+            {type && !/^reg/i.test(type) && <>
+              <span className="max-w-[86px] flex-shrink-0 truncate rounded bg-[#FFF2B8] px-1.5 py-0.5 text-[10px] font-semibold text-[#6B5A00] lg:hidden">{type}</span>
+              {/* Coluna estreita do desktop: só uma estrela, com o tipo do jogo no hover */}
+              <span title={type} className="hidden h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#FFF2B8] text-[11px] text-[#8D6A00] lg:flex">★</span>
+            </>}
           </button>
         )
       })}
             {/* Altura fixa: a última página completa com linhas vazias (o card não muda de tamanho) */}
-            {pages > 1 && Array.from({ length: H2H_PAGE - rows.length }, (_, i) => <div key={`pad-${i}`} aria-hidden className="h-[28px]" />)}
+            {pages > 1 && Array.from({ length: H2H_PAGE - rows.length }, (_, i) => <div key={`pad-${i}`} aria-hidden className="h-[40px] border-t border-[#F1F2F4]" />)}
           </>
         )
       })()}
+      {/* Recordes do confronto: um quadro por time (esquerda = time da esquerda), clicáveis */}
       {(h2h.bigA || h2h.bigB || h2h.runA || h2h.runB) && (
-        <div className="mt-1 border-t border-[#EEF0F2] py-1 text-[11px] leading-relaxed text-[#6B7280]">
+        <div className="grid grid-cols-2 gap-2 border-t border-[#EEF0F2] px-3 pb-1 pt-3 lg:px-4">
           {[
-            ...[[h2h.a, h2h.bigA], [h2h.b, h2h.bigB]].filter(([, g]) => g).map(([team, g]) => ({
-              key: `big-${team}`, game: g,
-              text: <>Biggest win · <span className="font-medium text-[#111]">{h2hShort(team)}</span> by {Math.abs(parseNumber(g.PF) - parseNumber(g.PA)).toFixed(2)} ({g.Season} W{g.Week})</>,
-            })),
-            ...[[h2h.a, h2h.runA], [h2h.b, h2h.runB]].filter(([, r]) => r).map(([team, r]) => ({
-              key: `run-${team}`, game: r.last,
-              text: <>Best streak · <span className="font-medium text-[#111]">{h2hShort(team)}</span> W{r.n} ({r.n > 1 ? `${r.first.Season} W${r.first.Week} – ${r.last.Season} W${r.last.Week}` : `${r.last.Season} W${r.last.Week}`})</>,
-            })),
-          ].map(item => (
+            ['Biggest win', [[h2h.a, h2h.bigA], [h2h.b, h2h.bigB]].map(([team, g]) => g && {
+              team, game: g,
+              value: `+${Math.abs(parseNumber(g.PF) - parseNumber(g.PA)).toFixed(2)}`,
+              sub: `${g.Season} · W${g.Week} · ${parseNumber(g.PF).toFixed(2)}–${parseNumber(g.PA).toFixed(2)}`,
+            })],
+            ['Best streak', [[h2h.a, h2h.runA], [h2h.b, h2h.runB]].map(([team, r]) => r && {
+              team, game: r.last,
+              value: `W${r.n}`,
+              sub: r.n > 1 ? `${r.first.Season} W${r.first.Week} – ${r.last.Season} W${r.last.Week}` : `${r.last.Season} · W${r.last.Week}`,
+            })],
+          ].flatMap(([label, items]) => items.map((it, i) => it ? (
             <button
-              key={item.key}
+              key={`${label}-${it.team}`}
               type="button"
-              onClick={() => openGame(item.game)}
-              className={`block w-full truncate px-3 py-0.5 text-left transition-colors hover:bg-[#EEF0F2] lg:px-4 ${item.game === selected ? 'bg-[#EAEFF7]' : ''}`}
+              onClick={() => openGame(it.game)}
+              className={`min-w-0 rounded-lg px-2.5 py-2 text-left ring-1 transition-colors hover:bg-[#EEF0F2] ${it.game === selected ? 'bg-[#EAEFF7] ring-[#02275F]/30' : 'bg-white ring-[#E6E8EB]'}`}
             >
-              {item.text}
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6B7280]">{label}</div>
+              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <TeamAvatar name={it.team} className="h-5 w-5 flex-shrink-0" textClassName="text-[7px]" />
+                  <span className="truncate text-[13px] font-semibold text-[#111]">{h2hShort(it.team)}</span>
+                </span>
+                {/* No celular o valor fica na mesma linha; na coluna estreita do desktop desce */}
+                <span className={`ml-auto flex-shrink-0 text-[16px] font-bold leading-tight tabular-nums lg:ml-0 lg:basis-full ${label === 'Biggest win' ? 'text-[#1E8E3E]' : 'text-[#02275F]'}`}>{it.value}</span>
+              </div>
+              <div className="mt-0.5 truncate text-[11px] text-[#4B5563]">{it.sub}</div>
             </button>
-          ))}
+          ) : <div key={`${label}-empty-${i}`} />))}
         </div>
       )}
     </div>
