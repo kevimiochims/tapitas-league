@@ -187,11 +187,11 @@ export function PlayerTransactionsCard({ playerId, names = [] }) {
     const out = t.moves.find(m => m.drops.some(p => p.id === id))
     if (!into && !out) return
     if (t.type === 'trade') {
-      events.push({ t, kind: 'trade', team: into?.team, from: out?.team, text: `Traded to ${into?.team || '—'}`, sub: out ? `from ${out.team}` : '' })
+      events.push({ t, at: t.date || 0, kind: 'trade', team: into?.team, from: out?.team, text: `Traded to ${into?.team || '—'}`, sub: out ? `from ${out.team}` : '' })
       return
     }
-    if (into) events.push({ t, kind: 'add', team: into.team, text: t.type === 'waiver' ? `Claimed off waivers by ${into.team}` : `Signed as a free agent by ${into.team}`, sub: t.type === 'waiver' && t.bid ? `$${t.bid} bid` : '' })
-    if (out) events.push({ t, kind: 'drop', team: out.team, text: `Released by ${out.team}`, sub: '' })
+    if (into) events.push({ t, at: t.date || 0, kind: 'add', team: into.team, text: t.type === 'waiver' ? `Claimed off waivers by ${into.team}` : `Signed as a free agent by ${into.team}`, sub: t.type === 'waiver' && t.bid ? `$${t.bid} bid` : '' })
+    if (out) events.push({ t, at: (t.date || 0) - 1, kind: 'drop', team: out.team, text: `Released by ${out.team}`, sub: '' })
   })
   // Draft: casa pelo nome completo; só com o nome abreviado ("J. Allen"), pela abreviação
   const normed = names.map(normName).filter(Boolean)
@@ -208,8 +208,13 @@ export function PlayerTransactionsCard({ playerId, names = [] }) {
       const team = String(r?.Team || '').trim()
       const round = String(r?.Round || '').trim()
       const pick = String(r?.Pick || '').trim()
+      // Data do draft: a do Sleeper quando existir; antes do Sleeper, início de
+      // setembro da temporada (época do draft da liga)
+      const season = String(r?.Season || '').trim()
+      const at = data?.draftDates?.[season] || Date.UTC(Number(season) || 0, 8, 1)
       events.push({
         t: { id: `draft-${r?.Season}-${pick}` },
+        at,
         kind: 'draft',
         team,
         text: `Drafted by ${team}`,
@@ -217,6 +222,8 @@ export function PlayerTransactionsCard({ playerId, names = [] }) {
         meta: `${String(r?.Season || '').trim()} draft`,
       })
     })
+  // Ordem cronológica decrescente: o mais recente em cima (draft incluído)
+  events.sort((x, y) => (y.at || 0) - (x.at || 0))
   const style = {
     trade: { icon: ArrowLeftRight, cls: 'bg-[#EEF3FF] text-[#02275F]', tag: 'Trade' },
     add: { icon: Plus, cls: 'bg-[#E8F5EC] text-[#1E8E3E]', tag: 'Added' },

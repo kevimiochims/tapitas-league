@@ -98,8 +98,17 @@ export function getLeagueTransactions() {
       return []
     })))
     const transactions = perSeason.flat().sort((a, b) => (b.date || 0) - (a.date || 0))
+    // Data de cada draft da liga no Sleeper (para ordenar o draft junto das
+    // transações no histórico do jogador)
+    const draftDates = {}
+    await Promise.all(chain.map(l => fetchJson(`${API}/league/${l.leagueId}/drafts`)
+      .then(list => (Array.isArray(list) ? list : []).forEach(d => {
+        if (d?.start_time) draftDates[String(d.season || l.season)] = Number(d.start_time)
+      }))
+      .catch(() => {})))
     return {
       seasons: chain.map(l => l.season),
+      draftDates,
       transactions,
     }
   })
