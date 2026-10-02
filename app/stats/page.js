@@ -7,7 +7,7 @@ import { ChevronRight, Activity, Swords, Flame } from 'lucide-react'
 import { HighlightCards, HighlightIcon, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, StableHeight, LoadingState } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
-import { useTeamFocus } from '../context/TeamFocus'
+import { useTeamFocus, getTeamFocus } from '../context/TeamFocus'
 
 const BASE_URL = '/api/sheet'
 
@@ -311,10 +311,12 @@ function StatsPageContent() {
   // Game Log database controls
   const [gfSeason, setGfSeason] = useState([])
   const [gfTeam, setGfTeam] = useState([])
-  if (appliedFocus !== teamFocus) {
+  // Aplica o time em foco (e as trocas dele) no Team Evolution e no Game Log
+  useEffect(() => {
+    if (appliedFocus === teamFocus) return
     setAppliedFocus(teamFocus)
     if (teamFocus) { setChartTeam(teamFocus); setGfTeam([teamFocus]) } else setGfTeam([])
-  }
+  }, [teamFocus, appliedFocus])
   const [gfOpponent, setGfOpponent] = useState([])
   const [gfStage, setGfStage] = useState([])
   const [gfResult, setGfResult] = useState([])
@@ -343,7 +345,10 @@ function StatsPageContent() {
       setGamesData(games)
       if (allTime.length > 0) {
         const availableTeams = allTime.map(r => String(r?.Team || r?.team || '').trim()).filter(Boolean)
-        const preferredTeam = availableTeams.find(t => normalizeString(t) === normalizeString('Moneyball'))
+        // Time em foco (filtro geral) tem prioridade; senão Moneyball
+        const focusTeam = getTeamFocus()
+        const preferredTeam = (focusTeam && availableTeams.find(t => normalizeString(t) === normalizeString(focusTeam)))
+          || availableTeams.find(t => normalizeString(t) === normalizeString('Moneyball'))
         setChartTeam(preferredTeam || String(allTime[0]?.Team || allTime[0]?.team || '').trim())
       }
       setLoading(false)

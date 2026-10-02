@@ -173,6 +173,17 @@ const normName = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/
   .replace(/[.'’]/g, '').replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
 const abbrName = n => { const parts = n.split(' '); return parts.length > 1 ? `${parts[0][0]} ${parts.slice(1).join(' ')}` : n }
 
+// Defesas: o draft traz o nome completo do time ("Minnesota Vikings"); o perfil
+// tem a sigla (ID do Sleeper). Casamos pelo apelido, incluindo nomes antigos.
+const DEF_NICKNAMES = {
+  ARI: ['cardinals'], ATL: ['falcons'], BAL: ['ravens'], BUF: ['bills'], CAR: ['panthers'], CHI: ['bears'],
+  CIN: ['bengals'], CLE: ['browns'], DAL: ['cowboys'], DEN: ['broncos'], DET: ['lions'], GB: ['packers'],
+  HOU: ['texans'], IND: ['colts'], JAX: ['jaguars'], KC: ['chiefs'], LAC: ['chargers'], LAR: ['rams'],
+  LV: ['raiders'], MIA: ['dolphins'], MIN: ['vikings'], NE: ['patriots'], NO: ['saints'], NYG: ['giants'],
+  NYJ: ['jets'], PHI: ['eagles'], PIT: ['steelers'], SEA: ['seahawks'], SF: ['49ers'], TB: ['buccaneers'],
+  TEN: ['titans'], WAS: ['commanders', 'redskins', 'football team'],
+}
+
 // Linha do tempo do jogador na liga: escolhas no draft (planilha) e todas as
 // transações do Sleeper (trades, waivers, free agents, dispensas).
 export function PlayerTransactionsCard({ playerId, names = [] }) {
@@ -197,10 +208,12 @@ export function PlayerTransactionsCard({ playerId, names = [] }) {
   const normed = names.map(normName).filter(Boolean)
   const fulls = new Set(normed.filter(n => n.split(' ')[0]?.length > 1))
   const abbrs = new Set(normed.map(abbrName))
+  const defNicks = DEF_NICKNAMES[id.toUpperCase()] || null
   draftRows
     .filter(r => {
       const n = normName(r?.Player)
       if (!n) return false
+      if (defNicks) return defNicks.some(nick => n === nick || n.endsWith(` ${nick}`))
       return fulls.size ? fulls.has(n) : abbrs.has(abbrName(n))
     })
     .sort((x, y) => Number(y?.Season) - Number(x?.Season))
