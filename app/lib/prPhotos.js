@@ -2,6 +2,7 @@ import { cached } from './cache'
 import { getSheetRows } from './sheets'
 import { getScoreboard, getEspnIdMap, getPlayerPhotos } from './espn'
 import { getSleeperPlayers } from './sleeper'
+import { getCommonsCategories, getCommonsPhotos } from './commonsPhotos'
 
 // Foto automática de cada time no card do Power Rankings, tirada das notícias
 // da ESPN (feed de fantasy e página de cada atleta). Junta as fotos de todos
@@ -10,7 +11,9 @@ import { getSleeperPlayers } from './sleeper'
 // nenhuma foto dele passa para o 2º, depois o 3º... Para cada jogador vale a
 // melhor que houver: foto da semana do jogo com ele como assunto da legenda,
 // vídeo da semana, foto da semana que só o cita, foto de outra rodada da
-// temporada. A mesma foto não se repete em dois times na mesma semana.
+// temporada. Sem nada na ESPN (semanas antigas), vale a galeria do jogador
+// no Wikimedia Commons (foto livre, com crédito). A mesma foto não se repete
+// em dois times na mesma semana.
 
 const DAY = 24 * 3600 * 1000
 const num = v => Number(String(v ?? '').replace(',', '.')) || 0
@@ -46,7 +49,7 @@ async function mapLimit(items, limit, fn) {
 }
 
 export function getPowerRankingPhotos(season, week) {
-  return cached(`pr-photos:v6:${season}|${week}`, 3 * 3600, async () => {
+  return cached(`pr-photos:v12:${season}|${week}`, 3 * 3600, async () => {
     const [games, cacheRows, espnIds, players, window] = await Promise.all([
       getSheetRows('GAME_FACTS_ALL'),
       getSheetRows('_PLAYER_CACHE'),
@@ -128,6 +131,41 @@ export function getPowerRankingPhotos(season, week) {
       [photoSeason, leads], [photoSeason, mentions], [stillSeason, leads], [stillSeason, mentions],
     ]
 
+    // Reserva: galeria do jogador no Wikimedia Commons (semanas antigas, que a
+    // ESPN não guarda mais). Primeiro uma foto daquela temporada; senão a mais
+    // próxima dela, mas só da carreira na NFL (nada de faculdade)
+    const commonsCats = await getCommonsCategories(teams.flatMap(t => t.starters.slice(0, 3).map(p => p.espnId).filter(Boolean))).catch(() => ({}))
+    const now = new Date()
+    const nflSeason = now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
+    const seasonFrom = Date.UTC(Number(season), 7, 1)
+    const seasonTo = Date.UTC(Number(season) + 1, 2, 1)
+    const commonsFor = async p => {
+      const cat = p.espnId && commonsCats[p.espnId]
+      if (!cat) return null
+      // Estreia na NFL (só dá para calcular de quem está em atividade)
+      const info = players.get(p.id)
+      const rookie = info?.team && info?.yearsExp != null ? Date.UTC(nflSeason - info.yearsExp, 7, 1) : null
+      // Foto de jogo: título que indica partida ("Bills vs. Titans", "Bears at
+      // Lions") ou tirada em dia de jogo da temporada (dom/seg/qui, set–jan);
+      // fora entrevista, retrato, treino, recortes e afins
+      const notGame = /interview|portrait|headshot|camp|practice|press|conference|cropped|signing|parade|award|ceremony|visit|draft|combine|pro bowl|fan ?duel|podcast|welcome|family|injured|military|honored|golf|pebble|celebrity|charity|tournament|wedding|concert/i
+      // "vs"/"at" em minúsculas ("Bears at Lions"); "AT&T" não conta
+      const isGameTitle = t => /\b(vs\.?|versus|at)\b/.test(t) || /\b(game|week \d+|preseason|playoffs?|wild card|super bowl)\b/i.test(t)
+      const isGameDay = d => { const x = new Date(d); const m = x.getUTCMonth(); const wd = x.getUTCDay(); return (m >= 8 || m === 0) && [0, 1, 4, 6].includes(wd) }
+      const ok = ph => ph.date && !used.has(ph.url) && (!rookie || ph.date >= rookie) && !notGame.test(ph.title) && (isGameTitle(ph.title) || isGameDay(ph.date))
+      const seasonPick = list => list.filter(ok).filter(ph => ph.date >= seasonFrom && ph.date < seasonTo).sort((a, b) => b.width - a.width)[0]
+      // 1) fotos daquela temporada (ano dela e janeiro seguinte)
+      for (const y of [season, String(Number(season) + 1)]) {
+        const hit = seasonPick(await getCommonsPhotos(cat, y).catch(() => []))
+        if (hit) return hit
+      }
+      // 2) a mais próxima, de até 1 temporada antes a 2 depois
+      const near = (await getCommonsPhotos(cat).catch(() => [])).filter(ok)
+        .filter(ph => ph.date >= Date.UTC(Number(season) - 1, 7, 1) && ph.date < Date.UTC(Number(season) + 3, 2, 1))
+        .sort((a, b) => Math.abs(a.date - seasonFrom) - Math.abs(b.date - seasonFrom))
+      return near[0] || null
+    }
+
     const used = new Set()
     const result = {}
     for (const { team, starters } of teams) {
@@ -135,7 +173,7 @@ export function getPowerRankingPhotos(season, week) {
       let hit = null
       let who = null
       // Regra fixa: o maior pontuador; só sem nenhuma foto dele passa para o
-      // 2º, depois o 3º (e assim por diante)
+      // 2º, depois o 3º (e assim por diante). Para cada um: ESPN, depois Commons
       for (const p of starters) {
         for (const [when, match] of rules) {
           const found = photos
@@ -143,13 +181,18 @@ export function getPowerRankingPhotos(season, week) {
             .sort((a, b) => (b.width || 0) - (a.width || 0))[0]
           if (found) { hit = found; who = p; break }
         }
+        if (!hit && starters.indexOf(p) < 3) {
+          const free = await commonsFor(p)
+          if (free) { hit = { ...free, caption: free.title.replace(/^File:/, '').replace(/\.[a-z]+$/i, ''), commons: true }; who = p }
+        }
         if (hit) break
       }
       if (hit) used.add(hit.url)
       const shown = who || star
       result[team] = {
-        url: hit ? await largest(hit.url) : null,
+        url: hit ? (hit.commons ? hit.url : await largest(hit.url)) : null,
         caption: hit?.caption || '',
+        credit: hit?.commons ? hit.credit : '',
         player: shown?.full || '',
         playerId: shown?.id || null,
         pts: shown?.pts || 0,

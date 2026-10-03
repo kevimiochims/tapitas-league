@@ -13,7 +13,7 @@ import PlayerCutout from './PlayerCutout'
 const matchupLink = (season, week, team, opp) =>
   `/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}&team=${encodeURIComponent(team)}&opp=${encodeURIComponent(opp)}`
 
-export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, markdownComponents, history = [], totalTeams = 10, photo = null, season, week }) {
+export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, markdownComponents, history = [], totalTeams = 10, photo = null, credit = '', season, week }) {
   const [open, setOpen] = useState(false)
   const up = team.delta > 0
   const down = team.delta < 0
@@ -35,6 +35,8 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
         )}
         <div className="absolute right-3 top-3 rounded-full bg-white/95 p-1 shadow-lg"><TeamLogo name={team.team} size={34} /></div>
         {photo && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent" />}
+        {/* Crédito exigido pelas fotos livres (Wikimedia Commons) */}
+        {photo && credit && <div className="absolute left-2 top-2 max-w-[62%] truncate rounded bg-black/40 px-1.5 py-0.5 text-[9px] text-white/80" title={credit}>{credit}</div>}
         {star && (
           <div className="absolute bottom-3 right-3 max-w-[48%] rounded-lg bg-black/45 px-2 py-1 text-right backdrop-blur-sm">
             <div className="truncate text-[11px] font-semibold">{star.label}</div>

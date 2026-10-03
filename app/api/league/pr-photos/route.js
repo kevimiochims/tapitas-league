@@ -1,7 +1,10 @@
 import { getPowerRankingPhotos } from '@/app/lib/prPhotos'
 import { cdnHeaders } from '@/app/lib/cache'
 
-// ?season=2026&week=3 → { time: { url, caption, player, playerId, pts } }
+// Semanas antigas buscam no Wikimedia Commons e podem levar alguns segundos
+export const maxDuration = 60
+
+// ?season=2026&week=3 → { time: { url, caption, credit, player, playerId, pts } }
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const season = String(searchParams.get('season') || '').trim()

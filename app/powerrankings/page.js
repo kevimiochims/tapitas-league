@@ -281,7 +281,7 @@ function PowerRankingsPageContent() {
         if (!src) return
         const prev = photos.get(key)
         if (auto && prev && !prev.auto) return // foto do Form não é trocada pela automática
-        photos.set(key, { src, auto, player: String(r?.Jogador || '').trim(), playerId: String(r?.PlayerId || '').trim(), pts: parseNumber(r?.Pts) })
+        photos.set(key, { src, auto, player: String(r?.Jogador || '').trim(), playerId: String(r?.PlayerId || '').trim(), pts: parseNumber(r?.Pts), credit: String(r?.Credito || '').trim() })
       })
       setCustomPhotos(photos)
 
@@ -1063,6 +1063,7 @@ function PowerRankingsPageContent() {
                           history={getTeamHistory(t.team).map(h => ({ week: String(h?.Week || '').trim(), rank: parseNumber(h?.['Power Ranking']) }))}
                           totalTeams={rankings.length}
                           photo={(!liveBetter && saved?.src) || auto?.url || null}
+                          credit={(!liveBetter && saved?.src) ? (saved.credit || '') : (auto?.credit || '')}
                           season={season}
                           week={week}
                         />

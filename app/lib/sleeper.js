@@ -40,6 +40,7 @@ export function getSleeperPlayers() {
         injuryDate: p.injury_status ? (Date.parse(p.injury_start_date || '') || Number(p.news_updated) || null) : null,
         espnId: p.espn_id ? String(p.espn_id) : null,
         gsisId: p.gsis_id ? String(p.gsis_id).trim() : null,
+        yearsExp: Number.isFinite(Number(p.years_exp)) ? Number(p.years_exp) : null,
       })
     }
     return players

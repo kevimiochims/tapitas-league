@@ -39,7 +39,7 @@
 // Precisa da propriedade SITE_URL (a mesma usada pelos recaps).
 // =============================================================================
 
-const PR_FOTOS_HEADERS = ['Season', 'Week', 'Team', 'FileId', 'Url', 'Enviado', 'Fonte', 'Jogador', 'PlayerId', 'Pts'];
+const PR_FOTOS_HEADERS = ['Season', 'Week', 'Team', 'FileId', 'Url', 'Enviado', 'Fonte', 'Jogador', 'PlayerId', 'Pts', 'Credito'];
 const PR_FOTOS_PASTA = 'Tapitas League - Fotos PR';
 
 const PR_FOTOS_TAB = 'PR_FOTOS';
@@ -109,7 +109,7 @@ function aoEnviarFotoPR(e) {
     }
   }
 
-  abaFotosPR_(ss).appendRow([season, week, team, fileId, url, new Date(), 'form', '', '', '']);
+  abaFotosPR_(ss).appendRow([season, week, team, fileId, url, new Date(), 'form', '', '', '', '']);
   Logger.log(`[FOTOS PR] Foto salva: ${team} · ${season} semana ${week}`);
 }
 
@@ -151,10 +151,16 @@ function salvaFotosAutomaticasPR(season, week) {
 
   const site = (PropertiesService.getScriptProperties().getProperty('SITE_URL') || '').replace(/\/+$/, '');
   if (!site) throw new Error('Falta SITE_URL nas Propriedades do script.');
-  const res = UrlFetchApp.fetch(`${site}/api/league/pr-photos?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`, { muteHttpExceptions: true });
+  let res;
+  try {
+    res = UrlFetchApp.fetch(`${site}/api/league/pr-photos?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`, { muteHttpExceptions: true });
+  } catch (err) {
+    Logger.log(`[FOTOS PR] Sem resposta do site para ${season} semana ${week}: ${err}`);
+    return false;
+  }
   if (res.getResponseCode() !== 200) {
     Logger.log(`[FOTOS PR] Site respondeu ${res.getResponseCode()} para ${season} semana ${week}.`);
-    return;
+    return false;
   }
   const fotos = JSON.parse(res.getContentText() || '{}');
 
@@ -181,7 +187,7 @@ function salvaFotosAutomaticasPR(season, week) {
         .setName(`${season}-W${week}-${team} - ${f.player || 'foto'}.jpg`);
       const file = pasta.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      const linha = [String(season), String(week), team, file.getId(), f.url, new Date(), 'auto', f.player || '', f.playerId || '', f.pts || ''];
+      const linha = [String(season), String(week), team, file.getId(), f.url, new Date(), 'auto', f.player || '', f.playerId || '', f.pts || '', f.credit || ''];
       if (atual) {
         sheet.getRange(atual.linha, 1, 1, linha.length).setValues([linha]);
         try { DriveApp.getFileById(atual.fileId).setTrashed(true); } catch (e) {}
@@ -194,6 +200,7 @@ function salvaFotosAutomaticasPR(season, week) {
     }
   });
   Logger.log(`[FOTOS PR] ${season} semana ${week}: ${salvas} fotos novas guardadas no Drive (${Object.keys(fotos).length} encontradas).`);
+  return true;
 }
 
 // Todas as semanas já jogadas da temporada atual (rodar uma vez)
@@ -207,6 +214,65 @@ function salvaFotosTemporadaPR() {
     .filter(r => String(r[iS]) === String(atual.season) && Number(String(r[iPR]).replace(',', '.')) > 0)
     .map(r => String(r[iW]))));
   semanas.forEach(w => salvaFotosAutomaticasPR(atual.season, w));
+}
+
+// ---------------------------------------------------------------------------
+// HISTÓRICO (temporadas antigas)
+// ---------------------------------------------------------------------------
+// Semanas antigas: a ESPN não guarda mais as fotos, então o site usa a galeria
+// do jogador no Wikimedia Commons (foto livre, com crédito). São mais de 100
+// semanas; o Apps Script só pode rodar ~6 min por vez, então o trabalho é
+// feito aos poucos:
+//   - Rode instalaHistoricoPR() uma vez. Um gatilho roda a cada 15 minutos,
+//     guarda as fotos de algumas semanas por vez e se desliga sozinho no fim.
+//   - Para recomeçar do zero: refazHistoricoPR().
+
+function instalaHistoricoPR() {
+  PropertiesService.getScriptProperties().setProperty('PR_FOTOS_SHEET_ID', SpreadsheetApp.getActiveSpreadsheet().getId());
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'salvaFotosHistoricoPR')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('salvaFotosHistoricoPR').timeBased().everyMinutes(15).create();
+  Logger.log('[FOTOS PR] Histórico: gatilho de 15 em 15 minutos criado. Rodando a primeira leva agora...');
+  salvaFotosHistoricoPR();
+}
+
+function salvaFotosHistoricoPR() {
+  const inicio = Date.now();
+  const props = PropertiesService.getScriptProperties();
+  const feitas = new Set(JSON.parse(props.getProperty('PR_FOTOS_HIST_FEITAS') || '[]'));
+  const ss = planilhaFotosPR_();
+  const values = ss.getSheetByName('GAME_FACTS_ALL').getDataRange().getValues();
+  const h = values[0].map(v => String(v).trim());
+  const iS = h.indexOf('Season'), iW = h.indexOf('Week'), iPR = h.indexOf('Power Ranking');
+  const semanas = [];
+  values.slice(1).forEach(r => {
+    if (!(Number(String(r[iPR]).replace(',', '.')) > 0)) return;
+    const key = `${r[iS]}|${r[iW]}`;
+    if (!semanas.includes(key)) semanas.push(key);
+  });
+  const pendentes = semanas.filter(k => !feitas.has(k));
+  for (const key of pendentes) {
+    if (Date.now() - inicio > 4.5 * 60 * 1000) break; // deixa folga no limite de 6 min
+    const [season, week] = key.split('|');
+    if (salvaFotosAutomaticasPR(season, week)) {
+      feitas.add(key);
+      props.setProperty('PR_FOTOS_HIST_FEITAS', JSON.stringify(Array.from(feitas)));
+    }
+  }
+  const faltam = semanas.filter(k => !feitas.has(k)).length;
+  Logger.log(`[FOTOS PR] Histórico: ${semanas.length - faltam} de ${semanas.length} semanas prontas.`);
+  if (!faltam) {
+    ScriptApp.getProjectTriggers()
+      .filter(t => t.getHandlerFunction() === 'salvaFotosHistoricoPR')
+      .forEach(t => ScriptApp.deleteTrigger(t));
+    Logger.log('[FOTOS PR] Histórico completo. Gatilho desligado.');
+  }
+}
+
+function refazHistoricoPR() {
+  PropertiesService.getScriptProperties().deleteProperty('PR_FOTOS_HIST_FEITAS');
+  instalaHistoricoPR();
 }
 
 function planilhaFotosPR_() {
