@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { BrandBackdrop, Podium, SummaryButton, PageShell, CardShell, CardGroup, StatRow, ResultBadge, StreakBadge, TeamLogo, getTeamAbbr } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
+import PowerCard from '../components/PowerCard'
 import { useDrawer } from '../context/DrawerContext'
 
 const BASE_URL = '/api/sheet'
@@ -215,6 +216,11 @@ function PowerRankingsPageContent() {
   const [expanded, setExpanded] = useState(null)
   // Celular: uma aba por vez (no desktop os três cards aparecem juntos)
   const [mobileTab, setMobileTab] = useState('rankings')
+  // Rankings em cards (estilo dos posts do Instagram) ou em lista
+  const [view, setView] = useState('cards')
+  const [playerLookup, setPlayerLookup] = useState(new Map())
+  const [customPhotos, setCustomPhotos] = useState(new Map())
+  const cardsRef = useRef(null)
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
   const historyRefs = useRef({})
@@ -246,12 +252,37 @@ function PowerRankingsPageContent() {
 
     async function load() {
 
-      const [gameData, calendarData] = await Promise.all([
+      const [gameData, calendarData, cacheRows, photoRows] = await Promise.all([
         safeFetch(`${BASE_URL}/GAME_FACTS_ALL`),
         safeFetch(`${BASE_URL}/CALENDAR`),
+        safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
+        safeFetch(`${BASE_URL}/PR_FOTOS`),
       ])
+      // Fotos personalizadas dos cards (Google Form → aba PR_FOTOS); a última
+      // enviada para o mesmo time/semana vale
+      const photos = new Map()
+      ;(photoRows || []).forEach(r => {
+        const key = `${String(r?.Season || '').trim()}|${String(r?.Week || '').trim()}|${String(r?.Team || '').trim()}`
+        const fileId = String(r?.FileId || '').trim()
+        const url = String(r?.Url || '').trim()
+        const src = fileId ? `/api/pr-photo/${encodeURIComponent(fileId)}` : /^https?:\/\//.test(url) ? url : ''
+        if (src) photos.set(key, src)
+      })
+      setCustomPhotos(photos)
 
       setCalendar(calendarData)
+      // Nome do jogador (completo ou abreviado) → ID do Sleeper e nome curto, para a foto dos cards
+      const lookup = new Map()
+      ;(cacheRows || []).forEach(r => {
+        const id = String(r?.player_id || '').trim()
+        if (!id) return
+        const entry = { id, short: String(r?.name || r?.full_name || '').trim(), pos: String(r?.position || '').toUpperCase() }
+        ;[r?.full_name, r?.name].forEach(v => {
+          const k = String(v || '').trim().toLowerCase()
+          if (k && !lookup.has(k)) lookup.set(k, entry)
+        })
+      })
+      setPlayerLookup(lookup)
 
       // OPCIONAL:
       // criar uma aba POWER_RANKING_NOTES
@@ -948,8 +979,69 @@ function PowerRankingsPageContent() {
 
       <div data-sticky-cols className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-5">
         <div className="min-w-0">
-          <CardShell title="Power Rankings" subtitle={`${season} · Week ${week} · tap a team for details`} className={mobileTab === 'rankings' ? '' : 'hidden lg:block'}>
-            <div>
+          <CardShell
+            title="Power Rankings"
+            subtitle={view === 'cards' ? `${season} · Week ${week} · swipe through the teams` : `${season} · Week ${week} · tap a team for details`}
+            className={mobileTab === 'rankings' ? '' : 'hidden lg:block'}
+            action={
+              <div className="flex flex-shrink-0 rounded-lg bg-[#F1F2F4] p-0.5 text-[12px] font-medium">
+                {[['cards', 'Cards'], ['list', 'List']].map(([key, label]) => (
+                  <button key={key} type="button" onClick={() => setView(key)} className={`rounded-md px-2.5 py-1 transition-colors ${view === key ? 'bg-white text-[#111] shadow-sm' : 'text-[#6B7280] hover:text-[#111]'}`}>{label}</button>
+                ))}
+              </div>
+            }
+          >
+            {view === 'cards' && (
+              <div className="pb-3 pt-3">
+                {/* Atalho: logos na ordem do ranking, toque para ir ao card */}
+                <div className="scroll-hide flex gap-1.5 overflow-x-auto px-3 pb-3 lg:px-4">
+                  {rankings.map(t => (
+                    <button
+                      key={t.team}
+                      type="button"
+                      onClick={() => cardsRef.current?.querySelector(`[data-card="${CSS.escape(t.team)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })}
+                      className="flex flex-shrink-0 items-center gap-1 rounded-full bg-[#F4F5F7] py-1 pl-1 pr-2 text-[12px] font-semibold tabular-nums text-[#111] hover:bg-[#ECEEF1]"
+                    >
+                      <TeamLogo name={t.team} size={20} />{t.rank}
+                    </button>
+                  ))}
+                </div>
+                <div ref={cardsRef} className="scroll-hide flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-3 px-3 lg:scroll-px-4 lg:px-4">
+                  {rankings.map(t => {
+                    const tier = tierOf(t.rank)
+                    const nextOpp = getNextOpponentData(t.team)
+                    const row = games.find(g => String(g?.Season || '').trim() === season && String(g?.Week || '').trim() === week && String(g?.Team || '').trim() === t.team)
+                    // Destaque do time na semana: maior pontuador entre os titulares (sem defesa)
+                    let star = null
+                    for (let i = 1; i <= 13; i++) {
+                      const name = String(row?.[`S${i}_Name`] || '').trim()
+                      if (!name || name === '--empty--') continue
+                      const info = playerLookup.get(name.toLowerCase())
+                      if (!info || info.pos === 'DEF') continue
+                      const pts = parseNumber(row?.[`S${i}_Pts`])
+                      if (!star || pts > star.pts) star = { id: info.id, name, label: info.short || name, pts }
+                    }
+                    return (
+                      <div key={t.team} data-card={t.team} className="w-[86%] max-w-[380px] flex-shrink-0 snap-start sm:w-[340px]">
+                        <PowerCard
+                          team={t}
+                          next={nextOpp}
+                          h2h={nextOpp ? getH2H(t.team, nextOpp.team) : null}
+                          star={star}
+                          prevRank={games.some(g => String(g?.Season || '').trim() === season && String(g?.Team || '').trim() === t.team && getWeekStart(g?.Week) < getWeekStart(week) && parseNumber(g?.['Power Ranking']) > 0) ? t.rank + t.delta : null}
+                          tierColor={tier.color === '#9CA3AF' ? '#4B5563' : tier.color}
+                          markdownComponents={markdownComponents}
+                          history={getTeamHistory(t.team).map(h => ({ week: String(h?.Week || '').trim(), rank: parseNumber(h?.['Power Ranking']) }))}
+                          totalTeams={rankings.length}
+                          photo={customPhotos.get(`${season}|${week}|${t.team}`) || null}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            <div className={view === 'cards' ? 'hidden' : ''}>
               {rankings.map((team, ti) => {
                 const tier = tierOf(team.rank)
                 const isFocus = team.team === teamFocus

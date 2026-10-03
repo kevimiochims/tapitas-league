@@ -131,3 +131,32 @@ export function findEspnIdByName(name) {
     return null
   })
 }
+
+const nameKey = v => String(v || '')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase()
+  .replace(/\./g, '')
+  .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '')
+  .replace(/[^a-z0-9]/g, '')
+
+// IDs da ESPN pelos elencos atuais dos 32 times (nome → [{ id, team }]).
+// O Sleeper não traz o ID da ESPN de boa parte dos jogadores (ex.: Jahmyr
+// Gibbs), e sem ele não há foto recortada; este mapa completa o que falta.
+export function getEspnRosterIds() {
+  return cached('espn:roster-ids', 24 * 3600, async () => {
+    const teams = await fetchJson(`${SITE}/teams`)
+    const list = (teams?.sports?.[0]?.leagues?.[0]?.teams || []).map(t => t?.team).filter(Boolean)
+    const byName = new Map()
+    await Promise.all(list.map(t => fetchJson(`${SITE}/teams/${t.id}/roster`)
+      .then(r => (r?.athletes || []).forEach(group => (group?.items || []).forEach(a => {
+        const key = nameKey(a?.fullName)
+        if (!key || !a?.id) return
+        if (!byName.has(key)) byName.set(key, [])
+        byName.get(key).push({ id: String(a.id), team: normalizeNflTeam(t.abbreviation) })
+      })))
+      .catch(() => {})))
+    return byName
+  })
+}
+
+export { nameKey as espnNameKey }

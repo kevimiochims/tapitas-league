@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { CardShell, FilterPill, ToggleChip, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { EmptyNote, NewsImage, NewsHero } from './shared'
 import { useFocusFilter } from '../../context/TeamFocus'
+import { useEspnId } from '../PlayerCutout'
 
 function timeAgo(iso) {
   const d = new Date(iso)
@@ -66,11 +67,13 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
             const more = hero ? rest.slice(3) : rest
             const row = n => (
               <div key={n.id || n.url || n.headline} className={`flex h-[76px] items-center gap-2.5 px-3 py-2.5 lg:px-4 ${n === hero ? '@3xl:hidden' : ''}`}>
-                {/* Só notícia com foto leva imagem; sem foto fica só o texto
-                    (sem misturar foto retangular com rosto redondo) */}
-                {n.image && (
+                {/* Foto da notícia; sem ela, o jogador recortado sobre o fundo da
+                    marca, no mesmo retângulo (todas as linhas no mesmo formato) */}
+                {(n.image || n.player?.id) && (
                   <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="relative flex-shrink-0" aria-label={n.player?.name}>
-                    <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
+                    {n.image
+                      ? <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
+                      : <PlayerTile id={n.player.id} name={n.player.name} />}
                   </button>
                 )}
                 <div className="min-w-0 flex-1">
@@ -105,5 +108,25 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
         </div>
       )}
     </CardShell>
+  )
+}
+
+// Retângulo do jogador para notícia sem foto: recorte da ESPN sobre o azul da
+// marca; sem recorte, a foto do Sleeper preenchendo o retângulo
+function PlayerTile({ id, name }) {
+  const espnId = useEspnId(id)
+  const [failed, setFailed] = useState(false)
+  const cutout = espnId && !failed
+  return (
+    <span className="relative block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#02275F]">
+      <span className="pointer-events-none absolute -bottom-3 left-1/2 h-10 w-14 -translate-x-1/2 rounded-full bg-white/15 blur-md" />
+      <img
+        src={cutout ? `https://a.espncdn.com/i/headshots/nfl/players/full/${espnId}.png` : `https://sleepercdn.com/content/nfl/players/${id}.jpg`}
+        alt={name || ''}
+        onError={() => cutout && setFailed(true)}
+        className={cutout ? 'absolute bottom-0 left-1/2 h-[44px] w-auto max-w-none -translate-x-1/2 object-contain' : 'h-full w-full object-cover object-top'}
+        draggable={false}
+      />
+    </span>
   )
 }
