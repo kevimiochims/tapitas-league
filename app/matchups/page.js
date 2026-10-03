@@ -9,7 +9,7 @@ import Header from '../components/Header'
 import SharedPlayerProfile from '../components/PlayerProfileModal'
 import PlayerCutout from '../components/PlayerCutout'
 import { PageShell, PageSkeleton, SiteFooter, getTeamAbbr, PositionBadge as UiPositionBadge } from '../components/ui'
-import { getTeamFocus } from '../context/TeamFocus'
+import { getTeamFocus, useTeamFocus } from '../context/TeamFocus'
 
 const BASE_URL = '/api/sheet'
 
@@ -1104,25 +1104,21 @@ function MatchupsPageContent() {
     }
   }
 
+  // Trocou o time no filtro geral: abre o confronto dele na semana aberta
+  const [teamFocus] = useTeamFocus()
+  const lastFocusRef = useRef(teamFocus)
+  useEffect(() => {
+    if (lastFocusRef.current === teamFocus) return
+    lastFocusRef.current = teamFocus
+    if (!teamFocus || !season || !week) return
+    const mine = games.find(g => String(g?.Season || '').trim() === season && String(g?.Week || '').trim() === week && String(g?.Team || '').trim() === teamFocus)
+    if (mine) setSelected(mine)
+  }, [teamFocus, games, season, week])
+
   const handleWeekClick = (w) => {
     setWeek(String(w))
-    setSelected(null)
-    // Seleciona o primeiro matchup da semana automaticamente
-    const seen = new Set()
-    for (const g of games) {
-      if (
-        String(g?.Season || '').trim() === season &&
-        String(g?.Week || '').trim() === String(w)
-      ) {
-        const team = String(g?.Team || '').trim()
-        const opp = String(g?.Opponent || '').trim()
-        const key = [team, opp].sort().join('|')
-        if (!seen.has(key)) {
-          setSelected(g)
-          break
-        }
-      }
-    }
+    // Confronto do time em foco (filtro geral) ou o primeiro da semana
+    setSelected(firstGameOfWeek(games, season, String(w)))
   }
 
   useEffect(() => {
@@ -1788,7 +1784,8 @@ function MatchupsPageContent() {
                     const result = String(g?.Result || '').trim().toUpperCase()
                     const teamAhead = result ? result === 'W' : pf >= pa
                     const oppAhead = result ? result === 'L' : pa >= pf
-                    const isSelected = selected === g
+                    const pairOf = x => [String(x?.Team || '').trim(), String(x?.Opponent || '').trim()].sort().join('|')
+                    const isSelected = selected === g || (selected && String(selected?.Season).trim() === season && String(selected?.Week).trim() === week && pairOf(selected) === pairOf(g))
                     const team = String(g?.Team || '').trim()
                     const opp = String(g?.Opponent || '').trim()
                     const gameType = String(g?.GameType || '').trim()

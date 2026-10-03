@@ -114,14 +114,14 @@ function RankHistory({ history, total }) {
   // para a linha usar a altura toda sem exagerar variações pequenas
   const lo = Math.max(1, Math.min(best, worst - 2))
   const hi = Math.min(Math.max(total, worst), Math.max(worst, lo + 2))
-  const y = r => 22 + ((r - lo) / Math.max(1, hi - lo)) * 56
+  const y = r => 20 + ((r - lo) / Math.max(1, hi - lo)) * 60
   return (
     <div className="mx-4 mt-3">
       <div className="flex items-center justify-between text-[11px] text-[#6B7280]">
         <span className="font-medium">Ranking history</span>
         <span>best <span className="font-semibold text-[#111]">#{best}</span> · worst <span className="font-semibold text-[#111]">#{worst}</span></span>
       </div>
-      <div className="relative mt-0.5 h-[24px]">
+      <div className="relative mt-0.5 h-[35px]">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
           <polyline points={history.map((h, i) => `${x(i)},${y(h.rank)}`).join(' ')} fill="none" stroke="#CBD2DB" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
         </svg>
@@ -131,7 +131,7 @@ function RankHistory({ history, total }) {
             <span
               key={h.week}
               title={`Week ${h.week}: #${h.rank}`}
-              className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full font-bold tabular-nums ${last ? 'h-[16px] min-w-[16px] text-[9px] text-white' : 'h-[12px] min-w-[12px] bg-white text-[7px] ring-1'}`}
+              className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full font-bold tabular-nums ${last ? 'h-[17px] min-w-[17px] text-[10px] text-white' : 'h-[13px] min-w-[13px] bg-white text-[8px] ring-1'}`}
               style={{ left: `${x(i)}%`, top: `${y(h.rank)}%`, background: last ? TIER_DOT(h.rank) : undefined, color: last ? undefined : TIER_DOT(h.rank), '--tw-ring-color': last ? undefined : '#CBD2DB' }}
             >
               {h.rank}
