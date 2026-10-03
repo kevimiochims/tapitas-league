@@ -225,7 +225,9 @@ function salvaFotosTemporadaPR() {
 // feito aos poucos:
 //   - Rode instalaHistoricoPR() uma vez. Um gatilho roda a cada 15 minutos,
 //     guarda as fotos de algumas semanas por vez e se desliga sozinho no fim.
-//   - Para recomeçar do zero: refazHistoricoPR().
+//   - Para recomeçar do zero: refazHistoricoPR() (só preenche o que falta e
+//     troca foto por uma de quem pontuou mais) ou limpaERefazHistoricoPR()
+//     (apaga as fotos automáticas das temporadas passadas e busca de novo).
 
 function instalaHistoricoPR() {
   PropertiesService.getScriptProperties().setProperty('PR_FOTOS_SHEET_ID', SpreadsheetApp.getActiveSpreadsheet().getId());
@@ -268,6 +270,27 @@ function salvaFotosHistoricoPR() {
       .forEach(t => ScriptApp.deleteTrigger(t));
     Logger.log('[FOTOS PR] Histórico completo. Gatilho desligado.');
   }
+}
+
+// Apaga as fotos AUTOMÁTICAS das temporadas passadas (linhas da PR_FOTOS e
+// arquivos no Drive) e refaz o histórico com a busca atual do site. Fotos do
+// Form e as da temporada atual não são tocadas.
+function limpaERefazHistoricoPR() {
+  const ss = planilhaFotosPR_();
+  const sheet = abaFotosPR_(ss);
+  const atual = String(ultimaSemanaPR_(ss).season);
+  const values = sheet.getDataRange().getValues();
+  let apagadas = 0;
+  for (let i = values.length - 1; i >= 1; i--) {
+    const r = values[i];
+    const auto = String(r[6] || '').trim().toLowerCase() === 'auto';
+    if (!auto || String(r[0]).trim() === atual) continue;
+    try { if (r[3]) DriveApp.getFileById(String(r[3])).setTrashed(true); } catch (e) {}
+    sheet.deleteRow(i + 1);
+    apagadas++;
+  }
+  Logger.log(`[FOTOS PR] ${apagadas} fotos automáticas antigas apagadas. Refazendo o histórico...`);
+  refazHistoricoPR();
 }
 
 function refazHistoricoPR() {
