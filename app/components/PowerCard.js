@@ -73,10 +73,13 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
       {/* Texto da semana (abre por inteiro no "Read more") */}
       {team.note && (
         <div className="mx-4 mt-3 rounded-xl bg-[#F6F7F9] px-3 py-2.5 text-justify text-[13px] leading-relaxed text-[#2F3542] hyphens-auto" lang="pt-BR">
-          {/* Fechado: 5 linhas (todos os cards com a mesma altura). Aberto: o
-              texto inteiro, e o rodapé vem logo abaixo (cada card com a sua altura) */}
-          <div className={open ? '' : 'line-clamp-5 min-h-[106px]'}>
+          {/* Fechado: altura de 5 linhas com o fim esmaecido (todos os cards com
+              a mesma altura). Aberto: o texto inteiro, e o rodapé vem logo abaixo.
+              Não usa line-clamp: com vários parágrafos, o Safari do iPhone
+              desenhava o 2º parágrafo por cima do 1º. */}
+          <div className={open ? '' : 'relative overflow-hidden'} style={open ? undefined : { height: 'calc(1.625em * 5)' }}>
             <ReactMarkdown components={markdownComponents}>{team.note}</ReactMarkdown>
+            {!open && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2.6em] bg-gradient-to-t from-[#F6F7F9] to-transparent" />}
           </div>
           <button type="button" onClick={() => onToggleExpanded?.()} className="mt-1 text-[12px] font-semibold text-[#1D5FD1] hover:underline">
             {open ? 'Show less' : 'Read more'}
