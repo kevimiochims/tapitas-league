@@ -38,13 +38,13 @@ export default function NewsReader({ item, photo, photoCredit = '', onClose, onO
   // Portal no <body>: a coluna lateral é "sticky" e prenderia o pop-up atrás
   // das outras colunas
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 p-3 sm:p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={item.headline}
         onClick={e => e.stopPropagation()}
-        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-[560px] sm:rounded-2xl"
+        className="flex max-h-[86vh] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
         <div className="relative flex-shrink-0">
           {image

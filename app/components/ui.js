@@ -22,7 +22,7 @@ export function PageShell({ children, loading = false, headerProps, topBar, wide
       `}</style>
       <Header {...headerProps} flush={Boolean(topBar)} />
       {topBar && <div className="mb-2">{topBar}</div>}
-      <section className={`mx-auto w-full ${wide ? 'max-w-[1720px]' : 'max-w-[1400px]'} px-0 pb-6 pt-0 sm:px-2 lg:px-4`}>
+      <section className={`mx-auto w-full ${wide ? 'max-w-[1720px]' : 'max-w-[1400px]'} px-2.5 pb-6 pt-0 sm:px-2 lg:px-4`}>
         {loading ? <PageSkeleton /> : children}
       </section>
       <SiteFooter />

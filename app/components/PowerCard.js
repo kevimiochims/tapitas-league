@@ -18,7 +18,7 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
   const up = team.delta > 0
   const down = team.delta < 0
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#E6E8EB] bg-white">
+    <article className="flex flex-col overflow-hidden rounded-2xl border border-[#E6E8EB] bg-white">
       {/* Foto: destaque do time na semana sobre o fundo da marca */}
       <div className="relative h-[210px] overflow-hidden text-white sm:h-[230px]">
         <BrandBackdrop />
@@ -71,7 +71,9 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
       {/* Texto da semana (abre por inteiro no "Read more") */}
       {team.note && (
         <div className="mx-4 mt-3 rounded-xl bg-[#F6F7F9] px-3 py-2.5 text-justify text-[13px] leading-relaxed text-[#2F3542] hyphens-auto" lang="pt-BR">
-          <div className={open ? '' : 'line-clamp-5'}>
+          {/* Fechado: 5 linhas (todos os cards com a mesma altura). Aberto: o
+              texto inteiro, e o rodapé vem logo abaixo (cada card com a sua altura) */}
+          <div className={open ? '' : 'line-clamp-5 min-h-[106px]'}>
             <ReactMarkdown components={markdownComponents}>{team.note}</ReactMarkdown>
           </div>
           <button type="button" onClick={() => onToggleExpanded?.()} className="mt-1 text-[12px] font-semibold text-[#1D5FD1] hover:underline">
@@ -81,8 +83,7 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
       )}
 
       {/* Rodapé: média, próximo adversário e retrospecto contra ele */}
-      <div className="min-h-3 flex-1" />
-      <div className="grid grid-cols-3 border-t border-[#EEF0F2] text-center">
+      <div className="mt-3 grid grid-cols-3 border-t border-[#EEF0F2] text-center">
         <div className="px-1 py-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">PPG</div>
           <div className="mt-0.5 text-[14px] font-bold tabular-nums text-[#111]">{team.avgPF.toFixed(1)} <span className="text-[11px] font-medium text-[#9CA3AF]">#{team.avgRank}</span></div>

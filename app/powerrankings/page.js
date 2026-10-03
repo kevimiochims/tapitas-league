@@ -234,6 +234,34 @@ function PowerRankingsPageContent() {
   const cardsRef = useRef(null)
   // Read more / Show less abre ou fecha o texto de todos os cards juntos
   const [notesOpen, setNotesOpen] = useState(false)
+  // Celular (um card por vez): a faixa de cards fica da altura do card que está
+  // na tela, sem sobrar espaço embaixo dos mais curtos quando o texto está aberto
+  useEffect(() => {
+    const el = cardsRef.current
+    if (!el) return
+    let frame = null
+    const sync = () => {
+      frame = null
+      const cards = Array.from(el.children)
+      if (!cards.length) return
+      if (window.innerWidth >= 640) { el.style.height = ''; return }
+      const left = el.getBoundingClientRect().left
+      const current = cards.reduce((best, c) => (Math.abs(c.getBoundingClientRect().left - left) < Math.abs(best.getBoundingClientRect().left - left) ? c : best), cards[0])
+      el.style.height = `${current.offsetHeight + 4}px`
+    }
+    const schedule = () => { if (frame == null) frame = requestAnimationFrame(sync) }
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null
+    Array.from(el.children).forEach(c => ro?.observe(c))
+    el.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    schedule()
+    return () => {
+      ro?.disconnect()
+      el.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      if (frame != null) cancelAnimationFrame(frame)
+    }
+  }, [notesOpen, view, season, week, games.length])
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
   const historyRefs = useRef({})
@@ -1027,7 +1055,7 @@ function PowerRankingsPageContent() {
                 </div>
                 {/* Celular: um card por vez (carrossel, sem pedaço do próximo);
                     telas maiores: vários lado a lado */}
-                <div ref={cardsRef} className="scroll-hide flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-3 px-3 pb-1 lg:scroll-px-4 lg:px-4">
+                <div ref={cardsRef} className="scroll-hide flex snap-x snap-mandatory items-start gap-3 overflow-x-auto overflow-y-hidden scroll-px-3 px-3 pb-1 transition-[height] duration-200 lg:scroll-px-4 lg:px-4">
                   {rankings.map(t => {
                     const tier = tierOf(t.rank)
                     const nextOpp = getNextOpponentData(t.team)

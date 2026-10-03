@@ -123,10 +123,10 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
             )
             // Linha: manchete (2 linhas) / jogador, posição e times / fonte e horário
             const row = (n, pad = 'px-3 lg:px-4') => (
-              <div key={n.id || n.url || n.headline} className={`flex items-center gap-2.5 py-2 ${pad}`} style={{ height: ROW_H }}>
+              <div key={n.id || n.url || n.headline} className={`flex items-center gap-2.5 py-2 ${pad}`} style={{ minHeight: ROW_H }}>
                 {thumb(n)}
                 <div className="min-w-0 flex-1">
-                  <button type="button" onClick={() => setReading(n)} className="line-clamp-2 text-left text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]">{n.headline}</button>
+                  <button type="button" onClick={() => setReading(n)} className="block w-full text-left text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]"><span className="line-clamp-2">{n.headline}</span></button>
                   <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px]">
                     <button type="button" onClick={() => openPlayer(n.player)} className="min-w-0 truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
                     <span className="flex-shrink-0"><PositionBadge position={n.player?.pos} /></span>

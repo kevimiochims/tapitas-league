@@ -725,8 +725,10 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   ]
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-stretch justify-center bg-black/55 p-0 sm:items-center sm:p-5" onClick={onClose}>
-      <div className="flex h-full w-full max-w-5xl flex-col overflow-hidden bg-[#EDEEF0] shadow-xl sm:h-auto sm:max-h-[92vh] sm:rounded-xl" onClick={e => e.stopPropagation()}>
+    // Também no celular é um pop-up: margem em volta e cantos arredondados,
+    // com o fundo escurecido aparecendo
+    <div className="fixed inset-0 z-[100] flex items-stretch justify-center bg-black/55 px-3 pb-3 pt-10 sm:items-center sm:p-5" onClick={onClose}>
+      <div className="flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-[#EDEEF0] shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-xl" onClick={e => e.stopPropagation()}>
 
         {/* Cabeçalho (mesmo azul do bloco da marca no header do site) */}
         <div className="flex-shrink-0 bg-[#02275F] text-white">

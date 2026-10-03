@@ -1076,7 +1076,7 @@ export default function TeamsPage() {
         .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
       <Header />
-      <section className="mx-auto w-full max-w-[1400px] px-0 pb-6 pt-0 sm:px-2 lg:px-4">
+      <section className="mx-auto w-full max-w-[1400px] px-2.5 pb-6 pt-0 sm:px-2 lg:px-4">
         {loading ? (
           <PageSkeleton />
         ) : content}
