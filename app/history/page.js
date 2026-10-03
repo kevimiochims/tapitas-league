@@ -695,7 +695,7 @@ export default function HistoryPage() {
       {selected.topScorer && (
         <button
           type="button"
-          onClick={() => setProfile({ name: selected.topScorer.name, team: selected.topScorer.team })}
+          onClick={() => setProfile({ name: selected.topScorer.name, team: selected.topScorer.team, season: selected.season })}
           className="group relative mx-3 mt-3 block w-[calc(100%-1.5rem)] overflow-hidden rounded-xl text-left text-white lg:mx-4 lg:w-[calc(100%-2rem)]"
         >
           <BrandBackdrop />
@@ -715,8 +715,8 @@ export default function HistoryPage() {
         <StatRow onClick={() => setView('unicorn')} left={<TeamLogo name={selected.unicorn} size={28} />} eyebrow="🦄 Unicorn" title={selected.unicorn || '—'} subtitle={`Reg. season ${stageRecord(selected.unicorn, 'reg season')} · Consolation ${stageRecord(selected.unicorn, 'consolation')}`} />
       </CardGroup>
       <CardGroup label="Player dominance">
-        {playerRow('Most points', selected.topScorer, selected.topScorer?.total.toFixed(1), () => setProfile({ name: selected.topScorer.name, team: selected.topScorer.team }))}
-        {playerRow('Best average (6+ starts)', selected.topAverage, selected.topAverage ? (selected.topAverage.total / selected.topAverage.starts).toFixed(2) : null, () => setProfile({ name: selected.topAverage.name, team: selected.topAverage.team }))}
+        {playerRow('Most points', selected.topScorer, selected.topScorer?.total.toFixed(1), () => setProfile({ name: selected.topScorer.name, team: selected.topScorer.team, season: selected.season }))}
+        {playerRow('Best average (6+ starts)', selected.topAverage, selected.topAverage ? (selected.topAverage.total / selected.topAverage.starts).toFixed(2) : null, () => setProfile({ name: selected.topAverage.name, team: selected.topAverage.team, season: selected.season }))}
         {selected.bestPlayerGame && (
           <StatRow href={selected.bestPlayerGame.href} left={<PlayerPhoto playerId={playerInfo(selected.bestPlayerGame.name)?.playerId} name={selected.bestPlayerGame.name} />} eyebrow="Best single game" title={selected.bestPlayerGame.name} subtitle={`${selected.bestPlayerGame.team} vs ${selected.bestPlayerGame.opp} · Wk ${selected.bestPlayerGame.week}`} value={selected.bestPlayerGame.pts.toFixed(2)} valueClass="text-[#1E8E3E]" />
         )}
@@ -813,13 +813,14 @@ export default function HistoryPage() {
 
       {profile && (
         <PlayerProfileModal
-          key={`${profile.name}|${profile.team}`}
+          key={`${profile.name}|${profile.team}|${profile.season || ""}`}
           rawName={profile.name}
           displayName={profile.name}
           position={playerInfo(profile.name)?.pos}
           playerId={playerInfo(profile.name)?.playerId}
           games={games}
           initialTeams={[profile.team]}
+          initialSeasons={profile.season ? [profile.season] : undefined}
           onClose={closeProfile}
         />
       )}

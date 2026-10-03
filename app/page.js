@@ -2303,6 +2303,7 @@ export default function TapitasLeagueHomepage() {
           playerId={selectedPerformer.data?.playerId}
           games={gameFactsData}
           initialTeams={[selectedPerformer.team]}
+          initialSeasons={selectedPerformer.season ? [String(selectedPerformer.season)] : undefined}
           matchup={{ season: selectedPerformer.season, week: selectedPerformer.week, team: selectedPerformer.team, opponent: selectedPerformer.opponent }}
           onClose={closePerformer}
         />

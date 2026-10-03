@@ -232,6 +232,8 @@ function PowerRankingsPageContent() {
     return () => { cancelled = true }
   }, [season, week])
   const cardsRef = useRef(null)
+  // Read more / Show less abre ou fecha o texto de todos os cards juntos
+  const [notesOpen, setNotesOpen] = useState(false)
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
   const historyRefs = useRef({})
@@ -1023,7 +1025,9 @@ function PowerRankingsPageContent() {
                     </button>
                   ))}
                 </div>
-                <div ref={cardsRef} className="scroll-hide flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-3 px-3 lg:scroll-px-4 lg:px-4">
+                {/* Celular: um card por vez (carrossel, sem pedaço do próximo);
+                    telas maiores: vários lado a lado */}
+                <div ref={cardsRef} className="scroll-hide flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-3 px-3 pb-1 lg:scroll-px-4 lg:px-4">
                   {rankings.map(t => {
                     const tier = tierOf(t.rank)
                     const nextOpp = getNextOpponentData(t.team)
@@ -1051,7 +1055,7 @@ function PowerRankingsPageContent() {
                       star = { id: auto.playerId, name: auto.player, label: info?.short || auto.player, pts: auto.pts }
                     }
                     return (
-                      <div key={t.team} data-card={t.team} className="w-[86%] max-w-[380px] flex-shrink-0 snap-start sm:w-[340px]">
+                      <div key={t.team} data-card={t.team} className="w-full flex-shrink-0 snap-center snap-always sm:w-[340px] sm:snap-start">
                         <PowerCard
                           team={t}
                           next={nextOpp}
@@ -1066,6 +1070,8 @@ function PowerRankingsPageContent() {
                           credit={(!liveBetter && saved?.src) ? (saved.credit || '') : (auto?.credit || '')}
                           season={season}
                           week={week}
+                          expanded={notesOpen}
+                          onToggleExpanded={() => setNotesOpen(o => !o)}
                         />
                       </div>
                     )

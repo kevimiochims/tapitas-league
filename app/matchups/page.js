@@ -2437,6 +2437,7 @@ function MatchupsPageContent() {
               return null
             })()}
             initialTeams={[selectedPlayerProfile.team]}
+            initialSeasons={selectedPlayerProfile.season ? [String(selectedPlayerProfile.season)] : undefined}
             matchup={{
               season: selectedPlayerProfile.season,
               week: selectedPlayerProfile.week,

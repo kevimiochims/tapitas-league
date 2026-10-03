@@ -50,6 +50,21 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
     .filter(Boolean)
   const teamCount = team === 'All' ? state.news.length : state.news.filter(n => playersOf(n).some(p => p.fantasyTeam === team)).length
   const { visible, totalPages, pagerProps, listProps } = usePager(news, initialLimit, `${team}|${filter}`)
+
+  // Notícias sem foto: foto de jogo do jogador (Drive → ESPN → Commons), buscada
+  // só para as linhas visíveis; enquanto não chega, fica o recorte do jogador
+  const [playerPhotos, setPlayerPhotos] = useState({})
+  const missingIds = visible.filter(n => !n.image && n.player?.id && !(n.player.id in playerPhotos)).map(n => n.player.id)
+  const missingKey = Array.from(new Set(missingIds)).join(',')
+  useEffect(() => {
+    if (!missingKey) return
+    let cancelled = false
+    fetch(`/api/nfl/player-photos?ids=${missingKey}`)
+      .then(r => (r.ok ? r.json() : {}))
+      .then(map => { if (!cancelled) setPlayerPhotos(prev => ({ ...prev, ...Object.fromEntries(missingKey.split(',').map(id => [id, map?.[id] || null])) })) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [missingKey])
   if (state.failed) return null
 
   return (
@@ -86,7 +101,9 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
                   <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="relative flex-shrink-0" aria-label={n.player?.name}>
                     {n.image
                       ? <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
-                      : <PlayerTile id={n.player.id} name={n.player.name} />}
+                      : playerPhotos[n.player.id]?.url
+                        ? <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><img src={playerPhotos[n.player.id].url} alt={n.player.name || ''} className="h-full w-full object-cover object-[50%_25%]" /></span>
+                        : <PlayerTile id={n.player.id} name={n.player.name} />}
                   </button>
                 )}
                 <div className="min-w-0 flex-1">

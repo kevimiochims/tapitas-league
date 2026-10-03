@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import { BrandBackdrop, TeamLogo, StreakBadge, getTeamAbbr } from './ui'
@@ -13,12 +12,13 @@ import PlayerCutout from './PlayerCutout'
 const matchupLink = (season, week, team, opp) =>
   `/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}&team=${encodeURIComponent(team)}&opp=${encodeURIComponent(opp)}`
 
-export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, markdownComponents, history = [], totalTeams = 10, photo = null, credit = '', season, week }) {
-  const [open, setOpen] = useState(false)
+export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, markdownComponents, history = [], totalTeams = 10, photo = null, credit = '', season, week, expanded = false, onToggleExpanded }) {
+  // Read more / Show less vale para todos os cards (estado vem da página)
+  const open = expanded
   const up = team.delta > 0
   const down = team.delta < 0
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-[#E6E8EB]">
+    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#E6E8EB] bg-white">
       {/* Foto: destaque do time na semana sobre o fundo da marca */}
       <div className="relative h-[210px] overflow-hidden text-white sm:h-[230px]">
         <BrandBackdrop />
@@ -74,7 +74,7 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
           <div className={open ? '' : 'line-clamp-5'}>
             <ReactMarkdown components={markdownComponents}>{team.note}</ReactMarkdown>
           </div>
-          <button type="button" onClick={() => setOpen(o => !o)} className="mt-1 text-[12px] font-semibold text-[#1D5FD1] hover:underline">
+          <button type="button" onClick={() => onToggleExpanded?.()} className="mt-1 text-[12px] font-semibold text-[#1D5FD1] hover:underline">
             {open ? 'Show less' : 'Read more'}
           </button>
         </div>

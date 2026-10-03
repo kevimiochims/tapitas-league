@@ -404,9 +404,10 @@ const DEFAULT_SORT = { key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: '
  * @param playerId    id do Sleeper, resolvido por cada página com o próprio lookup
  * @param games       linhas do GAME_FACTS_ALL
  * @param initialTeams franquias pré-selecionadas (padrão: todas em que ele jogou)
+ * @param initialSeasons temporadas pré-selecionadas (ex.: aberto como MVP de 2023)
  * @param matchup     { season, week, team, opponent } quando aberto de um confronto
  */
-export default function PlayerProfileModal({ rawName, displayName, position, playerId, games, initialTeams, matchup, initialTab, liveGame, onClose }) {
+export default function PlayerProfileModal({ rawName, displayName, position, playerId, games, initialTeams, initialSeasons, matchup, initialTab, liveGame, onClose }) {
   const pos = String(position || '').toUpperCase()
   const [sleeperInfo, setSleeperInfo] = useState(null)
   const [weeklyStats, setWeeklyStats] = useState(null)
@@ -459,6 +460,24 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const [selectedTeams, setSelectedTeams] = useState(() => (initialTeams && initialTeams.length ? initialTeams : null))
   const activeTeams = selectedTeams || clubs.map(c => c.team)
   const activeTeamKeys = new Set(activeTeams.map(normalizeTeamName))
+
+  // Temporadas: só as das franquias selecionadas. "Todas" por padrão, ou a do
+  // contexto em que o perfil foi aberto (ex.: MVP da temporada na History)
+  const availableSeasons = Array.from(new Set(clubs.filter(c => activeTeamKeys.has(normalizeTeamName(c.team))).flatMap(c => c.seasons)))
+    .sort((a, b) => Number(a) - Number(b))
+  const [selectedSeasons, setSelectedSeasons] = useState(() => (initialSeasons && initialSeasons.length ? initialSeasons.map(String) : null))
+  const chosenSeasons = (selectedSeasons || []).filter(s => availableSeasons.includes(s))
+  const activeSeasons = chosenSeasons.length ? chosenSeasons : availableSeasons
+  const allSeasons = activeSeasons.length === availableSeasons.length
+  const activeSeasonSet = new Set(activeSeasons)
+  // Com todas marcadas, tocar numa temporada mostra só ela; depois cada toque
+  // liga/desliga (sempre fica pelo menos uma)
+  const toggleSeason = season => setSelectedSeasons(() => {
+    if (allSeasons) return [season]
+    if (activeSeasonSet.has(season)) return activeSeasons.length === 1 ? null : activeSeasons.filter(s => s !== season)
+    const next = [...activeSeasons, season]
+    return next.length === availableSeasons.length ? null : next
+  })
 
   const toggleTeam = team => setSelectedTeams(() => {
     const cur = activeTeams
@@ -567,6 +586,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     const team = String(g?.Team || '').trim()
     if (!activeTeamKeys.has(normalizeTeamName(team))) return []
     const season = String(g?.Season || '').trim()
+    if (!activeSeasonSet.has(season)) return []
     const week = String(g?.Week || '').trim()
     const opponent = String(g?.Opponent || '').trim()
     const doubleWeek = isDoubleWeekValue(week)
@@ -757,6 +777,21 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
               )
             })}
           </div>
+          {/* Temporadas das franquias selecionadas */}
+          {availableSeasons.length > 1 && (
+            <div className="scroll-hide mt-1.5 flex items-center gap-1 overflow-x-auto">
+              <span className="mr-0.5 flex-shrink-0 text-[11px] font-medium text-[#6B7280]">Season</span>
+              <button type="button" onClick={() => setSelectedSeasons(null)} className={`h-6 flex-shrink-0 rounded-full px-2.5 text-[11px] transition-colors ${allSeasons ? 'bg-[#02275F] font-semibold text-white' : 'bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]'}`}>All</button>
+              {availableSeasons.map(season => {
+                const on = !allSeasons && activeSeasonSet.has(season)
+                return (
+                  <button key={season} type="button" onClick={() => toggleSeason(season)} className={`h-6 flex-shrink-0 rounded-full px-2.5 text-[11px] tabular-nums transition-colors ${on ? 'bg-[#02275F] font-semibold text-white' : 'bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]'}`}>
+                    {season}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Abas (também no desktop) */}
