@@ -694,16 +694,22 @@ export function BrandBackdrop({ tone = 'navy' }) {
 
 // Pódio do top 3 (2º, 1º, 3º) para usar sobre o BrandBackdrop.
 // rows: [{ team, rank }] já ordenados do 1º ao 3º.
-export function Podium({ rows, compact = false }) {
+// size: 'full' (padrão), 'compact' ou 'mini' (hero no celular, ao lado do texto)
+export function Podium({ rows, compact = false, mini = false }) {
   if (!rows || rows.length < 3) return null
+  const S = mini
+    ? { col: 'w-[44px]', gap: 'gap-1', logo: [30, 24], h: ['h-[88px]', 'h-[66px]', 'h-[48px]'], text: 'text-[17px] pt-1.5' }
+    : compact
+      ? { col: 'w-[58px]', gap: 'gap-1.5', logo: [38, 30], h: ['h-[70px]', 'h-[52px]', 'h-[38px]'], text: 'text-[20px] pt-1.5' }
+      : { col: 'w-[66px] xl:w-[76px]', gap: 'gap-1.5', logo: [44, 36], h: ['h-[88px]', 'h-[64px]', 'h-[46px]'], text: 'text-[20px] pt-1.5' }
   return (
-    <div className="flex items-end gap-1.5">
+    <div className={`flex items-end ${S.gap}`}>
       {[rows[1], rows[0], rows[2]].map(row => {
         const first = row.rank === 1
         return (
-          <div key={row.team} className={`flex flex-col items-center ${compact ? 'w-[58px]' : 'w-[66px] xl:w-[76px]'}`}>
-            <span className={`mb-2 rounded-full bg-white p-1 shadow-lg ${first ? 'ring-2 ring-[#E8C766]' : ''}`}><TeamLogo name={row.team} size={first ? (compact ? 38 : 44) : (compact ? 30 : 36)} /></span>
-            <div className={`flex w-full items-start justify-center rounded-t-lg pt-1.5 text-[20px] font-black italic tabular-nums text-white ${first ? `${compact ? 'h-[70px]' : 'h-[88px]'} bg-white/20 text-[#E8C766]` : row.rank === 2 ? `${compact ? 'h-[52px]' : 'h-[64px]'} bg-white/[0.14]` : `${compact ? 'h-[38px]' : 'h-[46px]'} bg-white/10`}`}>{row.rank}</div>
+          <div key={row.team} className={`flex flex-col items-center ${S.col}`}>
+            <span className={`${mini ? 'mb-1.5 p-0.5' : 'mb-2 p-1'} rounded-full bg-white shadow-lg ${first ? 'ring-2 ring-[#E8C766]' : ''}`}><TeamLogo name={row.team} size={first ? S.logo[0] : S.logo[1]} /></span>
+            <div className={`flex w-full items-start justify-center rounded-t-lg font-black italic tabular-nums text-white ${S.text} ${first ? `${S.h[0]} bg-white/20 text-[#E8C766]` : row.rank === 2 ? `${S.h[1]} bg-white/[0.14]` : `${S.h[2]} bg-white/10`}`}>{row.rank}</div>
           </div>
         )
       })}

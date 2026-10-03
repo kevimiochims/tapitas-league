@@ -1519,6 +1519,12 @@ function MatchupsPageContent() {
           </div>
         )
       })}
+      <a
+        href={`/stats?tab=standings&season=${encodeURIComponent(season)}`}
+        className="block border-t border-[#E6E8EB] px-3 py-3 text-center lg:py-4 text-[13px] font-medium text-[#1D5FD1] hover:underline"
+      >
+        Full Standings
+      </a>
     </>
   )
 

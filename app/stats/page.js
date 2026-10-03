@@ -294,7 +294,11 @@ function StatsPageContent() {
     return ['overview', 'standings', 'evolution', 'games'].includes(t) ? t : 'overview'
   })
   const [tab, setTab] = useState('Overall')
-  const [season, setSeason] = useState('All-Time')
+  // ?season=2025 (ex.: vindo do Full Standings da Matchups) já abre na temporada
+  const [season, setSeason] = useState(() => {
+    const s = searchParams.get('season')
+    return /^\d{4}$/.test(String(s || '')) ? s : 'All-Time'
+  })
   const [chartTeam, setChartTeam] = useState('Moneyball')
   // Time em foco (filtro geral): destacado nos gráficos e tabelas e já
   // escolhido no Team Evolution e no filtro de time do Game Log

@@ -13,7 +13,7 @@ import {
   ChevronDown,
   Star,
 } from 'lucide-react'
-import { BrandBackdrop, Podium, SummaryButton, PageShell, CardShell, CardGroup, StatRow, ResultBadge, StreakBadge, TeamLogo } from '../components/ui'
+import { BrandBackdrop, Podium, SummaryButton, PageShell, CardShell, CardGroup, StatRow, ResultBadge, StreakBadge, TeamLogo, getTeamAbbr } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 
@@ -213,6 +213,8 @@ function PowerRankingsPageContent() {
   const [season, setSeason] = useState('')
   const [week, setWeek] = useState('')
   const [expanded, setExpanded] = useState(null)
+  // Celular: uma aba por vez (no desktop os três cards aparecem juntos)
+  const [mobileTab, setMobileTab] = useState('rankings')
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
   const historyRefs = useRef({})
@@ -846,7 +848,7 @@ function PowerRankingsPageContent() {
   }
 
   const moversCard = rankings.length > 0 && (
-    <CardShell title="This week" subtitle={`${season} · Week ${week}`} sidebar>
+    <CardShell title="This week" subtitle={`${season} · Week ${week}`} sidebar className={mobileTab === 'highlights' ? '' : 'hidden lg:block'}>
       {risers.length > 0 && (
         <CardGroup label="Biggest risers" first>
           {risers.map(t => (
@@ -902,11 +904,10 @@ function PowerRankingsPageContent() {
         return (
           <div className="relative mb-2 overflow-hidden rounded-xl text-white">
             <BrandBackdrop />
-            <div className="relative flex min-h-[176px] items-stretch gap-4 px-4 pt-4 sm:px-6 sm:pt-5">
+            <div className="relative flex min-h-[176px] items-stretch gap-3 px-4 pt-4 sm:gap-4 sm:px-6 sm:pt-5">
               <div className="min-w-0 flex-1 pb-4 sm:pb-5">
                 <div className="text-[12px] font-medium text-white/70">{season} · Week {week} · Power Rankings</div>
                 <div className="mt-2 flex min-w-0 items-center gap-3">
-                  <span className="flex-shrink-0 rounded-full bg-white p-1 shadow-lg sm:hidden"><TeamLogo name={leader.team} size={40} /></span>
                   <div className="min-w-0">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#E8C766]">#1 this week</div>
                     <h1 className="truncate text-[26px] font-bold leading-tight tracking-tight sm:text-[34px]">{leader.team}</h1>
@@ -917,19 +918,37 @@ function PowerRankingsPageContent() {
                   {leader.delta > 0 ? ` · ▲ ${leader.delta}` : leader.delta < 0 ? ` · ▼ ${Math.abs(leader.delta)}` : ' · holds the top spot'}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {riser && <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[12px]"><span className="text-white/70">Biggest riser</span><TeamLogo name={riser.team} size={14} /><span className="font-semibold">{riser.team}</span><span className="text-[#7FD18A]">▲ {riser.delta}</span></span>}
-                  {topScorer && <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[12px]"><span className="text-white/70">Week high</span><TeamLogo name={topScorer.team} size={14} /><span className="font-semibold">{topScorer.team}</span><span className="tabular-nums text-[#E8C766]">{topScorer.pf.toFixed(2)}</span></span>}
+                  {riser && <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[12px]"><span className="text-white/70"><span className="sm:hidden">Riser</span><span className="hidden sm:inline">Biggest riser</span></span><TeamLogo name={riser.team} size={14} /><span className="font-semibold"><span className="sm:hidden">{getTeamAbbr(riser.team)}</span><span className="hidden sm:inline">{riser.team}</span></span><span className="text-[#7FD18A]">▲ {riser.delta}</span></span>}
+                  {topScorer && <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[12px]"><span className="text-white/70">Week high</span><TeamLogo name={topScorer.team} size={14} /><span className="font-semibold"><span className="sm:hidden">{getTeamAbbr(topScorer.team)}</span><span className="hidden sm:inline">{topScorer.team}</span></span><span className="tabular-nums text-[#E8C766]">{topScorer.pf.toFixed(2)}</span></span>}
                 </div>
               </div>
+              {/* Pódio do top 3 à direita: menor no celular, para caber ao lado do texto */}
+              <div className="flex-shrink-0 self-end sm:hidden"><Podium rows={rankings.slice(0, 3)} mini /></div>
               <div className="hidden flex-shrink-0 self-end sm:block"><Podium rows={rankings.slice(0, 3)} /></div>
             </div>
           </div>
         )
       })()}
 
+      {/* Abas no celular: Rankings, Highlights (This week) e Season (Season race) */}
+      {rankings.length > 0 && (
+        <div className="mb-2 flex overflow-hidden rounded-xl bg-white lg:hidden">
+          {[['rankings', 'Rankings'], ['highlights', 'Highlights'], raceSeries.length > 0 && ['season', 'Season']].filter(Boolean).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setMobileTab(key)}
+              className={`flex-1 border-b-2 px-2 py-2.5 text-[13px] transition-colors ${mobileTab === key ? 'border-[#D01F2D] font-semibold text-[#111]' : 'border-transparent text-[#6B7280]'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div data-sticky-cols className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-5">
         <div className="min-w-0">
-          <CardShell title="Power Rankings" subtitle={`${season} · Week ${week} · tap a team for details`}>
+          <CardShell title="Power Rankings" subtitle={`${season} · Week ${week} · tap a team for details`} className={mobileTab === 'rankings' ? '' : 'hidden lg:block'}>
             <div>
               {rankings.map((team, ti) => {
                 const tier = tierOf(team.rank)
@@ -1070,7 +1089,7 @@ function PowerRankingsPageContent() {
         </div>
         <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC]">
           {raceSeries.length > 0 && (
-            <CardShell title="Season race" subtitle={`${season} · rank week by week · tap a line`} sidebar>
+            <CardShell title="Season race" subtitle={`${season} · rank week by week · tap a line`} sidebar className={mobileTab === 'season' ? '' : 'hidden lg:block'}>
               <div className="px-2 pb-3 pt-3 lg:px-3">
                 <BumpChart weeks={raceWeeks} series={raceSeries} active={expanded || teamFocus} onPick={team => setExpanded(team)} />
               </div>
