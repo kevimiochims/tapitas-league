@@ -33,9 +33,22 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
   // Mesmos filtros do Injury report: titulares/todos e franquia
   const [team, setTeam] = useFocusFilter('All')
   const [filter, setFilter] = useState('all')
-  const teams = Array.from(new Set(state.news.map(n => n.player?.fantasyTeam).filter(Boolean))).sort((a, b) => a.localeCompare(b))
-  const byTeam = team === 'All' ? state.news : state.news.filter(n => n.player?.fantasyTeam === team)
-  const news = filter === 'starters' ? byTeam.filter(n => n.player?.starter) : byTeam
+  // Uma notícia pode citar vários jogadores da liga (ex.: relatório de lesões):
+  // ela entra no filtro de todos os times envolvidos, e o jogador mostrado é o
+  // do time filtrado (ou o primeiro citado); os outros viram logos ao lado
+  const playersOf = n => (n.players?.length ? n.players : [n.player]).filter(Boolean)
+  const teams = Array.from(new Set(state.news.flatMap(n => playersOf(n).map(p => p.fantasyTeam)).filter(Boolean))).sort((a, b) => a.localeCompare(b))
+  const news = state.news
+    .map(n => {
+      const all = playersOf(n)
+      const inTeam = team === 'All' ? all : all.filter(p => p.fantasyTeam === team)
+      const pool = filter === 'starters' ? inTeam.filter(p => p.starter) : inTeam
+      if (!pool.length) return null
+      const main = pool[0]
+      return { ...n, player: main, others: all.filter(p => p !== main) }
+    })
+    .filter(Boolean)
+  const teamCount = team === 'All' ? state.news.length : state.news.filter(n => playersOf(n).some(p => p.fantasyTeam === team)).length
   const { visible, totalPages, pagerProps, listProps } = usePager(news, initialLimit, `${team}|${filter}`)
   if (state.failed) return null
 
@@ -49,7 +62,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
       {!state.loading && (
         <div className="flex items-center gap-1.5 px-3 pb-1 pt-2.5 lg:px-4">
           <ToggleChip active={filter === 'starters'} onClick={() => setFilter('starters')}>Starters</ToggleChip>
-          <ToggleChip active={filter === 'all'} onClick={() => setFilter('all')}>All ({byTeam.length})</ToggleChip>
+          <ToggleChip active={filter === 'all'} onClick={() => setFilter('all')}>All ({teamCount})</ToggleChip>
           {teams.length > 0 && <div className="ml-auto min-w-0"><FilterPill value={team} onChange={setTeam} options={['All', ...teams]} label="Team" allLabel="All teams" align="right" /></div>}
         </div>
       )}
@@ -84,6 +97,15 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
                     <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
                     <PositionBadge position={n.player?.pos} />
                     {n.player?.fantasyTeam && <TeamLogo name={n.player.fantasyTeam} size={14} />}
+                    {n.others?.length > 0 && (
+                      // Outros jogadores da liga na notícia: só os logos dos times, sobrepostos
+                      <span className="flex flex-shrink-0 items-center rounded-full bg-[#F1F2F4] py-px pl-0.5 pr-1" title={n.others.map(p => `${p.name} (${p.fantasyTeam})`).join(', ')}>
+                        {n.others.slice(0, 3).map((p, i) => (
+                          <span key={p.id || p.name} className={`rounded-full bg-white ring-1 ring-white ${i ? '-ml-1' : ''}`}><TeamLogo name={p.fantasyTeam} size={12} /></span>
+                        ))}
+                        <span className="ml-0.5 text-[10px] font-semibold text-[#6B7280]">+{n.others.length}</span>
+                      </span>
+                    )}
                     <span className="ml-auto flex-shrink-0">{[n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')}</span>
                   </div>
                 </div>

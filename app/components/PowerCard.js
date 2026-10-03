@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import { BrandBackdrop, TeamLogo, StreakBadge, getTeamAbbr } from './ui'
 import PlayerCutout from './PlayerCutout'
@@ -9,7 +10,10 @@ import PlayerCutout from './PlayerCutout'
 // topo com a posição, nome do time, campanha, subida/queda, o texto da semana
 // e, embaixo, média de pontos, próximo adversário e retrospecto contra ele.
 // A foto é o recorte do destaque do time na semana (maior pontuador).
-export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, markdownComponents, history = [], totalTeams = 10, photo = null }) {
+const matchupLink = (season, week, team, opp) =>
+  `/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}&team=${encodeURIComponent(team)}&opp=${encodeURIComponent(opp)}`
+
+export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, markdownComponents, history = [], totalTeams = 10, photo = null, season, week }) {
   const [open, setOpen] = useState(false)
   const up = team.delta > 0
   const down = team.delta < 0
@@ -54,7 +58,9 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
         <div className="mt-1 flex items-center gap-2 text-[12px] text-[#6B7280]">
           {team.streak && <StreakBadge streak={team.streak} />}
           <span>Last week: <span className="font-semibold text-[#111]">{prevRank ? `#${prevRank}` : '–'}</span></span>
-          <span className="ml-auto whitespace-nowrap">This week: <span className={`font-semibold ${team.result === 'W' ? 'text-[#1E8E3E]' : team.result === 'L' ? 'text-[#D01F2D]' : 'text-[#111]'}`}>{team.result || '–'}</span> vs {getTeamAbbr(team.opponent) || team.opponent}</span>
+          {team.opponent ? (
+            <Link href={matchupLink(season, week, team.team, team.opponent)} className="ml-auto whitespace-nowrap hover:text-[#1D5FD1] hover:underline">This week: <span className={`font-semibold ${team.result === 'W' ? 'text-[#1E8E3E]' : team.result === 'L' ? 'text-[#D01F2D]' : 'text-[#111]'}`}>{team.result || '–'}</span> vs {getTeamAbbr(team.opponent) || team.opponent}</Link>
+          ) : <span className="ml-auto whitespace-nowrap">This week: <span className={`font-semibold ${team.result === 'W' ? 'text-[#1E8E3E]' : team.result === 'L' ? 'text-[#D01F2D]' : 'text-[#111]'}`}>{team.result || '–'}</span> vs {getTeamAbbr(team.opponent) || team.opponent}</span>}
         </div>
       </div>
 
@@ -79,23 +85,35 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
           <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">PPG</div>
           <div className="mt-0.5 text-[14px] font-bold tabular-nums text-[#111]">{team.avgPF.toFixed(1)} <span className="text-[11px] font-medium text-[#9CA3AF]">#{team.avgRank}</span></div>
         </div>
-        <div className="border-l border-[#EEF0F2] px-1 py-2.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">Next</div>
-          {next ? (
+        {next ? (
+          <Link href={matchupLink(season, next.week, team.team, next.team)} className="border-l border-[#EEF0F2] px-1 py-2.5 transition-colors hover:bg-[#F6F7F9]">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">Next</div>
             <div className="mt-0.5 flex items-center justify-center gap-1 text-[14px] font-bold text-[#111]">
               <TeamLogo name={next.team} size={16} />{getTeamAbbr(next.team) || next.team}
               <span className="text-[11px] font-medium tabular-nums text-[#9CA3AF]">({next.wins}-{next.losses})</span>
             </div>
-          ) : <div className="mt-0.5 text-[14px] font-bold text-[#9CA3AF]">–</div>}
-        </div>
-        <div className="border-l border-[#EEF0F2] px-1 py-2.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">H2H</div>
-          {h2h && h2h.aWins + h2h.bWins > 0 ? (
-            <div className="mt-0.5 flex items-center justify-center gap-1 text-[14px] font-bold tabular-nums text-[#111]">
-              {h2h.aWins}-{h2h.bWins} <StreakBadge streak={h2h.streak} />
-            </div>
-          ) : <div className="mt-0.5 text-[12px] font-medium text-[#9CA3AF]">{next ? 'First meeting' : '–'}</div>}
-        </div>
+          </Link>
+        ) : (
+          <div className="border-l border-[#EEF0F2] px-1 py-2.5">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">Next</div>
+            <div className="mt-0.5 text-[14px] font-bold text-[#9CA3AF]">–</div>
+          </div>
+        )}
+        {next ? (
+          <Link href={`/rivalries?teamA=${encodeURIComponent(team.team)}&teamB=${encodeURIComponent(next.team)}`} className="border-l border-[#EEF0F2] px-1 py-2.5 transition-colors hover:bg-[#F6F7F9]">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">H2H</div>
+            {h2h && h2h.aWins + h2h.bWins > 0 ? (
+              <div className="mt-0.5 flex items-center justify-center gap-1 text-[14px] font-bold tabular-nums text-[#111]">
+                {h2h.aWins}-{h2h.bWins} <StreakBadge streak={h2h.streak} />
+              </div>
+            ) : <div className="mt-0.5 text-[12px] font-medium text-[#9CA3AF]">First meeting</div>}
+          </Link>
+        ) : (
+          <div className="border-l border-[#EEF0F2] px-1 py-2.5">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">H2H</div>
+            <div className="mt-0.5 text-[12px] font-medium text-[#9CA3AF]">–</div>
+          </div>
+        )}
       </div>
     </article>
   )

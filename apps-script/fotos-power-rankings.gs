@@ -34,6 +34,8 @@
 //     que guarda as fotos da semana mais recente do Power Rankings.
 //   - Rode salvaFotosTemporadaPR() uma vez para guardar também as semanas
 //     já jogadas da temporada atual (enquanto a ESPN ainda tem as fotos).
+// Uma foto automática já guardada só é trocada se aparecer foto de um jogador
+// do time que pontuou mais naquela semana; foto do Form nunca é trocada.
 // Precisa da propriedade SITE_URL (a mesma usada pelos recaps).
 // =============================================================================
 
@@ -158,20 +160,34 @@ function salvaFotosAutomaticasPR(season, week) {
 
   const sheet = abaFotosPR_(ss);
   const values = sheet.getDataRange().getValues();
-  const jaTem = new Set(values.slice(1).map(r => [String(r[0]).trim(), String(r[1]).trim(), String(r[2]).trim()].join('|')));
+  // Linha existente de cada time nesta semana (a última vale)
+  const existentes = {};
+  values.slice(1).forEach((r, i) => {
+    if (String(r[0]).trim() !== String(season) || String(r[1]).trim() !== String(week)) return;
+    existentes[String(r[2]).trim()] = { linha: i + 2, fonte: String(r[6] || '').trim().toLowerCase(), fileId: String(r[3] || ''), pts: Number(String(r[9] || '0').replace(',', '.')) || 0 };
+  });
   const pasta = pastaFotosPR_();
   let salvas = 0;
 
   Object.keys(fotos).forEach(team => {
     const f = fotos[team];
-    const key = [String(season), String(week), team].join('|');
-    if (!f || !f.url || jaTem.has(key)) return; // já guardada (ou foto do Form)
+    if (!f || !f.url) return;
+    const atual = existentes[team];
+    // Foto do Form nunca é trocada. Automática só é trocada por foto de um
+    // jogador que pontuou mais (a regra do site é: maior pontuador do time)
+    if (atual && (atual.fonte !== 'auto' || !(Number(f.pts) > atual.pts + 0.001))) return;
     try {
       const blob = UrlFetchApp.fetch(f.url).getBlob()
         .setName(`${season}-W${week}-${team} - ${f.player || 'foto'}.jpg`);
       const file = pasta.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      sheet.appendRow([String(season), String(week), team, file.getId(), f.url, new Date(), 'auto', f.player || '', f.playerId || '', f.pts || '']);
+      const linha = [String(season), String(week), team, file.getId(), f.url, new Date(), 'auto', f.player || '', f.playerId || '', f.pts || ''];
+      if (atual) {
+        sheet.getRange(atual.linha, 1, 1, linha.length).setValues([linha]);
+        try { DriveApp.getFileById(atual.fileId).setTrashed(true); } catch (e) {}
+      } else {
+        sheet.appendRow(linha);
+      }
       salvas++;
     } catch (err) {
       Logger.log(`[FOTOS PR] Falhou ${team}: ${err}`);

@@ -11,7 +11,7 @@ import { getRssNews, matchNewsToPlayers } from './rssNews'
 const normalizeHeadline = h => String(h || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80)
 
 export function getLeagueNews() {
-  return cached('league:news', 900, async () => {
+  return cached('league:news:v2', 900, async () => {
     const [rosters, players] = await Promise.all([getLeagueRosters(), getSleeperPlayers()])
 
     const byEspn = new Map()
@@ -24,20 +24,30 @@ export function getLeagueNews() {
       else if (!byEspn.has(info.espnId)) byEspn.set(info.espnId, entry)
     }))
 
+    // Cada notícia guarda todos os jogadores da liga citados nela (`players`;
+    // `player` é o primeiro), para aparecer no filtro de todos os times envolvidos
     const items = new Map()
-    const add = (n, player) => {
+    const add = (n, list) => {
       const key = normalizeHeadline(n.headline)
-      if (!items.has(key)) items.set(key, { ...n, athleteIds: undefined, player })
+      const players = (Array.isArray(list) ? list : [list]).filter(Boolean)
+      if (!players.length) return
+      const prev = items.get(key)
+      if (prev) {
+        players.forEach(p => { if (!prev.players.some(x => x.id === p.id)) prev.players.push(p) })
+        return
+      }
+      items.set(key, { ...n, athleteIds: undefined, player: players[0], players: players.slice() })
     }
 
     const feed = await getFantasyNewsFeed().catch(err => { console.error('[league-news] feed', err.message); return [] })
-    feed.forEach(n => {
-      const id = n.athleteIds.find(a => byEspn.has(a))
-      if (id) add(n, byEspn.get(id))
-    })
+    feed.forEach(n => add(n, n.athleteIds.filter(a => byEspn.has(a)).map(a => byEspn.get(a))))
 
+    // RSS: pelos nomes no título e no resumo; o feed da ESPN também passa por
+    // aqui para achar quem é citado no texto além dos atletas marcados
+    const allPlayers = Array.from(byEspn.values()).concat(rosterPlayersWithoutEspn)
     const rss = await getRssNews().catch(() => [])
-    matchNewsToPlayers(rss, Array.from(byEspn.values()).concat(rosterPlayersWithoutEspn)).forEach(n => add(n, n.player))
+    matchNewsToPlayers(rss, allPlayers).forEach(n => add(n, n.players))
+    matchNewsToPlayers(feed, allPlayers).forEach(n => add(n, n.players))
 
     if (items.size < 8) {
       const starters = Array.from(byEspn.entries()).filter(([, p]) => p.starter).slice(0, 40)

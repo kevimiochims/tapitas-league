@@ -1787,14 +1787,14 @@ export default function TapitasLeagueHomepage() {
     {
       eyebrow: 'Your team is now on the clock',
       title: 'The Draft Day',
-      text: 'Every dynasty started with a pick. And probably a beer or two.',
+      text: 'Every dynasty started with a pick.',
       cta: { label: 'Draft history', href: '/draft' },
       image: '/images/draft.png',
     },
     {
       eyebrow: `${currentSeason || ''}${prData?.[0]?.week ? ` · Week ${prData[0].week}` : ''}`,
       title: 'Power Rankings',
-      text: prData?.length >= 3 ? `${prData[0].team} leads the league. ${prData[1].team} and ${prData[2].team} give chase.` : "Who's hot, who's not.",
+      text: prData?.length >= 3 ? `${prData[0].team} leads. ${prData[1].team} and ${prData[2].team} follow.` : "Who's hot, who's not.",
       cta: { label: 'Power rankings', href: '/powerrankings' },
       image: null,
       podium: (prData || []).slice(0, 3),

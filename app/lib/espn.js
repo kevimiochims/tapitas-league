@@ -185,17 +185,26 @@ export function getEspnIdMap() {
 // verdade (a.espncdn.com/photo) e, marcadas como `still`, quadros de vídeo
 // (a legenda é o título do vídeo). Cada foto vem com legenda e data.
 export function getPlayerPhotos(espnId) {
-  return cached(`espn:player-photos:${espnId}`, 3600, async () => {
-    const data = await fetchJson(`https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=${encodeURIComponent(espnId)}&limit=50`)
-    const list = data?.feed || data?.articles || []
+  return cached(`espn:player-photos:v2:${espnId}`, 3600, async () => {
+    const id = encodeURIComponent(espnId)
+    // Duas fontes por jogador: o feed de notícias de fantasy e as notícias da
+    // página do atleta (cada uma traz fotos que a outra não tem)
+    const [feed, overview] = await Promise.all([
+      fetchJson(`https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=${id}&limit=50`).catch(() => null),
+      fetchJson(`https://site.web.api.espn.com/apis/common/v3/sports/football/nfl/athletes/${id}/overview`).catch(() => null),
+    ])
+    const list = [...(feed?.feed || feed?.articles || []), ...(overview?.news || [])]
     const out = []
-    ;(Array.isArray(list) ? list : []).forEach(a => {
+    const seen = new Set()
+    list.forEach(a => {
       const published = Date.parse(a?.published || a?.lastModified || '') || null
       ;(a?.images || []).forEach(img => {
         const url = String(img?.url || '')
+        if (seen.has(url)) return
         const photo = /^https:\/\/a\.espncdn\.com\/photo\//.test(url)
         const still = /^https:\/\/espnmedia-cdn\.akamaized\.net\/espn\/media\//.test(url)
         if (!photo && !still) return
+        seen.add(url)
         out.push({ url, caption: String(img?.caption || img?.name || a?.headline || ''), published, width: Number(img?.width) || 0, still })
       })
     })

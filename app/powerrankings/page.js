@@ -963,7 +963,7 @@ function PowerRankingsPageContent() {
                 </div>
                 <div className="mt-1 text-[13px] text-white/80">
                   <span className="font-semibold tabular-nums text-white">{leader.wins}–{leader.losses}</span> · {leader.avgPF.toFixed(1)} pts per week
-                  {leader.delta > 0 ? ` · ▲ ${leader.delta}` : leader.delta < 0 ? ` · ▼ ${Math.abs(leader.delta)}` : ' · holds the top spot'}
+                  {leader.delta > 0 ? ` · ▲ ${leader.delta}` : leader.delta < 0 ? ` · ▼ ${Math.abs(leader.delta)}` : ' · –'}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {riser && <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[12px]"><span className="text-white/70"><span className="sm:hidden">Riser</span><span className="hidden sm:inline">Biggest riser</span></span><TeamLogo name={riser.team} size={14} /><span className="font-semibold"><span className="sm:hidden">{getTeamAbbr(riser.team)}</span><span className="hidden sm:inline">{riser.team}</span></span><span className="text-[#7FD18A]">▲ {riser.delta}</span></span>}
@@ -1042,7 +1042,10 @@ function PowerRankingsPageContent() {
                     // Drive) ou, se ainda não houver, a busca automática ao vivo
                     const saved = customPhotos.get(`${season}|${week}|${t.team}`)
                     const live = autoPhotos[`${season}|${week}`]?.[t.team]
-                    const auto = saved ? (saved.auto && saved.playerId ? { playerId: saved.playerId, player: saved.player, pts: saved.pts } : null) : live
+                    // Automática guardada perde para a busca ao vivo se esta achou foto de
+                    // quem pontuou mais (o Apps Script troca a guardada no dia seguinte)
+                    const liveBetter = saved?.auto && live?.url && live.pts > (saved.pts || 0) + 0.001
+                    const auto = saved && !liveBetter ? (saved.auto && saved.playerId ? { playerId: saved.playerId, player: saved.player, pts: saved.pts } : null) : live
                     if (auto && (!star || star.id !== auto.playerId)) {
                       const info = playerLookup.get(String(auto.player || '').toLowerCase())
                       star = { id: auto.playerId, name: auto.player, label: info?.short || auto.player, pts: auto.pts }
@@ -1059,7 +1062,9 @@ function PowerRankingsPageContent() {
                           markdownComponents={markdownComponents}
                           history={getTeamHistory(t.team).map(h => ({ week: String(h?.Week || '').trim(), rank: parseNumber(h?.['Power Ranking']) }))}
                           totalTeams={rankings.length}
-                          photo={saved?.src || auto?.url || null}
+                          photo={(!liveBetter && saved?.src) || auto?.url || null}
+                          season={season}
+                          week={week}
                         />
                       </div>
                     )

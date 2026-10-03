@@ -109,9 +109,18 @@ export function matchNewsToPlayers(items, players, { loose = false } = {}) {
     const raw = `${n.headline} ${n.description}`
     const text = ` ${normalizePlayerKey(raw)} `
     const textJoined = ` ${normalizePlayerKey(raw.replace(/['’`.-]/g, ''))} `
-    let hit = keyed.find(k => k.keys.some(key => text.includes(key) || textJoined.includes(key)))
-    if (!hit && loose) hit = keyed.find(k => k.last.length >= 5 && (text.includes(` ${k.last} `) || textJoined.includes(` ${k.last} `)))
-    if (hit) out.push({ ...n, player: hit.player })
+    // Todos os jogadores citados (ex.: relatório de lesões com vários nomes),
+    // na ordem em que aparecem no texto
+    let hits = keyed
+      .map(k => ({ k, at: Math.min(...k.keys.map(key => { const i = text.indexOf(key); const j = textJoined.indexOf(key); return Math.min(i < 0 ? Infinity : i, j < 0 ? Infinity : j) })) }))
+      .filter(h => h.at !== Infinity)
+      .sort((a, b) => a.at - b.at)
+      .map(h => h.k)
+    if (!hits.length && loose) {
+      const hit = keyed.find(k => k.last.length >= 5 && (text.includes(` ${k.last} `) || textJoined.includes(` ${k.last} `)))
+      if (hit) hits = [hit]
+    }
+    if (hits.length) out.push({ ...n, player: hits[0].player, players: hits.map(h => h.player) })
   })
   return out
 }

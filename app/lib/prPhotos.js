@@ -4,14 +4,13 @@ import { getScoreboard, getEspnIdMap, getPlayerPhotos } from './espn'
 import { getSleeperPlayers } from './sleeper'
 
 // Foto automática de cada time no card do Power Rankings, tirada das notícias
-// de fantasy da ESPN. Junta as fotos dos feeds de todos os titulares da
-// semana (a foto de um jogador muitas vezes está na notícia de outro) e, para
-// cada time, procura pelos titulares em ordem de pontos:
-// dando preferência aos 3 maiores pontuadores, a fotos publicadas na semana
-// do jogo e a legendas em que o jogador é o assunto (começa pelo nome);
-// quadros de vídeo e fotos de outras rodadas da temporada ficam por último.
-// Também devolve o destaque do time (maior pontuador, já com o ID certo
-// quando há homônimos), usado no recorte quando não há foto.
+// da ESPN (feed de fantasy e página de cada atleta). Junta as fotos de todos
+// os titulares da semana (a foto de um jogador muitas vezes está na notícia de
+// outro). Regra: a foto é do maior pontuador do time; só se não houver
+// nenhuma foto dele passa para o 2º, depois o 3º... Para cada jogador vale a
+// melhor que houver: foto da semana do jogo com ele como assunto da legenda,
+// vídeo da semana, foto da semana que só o cita, foto de outra rodada da
+// temporada. A mesma foto não se repete em dois times na mesma semana.
 
 const DAY = 24 * 3600 * 1000
 const num = v => Number(String(v ?? '').replace(',', '.')) || 0
@@ -47,7 +46,7 @@ async function mapLimit(items, limit, fn) {
 }
 
 export function getPowerRankingPhotos(season, week) {
-  return cached(`pr-photos:v4:${season}|${week}`, 3 * 3600, async () => {
+  return cached(`pr-photos:v6:${season}|${week}`, 3 * 3600, async () => {
     const [games, cacheRows, espnIds, players, window] = await Promise.all([
       getSheetRows('GAME_FACTS_ALL'),
       getSheetRows('_PLAYER_CACHE'),
@@ -99,18 +98,34 @@ export function getPowerRankingPhotos(season, week) {
     // Legenda que começa pelo jogador (ele é o assunto da foto) vale mais do
     // que uma que só o cita no meio, ao lado de outros
     const name = p => norm(stripSuffix(p.full))
-    const leads = (ph, p) => ph.text.startsWith(` ${name(p)} `) || ph.text.replace(/^ (qb|rb|wr|te|k) /, ' ').startsWith(` ${name(p)} `)
+    // O jogador é o assunto da foto quando é o primeiro jogador citado na
+    // legenda, logo no começo ("Falcons wide receiver Drake London said...");
+    // "DJ Moore should become Josh Allen's favorite target" é foto do DJ Moore
+    const knownNames = Array.from(byName.keys()).filter(k => k.includes(' ') && k.length >= 7)
+    const firstNamed = new Map()
+    photos.forEach(ph => {
+      let best = null
+      knownNames.forEach(k => {
+        const i = ph.text.indexOf(` ${k} `)
+        if (i >= 0 && (!best || i < best.i || (i === best.i && k.length > best.k.length))) best = { i, k }
+      })
+      firstNamed.set(ph.url, best)
+    })
+    const leads = (ph, p) => {
+      const first = firstNamed.get(ph.url)
+      return Boolean(first && first.i <= 40 && first.k === name(p))
+    }
     const mentions = (ph, p) => ph.text.includes(` ${name(p)} `)
     const photoWeek = ph => !ph.still && inWindow(ph)
     const stillWeek = ph => ph.still && inWindow(ph)
     const photoSeason = ph => !ph.still && sameSeason(ph)
-    // Passadas em ordem: os 3 maiores pontuadores com foto da semana primeiro;
-    // depois qualquer titular com foto da semana; depois fotos de outras rodadas
-    const passes = [
-      { top: 3, rules: [[photoWeek, leads], [stillWeek, leads], [photoWeek, mentions]] },
-      { top: 99, rules: [[photoWeek, leads], [stillWeek, leads]] },
-      { top: 3, rules: [[photoSeason, leads], [stillWeek, mentions]] },
-      { top: 99, rules: [[photoWeek, mentions], [photoSeason, leads], [photoSeason, mentions]] },
+    const stillSeason = ph => ph.still && sameSeason(ph)
+    // Para cada jogador, da melhor foto para a pior: da semana com ele como
+    // assunto, vídeo da semana, foto da semana que só o cita, e por fim fotos
+    // de outras rodadas da temporada
+    const rules = [
+      [photoWeek, leads], [stillWeek, leads], [photoWeek, mentions], [stillWeek, mentions],
+      [photoSeason, leads], [photoSeason, mentions], [stillSeason, leads], [stillSeason, mentions],
     ]
 
     const used = new Set()
@@ -119,15 +134,14 @@ export function getPowerRankingPhotos(season, week) {
       const star = starters[0] || null
       let hit = null
       let who = null
-      for (const { top, rules } of passes) {
-        for (const p of starters.slice(0, top)) {
-          for (const [when, match] of rules) {
-            const found = photos
-              .filter(ph => !used.has(ph.url) && when(ph) && match(ph, p))
-              .sort((a, b) => (b.width || 0) - (a.width || 0))[0]
-            if (found) { hit = found; who = p; break }
-          }
-          if (hit) break
+      // Regra fixa: o maior pontuador; só sem nenhuma foto dele passa para o
+      // 2º, depois o 3º (e assim por diante)
+      for (const p of starters) {
+        for (const [when, match] of rules) {
+          const found = photos
+            .filter(ph => !used.has(ph.url) && when(ph) && match(ph, p))
+            .sort((a, b) => (b.width || 0) - (a.width || 0))[0]
+          if (found) { hit = found; who = p; break }
         }
         if (hit) break
       }
