@@ -713,12 +713,13 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const injuryOrStatus = sleeperInfo?.status ? (String(sleeperInfo.status).toLowerCase() === 'active' ? 'Active' : 'Inactive') : null
 
   const columns = [
+    // Pontos e status logo depois da semana: no celular aparecem sem rolar
     ['Season', { sort: 'season' }],
     ['Week', { sort: 'week' }],
+    ['Player Pts', { sort: 'pts', align: 'right' }],
+    ['Status', { filter: [statusFilter, setStatusFilter, options('status')] }],
     ['Team', {}],
     ['Opponent', { filter: [opponentFilter, setOpponentFilter, options('opponent'), shortName] }],
-    ['Status', { filter: [statusFilter, setStatusFilter, options('status')] }],
-    ['Player Pts', { sort: 'pts', align: 'right' }],
     ['Team PF', { sort: 'teamPF', align: 'right' }],
     ['Result', { filter: [resultFilter, setResultFilter, options('result')] }],
     ['Stage', { filter: [stageFilter, setStageFilter, options('stage')] }],
@@ -973,12 +974,12 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
                     >
                       <td className="px-3 py-2.5 text-[13px] font-semibold text-[#111] sm:px-4">{x.season}</td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-[13px] tabular-nums text-[#3F4757] sm:px-4">{x.week}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-[13px] text-[#111] sm:px-4">{shortName(x.team)}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-[13px] text-[#111] sm:px-4">{shortName(x.opponent)}</td>
+                      <td className="px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums text-[#111] sm:px-4">{x.pts.toFixed(2)}</td>
                       <td className="px-3 py-2.5 sm:px-4">
                         <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none ${x.status === 'Starter' ? 'bg-[#E8F5EC] text-[#1E8E3E]' : 'bg-[#F1F2F4] text-[#4B5563]'}`}>{x.status}</span>
                       </td>
-                      <td className="px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums text-[#111] sm:px-4">{x.pts.toFixed(2)}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-[13px] text-[#111] sm:px-4">{shortName(x.team)}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-[13px] text-[#111] sm:px-4">{shortName(x.opponent)}</td>
                       <td className="px-3 py-2.5 text-right text-[13px] tabular-nums text-[#3F4757] sm:px-4">{x.teamPF.toFixed(2)}</td>
                       <td className="px-3 py-2.5 sm:px-4"><ResultBadge result={x.result} /></td>
                       <td className="px-3 py-2.5 text-[12px] text-[#6B7280] sm:px-4">{x.stage || '—'}</td>

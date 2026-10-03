@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import { BrandBackdrop, TeamLogo, StreakBadge, getTeamAbbr } from './ui'
@@ -27,7 +29,7 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
         {photo ? (
           // Foto do jogo (automática, das notícias da ESPN) ou escolhida pela
           // liga no Google Form (aba PR_FOTOS)
-          <img src={photo} alt={team.team} className="absolute inset-0 h-full w-full object-cover object-[50%_25%]" />
+          <CardPhoto src={photo} alt={team.team} />
         ) : star?.id && (
           <div className="absolute inset-x-0 bottom-0 flex justify-center">
             <PlayerCutout sleeperId={star.id} name={star.name} className="h-[200px] sm:h-[220px]" fallback={false} />
@@ -162,5 +164,19 @@ function RankHistory({ history, total }) {
         })}
       </div>
     </div>
+  )
+}
+
+// Foto do card: em foto "em pé" (retrato), o rosto costuma estar no alto, então
+// o enquadramento sobe para perto do topo; em paisagem, um pouco acima do meio
+function CardPhoto({ src, alt }) {
+  const [tall, setTall] = useState(false)
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onLoad={e => setTall(e.currentTarget.naturalHeight > e.currentTarget.naturalWidth * 0.8)}
+      className={`absolute inset-0 h-full w-full object-cover ${tall ? 'object-[50%_8%]' : 'object-[50%_25%]'}`}
+    />
   )
 }

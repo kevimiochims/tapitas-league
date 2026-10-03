@@ -15,7 +15,10 @@
 //      pergunta sozinho; é a única parte manual.
 //
 // COMO USAR: abra o link de RESPONDER, escolha o time, envie a foto (ou cole
-// um link) e pronto. Temporada e semana em branco = semana atual do Power
+// um link de imagem; ele é copiado para o Drive) e pronto. Também dá para
+// escrever direto na aba PR_FOTOS: Season, Week, Team e o link na coluna Url
+// (deixe FileId vazio); o gatilho diário copia a imagem para o Drive, ou rode
+// salvaLinksManuaisPR() para fazer na hora. Temporada e semana em branco = semana atual do Power
 // Rankings. Para trocar, é só enviar de novo: vale a última foto enviada para
 // aquele time naquela semana. Em alguns minutos aparece no site.
 //
@@ -101,6 +104,12 @@ function aoEnviarFotoPR(e) {
     return;
   }
 
+  // Link de fora (Google Imagens, site de notícia...): guarda uma cópia no
+  // Drive, para a foto não sumir se o site de origem tirar do ar
+  if (!fileId && url) {
+    const copia = copiaLinkParaDrivePR_(url, `${season}-W${week}-${team} - manual`);
+    if (copia) fileId = copia;
+  }
   if (fileId) {
     try {
       DriveApp.getFileById(fileId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
@@ -142,6 +151,9 @@ function instalaFotosAutomaticasPR() {
 // Semana mais recente do Power Rankings (ou a temporada/semana informadas)
 function salvaFotosAutomaticasPR(season, week) {
   const ss = planilhaFotosPR_();
+  if (!season || typeof season === 'object') {
+    try { salvaLinksManuaisPR(); } catch (err) { Logger.log('[FOTOS PR] Links manuais: ' + err); }
+  }
   if (!season || !week || typeof season === 'object') {
     const atual = ultimaSemanaPR_(ss);
     season = atual.season;
@@ -296,6 +308,47 @@ function limpaERefazHistoricoPR() {
 function refazHistoricoPR() {
   PropertiesService.getScriptProperties().deleteProperty('PR_FOTOS_HIST_FEITAS');
   instalaHistoricoPR();
+}
+
+// Baixa uma imagem de um link e guarda na pasta das fotos; devolve o ID do
+// arquivo (ou '' se o link não for uma imagem)
+function copiaLinkParaDrivePR_(url, nome) {
+  try {
+    const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
+    const tipo = String(res.getHeaders()['Content-Type'] || res.getHeaders()['content-type'] || '');
+    if (res.getResponseCode() !== 200 || !/^image\//.test(tipo)) {
+      Logger.log(`[FOTOS PR] O link não é uma imagem (${res.getResponseCode()}, ${tipo}): ${url}`);
+      return '';
+    }
+    const file = pastaFotosPR_().createFile(res.getBlob().setName(`${nome}.jpg`));
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return file.getId();
+  } catch (err) {
+    Logger.log(`[FOTOS PR] Não consegui baixar ${url}: ${err}`);
+    return '';
+  }
+}
+
+// Linhas escritas à mão na PR_FOTOS (Season, Week, Team e o link na coluna
+// Url, sem FileId): copia a imagem para o Drive e preenche o FileId. Roda
+// junto com o gatilho diário; também dá para rodar na hora.
+function salvaLinksManuaisPR() {
+  const sheet = abaFotosPR_(planilhaFotosPR_());
+  const values = sheet.getDataRange().getValues();
+  let feitas = 0;
+  for (let i = 1; i < values.length; i++) {
+    const r = values[i];
+    const fileId = String(r[3] || '').trim();
+    const url = String(r[4] || '').trim();
+    const fonte = String(r[6] || '').trim().toLowerCase();
+    if (fileId || !/^https?:\/\//.test(url) || fonte === 'auto') continue;
+    const id = copiaLinkParaDrivePR_(url, `${r[0]}-W${r[1]}-${r[2]} - manual`);
+    if (!id) continue;
+    sheet.getRange(i + 1, 4).setValue(id);
+    if (!fonte) sheet.getRange(i + 1, 7).setValue('manual');
+    feitas++;
+  }
+  Logger.log(`[FOTOS PR] ${feitas} fotos manuais copiadas para o Drive.`);
 }
 
 function planilhaFotosPR_() {

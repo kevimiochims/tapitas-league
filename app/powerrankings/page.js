@@ -234,22 +234,32 @@ function PowerRankingsPageContent() {
   const cardsRef = useRef(null)
   // Read more / Show less abre ou fecha o texto de todos os cards juntos
   const [notesOpen, setNotesOpen] = useState(false)
-  // Celular (um card por vez): a faixa de cards fica da altura do card que está
-  // na tela, sem sobrar espaço embaixo dos mais curtos quando o texto está aberto
+  // Celular (um card por vez): quando a rolagem termina, a faixa fica da altura
+  // do card que está na tela (sem sobrar espaço embaixo dos mais curtos com o
+  // texto aberto) e o card é recentralizado se tiver parado torto. A altura só
+  // muda depois de parar: mudar durante o arraste atrapalhava o encaixe.
   useEffect(() => {
     const el = cardsRef.current
     if (!el) return
-    let frame = null
-    const sync = () => {
-      frame = null
+    let timer = null
+    const settle = () => {
+      timer = null
       const cards = Array.from(el.children)
       if (!cards.length) return
       if (window.innerWidth >= 640) { el.style.height = ''; return }
-      const left = el.getBoundingClientRect().left
-      const current = cards.reduce((best, c) => (Math.abs(c.getBoundingClientRect().left - left) < Math.abs(best.getBoundingClientRect().left - left) ? c : best), cards[0])
+      const box = el.getBoundingClientRect()
+      const middle = box.left + box.width / 2
+      const current = cards.reduce((best, c) => {
+        const r = c.getBoundingClientRect()
+        const rb = best.getBoundingClientRect()
+        return Math.abs(r.left + r.width / 2 - middle) < Math.abs(rb.left + rb.width / 2 - middle) ? c : best
+      }, cards[0])
       el.style.height = `${current.offsetHeight + 4}px`
+      const r = current.getBoundingClientRect()
+      const offset = r.left + r.width / 2 - middle
+      if (Math.abs(offset) > 2) el.scrollTo({ left: el.scrollLeft + offset, behavior: 'smooth' })
     }
-    const schedule = () => { if (frame == null) frame = requestAnimationFrame(sync) }
+    const schedule = () => { if (timer) clearTimeout(timer); timer = setTimeout(settle, 150) }
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null
     Array.from(el.children).forEach(c => ro?.observe(c))
     el.addEventListener('scroll', schedule, { passive: true })
@@ -259,7 +269,7 @@ function PowerRankingsPageContent() {
       ro?.disconnect()
       el.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
-      if (frame != null) cancelAnimationFrame(frame)
+      if (timer) clearTimeout(timer)
     }
   }, [notesOpen, view, season, week, games.length])
   const seasonsRef = useRef(null)
@@ -1055,7 +1065,7 @@ function PowerRankingsPageContent() {
                 </div>
                 {/* Celular: um card por vez (carrossel, sem pedaço do próximo);
                     telas maiores: vários lado a lado */}
-                <div ref={cardsRef} className="scroll-hide flex snap-x snap-mandatory items-start gap-3 overflow-x-auto overflow-y-hidden scroll-px-3 px-3 pb-1 transition-[height] duration-200 lg:scroll-px-4 lg:px-4">
+                <div ref={cardsRef} className="scroll-hide flex snap-x snap-mandatory items-start gap-3 overflow-x-auto overflow-y-hidden scroll-px-3 px-3 pb-1 lg:scroll-px-4 lg:px-4">
                   {rankings.map(t => {
                     const tier = tierOf(t.rank)
                     const nextOpp = getNextOpponentData(t.team)
