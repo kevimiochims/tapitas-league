@@ -3,6 +3,8 @@ import { getSheetRows } from './sheets'
 import { getScoreboard, getEspnIdMap, getPlayerPhotos } from './espn'
 import { getSleeperPlayers } from './sleeper'
 import { getCommonsCategories, getCommonsCategoryByName, getCommonsPhotos } from './commonsPhotos'
+import { getWeekEvents, getRecapPhotos, getDayPhotos, getWeekDays, getPlayerWeekTeams, largestEspnPhoto } from './espnArchive'
+import { normalizeNflTeam } from './nflTeams'
 
 // Foto automática de cada time no card do Power Rankings, tirada das notícias
 // da ESPN (feed de fantasy e página de cada atleta). Junta as fotos de todos
@@ -49,7 +51,7 @@ async function mapLimit(items, limit, fn) {
 }
 
 export function getPowerRankingPhotos(season, week) {
-  return cached(`pr-photos:v15:${season}|${week}`, 3 * 3600, async () => {
+  return cached(`pr-photos:v17:${season}|${week}`, 3 * 3600, async () => {
     const [games, cacheRows, espnIds, players, window] = await Promise.all([
       getSheetRows('GAME_FACTS_ALL'),
       getSheetRows('_PLAYER_CACHE'),
@@ -174,25 +176,84 @@ export function getPowerRankingPhotos(season, week) {
       // 1) jogo na temporada; 2) qualquer foto dele na temporada (entrevista,
       // treino...); 3) jogo em até 1 temporada antes/2 depois; 4) qualquer foto
       // em até 2 antes/3 depois. Dentro de cada etapa, sorteio por semana.
-      const tiers = [
-        ph => game(ph) && inSeason(ph),
-        ph => base(ph) && inSeason(ph),
-        ph => game(ph) && near(ph, 1, 2),
-        ph => base(ph) && near(ph, 2, 3),
-      ]
-      // Em cada etapa: fotos com o nome dele no título primeiro (a galeria inclui
-      // fotos de grupo em que ele pode nem aparecer), paisagem antes de retrato
+      // Só fotos de jogo com o nome dele no título: da temporada; senão de até
+      // 1 temporada antes/2 depois. Paisagem primeiro; sorteio por semana.
       const last = norm(stripSuffix(p.full)).split(' ').pop()
       const named = ph => last.length >= 3 && norm(ph.title).includes(last)
-      // Primeiro só fotos com o nome dele (em todas as etapas); foto sem o nome
-      // (de grupo/jogo em que ele pode nem aparecer) só se não houver nenhuma
-      for (const mustName of [true, false]) {
-        for (const tier of tiers) {
-          const list = pool.filter(ph => tier(ph) && (!mustName || named(ph)))
-          const wide = list.filter(ph => ph.width > ph.height)
-          const chosen = pick(wide.length ? wide : list, seed)
-          if (chosen) return chosen
+      for (const tier of [ph => inSeason(ph), ph => near(ph, 1, 2)]) {
+        const list = pool.filter(ph => game(ph) && named(ph) && tier(ph))
+        const wide = list.filter(ph => ph.width > ph.height)
+        const chosen = pick(wide.length ? wide : list, seed)
+        if (chosen) return chosen
+      }
+      return null
+    }
+
+    // Arquivo da ESPN (recaps dos jogos e notícias de cada dia): fotos de jogo
+    // de qualquer temporada. O jogador é reconhecido pelo nome do arquivo
+    // ("nfl_u_rodgers04jr") no recap do jogo dele, ou pela legenda que começa
+    // por ele. Retratos de cadastro ("Baldwin_Doug 140127") ficam de fora.
+    const weekNums = (String(week).match(/\d+/g) || []).map(Number)
+    const weekDays = await getWeekDays(season, week).catch(() => [])
+    const dayPhotos = (await mapLimit(weekDays, 4, d => getDayPhotos(d).catch(() => []))).flat()
+      .map(ph => ({ ...ph, text: ` ${norm(ph.caption)} ` }))
+    const firstNamedIn = text => {
+      let best = null
+      knownNames.forEach(k => {
+        const i = text.indexOf(` ${k} `)
+        if (i >= 0 && (!best || i < best.i || (i === best.i && k.length > best.k.length))) best = { i, k }
+      })
+      return best
+    }
+    const headshot = ph => /^\S+_\S+ \d{6}/.test(ph.caption) || /mug|headshot|_ms_|logo/i.test(ph.file)
+    // Data da foto no próprio endereço (/photo/2014/1012/): só da temporada
+    // (agosto a fevereiro); foto de abril é de offseason, não de jogo
+    const urlDate = ph => { const m = String(ph.url).match(/\/photo\/(\d{4})\/(\d{2})(\d{2})\//); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null }
+    const inSeasonPhoto = ph => { const t = urlDate(ph); if (!t) return true; const mo = new Date(t).getUTCMonth(); return t >= seasonFrom && t < seasonTo && (mo >= 7 || mo <= 1) }
+    // Sobrenomes dos jogadores conhecidos: arquivo com o nome de OUTRO jogador
+    // ("chi_jennings") é foto dele, mesmo que a legenda cite o nosso
+    const lastNames = Array.from(new Set(knownNames.map(k => k.split(' ').pop()).filter(l => l.length >= 5)))
+    const fileNamesOther = (ph, p) => {
+      const mine = norm(stripSuffix(p.full)).split(' ').pop()
+      const letters = ph.file.replace(/\.jpg$/, '').replace(/[^a-z]/g, '')
+      return !letters.includes(mine) && lastNames.some(l => l !== mine && letters.includes(l))
+    }
+    const fileHas = (ph, p) => {
+      const lastKey = norm(stripSuffix(p.full)).split(' ').pop().replace(/ /g, '')
+      return lastKey.length >= 4 && ph.file.replace(/[^a-z]/g, '').includes(lastKey)
+    }
+    const captionLeads = (ph, p) => { const f = firstNamedIn(` ${norm(ph.caption)} `); return Boolean(f && f.i <= 60 && f.k === name(p)) }
+    const archiveFor = async (p, team) => {
+      const teamsByWeek = await getPlayerWeekTeams(p.id, season).catch(() => ({}))
+      const nflTeam = normalizeNflTeam(teamsByWeek[weekNums[0]] || teamsByWeek[weekNums[1]] || '')
+      const seasonTeams = new Set(Object.values(teamsByWeek).map(normalizeNflTeam).filter(Boolean))
+      const ok = ph => !used.has(ph.url) && !headshot(ph) && inSeasonPhoto(ph)
+      // 1) recap do jogo dele nesta semana
+      if (nflTeam) {
+        for (const w of weekNums) {
+          const events = (await getWeekEvents(season, w).catch(() => [])).filter(e => e.teams.map(normalizeNflTeam).includes(nflTeam))
+          for (const e of events) {
+            const hit = (await getRecapPhotos(e.id).catch(() => [])).find(ph => ok(ph) && (fileHas(ph, p) || (captionLeads(ph, p) && !fileNamesOther(ph, p))))
+            if (hit) return hit
+          }
         }
+      }
+      // 2) notícias dos dias desta semana com ele como assunto da legenda
+      const day = dayPhotos.filter(ph => ok(ph) && captionLeads(ph, p) && !fileNamesOther(ph, p) && ph.width >= ph.height)
+        .sort((a, b) => (b.width || 0) - (a.width || 0))[0]
+      if (day) return day
+      // 3) recaps dos jogos do time dele em outras rodadas da temporada
+      if (seasonTeams.size) {
+        const others = []
+        for (let w = 1; w <= 18; w++) {
+          if (weekNums.includes(w)) continue
+          const t = normalizeNflTeam(teamsByWeek[w] || '')
+          if (!t) continue
+          const events = (await getWeekEvents(season, w).catch(() => [])).filter(e => e.teams.map(normalizeNflTeam).includes(t))
+          for (const e of events) (await getRecapPhotos(e.id).catch(() => [])).forEach(ph => { if (ok(ph) && (fileHas(ph, p) || (captionLeads(ph, p) && !fileNamesOther(ph, p)))) others.push(ph) })
+        }
+        const chosen = pick(others, `${season}|${week}|${team}|${p.id}`)
+        if (chosen) return chosen
       }
       return null
     }
@@ -215,6 +276,10 @@ export function getPowerRankingPhotos(season, week) {
           if (found) { hit = found; who = p; break }
         }
         if (!hit && starters.indexOf(p) < 3) {
+          const archived = await archiveFor(p, team).catch(() => null)
+          if (archived) { hit = { ...archived, caption: archived.caption || archived.headline || '' }; who = p }
+        }
+        if (!hit && starters.indexOf(p) < 3) {
           const free = await commonsFor(p, team)
           if (free) { hit = { ...free, caption: free.title.replace(/^File:/, '').replace(/\.[a-z]+$/i, ''), commons: true }; who = p }
         }
@@ -223,7 +288,7 @@ export function getPowerRankingPhotos(season, week) {
       if (hit) used.add(hit.url)
       const shown = who || star
       result[team] = {
-        url: hit ? (hit.commons ? hit.url : await largest(hit.url)) : null,
+        url: hit ? (hit.commons ? hit.url : hit.source ? await largestEspnPhoto(hit.url) : await largest(hit.url)) : null,
         caption: hit?.caption || '',
         credit: hit?.commons ? hit.credit : '',
         player: shown?.full || '',
