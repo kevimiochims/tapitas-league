@@ -2,7 +2,7 @@ import { cached } from './cache'
 import { getSheetRows } from './sheets'
 import { getScoreboard, getEspnIdMap, getPlayerPhotos } from './espn'
 import { getSleeperPlayers } from './sleeper'
-import { getCommonsCategories, getCommonsPhotos } from './commonsPhotos'
+import { getCommonsCategories, getCommonsCategoryByName, getCommonsPhotos } from './commonsPhotos'
 
 // Foto automática de cada time no card do Power Rankings, tirada das notícias
 // da ESPN (feed de fantasy e página de cada atleta). Junta as fotos de todos
@@ -49,7 +49,7 @@ async function mapLimit(items, limit, fn) {
 }
 
 export function getPowerRankingPhotos(season, week) {
-  return cached(`pr-photos:v12:${season}|${week}`, 3 * 3600, async () => {
+  return cached(`pr-photos:v15:${season}|${week}`, 3 * 3600, async () => {
     const [games, cacheRows, espnIds, players, window] = await Promise.all([
       getSheetRows('GAME_FACTS_ALL'),
       getSheetRows('_PLAYER_CACHE'),
@@ -139,31 +139,62 @@ export function getPowerRankingPhotos(season, week) {
     const nflSeason = now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
     const seasonFrom = Date.UTC(Number(season), 7, 1)
     const seasonTo = Date.UTC(Number(season) + 1, 2, 1)
-    const commonsFor = async p => {
-      const cat = p.espnId && commonsCats[p.espnId]
+    // Sorteio estável por semana/time/jogador: semanas diferentes mostram
+    // fotos diferentes do mesmo jogador, mas a mesma semana é sempre igual
+    const pick = (list, seed) => {
+      if (!list.length) return null
+      let h = 0
+      for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+      return list[h % list.length]
+    }
+    const commonsFor = async (p, team) => {
+      const cat = (p.espnId && commonsCats[p.espnId]) || await getCommonsCategoryByName(p.full).catch(() => null)
       if (!cat) return null
       // Estreia na NFL (só dá para calcular de quem está em atividade)
       const info = players.get(p.id)
       const rookie = info?.team && info?.yearsExp != null ? Date.UTC(nflSeason - info.yearsExp, 7, 1) : null
-      // Foto de jogo: título que indica partida ("Bills vs. Titans", "Bears at
-      // Lions") ou tirada em dia de jogo da temporada (dom/seg/qui, set–jan);
-      // fora entrevista, retrato, treino, recortes e afins
-      const notGame = /interview|portrait|headshot|camp|practice|press|conference|cropped|signing|parade|award|ceremony|visit|draft|combine|pro bowl|fan ?duel|podcast|welcome|family|injured|military|honored|golf|pebble|celebrity|charity|tournament|wedding|concert/i
+      // Fora só o que claramente não é ele em contexto de futebol
+      const offTopic = /golf|pebble|celebrity|charity|tournament|wedding|concert|basketball|baseball|signing|autograph|visit|cemetery|memorial|hospital|white house|school|military|army|navy|air force|marine|troops|veteran|funeral|church|gala|premiere|red carpet/i
+      const notGame = /interview|portrait|headshot|camp|practice|press|conference|cropped|parade|award|ceremony|visit|draft|combine|pro bowl|fan ?duel|podcast|welcome|family|injured|military|honored/i
       // "vs"/"at" em minúsculas ("Bears at Lions"); "AT&T" não conta
       const isGameTitle = t => /\b(vs\.?|versus|at)\b/.test(t) || /\b(game|week \d+|preseason|playoffs?|wild card|super bowl)\b/i.test(t)
       const isGameDay = d => { const x = new Date(d); const m = x.getUTCMonth(); const wd = x.getUTCDay(); return (m >= 8 || m === 0) && [0, 1, 4, 6].includes(wd) }
-      const ok = ph => ph.date && !used.has(ph.url) && (!rookie || ph.date >= rookie) && !notGame.test(ph.title) && (isGameTitle(ph.title) || isGameDay(ph.date))
-      const seasonPick = list => list.filter(ok).filter(ph => ph.date >= seasonFrom && ph.date < seasonTo).sort((a, b) => b.width - a.width)[0]
-      // 1) fotos daquela temporada (ano dela e janeiro seguinte)
-      for (const y of [season, String(Number(season) + 1)]) {
-        const hit = seasonPick(await getCommonsPhotos(cat, y).catch(() => []))
-        if (hit) return hit
+      const base = ph => ph.date && !used.has(ph.url) && (!rookie || ph.date >= rookie) && !offTopic.test(ph.title)
+      const game = ph => base(ph) && !notGame.test(ph.title) && (isGameTitle(ph.title) || isGameDay(ph.date))
+      const inSeason = ph => ph.date >= seasonFrom && ph.date < seasonTo
+      const near = (ph, before, after) => ph.date >= Date.UTC(Number(season) - before, 7, 1) && ph.date < Date.UTC(Number(season) + after + 1, 2, 1)
+      const seed = `${season}|${week}|${team}|${p.id}`
+      const seasonList = [
+        ...(await getCommonsPhotos(cat, season).catch(() => [])),
+        ...(await getCommonsPhotos(cat, String(Number(season) + 1)).catch(() => [])),
+      ]
+      const all = await getCommonsPhotos(cat).catch(() => [])
+      const pool = Array.from(new Map([...seasonList, ...all].map(ph => [ph.url, ph])).values())
+      // Paisagem primeiro (cabe melhor no card); da melhor para a mais solta:
+      // 1) jogo na temporada; 2) qualquer foto dele na temporada (entrevista,
+      // treino...); 3) jogo em até 1 temporada antes/2 depois; 4) qualquer foto
+      // em até 2 antes/3 depois. Dentro de cada etapa, sorteio por semana.
+      const tiers = [
+        ph => game(ph) && inSeason(ph),
+        ph => base(ph) && inSeason(ph),
+        ph => game(ph) && near(ph, 1, 2),
+        ph => base(ph) && near(ph, 2, 3),
+      ]
+      // Em cada etapa: fotos com o nome dele no título primeiro (a galeria inclui
+      // fotos de grupo em que ele pode nem aparecer), paisagem antes de retrato
+      const last = norm(stripSuffix(p.full)).split(' ').pop()
+      const named = ph => last.length >= 3 && norm(ph.title).includes(last)
+      // Primeiro só fotos com o nome dele (em todas as etapas); foto sem o nome
+      // (de grupo/jogo em que ele pode nem aparecer) só se não houver nenhuma
+      for (const mustName of [true, false]) {
+        for (const tier of tiers) {
+          const list = pool.filter(ph => tier(ph) && (!mustName || named(ph)))
+          const wide = list.filter(ph => ph.width > ph.height)
+          const chosen = pick(wide.length ? wide : list, seed)
+          if (chosen) return chosen
+        }
       }
-      // 2) a mais próxima, de até 1 temporada antes a 2 depois
-      const near = (await getCommonsPhotos(cat).catch(() => [])).filter(ok)
-        .filter(ph => ph.date >= Date.UTC(Number(season) - 1, 7, 1) && ph.date < Date.UTC(Number(season) + 3, 2, 1))
-        .sort((a, b) => Math.abs(a.date - seasonFrom) - Math.abs(b.date - seasonFrom))
-      return near[0] || null
+      return null
     }
 
     const used = new Set()
@@ -176,13 +207,15 @@ export function getPowerRankingPhotos(season, week) {
       // 2º, depois o 3º (e assim por diante). Para cada um: ESPN, depois Commons
       for (const p of starters) {
         for (const [when, match] of rules) {
-          const found = photos
-            .filter(ph => !used.has(ph.url) && when(ph) && match(ph, p))
-            .sort((a, b) => (b.width || 0) - (a.width || 0))[0]
+          const list = photos.filter(ph => !used.has(ph.url) && when(ph) && match(ph, p))
+          // Foto da semana: a maior; de outras rodadas: sorteio por semana (varia)
+          const found = when === photoSeason || when === stillSeason
+            ? pick(list, `${season}|${week}|${team}|${p.id}`)
+            : list.sort((a, b) => (b.width || 0) - (a.width || 0))[0]
           if (found) { hit = found; who = p; break }
         }
         if (!hit && starters.indexOf(p) < 3) {
-          const free = await commonsFor(p)
+          const free = await commonsFor(p, team)
           if (free) { hit = { ...free, caption: free.title.replace(/^File:/, '').replace(/\.[a-z]+$/i, ''), commons: true }; who = p }
         }
         if (hit) break

@@ -41,11 +41,29 @@ export async function getCommonsCategories(espnIds) {
   })
 }
 
+// Categoria pelo nome, para quem não tem o ID da ESPN no Wikidata (Golden
+// Tate, Dez Bryant...): só itens que sejam jogadores de futebol americano
+export function getCommonsCategoryByName(name) {
+  const label = String(name || '').trim()
+  if (!label) return Promise.resolve(null)
+  return cached(`commons:cat-name:${label}`, 7 * 24 * 3600, async () => {
+    const variants = Array.from(new Set([label, label.replace(/\s+(Jr|Sr|II|III|IV)\.?$/i, ''), `${label} Jr.`]))
+    const values = variants.map(v => `"${v.replace(/"/g, '')}"@en`).join(' ')
+    const query = `SELECT ?cat WHERE { VALUES ?label { ${values} } ?item rdfs:label ?label ; wdt:P106 wd:Q19204627 ; wdt:P373 ?cat } LIMIT 2`
+    const data = await fetchPolite(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(query)}`, {
+      headers: { ...UA, Accept: 'application/sparql-results+json' },
+      timeoutMs: 30000,
+    })
+    const cats = (data?.results?.bindings || []).map(b => b.cat.value)
+    return cats.length === 1 ? cats[0] : null // homônimo (2 jogadores com o mesmo nome): não arrisca
+  })
+}
+
 // Fotos do jogador pela busca do Commons dentro da categoria dele e das
 // subcategorias ("Aaron Rodgers in 2014"...). `year` restringe à temporada.
 // Só paisagem e de boa resolução, com data, autor e licença.
 export function getCommonsPhotos(category, year = '') {
-  return cached(`commons:photos:${category}:${year}`, 7 * 24 * 3600, async () => {
+  return cached(`commons:photos:v2:${category}:${year}`, 7 * 24 * 3600, async () => {
     const params = new URLSearchParams({
       action: 'query', format: 'json', generator: 'search',
       gsrsearch: `deepcat:"${category}" filetype:bitmap${year ? ` ${year}` : ''}`,
@@ -66,6 +84,6 @@ export function getCommonsPhotos(category, year = '') {
         credit: [strip(meta.Artist?.value), 'Wikimedia Commons', strip(meta.LicenseShortName?.value)].filter(Boolean).join(' · '),
         title: String(p?.title || ''),
       }
-    }).filter(ph => ph.url && /\.(jpe?g)$/i.test(ph.title) && ph.width >= 1000 && ph.width > ph.height)
+    }).filter(ph => ph.url && /\.(jpe?g)$/i.test(ph.title) && ph.width >= 800 && ph.height >= 500)
   })
 }

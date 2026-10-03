@@ -5,6 +5,7 @@ import { CardShell, FilterPill, ToggleChip, TeamLogo, PositionBadge, Pager, useP
 import { EmptyNote, NewsImage, NewsHero } from './shared'
 import { useFocusFilter } from '../../context/TeamFocus'
 import { useEspnId } from '../PlayerCutout'
+import NewsReader from './NewsReader'
 
 function timeAgo(iso) {
   const d = new Date(iso)
@@ -54,6 +55,8 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
   // Notícias sem foto: foto de jogo do jogador (Drive → ESPN → Commons), buscada
   // só para as linhas visíveis; enquanto não chega, fica o recorte do jogador
   const [playerPhotos, setPlayerPhotos] = useState({})
+  // Notícia aberta no leitor (pop-up dentro do site)
+  const [reading, setReading] = useState(null)
   const missingIds = visible.filter(n => !n.image && n.player?.id && !(n.player.id in playerPhotos)).map(n => n.player.id)
   const missingKey = Array.from(new Set(missingIds)).join(',')
   useEffect(() => {
@@ -107,9 +110,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
                   </button>
                 )}
                 <div className="min-w-0 flex-1">
-                  {n.url
-                    ? <a href={n.url} target="_blank" rel="noopener noreferrer" className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]">{n.headline}</a>
-                    : <div className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111]">{n.headline}</div>}
+                  <button type="button" onClick={() => setReading(n)} className="line-clamp-2 text-left text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]">{n.headline}</button>
                   <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-[#6B7280]">
                     <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
                     <PositionBadge position={n.player?.pos} />
@@ -135,7 +136,7 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
                 <div className={hero ? '@3xl:grid @3xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)] @3xl:items-center' : ''}>
                   {/* Destaque com foto só no card largo; no estreito ele vira uma linha
                       comum, para todas as páginas terem a mesma altura */}
-                  {hero && <div className="hidden px-3 pb-2.5 pt-2.5 lg:px-4 @3xl:block @3xl:pr-0"><NewsHero item={hero} meta={meta(hero)} /></div>}
+                  {hero && <div className="hidden px-3 pb-2.5 pt-2.5 lg:px-4 @3xl:block @3xl:pr-0"><NewsHero item={hero} meta={meta(hero)} onClick={e => { e.preventDefault(); setReading(hero) }} /></div>}
                   {hero && row(hero)}
                   {side.length > 0 && <div>{side.map(row)}</div>}
                 </div>
@@ -145,6 +146,15 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
           })()}
           {totalPages > 1 && <Pager {...pagerProps} />}
         </div>
+      )}
+      {reading && (
+        <NewsReader
+          item={reading}
+          photo={reading.player?.id ? playerPhotos[reading.player.id]?.url : null}
+          photoCredit={reading.player?.id ? playerPhotos[reading.player.id]?.credit || '' : ''}
+          onClose={() => setReading(null)}
+          onOpenPlayer={onOpenPlayer}
+        />
       )}
     </CardShell>
   )

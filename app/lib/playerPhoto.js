@@ -2,7 +2,7 @@ import { cached } from './cache'
 import { getSheetRows } from './sheets'
 import { getEspnIdMap, getPlayerPhotos } from './espn'
 import { getSleeperPlayers } from './sleeper'
-import { getCommonsCategories, getCommonsPhotos } from './commonsPhotos'
+import { getCommonsCategories, getCommonsCategoryByName, getCommonsPhotos } from './commonsPhotos'
 
 // Uma foto de jogo de um jogador (para notícias sem foto, por exemplo):
 //   1. a mais recente guardada no Drive para ele (aba PR_FOTOS);
@@ -35,7 +35,7 @@ const isGameDay = d => { const x = new Date(d); const m = x.getUTCMonth(); retur
 
 export function getPlayerPhoto(sleeperId) {
   const id = String(sleeperId || '').trim()
-  return cached(`player-photo:${id}`, 6 * 3600, async () => {
+  return cached(`player-photo:v2:${id}`, 6 * 3600, async () => {
     if (!id) return null
     // 1) Drive
     const saved = (await getSheetRows('PR_FOTOS').catch(() => []))
@@ -57,15 +57,22 @@ export function getPlayerPhoto(sleeperId) {
       .sort((a, b) => (b.published || 0) - (a.published || 0))
     if (photos[0]) return { url: photos[0].url, credit: '' }
 
-    // 3) Commons: foto de jogo da carreira na NFL, a mais recente
-    const cat = (await getCommonsCategories([espnId]).catch(() => ({})))[espnId]
+    // 3) Commons: foto de jogo da carreira na NFL, a mais recente; sem foto de
+    // jogo, qualquer foto dele no futebol (de preferência com o nome no título)
+    const cat = (await getCommonsCategories([espnId]).catch(() => ({})))[espnId] || await getCommonsCategoryByName(info.name).catch(() => null)
     if (!cat) return null
     const now = new Date()
     const nflSeason = now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
     const rookie = info.team && info.yearsExp != null ? Date.UTC(nflSeason - info.yearsExp, 7, 1) : 0
-    const list = (await getCommonsPhotos(cat).catch(() => []))
-      .filter(ph => ph.date && ph.date >= rookie && !notGame.test(ph.title) && (isGameTitle(ph.title) || isGameDay(ph.date)))
+    const offTopic = /golf|pebble|celebrity|charity|tournament|wedding|concert|basketball|baseball|signing|autograph|visit|cemetery|memorial|hospital|white house|school|military|army|navy|troops|veteran|funeral|church|gala|premiere|red carpet/i
+    const last = me.split(' ').pop()
+    const all = (await getCommonsPhotos(cat).catch(() => []))
+      .filter(ph => ph.date && ph.date >= rookie && !offTopic.test(ph.title))
       .sort((a, b) => b.date - a.date)
-    return list[0] ? { url: list[0].url, credit: list[0].credit } : null
+    const named = ph => last.length >= 3 && norm(ph.title).includes(last)
+    const game = ph => !notGame.test(ph.title) && (isGameTitle(ph.title) || isGameDay(ph.date))
+    const chosen = all.find(ph => named(ph) && game(ph) && ph.width > ph.height) || all.find(ph => named(ph) && game(ph))
+      || all.find(ph => game(ph) && ph.width > ph.height) || all.find(ph => named(ph)) || all[0]
+    return chosen ? { url: chosen.url, credit: chosen.credit } : null
   })
 }
