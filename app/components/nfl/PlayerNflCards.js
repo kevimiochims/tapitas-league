@@ -1,8 +1,9 @@
 'use client'
 
-import { ExternalLink } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { usePlayerNews } from './useNflData'
 import { NewsImage, NewsHero } from './shared'
+import NewsReader from './NewsReader'
 
 function Card({ title, subtitle, children }) {
   return (
@@ -31,52 +32,75 @@ function timeAgo(iso) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
-// Últimas manchetes do jogador (ESPN)
+// Últimas manchetes do jogador. Celular: destaque + lista. Telas médias e
+// grandes: grade de cards do mesmo tamanho (2 ou 3 por linha), sem vãos.
+// Tocar numa notícia abre o leitor dentro do site.
 export function PlayerNewsCard({ playerId, emptyText }) {
   const { data, loading, error } = usePlayerNews(playerId)
   const news = data?.news || []
+  const [reading, setReading] = useState(null)
+  // Foto de jogo do jogador para as notícias sem foto
+  const [playerPhoto, setPlayerPhoto] = useState(null)
+  const needsPhoto = news.slice(0, 12).some((n, i, arr) => !n.image || arr.findIndex(x => x.image === n.image) !== i)
+  useEffect(() => {
+    if (!playerId || !needsPhoto) return
+    let cancelled = false
+    fetch(`/api/nfl/player-photos?ids=${encodeURIComponent(playerId)}`)
+      .then(r => (r.ok ? r.json() : {}))
+      .then(map => { if (!cancelled) setPlayerPhoto(map?.[playerId] || null) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [playerId, needsPhoto])
+
   if (!playerId || error || (!loading && !news.length)) {
     return emptyText ? <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more"><Empty>{emptyText}</Empty></Card> : null
   }
+  // Foto repetida em várias notícias (a ESPN usa a mesma em vários textos)
+  // só vale na primeira; nas outras entra uma foto alternativa do jogador
+  const seenImages = new Set()
+  const list = news.slice(0, 12).map(n => {
+    if (!n.image) return n
+    if (seenImages.has(n.image)) return { ...n, image: null }
+    seenImages.add(n.image)
+    return n
+  })
+  const hero = list.find(n => n.image)
+  const meta = n => [n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')
+  // Notícias sem foto recebem fotos diferentes do jogador, em rodízio
+  const alts = playerPhoto?.alts?.length ? playerPhoto.alts : playerPhoto ? [playerPhoto] : []
+  const noImage = list.filter(n => !n.image)
+  const altOf = n => (alts.length ? alts[noImage.indexOf(n) % alts.length] : null)
+  const imageOf = n => n.image || altOf(n)?.url || null
   return (
     <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more">
       {loading ? <div className="px-3 py-4 text-[13px] text-[#6B7280] sm:px-4">Loading…</div> : (
-        <div>
-          {(() => {
-            const list = news.slice(0, 10)
-            const hero = list.find(n => n.image)
-            return (
-              <div className="@container">
-               <div className={hero ? '@3xl:grid @3xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] @3xl:items-start' : ''}>
-                {hero && <div className="px-3 pb-1 pt-3 sm:px-4 @3xl:pb-3 @3xl:pr-0"><NewsHero item={hero} meta={[hero.source, hero.published && timeAgo(hero.published)].filter(Boolean).join(' · ')} /></div>}
-                <div className="divide-y divide-[#F1F2F4]">
-                  {list.filter(n => n !== hero).map(n => {
-                    const Tag = n.url ? 'a' : 'div'
-                    return (
-                      <Tag key={n.id} {...(n.url ? { href: n.url, target: '_blank', rel: 'noopener noreferrer' } : {})} className="group flex gap-3 px-3 py-2.5 transition-colors hover:bg-[#F7F8FA] sm:px-4">
-                        {n.image && <span className="block h-[54px] w-[80px] flex-shrink-0 overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="text-[13px] font-semibold leading-snug text-[#111] group-hover:text-[#02275F]">{n.headline}</div>
-                            {n.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#9CA3AF]" />}
-                          </div>
-                          {n.description && <div className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-[#6B7280]">{n.description}</div>}
-                          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[#9CA3AF]">
-                            {n.source && <span className="font-semibold text-[#6B7280]">{n.source}</span>}
-                            {n.source && n.published && <span>·</span>}
-                            {n.published && <span>{timeAgo(n.published)}</span>}
-                          </div>
-                        </div>
-                      </Tag>
-                    )
-                  })}
+        <div className="@container">
+          {/* Celular: destaque em cima */}
+          {hero && <div className="px-3 pb-1 pt-3 sm:px-4 @2xl:hidden"><NewsHero item={hero} meta={meta(hero)} onClick={e => { e.preventDefault(); setReading(hero) }} /></div>}
+          <div className="divide-y divide-[#F1F2F4] @2xl:grid @2xl:grid-cols-2 @2xl:gap-3 @2xl:divide-y-0 @2xl:p-3 @4xl:grid-cols-3">
+            {list.map(n => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => setReading(n)}
+                className={`group flex w-full gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#F7F8FA] sm:px-4 @2xl:flex-col @2xl:gap-0 @2xl:overflow-hidden @2xl:rounded-xl @2xl:bg-[#F6F7F9] @2xl:p-0 @2xl:hover:bg-[#EEF0F2] ${n === hero ? 'hidden @2xl:flex' : ''}`}
+              >
+                {imageOf(n) && (
+                  <span className="block h-[54px] w-[80px] flex-shrink-0 overflow-hidden rounded-md bg-[#E6E8EB] @2xl:aspect-[16/9] @2xl:h-auto @2xl:w-full @2xl:rounded-none">
+                    <NewsImage src={imageOf(n)} className="h-full w-full object-[50%_25%]" />
+                  </span>
+                )}
+                <div className="min-w-0 flex-1 @2xl:px-3 @2xl:pb-3 @2xl:pt-2.5">
+                  <div className="text-[13px] font-semibold leading-snug text-[#111] group-hover:text-[#02275F] @2xl:line-clamp-3">{n.headline}</div>
+                  {n.description && <div className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-[#6B7280]">{n.description}</div>}
+                  <div className="mt-1 text-[11px] text-[#9CA3AF]">{meta(n)}</div>
                 </div>
-               </div>
-              </div>
-            )
-          })()}
+              </button>
+            ))}
+          </div>
         </div>
       )}
+      {reading && <NewsReader item={reading} photo={reading.image ? null : altOf(reading)?.url} photoCredit={reading.image ? '' : altOf(reading)?.credit || ''} onClose={() => setReading(null)} />}
     </Card>
   )
 }

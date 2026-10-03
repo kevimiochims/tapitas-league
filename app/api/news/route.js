@@ -1,13 +1,17 @@
-// Notícias vêm do Apps Script da planilha (aba MEMES). Cache curto para que
-// uma notícia publicada pelo Form apareça no site em cerca de 1 minuto.
+// Notícias vêm do Apps Script da planilha (aba MEMES). A resposta fica no
+// cache de dados do Next por até 1 dia (etiqueta NEWS_TAG), então o Apps Script
+// (doGet) só é chamado quando o cache vence ou quando o Apps Script avisa que
+// entrou notícia nova (/api/news/refresh limpa a etiqueta).
+
+import { NEWS_TAG } from '@/app/lib/newsTag'
 
 const NEWS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQ0H5cbeMhSM8OXKTkoNoqEwZkMG93EiUcJNyNOsK6e-JoRRhQ13OuqhUDpJMq8zB0/exec'
-const NEWS_TTL = 60
+const NEWS_TTL = 60 // cache do CDN; o dado em si fica no cache do Next
 
 let lastGood = null
 
 async function fetchNews() {
-  const res = await fetch(NEWS_SCRIPT_URL, { cache: 'no-store', signal: AbortSignal.timeout(20000) })
+  const res = await fetch(NEWS_SCRIPT_URL, { next: { revalidate: 86400, tags: [NEWS_TAG] }, signal: AbortSignal.timeout(20000) })
   if (!res.ok) throw new Error(`Apps Script ${res.status}`)
   const json = await res.json()
   if (!Array.isArray(json)) throw new Error('Apps Script returned a non-array')

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
-import { X, ExternalLink, ChevronRight } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { X, ExternalLink } from 'lucide-react'
 import { TeamLogo, PositionBadge } from '../ui'
 
 function timeAgo(iso) {
@@ -27,14 +28,16 @@ export default function NewsReader({ item, photo, photoCredit = '', onClose, onO
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
   }, [onClose])
 
-  if (!item) return null
+  if (!item || typeof document === 'undefined') return null
   const players = (item.players?.length ? item.players : [item.player]).filter(Boolean)
   const summary = String(item.description || '')
     .replace(/\s*Visit RotoWire\.com for more analysis on this update\.?\s*$/i, '')
     .trim()
   const image = item.image || photo || null
 
-  return (
+  // Portal no <body>: a coluna lateral é "sticky" e prenderia o pop-up atrás
+  // das outras colunas
+  return createPortal(
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 sm:items-center sm:p-4" onClick={onClose}>
       <div
         role="dialog"
@@ -65,25 +68,21 @@ export default function NewsReader({ item, photo, photoCredit = '', onClose, onO
           {summary && <p className="mt-2 text-justify text-[14px] leading-relaxed text-[#2F3542]">{summary}</p>}
 
           {players.length > 0 && (
-            <div className="mt-4">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#6B7280]">{players.length > 1 ? 'Tapitas players in this story' : 'Tapitas player'}</div>
-              <div className="overflow-hidden rounded-xl border border-[#EEF0F2]">
+            <div className="mt-3">
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B7280]">{players.length > 1 ? 'Tapitas players in this story' : 'Tapitas player'}</div>
+              {/* Um chip por jogador (time, nome, posição); toque abre o perfil */}
+              <div className="flex flex-wrap gap-1.5">
                 {players.map(p => (
                   <button
                     key={p.id || p.name}
                     type="button"
                     onClick={() => { onClose(); onOpenPlayer?.({ ...p, focus: 'news' }, p.fantasyTeam) }}
-                    className="flex w-full items-center gap-2.5 border-b border-[#F1F2F4] px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-[#F6F7F9]"
+                    title={[p.fantasyTeam, p.starter ? 'Starter' : 'Bench', p.nflTeam].filter(Boolean).join(' · ')}
+                    className="flex max-w-full items-center gap-1.5 rounded-full bg-[#F4F5F7] py-1 pl-1 pr-2.5 text-[12px] transition-colors hover:bg-[#ECEEF1]"
                   >
-                    {p.fantasyTeam && <TeamLogo name={p.fantasyTeam} size={24} />}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <span className="truncate text-[14px] font-semibold text-[#111]">{p.name}</span>
-                        <PositionBadge position={p.pos} />
-                      </div>
-                      <div className="truncate text-[12px] text-[#6B7280]">{[p.fantasyTeam, p.starter ? 'Starter' : 'Bench', p.nflTeam].filter(Boolean).join(' · ')}</div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#A0A5AD]" />
+                    {p.fantasyTeam && <TeamLogo name={p.fantasyTeam} size={20} />}
+                    <span className="truncate font-semibold text-[#111]">{p.name}</span>
+                    <PositionBadge position={p.pos} />
                   </button>
                 ))}
               </div>
@@ -103,6 +102,7 @@ export default function NewsReader({ item, photo, photoCredit = '', onClose, onO
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

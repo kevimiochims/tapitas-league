@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CardShell, FilterPill, ToggleChip, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
-import { EmptyNote, NewsImage, NewsHero } from './shared'
+import { EmptyNote, NewsImage } from './shared'
 import { useFocusFilter } from '../../context/TeamFocus'
 import { useEspnId } from '../PlayerCutout'
 import NewsReader from './NewsReader'
@@ -17,10 +17,30 @@ function timeAgo(iso) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
-// Últimas notícias sobre jogadores dos elencos da liga. A primeira com foto
-// aparece em destaque (foto grande com o título por cima); as outras com miniatura.
+const ROW_H = 92 // altura fixa de cada linha (manchete em 2 linhas + jogador + fonte)
+
+// Últimas notícias sobre jogadores dos elencos da liga. O formato acompanha a
+// largura do card:
+//   - estreito (coluna lateral, celular): lista de linhas, `initialLimit` por página;
+//   - médio: a notícia em destaque à esquerda, da mesma altura das 4 ao lado;
+//   - largo: destaque + 8 notícias em duas colunas ao lado.
+// Sem filtro de time, todas as páginas têm a mesma altura (a de uma página
+// cheia); filtrando um time, o card encolhe para o que houver.
 export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar = true }) {
   const [state, setState] = useState({ news: [], loading: true, failed: false })
+  const wrapRef = useRef(null)
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const layout = width >= 1100 ? 'wide' : width >= 640 ? 'medium' : 'narrow'
+  const SIDE_ROWS = 4
+  const sideCols = layout === 'wide' ? 2 : 1
+  const pageSize = layout === 'narrow' ? initialLimit : 1 + SIDE_ROWS * sideCols
 
   useEffect(() => {
     let cancelled = false
@@ -50,13 +70,15 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
     })
     .filter(Boolean)
   const teamCount = team === 'All' ? state.news.length : state.news.filter(n => playersOf(n).some(p => p.fantasyTeam === team)).length
-  const { visible, totalPages, pagerProps, listProps } = usePager(news, initialLimit, `${team}|${filter}`)
+  const { visible, totalPages, pagerProps, listProps } = usePager(news, pageSize, `${team}|${filter}|${pageSize}`)
+  const fixedHeight = team === 'All' // sem filtro de time: altura de uma página cheia
 
   // Notícias sem foto: foto de jogo do jogador (Drive → ESPN → Commons), buscada
   // só para as linhas visíveis; enquanto não chega, fica o recorte do jogador
   const [playerPhotos, setPlayerPhotos] = useState({})
   // Notícia aberta no leitor (pop-up dentro do site)
   const [reading, setReading] = useState(null)
+  // (inclui o destaque das telas maiores, que também precisa de foto)
   const missingIds = visible.filter(n => !n.image && n.player?.id && !(n.player.id in playerPhotos)).map(n => n.player.id)
   const missingKey = Array.from(new Set(missingIds)).join(',')
   useEffect(() => {
@@ -84,37 +106,31 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
           {teams.length > 0 && <div className="ml-auto min-w-0"><FilterPill value={team} onChange={setTeam} options={['All', ...teams]} label="Team" allLabel="All teams" align="right" /></div>}
         </div>
       )}
+      <div ref={wrapRef}>
       {state.loading ? <div className="py-2"><SkeletonRows rows={4} /></div> : news.length === 0 ? <EmptyNote>{team === 'All' ? 'No recent news on Tapitas players.' : `No recent news on ${team} players.`}</EmptyNote> : (
         <div className="pb-1">
           {(() => {
-            const firstPage = pagerProps.page === 0
-            const hero = firstPage ? visible.find(n => n.image) : null
-            const meta = n => [n.player?.name, n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')
-            // Card largo (aba Player News): destaque + 3 manchetes ao lado e, embaixo,
-            // o resto em duas colunas (sem vão embaixo da foto).
-            // Card estreito (coluna lateral, celular): tudo empilhado.
-            const rest = visible.filter(n => n !== hero)
-            const side = hero ? rest.slice(0, 3) : []
-            const more = hero ? rest.slice(3) : rest
-            const row = n => (
-              <div key={n.id || n.url || n.headline} className={`flex h-[76px] items-center gap-2.5 px-3 py-2.5 lg:px-4 ${n === hero ? '@3xl:hidden' : ''}`}>
-                {/* Foto da notícia; sem ela, o jogador recortado sobre o fundo da
-                    marca, no mesmo retângulo (todas as linhas no mesmo formato) */}
-                {(n.image || n.player?.id) && (
-                  <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="relative flex-shrink-0" aria-label={n.player?.name}>
-                    {n.image
-                      ? <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
-                      : playerPhotos[n.player.id]?.url
-                        ? <span className="block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#F4F5F7]"><img src={playerPhotos[n.player.id].url} alt={n.player.name || ''} className="h-full w-full object-cover object-[50%_25%]" /></span>
-                        : <PlayerTile id={n.player.id} name={n.player.name} />}
-                  </button>
-                )}
+            const photoOf = n => n.image || (n.player?.id ? playerPhotos[n.player.id]?.url : null) || null
+            const openPlayer = p => onOpenPlayer?.(p && { ...p, focus: 'news' }, p?.fantasyTeam)
+            const thumb = n => (
+              <button type="button" onClick={() => setReading(n)} className="relative flex-shrink-0" aria-label={n.headline}>
+                {n.image
+                  ? <span className="block h-[50px] w-[74px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
+                  : n.player?.id && playerPhotos[n.player.id]?.url
+                    ? <span className="block h-[50px] w-[74px] overflow-hidden rounded-md bg-[#F4F5F7]"><img src={playerPhotos[n.player.id].url} alt={n.player.name || ''} className="h-full w-full object-cover object-[50%_25%]" /></span>
+                    : n.player?.id ? <PlayerTile id={n.player.id} name={n.player.name} /> : null}
+              </button>
+            )
+            // Linha: manchete (2 linhas) / jogador, posição e times / fonte e horário
+            const row = (n, pad = 'px-3 lg:px-4') => (
+              <div key={n.id || n.url || n.headline} className={`flex items-center gap-2.5 py-2 ${pad}`} style={{ height: ROW_H }}>
+                {thumb(n)}
                 <div className="min-w-0 flex-1">
                   <button type="button" onClick={() => setReading(n)} className="line-clamp-2 text-left text-[13px] font-semibold leading-snug text-[#111] hover:text-[#02275F]">{n.headline}</button>
-                  <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-[#6B7280]">
-                    <button type="button" onClick={() => onOpenPlayer?.(n.player && { ...n.player, focus: 'news' }, n.player?.fantasyTeam)} className="truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
-                    <PositionBadge position={n.player?.pos} />
-                    {n.player?.fantasyTeam && <TeamLogo name={n.player.fantasyTeam} size={14} />}
+                  <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px]">
+                    <button type="button" onClick={() => openPlayer(n.player)} className="min-w-0 truncate font-medium text-[#3F4757] hover:text-[#D01F2D]">{n.player?.name}</button>
+                    <span className="flex-shrink-0"><PositionBadge position={n.player?.pos} /></span>
+                    {n.player?.fantasyTeam && <span className="flex-shrink-0"><TeamLogo name={n.player.fantasyTeam} size={14} /></span>}
                     {n.others?.length > 0 && (
                       // Outros jogadores da liga na notícia: só os logos dos times, sobrepostos
                       <span className="flex flex-shrink-0 items-center rounded-full bg-[#F1F2F4] py-px pl-0.5 pr-1" title={n.others.map(p => `${p.name} (${p.fantasyTeam})`).join(', ')}>
@@ -124,29 +140,49 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
                         <span className="ml-0.5 text-[10px] font-semibold text-[#6B7280]">+{n.others.length}</span>
                       </span>
                     )}
-                    <span className="ml-auto flex-shrink-0">{[n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')}</span>
                   </div>
+                  <div className="mt-0.5 truncate text-[11px] text-[#9CA3AF]">{[n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')}</div>
                 </div>
               </div>
             )
-            return (
-              // Card lateral: sempre o espaço de uma página cheia (linhas de 76px),
-              // então a última página não encolhe o card
-              <div {...listProps} style={sidebar ? { minHeight: initialLimit * 76 } : listProps.style} className="@container">
-                <div className={hero ? '@3xl:grid @3xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)] @3xl:items-center' : ''}>
-                  {/* Destaque com foto só no card largo; no estreito ele vira uma linha
-                      comum, para todas as páginas terem a mesma altura */}
-                  {hero && <div className="hidden px-3 pb-2.5 pt-2.5 lg:px-4 @3xl:block @3xl:pr-0"><NewsHero item={hero} meta={meta(hero)} onClick={e => { e.preventDefault(); setReading(hero) }} /></div>}
-                  {hero && row(hero)}
-                  {side.length > 0 && <div>{side.map(row)}</div>}
+
+            if (layout === 'narrow') {
+              return (
+                <div {...listProps} style={fixedHeight ? { minHeight: pageSize * ROW_H } : undefined}>
+                  {visible.map(n => row(n))}
                 </div>
-                {more.length > 0 && <div className={`grid grid-cols-1 @3xl:grid-cols-2 ${hero ? '@3xl:border-t @3xl:border-[#F1F2F4]' : ''}`}>{more.map(row)}</div>}
+              )
+            }
+
+            // Médio/largo: destaque (primeira notícia da página) da altura da lista ao lado
+            const [hero, ...rest] = visible
+            const sideHeight = SIDE_ROWS * ROW_H
+            const heroPhoto = photoOf(hero)
+            return (
+              <div {...listProps} className="flex gap-3 px-3 pt-2 lg:px-4" style={{ minHeight: fixedHeight ? sideHeight + 8 : undefined }}>
+                <button
+                  type="button"
+                  onClick={() => setReading(hero)}
+                  className={`group relative flex-shrink-0 overflow-hidden rounded-lg bg-[#16274F] text-left ${layout === 'wide' ? 'w-[36%]' : 'w-[46%]'}`}
+                  style={{ height: fixedHeight ? sideHeight : Math.max(ROW_H * 2, Math.ceil(rest.length / sideCols) * ROW_H) }}
+                >
+                  {heroPhoto && <img src={heroPhoto} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover object-[50%_25%] transition-transform duration-300 group-hover:scale-[1.03]" />}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-3">
+                    <div className="line-clamp-3 text-[17px] font-extrabold leading-tight text-white">{hero.headline}</div>
+                    <div className="mt-1 truncate text-[11px] font-medium text-white/75">{[hero.player?.name, hero.source, hero.published && timeAgo(hero.published)].filter(Boolean).join(' · ')}</div>
+                  </div>
+                </button>
+                <div className={`min-w-0 flex-1 ${sideCols === 2 ? 'grid grid-cols-2 content-start' : ''}`}>
+                  {rest.map(n => row(n, sideCols === 2 ? 'pr-3' : 'pr-0'))}
+                </div>
               </div>
             )
           })()}
           {totalPages > 1 && <Pager {...pagerProps} />}
         </div>
       )}
+      </div>
       {reading && (
         <NewsReader
           item={reading}
@@ -167,13 +203,13 @@ function PlayerTile({ id, name }) {
   const [failed, setFailed] = useState(false)
   const cutout = espnId && !failed
   return (
-    <span className="relative block h-[46px] w-[68px] overflow-hidden rounded-md bg-[#02275F]">
+    <span className="relative block h-[50px] w-[74px] overflow-hidden rounded-md bg-[#02275F]">
       <span className="pointer-events-none absolute -bottom-3 left-1/2 h-10 w-14 -translate-x-1/2 rounded-full bg-white/15 blur-md" />
       <img
         src={cutout ? `https://a.espncdn.com/i/headshots/nfl/players/full/${espnId}.png` : `https://sleepercdn.com/content/nfl/players/${id}.jpg`}
         alt={name || ''}
         onError={() => cutout && setFailed(true)}
-        className={cutout ? 'absolute bottom-0 left-1/2 h-[44px] w-auto max-w-none -translate-x-1/2 object-contain' : 'h-full w-full object-cover object-top'}
+        className={cutout ? 'absolute bottom-0 left-1/2 h-[48px] w-auto max-w-none -translate-x-1/2 object-contain' : 'h-full w-full object-cover object-top'}
         draggable={false}
       />
     </span>
