@@ -34,6 +34,9 @@
 //      continua de onde parou na próxima execução (rode de novo até o log
 //      dizer que terminou). Das próximas vezes, exporte de novo: só as
 //      mensagens novas (depois da última processada) são lidas.
+//   Pode ter mais de um grupo na pasta (ex.: o grupo antigo, até 2023, e o
+//   atual): cada arquivo é lido, do grupo mais antigo para o mais novo, e cada
+//   grupo guarda separado até onde já foi processado.
 // Precisa: GEMINI_API_KEY, SITE_URL e LORE_SHEET_ID (as mesmas dos recaps).
 // =============================================================================
 
@@ -78,10 +81,11 @@ function testaWhatsAppLore() {
   waExecuta_(true);
 }
 
-// Recomeça a leitura do zero (esquece até onde já foi processado)
+// Recomeça a leitura do zero (esquece até onde já foi processado em cada grupo)
 function recomecaWhatsAppLore() {
-  PropertiesService.getScriptProperties().deleteProperty('LORE_WA_ULTIMA');
-  Logger.log('[LORE WA] Próxima execução lê a conversa desde o começo.');
+  const props = PropertiesService.getScriptProperties();
+  Object.keys(props.getProperties()).filter(k => k.indexOf('LORE_WA_ULTIMA') === 0).forEach(k => props.deleteProperty(k));
+  Logger.log('[LORE WA] Próxima execução lê as conversas desde o começo.');
 }
 
 function waExecuta_(simulacao) {
@@ -90,88 +94,100 @@ function waExecuta_(simulacao) {
   if (!cfg.loreSheetId) throw new Error('Falta LORE_SHEET_ID nas Propriedades do script.');
   const lore = SpreadsheetApp.openById(cfg.loreSheetId);
 
-  const arquivo = waArquivoMaisRecente_();
-  if (!arquivo) {
+  // Todas as conversas da pasta (ex.: o grupo antigo, até 2023, e o atual),
+  // da mais antiga para a mais nova
+  const arquivos = waArquivos_();
+  if (!arquivos.length) {
     Logger.log(`[LORE WA] Nenhuma conversa na pasta "${WA_PASTA}" do Drive. Exporte o grupo (sem mídia) e salve o arquivo lá.`);
     return;
   }
-  const mensagens = waLeConversa_(arquivo.texto);
-  Logger.log(`[LORE WA] ${arquivo.nome}: ${mensagens.length} mensagens.`);
+  arquivos.forEach(a => Logger.log(`[LORE WA] ${a.nome}: ${a.mensagens.length} mensagens (${a.periodo}).`));
 
-  // Pessoas → times
-  const pessoas = waPessoas_(lore, mensagens);
+  // Pessoas → times (de todos os grupos juntos)
+  const pessoas = waPessoas_(lore, [].concat(...arquivos.map(a => a.mensagens)));
   if (pessoas.faltando.length) {
     Logger.log(`[LORE WA] Preencha a coluna Time (ou Ignorar = Sim) na aba ${WA_ABA_PESSOAS} para: ${pessoas.faltando.join(', ')}. Depois rode de novo.`);
     if (!simulacao) return;
   }
 
-  // Só o que é novo desde a última execução
   const props = PropertiesService.getScriptProperties();
-  const ultima = Number(props.getProperty('LORE_WA_ULTIMA') || 0);
-  const novas = mensagens.filter(m => m.quando > ultima);
-  const filtradas = waFiltra_(novas, pessoas);
-  Logger.log(`[LORE WA] ${novas.length} mensagens novas; ${filtradas.length} sobre a liga (as outras não são enviadas).`);
-  if (!filtradas.length) {
-    if (!simulacao) waTerminaArquivo_(arquivo, props, novas);
-    return;
-  }
-
-  const blocos = waBlocos_(filtradas);
-  if (simulacao) {
-    Logger.log(`[LORE WA] SIMULAÇÃO: seriam ${blocos.length} envios ao Gemini. Início do primeiro:\n` + blocos[0].texto.slice(0, 4000));
-    return;
-  }
-
-  const existentes = waLoreExistente_(lore);
+  const existentes = simulacao ? [] : waLoreExistente_(lore);
   let sugestoes = 0;
-  for (let i = 0; i < blocos.length; i++) {
-    if (Date.now() - inicio > WA_TEMPO_MAX_MS) {
-      Logger.log(`[LORE WA] Parei perto do limite de tempo (${i} de ${blocos.length} partes). Rode de novo para continuar.`);
-      return;
+  for (const arquivo of arquivos) {
+    // Cada grupo guarda até onde já foi lido (exportar de novo só lê o que é novo)
+    const ultima = Number(props.getProperty(arquivo.chave) || 0);
+    const novas = arquivo.mensagens.filter(m => m.quando > ultima);
+    const filtradas = waFiltra_(novas, pessoas);
+    Logger.log(`[LORE WA] ${arquivo.nome}: ${novas.length} mensagens novas; ${filtradas.length} sobre a liga (as outras não são enviadas).`);
+    if (!filtradas.length) {
+      if (!simulacao) waTerminaArquivo_(arquivo, props, novas);
+      continue;
     }
-    const itens = waPedeSugestoes_(cfg, blocos[i].texto, existentes, pessoas.times);
-    const novosItens = itens.filter(it => !existentes.some(e => waParecido_(e, it.texto)));
-    novosItens.forEach(it => existentes.push(it.texto));
-    waGravaSugestoes_(lore, novosItens, blocos[i].periodo);
-    sugestoes += novosItens.length;
-    props.setProperty('LORE_WA_ULTIMA', String(blocos[i].ate));
-    if (i < blocos.length - 1) Utilities.sleep(RECAP_PAUSA_MS);
+
+    const blocos = waBlocos_(filtradas);
+    if (simulacao) {
+      Logger.log(`[LORE WA] SIMULAÇÃO: seriam ${blocos.length} envios ao Gemini. Início do primeiro:\n` + blocos[0].texto.slice(0, 3000));
+      continue;
+    }
+
+    for (let i = 0; i < blocos.length; i++) {
+      if (Date.now() - inicio > WA_TEMPO_MAX_MS) {
+        Logger.log(`[LORE WA] Parei perto do limite de tempo (${arquivo.nome}: ${i} de ${blocos.length} partes; ${sugestoes} sugestões até aqui). Rode de novo para continuar.`);
+        return;
+      }
+      if (sugestoes || i) Utilities.sleep(RECAP_PAUSA_MS);
+      const itens = waPedeSugestoes_(cfg, blocos[i].texto, existentes, pessoas.times);
+      const novosItens = itens.filter(it => !existentes.some(e => waParecido_(e, it.texto)));
+      novosItens.forEach(it => existentes.push(it.texto));
+      waGravaSugestoes_(lore, novosItens, blocos[i].periodo);
+      sugestoes += novosItens.length;
+      props.setProperty(arquivo.chave, String(blocos[i].ate));
+    }
+    waTerminaArquivo_(arquivo, props, novas);
   }
-  Logger.log(`[LORE WA] Pronto: ${sugestoes} sugestões novas na aba LORE (Ativo = Não). Revise e troque para "Sim" o que quiser usar.`);
-  waTerminaArquivo_(arquivo, props, novas);
+  if (!simulacao) Logger.log(`[LORE WA] Pronto: ${sugestoes} sugestões novas na aba LORE (Ativo = Não). Revise e troque para "Sim" o que quiser usar.`);
 }
 
 function waTerminaArquivo_(arquivo, props, mensagens) {
-  if (mensagens.length) props.setProperty('LORE_WA_ULTIMA', String(Math.max(...mensagens.map(m => m.quando))));
+  if (mensagens.length) props.setProperty(arquivo.chave, String(Math.max(...mensagens.map(m => m.quando))));
   arquivo.file.setTrashed(true);
   Logger.log(`[LORE WA] ${arquivo.nome} processado e enviado para a lixeira do Drive.`);
 }
 
 // -----------------------------------------------------------------------------
-// Arquivo e leitura
+// Arquivos e leitura
 // -----------------------------------------------------------------------------
 
-function waArquivoMaisRecente_() {
+function waArquivos_() {
   const it = DriveApp.getFoldersByName(WA_PASTA);
   const pasta = it.hasNext() ? it.next() : DriveApp.createFolder(WA_PASTA);
-  let melhor = null;
+  const out = [];
   const files = pasta.getFiles();
   while (files.hasNext()) {
     const f = files.next();
-    if (f.isTrashed()) continue;
-    if (!/\.(txt|zip)$/i.test(f.getName())) continue;
-    if (!melhor || f.getLastUpdated() > melhor.getLastUpdated()) melhor = f;
+    if (f.isTrashed() || !/\.(txt|zip)$/i.test(f.getName())) continue;
+    let texto;
+    if (/\.zip$/i.test(f.getName())) {
+      const txt = Utilities.unzip(f.getBlob()).find(b => /\.txt$/i.test(b.getName()));
+      if (!txt) continue;
+      texto = txt.getDataAsString('UTF-8');
+    } else {
+      texto = f.getBlob().getDataAsString('UTF-8');
+    }
+    const mensagens = waLeConversa_(texto);
+    if (!mensagens.length) {
+      Logger.log(`[LORE WA] ${f.getName()}: não reconheci nenhuma mensagem (é a exportação do WhatsApp?).`);
+      continue;
+    }
+    // O grupo é reconhecido pela primeira mensagem (não pelo nome do arquivo,
+    // que pode se repetir entre grupos, como "_chat.txt")
+    const primeira = mensagens[0];
+    const chave = 'LORE_WA_ULTIMA_' + Utilities.base64EncodeWebSafe(
+      Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, `${primeira.quando}|${primeira.autor}`)).slice(0, 16);
+    const f2 = t => Utilities.formatDate(new Date(t), 'America/Sao_Paulo', 'dd/MM/yyyy');
+    out.push({ file: f, nome: f.getName(), mensagens, chave, periodo: `${f2(primeira.quando)} a ${f2(mensagens[mensagens.length - 1].quando)}` });
   }
-  if (!melhor) return null;
-  let texto;
-  if (/\.zip$/i.test(melhor.getName())) {
-    const txt = Utilities.unzip(melhor.getBlob()).find(b => /\.txt$/i.test(b.getName()));
-    if (!txt) return null;
-    texto = txt.getDataAsString('UTF-8');
-  } else {
-    texto = melhor.getBlob().getDataAsString('UTF-8');
-  }
-  return { file: melhor, nome: melhor.getName(), texto };
+  return out.sort((a, b) => a.mensagens[0].quando - b.mensagens[0].quando);
 }
 
 // Formatos do WhatsApp (iPhone e Android, em português):
