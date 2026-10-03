@@ -1707,6 +1707,13 @@ function MatchupsPageContent() {
   const h2hCard = h2hBody ? (
     <CardShell title="Head to head" subtitle={h2h.meetings.length ? `All-time · since ${h2h.meetings[h2h.meetings.length - 1].Season}` : 'All-time'}>
       {h2hBody}
+      {/* Rivalidade completa (mesmo padrão do Full Standings / Full Power Rankings) */}
+      <a
+        href={`/rivalries?teamA=${encodeURIComponent(h2h.a)}&teamB=${encodeURIComponent(h2h.b)}`}
+        className="block border-t border-[#E6E8EB] px-3 py-3 text-center lg:py-4 text-[13px] font-medium text-[#1D5FD1] hover:underline"
+      >
+        Full Head to Head
+      </a>
     </CardShell>
   ) : null
 
@@ -2355,6 +2362,9 @@ function MatchupsPageContent() {
                   <div className="lg:hidden">
                     <div className="px-3 pt-4 text-[15px] font-bold text-[#111]">Head to head</div>
                     {h2hBody}
+                    <a href={`/rivalries?teamA=${encodeURIComponent(h2h.a)}&teamB=${encodeURIComponent(h2h.b)}`} className="block border-t border-[#EEF0F2] px-3 py-3 text-center text-[13px] font-medium text-[#1D5FD1] hover:underline">
+                      Full Head to Head
+                    </a>
                   </div>
                 )}
 

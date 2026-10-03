@@ -456,6 +456,7 @@ function StatsPageContent() {
         w: parseNumber(tab === 'Overall' ? r?.W : tab === 'Reg Season' ? r?.RS_W : r?.PO_W),
         l: parseNumber(tab === 'Overall' ? r?.L : tab === 'Reg Season' ? r?.RS_L : r?.PO_L),
         pf: parseNumber(tab === 'Overall' ? r?.PF : tab === 'Reg Season' ? r?.RS_PF : r?.PO_PF),
+        gp: parseNumber(tab === 'Overall' ? r?.GP : tab === 'Reg Season' ? r?.RS_GP : r?.PO_GP),
         winPct: parseNumber(String(tab === 'Overall' ? r?.['W%'] : tab === 'Reg Season' ? r?.['RS_W%'] : r?.['PO_W%'] || '0').replace('%', '')),
         titles: parseNumber(r?.Titles || 0),
         finals: parseNumber(r?.Finals || 0),
@@ -478,6 +479,7 @@ function StatsPageContent() {
             w: parseNumber(tab === 'Overall' ? r?.W : tab === 'Reg Season' ? r?.RS_W : r?.PO_W),
             l: parseNumber(tab === 'Overall' ? r?.L : tab === 'Reg Season' ? r?.RS_L : r?.PO_L),
             pf: parseNumber(tab === 'Overall' ? r?.PF : tab === 'Reg Season' ? r?.RS_PF : r?.PO_PF),
+            gp: parseNumber(tab === 'Overall' ? r?.GP : tab === 'Reg Season' ? r?.RS_GP : r?.PO_GP),
             winPct: parseNumber(String(tab === 'Overall' ? r?.['W%'] : tab === 'Reg Season' ? r?.['RS_W%'] : r?.['PO_W%'] || '0').replace('%', '')),
             titles: String(r?.Champion || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
             finals: String(r?.Reached_Final || '').trim().toUpperCase() === 'TRUE' ? 1 : 0,
@@ -497,6 +499,7 @@ function StatsPageContent() {
           if (sortCol === 'L') return row.l
           if (sortCol === 'W%') return row.winPct
           if (sortCol === 'PF') return row.pf
+          if (sortCol === 'Avg') return row.gp ? row.pf / row.gp : 0
           if (sortCol === 'Titles') return row.titles
           if (sortCol === 'Finals') return row.finals
           if (sortCol === 'PO Apps') return row.poApps
@@ -828,9 +831,9 @@ function StatsPageContent() {
   }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfSortCol, gfSortDir])
 
   const tabCols = {
-    'Overall': ['W', 'L', 'W%', 'PF', 'PO Apps', 'Finals', 'Titles', 'PR #1', 'High Score'],
-    'Reg Season': ['W', 'L', 'W%', 'PF'],
-    'Playoffs': ['W', 'L', 'PF'],
+    'Overall': ['W', 'L', 'W%', 'PF', 'Avg', 'PO Apps', 'Finals', 'Titles', 'PR #1', 'High Score'],
+    'Reg Season': ['W', 'L', 'W%', 'PF', 'Avg'],
+    'Playoffs': ['W', 'L', 'PF', 'Avg'],
   }
 
   const handleSort = (col) => {
@@ -850,6 +853,8 @@ function StatsPageContent() {
     if (col === 'L') return row.l
     if (col === 'W%') return `${row.winPct.toFixed(1)}%`
     if (col === 'PF') return Math.round(row.pf).toLocaleString()
+    // Média por jogo (pontos ÷ jogos; jogos sem placar ainda não contam)
+    if (col === 'Avg') return row.gp ? (row.pf / row.gp).toFixed(1) : '—'
     if (col === 'Titles') return row.titles
     if (col === 'Finals') return row.finals
     if (col === 'PO Apps') return row.poApps

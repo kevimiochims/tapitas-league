@@ -211,8 +211,11 @@ function salvaFotosAutomaticasPR(season, week) {
       Logger.log(`[FOTOS PR] Falhou ${team}: ${err}`);
     }
   });
-  Logger.log(`[FOTOS PR] ${season} semana ${week}: ${salvas} fotos novas guardadas no Drive (${Object.keys(fotos).length} encontradas).`);
-  return true;
+  const total = Object.keys(fotos).length;
+  const comFoto = Object.keys(fotos).filter(t => fotos[t] && fotos[t].url).length;
+  Logger.log(`[FOTOS PR] ${season} semana ${week}: ${salvas} fotos novas guardadas no Drive (${comFoto} de ${total} times com foto).`);
+  // "completa" = todos os times com foto (semanas sem escalação, como 2015/16, não têm o que buscar)
+  return { ok: true, completa: comFoto === total };
 }
 
 // Todas as semanas já jogadas da temporada atual (rodar uma vez)
@@ -269,7 +272,13 @@ function salvaFotosHistoricoPR() {
   for (const key of pendentes) {
     if (Date.now() - inicio > 4.5 * 60 * 1000) break; // deixa folga no limite de 6 min
     const [season, week] = key.split('|');
-    if (salvaFotosAutomaticasPR(season, week)) {
+    const res = salvaFotosAutomaticasPR(season, week);
+    // Semana concluída quando todos os times têm foto; se faltar algum (site
+    // demorou, fonte fora do ar), tenta de novo nas próximas rodadas, até 3 vezes
+    const tentativas = JSON.parse(props.getProperty('PR_FOTOS_HIST_TENTATIVAS') || '{}');
+    tentativas[key] = (tentativas[key] || 0) + 1;
+    props.setProperty('PR_FOTOS_HIST_TENTATIVAS', JSON.stringify(tentativas));
+    if (res && res.ok && (res.completa || tentativas[key] >= 3)) {
       feitas.add(key);
       props.setProperty('PR_FOTOS_HIST_FEITAS', JSON.stringify(Array.from(feitas)));
     }
@@ -282,6 +291,15 @@ function salvaFotosHistoricoPR() {
       .forEach(t => ScriptApp.deleteTrigger(t));
     Logger.log('[FOTOS PR] Histórico completo. Gatilho desligado.');
   }
+}
+
+// Refaz semanas específicas: edite a lista e rode refazSemanasPR(). Só
+// preenche os times sem foto (ou troca por foto de quem pontuou mais); foto do
+// Form/manual nunca é trocada.
+const SEMANAS_PARA_REFAZER = [['2021', '9'], ['2021', '10']];
+
+function refazSemanasPR() {
+  SEMANAS_PARA_REFAZER.forEach(([season, week]) => salvaFotosAutomaticasPR(String(season), String(week)));
 }
 
 // Apaga as fotos AUTOMÁTICAS das temporadas passadas (linhas da PR_FOTOS e
@@ -307,6 +325,7 @@ function limpaERefazHistoricoPR() {
 
 function refazHistoricoPR() {
   PropertiesService.getScriptProperties().deleteProperty('PR_FOTOS_HIST_FEITAS');
+  PropertiesService.getScriptProperties().deleteProperty('PR_FOTOS_HIST_TENTATIVAS');
   instalaHistoricoPR();
 }
 

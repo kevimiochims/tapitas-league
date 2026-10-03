@@ -51,7 +51,7 @@ async function mapLimit(items, limit, fn) {
 }
 
 export function getPowerRankingPhotos(season, week) {
-  return cached(`pr-photos:v17:${season}|${week}`, 3 * 3600, async () => {
+  return cached(`pr-photos:v22:${season}|${week}`, 3 * 3600, async () => {
     const [games, cacheRows, espnIds, players, window] = await Promise.all([
       getSheetRows('GAME_FACTS_ALL'),
       getSheetRows('_PLAYER_CACHE'),
@@ -92,7 +92,10 @@ export function getPowerRankingPhotos(season, week) {
     })
 
     // Todas as fotos dos feeds dos titulares da semana, sem repetição
-    const espnList = Array.from(new Set(teams.flatMap(t => t.starters.map(p => p.espnId).filter(Boolean))))
+    // (o feed da ESPN por jogador só guarda as últimas semanas: em semanas
+    // antigas não traz nada daquela época e só gastaria tempo)
+    const recentWeek = window && window.to > Date.now() - 120 * DAY
+    const espnList = recentWeek ? Array.from(new Set(teams.flatMap(t => t.starters.map(p => p.espnId).filter(Boolean)))) : []
     const feeds = await mapLimit(espnList, 12, id => getPlayerPhotos(id).catch(() => []))
     const pool = new Map()
     feeds.flat().forEach(ph => { if (!pool.has(ph.url)) pool.set(ph.url, ph) })
@@ -197,12 +200,15 @@ export function getPowerRankingPhotos(season, week) {
     const weekDays = await getWeekDays(season, week).catch(() => [])
     const dayPhotos = (await mapLimit(weekDays, 4, d => getDayPhotos(d).catch(() => []))).flat()
       .map(ph => ({ ...ph, text: ` ${norm(ph.caption)} ` }))
+    const firstNamedCache = new Map()
     const firstNamedIn = text => {
+      if (firstNamedCache.has(text)) return firstNamedCache.get(text)
       let best = null
       knownNames.forEach(k => {
         const i = text.indexOf(` ${k} `)
         if (i >= 0 && (!best || i < best.i || (i === best.i && k.length > best.k.length))) best = { i, k }
       })
+      firstNamedCache.set(text, best)
       return best
     }
     const headshot = ph => /^\S+_\S+ \d{6}/.test(ph.caption) || /mug|headshot|_ms_|logo/i.test(ph.file)
@@ -223,36 +229,42 @@ export function getPowerRankingPhotos(season, week) {
       return lastKey.length >= 4 && ph.file.replace(/[^a-z]/g, '').includes(lastKey)
     }
     const captionLeads = (ph, p) => { const f = firstNamedIn(` ${norm(ph.caption)} `); return Boolean(f && f.i <= 60 && f.k === name(p)) }
+    // Partidas de todas as semanas da temporada (buscadas uma vez, em paralelo)
+    let seasonEventsPromise = null
+    const seasonEvents = () => {
+      if (!seasonEventsPromise) {
+        seasonEventsPromise = mapLimit(Array.from({ length: 18 }, (_, i) => i + 1), 6, w => getWeekEvents(season, w).catch(() => []))
+          .then(list => Object.fromEntries(list.map((events, i) => [i + 1, events])))
+      }
+      return seasonEventsPromise
+    }
     const archiveFor = async (p, team) => {
-      const teamsByWeek = await getPlayerWeekTeams(p.id, season).catch(() => ({}))
+      const [teamsByWeek, eventsByWeek] = await Promise.all([getPlayerWeekTeams(p.id, season).catch(() => ({})), seasonEvents()])
       const nflTeam = normalizeNflTeam(teamsByWeek[weekNums[0]] || teamsByWeek[weekNums[1]] || '')
-      const seasonTeams = new Set(Object.values(teamsByWeek).map(normalizeNflTeam).filter(Boolean))
       const ok = ph => !used.has(ph.url) && !headshot(ph) && inSeasonPhoto(ph)
+      const matches = ph => ok(ph) && (fileHas(ph, p) || (captionLeads(ph, p) && !fileNamesOther(ph, p)))
+      const gamesOf = (w, t) => (eventsByWeek[w] || []).filter(e => e.teams.map(normalizeNflTeam).includes(t))
       // 1) recap do jogo dele nesta semana
       if (nflTeam) {
-        for (const w of weekNums) {
-          const events = (await getWeekEvents(season, w).catch(() => [])).filter(e => e.teams.map(normalizeNflTeam).includes(nflTeam))
-          for (const e of events) {
-            const hit = (await getRecapPhotos(e.id).catch(() => [])).find(ph => ok(ph) && (fileHas(ph, p) || (captionLeads(ph, p) && !fileNamesOther(ph, p))))
-            if (hit) return hit
-          }
-        }
+        const events = weekNums.flatMap(w => gamesOf(w, nflTeam))
+        const recaps = await mapLimit(events, 4, e => getRecapPhotos(e.id).catch(() => []))
+        const hit = recaps.flat().find(matches)
+        if (hit) return hit
       }
       // 2) notícias dos dias desta semana com ele como assunto da legenda
       const day = dayPhotos.filter(ph => ok(ph) && captionLeads(ph, p) && !fileNamesOther(ph, p) && ph.width >= ph.height)
         .sort((a, b) => (b.width || 0) - (a.width || 0))[0]
       if (day) return day
-      // 3) recaps dos jogos do time dele em outras rodadas da temporada
-      if (seasonTeams.size) {
-        const others = []
-        for (let w = 1; w <= 18; w++) {
-          if (weekNums.includes(w)) continue
-          const t = normalizeNflTeam(teamsByWeek[w] || '')
-          if (!t) continue
-          const events = (await getWeekEvents(season, w).catch(() => [])).filter(e => e.teams.map(normalizeNflTeam).includes(t))
-          for (const e of events) (await getRecapPhotos(e.id).catch(() => [])).forEach(ph => { if (ok(ph) && (fileHas(ph, p) || (captionLeads(ph, p) && !fileNamesOther(ph, p)))) others.push(ph) })
-        }
-        const chosen = pick(others, `${season}|${week}|${team}|${p.id}`)
+      // 3) recaps dos jogos do time dele em outras rodadas da temporada (em paralelo)
+      const otherEvents = []
+      for (let w = 1; w <= 18; w++) {
+        if (weekNums.includes(w)) continue
+        const t = normalizeNflTeam(teamsByWeek[w] || '')
+        if (t) otherEvents.push(...gamesOf(w, t))
+      }
+      if (otherEvents.length) {
+        const recaps = await mapLimit(otherEvents, 8, e => getRecapPhotos(e.id).catch(() => []))
+        const chosen = pick(recaps.flat().filter(matches), `${season}|${week}|${team}|${p.id}`)
         if (chosen) return chosen
       }
       return null
