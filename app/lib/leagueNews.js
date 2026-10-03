@@ -11,7 +11,7 @@ import { getRssNews, matchNewsToPlayers } from './rssNews'
 const normalizeHeadline = h => String(h || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80)
 
 export function getLeagueNews() {
-  return cached('league:news:v5', 900, async () => {
+  return cached('league:news:v6', 900, async () => {
     const [rosters, players] = await Promise.all([getLeagueRosters(), getSleeperPlayers()])
 
     const byEspn = new Map()
@@ -88,12 +88,13 @@ function dedupeStories(list) {
   const kept = []
   const rank = n => (n.image ? 0 : 10) + (SOURCE_RANK.indexOf(n.source) >= 0 ? SOURCE_RANK.indexOf(n.source) : 9)
   list
-    .map(n => ({ n, words: storyWords(n), at: new Date(n.published || 0).getTime() }))
+    .map(n => ({ n, words: storyWords(n), at: n.published ? new Date(n.published).getTime() || 0 : 0 }))
     .sort((x, y) => rank(x.n) - rank(y.n))
     .forEach(item => {
       const twin = kept.find(k =>
         k.n.player?.id && k.n.player.id === item.n.player?.id &&
-        Math.abs(k.at - item.at) <= 36 * 3600 * 1000 &&
+        // Sem data (a RotoBaller às vezes não informa): compara mesmo assim
+        (!k.at || !item.at || Math.abs(k.at - item.at) <= 36 * 3600 * 1000) &&
         similar(k.words, item.words))
       if (!twin) { kept.push(item); return }
       // Junta os jogadores citados e fica com o horário mais recente
