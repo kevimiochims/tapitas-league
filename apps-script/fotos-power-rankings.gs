@@ -20,9 +20,25 @@
 // aquele time naquela semana. Em alguns minutos aparece no site.
 //
 // O que acontece por trás: cada envio vira uma linha na aba PR_FOTOS
-// (Season, Week, Team, FileId, Url, Enviado), e o arquivo enviado fica
-// público "qualquer pessoa com o link pode ver", para o site conseguir exibir.
+// (Season, Week, Team, FileId, Url, Enviado, Fonte, Jogador, PlayerId, Pts),
+// e o arquivo enviado fica público "qualquer pessoa com o link pode ver",
+// para o site conseguir exibir. Foto enviada pelo Form sempre tem prioridade.
+//
+// FOTOS AUTOMÁTICAS (guardadas no Drive):
+// O site acha sozinho uma foto de jogo do destaque de cada time na semana
+// (notícias da ESPN), mas a ESPN só mantém as notícias recentes: depois de
+// algumas semanas a foto não é mais encontrada. Por isso este script copia
+// cada foto encontrada para uma pasta do Drive ("Tapitas League - Fotos PR")
+// e registra na PR_FOTOS (Fonte = auto); assim ela fica para sempre.
+//   - Rode instalaFotosAutomaticasPR() uma vez: cria um gatilho diário (10h)
+//     que guarda as fotos da semana mais recente do Power Rankings.
+//   - Rode salvaFotosTemporadaPR() uma vez para guardar também as semanas
+//     já jogadas da temporada atual (enquanto a ESPN ainda tem as fotos).
+// Precisa da propriedade SITE_URL (a mesma usada pelos recaps).
 // =============================================================================
+
+const PR_FOTOS_HEADERS = ['Season', 'Week', 'Team', 'FileId', 'Url', 'Enviado', 'Fonte', 'Jogador', 'PlayerId', 'Pts'];
+const PR_FOTOS_PASTA = 'Tapitas League - Fotos PR';
 
 const PR_FOTOS_TAB = 'PR_FOTOS';
 
@@ -91,7 +107,7 @@ function aoEnviarFotoPR(e) {
     }
   }
 
-  abaFotosPR_(ss).appendRow([season, week, team, fileId, url, new Date()]);
+  abaFotosPR_(ss).appendRow([season, week, team, fileId, url, new Date(), 'form', '', '', '']);
   Logger.log(`[FOTOS PR] Foto salva: ${team} · ${season} semana ${week}`);
 }
 
@@ -99,11 +115,92 @@ function abaFotosPR_(ss) {
   let sheet = ss.getSheetByName(PR_FOTOS_TAB);
   if (!sheet) {
     sheet = ss.insertSheet(PR_FOTOS_TAB);
-    sheet.appendRow(['Season', 'Week', 'Team', 'FileId', 'Url', 'Enviado']);
     // Texto puro: semana "14-15" não pode virar data
     sheet.getRange('A:B').setNumberFormat('@');
   }
+  // Cabeçalho completo (abas criadas por versões anteriores ganham as colunas novas)
+  sheet.getRange(1, 1, 1, PR_FOTOS_HEADERS.length).setValues([PR_FOTOS_HEADERS]);
   return sheet;
+}
+
+// ---------------------------------------------------------------------------
+// FOTOS AUTOMÁTICAS
+// ---------------------------------------------------------------------------
+
+function instalaFotosAutomaticasPR() {
+  PropertiesService.getScriptProperties().setProperty('PR_FOTOS_SHEET_ID', SpreadsheetApp.getActiveSpreadsheet().getId());
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'salvaFotosAutomaticasPR')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('salvaFotosAutomaticasPR').timeBased().everyDays(1).atHour(10).create();
+  Logger.log('[FOTOS PR] Gatilho diário criado. Rodando agora a primeira vez...');
+  salvaFotosAutomaticasPR();
+}
+
+// Semana mais recente do Power Rankings (ou a temporada/semana informadas)
+function salvaFotosAutomaticasPR(season, week) {
+  const ss = planilhaFotosPR_();
+  if (!season || !week || typeof season === 'object') {
+    const atual = ultimaSemanaPR_(ss);
+    season = atual.season;
+    week = atual.week;
+  }
+  if (!season || !week) return;
+
+  const site = (PropertiesService.getScriptProperties().getProperty('SITE_URL') || '').replace(/\/+$/, '');
+  if (!site) throw new Error('Falta SITE_URL nas Propriedades do script.');
+  const res = UrlFetchApp.fetch(`${site}/api/league/pr-photos?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`, { muteHttpExceptions: true });
+  if (res.getResponseCode() !== 200) {
+    Logger.log(`[FOTOS PR] Site respondeu ${res.getResponseCode()} para ${season} semana ${week}.`);
+    return;
+  }
+  const fotos = JSON.parse(res.getContentText() || '{}');
+
+  const sheet = abaFotosPR_(ss);
+  const values = sheet.getDataRange().getValues();
+  const jaTem = new Set(values.slice(1).map(r => [String(r[0]).trim(), String(r[1]).trim(), String(r[2]).trim()].join('|')));
+  const pasta = pastaFotosPR_();
+  let salvas = 0;
+
+  Object.keys(fotos).forEach(team => {
+    const f = fotos[team];
+    const key = [String(season), String(week), team].join('|');
+    if (!f || !f.url || jaTem.has(key)) return; // já guardada (ou foto do Form)
+    try {
+      const blob = UrlFetchApp.fetch(f.url).getBlob()
+        .setName(`${season}-W${week}-${team} - ${f.player || 'foto'}.jpg`);
+      const file = pasta.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      sheet.appendRow([String(season), String(week), team, file.getId(), f.url, new Date(), 'auto', f.player || '', f.playerId || '', f.pts || '']);
+      salvas++;
+    } catch (err) {
+      Logger.log(`[FOTOS PR] Falhou ${team}: ${err}`);
+    }
+  });
+  Logger.log(`[FOTOS PR] ${season} semana ${week}: ${salvas} fotos novas guardadas no Drive (${Object.keys(fotos).length} encontradas).`);
+}
+
+// Todas as semanas já jogadas da temporada atual (rodar uma vez)
+function salvaFotosTemporadaPR() {
+  const ss = planilhaFotosPR_();
+  const atual = ultimaSemanaPR_(ss);
+  const values = ss.getSheetByName('GAME_FACTS_ALL').getDataRange().getValues();
+  const h = values[0].map(v => String(v).trim());
+  const iS = h.indexOf('Season'), iW = h.indexOf('Week'), iPR = h.indexOf('Power Ranking');
+  const semanas = Array.from(new Set(values.slice(1)
+    .filter(r => String(r[iS]) === String(atual.season) && Number(String(r[iPR]).replace(',', '.')) > 0)
+    .map(r => String(r[iW]))));
+  semanas.forEach(w => salvaFotosAutomaticasPR(atual.season, w));
+}
+
+function planilhaFotosPR_() {
+  const id = PropertiesService.getScriptProperties().getProperty('PR_FOTOS_SHEET_ID');
+  return id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();
+}
+
+function pastaFotosPR_() {
+  const it = DriveApp.getFoldersByName(PR_FOTOS_PASTA);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(PR_FOTOS_PASTA);
 }
 
 // Temporada e semana mais recentes com Power Ranking na GAME_FACTS_ALL

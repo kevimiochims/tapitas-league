@@ -21,8 +21,9 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
         {/* Brilho atrás do jogador */}
         <div className="pointer-events-none absolute bottom-[-40%] left-1/2 h-[120%] w-[90%] -translate-x-1/2 rounded-full bg-white/10 blur-2xl" />
         {photo ? (
-          // Foto escolhida pela liga (Google Form → aba PR_FOTOS)
-          <img src={photo} alt={team.team} className="absolute inset-0 h-full w-full object-cover" />
+          // Foto do jogo (automática, das notícias da ESPN) ou escolhida pela
+          // liga no Google Form (aba PR_FOTOS)
+          <img src={photo} alt={team.team} className="absolute inset-0 h-full w-full object-cover object-[50%_25%]" />
         ) : star?.id && (
           <div className="absolute inset-x-0 bottom-0 flex justify-center">
             <PlayerCutout sleeperId={star.id} name={star.name} className="h-[200px] sm:h-[220px]" fallback={false} />
@@ -30,7 +31,7 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
         )}
         <div className="absolute right-3 top-3 rounded-full bg-white/95 p-1 shadow-lg"><TeamLogo name={team.team} size={34} /></div>
         {photo && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent" />}
-        {star && !photo && (
+        {star && (
           <div className="absolute bottom-3 right-3 max-w-[48%] rounded-lg bg-black/45 px-2 py-1 text-right backdrop-blur-sm">
             <div className="truncate text-[11px] font-semibold">{star.label}</div>
             <div className="text-[10px] tabular-nums text-white/75">{star.pts.toFixed(2)} pts this week</div>

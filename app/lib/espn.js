@@ -1,5 +1,6 @@
 import { cached, fetchJson } from './cache'
 import { normalizeNflTeam } from './nflTeams'
+import { getSleeperPlayers } from './sleeper'
 
 const SITE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl'
 
@@ -160,3 +161,44 @@ export function getEspnRosterIds() {
 }
 
 export { nameKey as espnNameKey }
+
+const FANTASY_POS = new Set(['QB', 'RB', 'WR', 'TE', 'K'])
+
+// Mapa ID do Sleeper → ID da ESPN. O Sleeper informa a maioria; quem falta é
+// completado pelos elencos da ESPN (mesmo nome; com homônimo, mesmo time).
+export function getEspnIdMap() {
+  return cached('espn:id-map', 6 * 3600, async () => {
+    const [players, rosterIds] = await Promise.all([getSleeperPlayers(), getEspnRosterIds().catch(() => new Map())])
+    const ids = {}
+    players.forEach(p => {
+      if (!FANTASY_POS.has(p.pos)) return
+      if (p.espnId) { ids[p.id] = p.espnId; return }
+      const matches = rosterIds.get(nameKey(p.name)) || []
+      const hit = matches.length === 1 ? matches[0] : matches.find(m => m.team && m.team === p.team)
+      if (hit) ids[p.id] = hit.id
+    })
+    return ids
+  })
+}
+
+// Fotos publicadas pela ESPN nas notícias de fantasy de um jogador: fotos de
+// verdade (a.espncdn.com/photo) e, marcadas como `still`, quadros de vídeo
+// (a legenda é o título do vídeo). Cada foto vem com legenda e data.
+export function getPlayerPhotos(espnId) {
+  return cached(`espn:player-photos:${espnId}`, 3600, async () => {
+    const data = await fetchJson(`https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=${encodeURIComponent(espnId)}&limit=50`)
+    const list = data?.feed || data?.articles || []
+    const out = []
+    ;(Array.isArray(list) ? list : []).forEach(a => {
+      const published = Date.parse(a?.published || a?.lastModified || '') || null
+      ;(a?.images || []).forEach(img => {
+        const url = String(img?.url || '')
+        const photo = /^https:\/\/a\.espncdn\.com\/photo\//.test(url)
+        const still = /^https:\/\/espnmedia-cdn\.akamaized\.net\/espn\/media\//.test(url)
+        if (!photo && !still) return
+        out.push({ url, caption: String(img?.caption || img?.name || a?.headline || ''), published, width: Number(img?.width) || 0, still })
+      })
+    })
+    return out
+  })
+}

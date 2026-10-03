@@ -220,6 +220,17 @@ function PowerRankingsPageContent() {
   const [view, setView] = useState('cards')
   const [playerLookup, setPlayerLookup] = useState(new Map())
   const [customPhotos, setCustomPhotos] = useState(new Map())
+  // Fotos automáticas (foto de jogo do destaque do time, das notícias da ESPN)
+  const [autoPhotos, setAutoPhotos] = useState({})
+  useEffect(() => {
+    if (!season || !week) return
+    let cancelled = false
+    fetch(`/api/league/pr-photos?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`)
+      .then(r => (r.ok ? r.json() : {}))
+      .then(d => { if (!cancelled) setAutoPhotos(prev => ({ ...prev, [`${season}|${week}`]: d || {} })) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [season, week])
   const cardsRef = useRef(null)
   const seasonsRef = useRef(null)
   const weeksRef = useRef(null)
@@ -258,15 +269,19 @@ function PowerRankingsPageContent() {
         safeFetch(`${BASE_URL}/_PLAYER_CACHE`),
         safeFetch(`${BASE_URL}/PR_FOTOS`),
       ])
-      // Fotos personalizadas dos cards (Google Form → aba PR_FOTOS); a última
-      // enviada para o mesmo time/semana vale
+      // Fotos dos cards guardadas na aba PR_FOTOS: as do Google Form (prioridade)
+      // e as automáticas copiadas para o Drive (Fonte = auto). Vale a última de cada tipo.
       const photos = new Map()
       ;(photoRows || []).forEach(r => {
         const key = `${String(r?.Season || '').trim()}|${String(r?.Week || '').trim()}|${String(r?.Team || '').trim()}`
         const fileId = String(r?.FileId || '').trim()
         const url = String(r?.Url || '').trim()
+        const auto = String(r?.Fonte || '').trim().toLowerCase() === 'auto'
         const src = fileId ? `/api/pr-photo/${encodeURIComponent(fileId)}` : /^https?:\/\//.test(url) ? url : ''
-        if (src) photos.set(key, src)
+        if (!src) return
+        const prev = photos.get(key)
+        if (auto && prev && !prev.auto) return // foto do Form não é trocada pela automática
+        photos.set(key, { src, auto, player: String(r?.Jogador || '').trim(), playerId: String(r?.PlayerId || '').trim(), pts: parseNumber(r?.Pts) })
       })
       setCustomPhotos(photos)
 
@@ -279,7 +294,9 @@ function PowerRankingsPageContent() {
         const entry = { id, short: String(r?.name || r?.full_name || '').trim(), pos: String(r?.position || '').toUpperCase() }
         ;[r?.full_name, r?.name].forEach(v => {
           const k = String(v || '').trim().toLowerCase()
-          if (k && !lookup.has(k)) lookup.set(k, entry)
+          // Homônimos ("Kenneth Walker" RB e um WR antigo): fica o mais recente
+          // (IDs do Sleeper crescem com o tempo); o servidor confirma pelo elenco
+          if (k && (!lookup.has(k) || Number(id) > Number(lookup.get(k).id))) lookup.set(k, entry)
         })
       })
       setPlayerLookup(lookup)
@@ -1021,6 +1038,15 @@ function PowerRankingsPageContent() {
                       const pts = parseNumber(row?.[`S${i}_Pts`])
                       if (!star || pts > star.pts) star = { id: info.id, name, label: info.short || name, pts }
                     }
+                    // Foto: a guardada na PR_FOTOS (Form ou automática já copiada para o
+                    // Drive) ou, se ainda não houver, a busca automática ao vivo
+                    const saved = customPhotos.get(`${season}|${week}|${t.team}`)
+                    const live = autoPhotos[`${season}|${week}`]?.[t.team]
+                    const auto = saved ? (saved.auto && saved.playerId ? { playerId: saved.playerId, player: saved.player, pts: saved.pts } : null) : live
+                    if (auto && (!star || star.id !== auto.playerId)) {
+                      const info = playerLookup.get(String(auto.player || '').toLowerCase())
+                      star = { id: auto.playerId, name: auto.player, label: info?.short || auto.player, pts: auto.pts }
+                    }
                     return (
                       <div key={t.team} data-card={t.team} className="w-[86%] max-w-[380px] flex-shrink-0 snap-start sm:w-[340px]">
                         <PowerCard
@@ -1033,7 +1059,7 @@ function PowerRankingsPageContent() {
                           markdownComponents={markdownComponents}
                           history={getTeamHistory(t.team).map(h => ({ week: String(h?.Week || '').trim(), rank: parseNumber(h?.['Power Ranking']) }))}
                           totalTeams={rankings.length}
-                          photo={customPhotos.get(`${season}|${week}|${t.team}`) || null}
+                          photo={saved?.src || auto?.url || null}
                         />
                       </div>
                     )
