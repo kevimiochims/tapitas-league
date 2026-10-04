@@ -16,6 +16,7 @@ import {
 import { BrandBackdrop, Podium, SummaryButton, PageShell, CardShell, CardGroup, StatRow, ResultBadge, StreakBadge, TeamLogo, getTeamAbbr } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import PowerCard from '../components/PowerCard'
+import PlayerProfileModal from '../components/PlayerProfileModal'
 import { useDrawer } from '../context/DrawerContext'
 
 const BASE_URL = '/api/sheet'
@@ -234,6 +235,8 @@ function PowerRankingsPageContent() {
   const cardsRef = useRef(null)
   // Read more / Show less abre ou fecha o texto de todos os cards juntos
   const [notesOpen, setNotesOpen] = useState(false)
+  // Destaque do card aberto no Player Profile (já na semana do ranking)
+  const [starProfile, setStarProfile] = useState(null)
   // Celular (um card por vez): quando a rolagem termina, a faixa fica da altura
   // do card que está na tela (sem sobrar espaço embaixo dos mais curtos com o
   // texto aberto) e o card é recentralizado se tiver parado torto. A altura só
@@ -1078,7 +1081,7 @@ function PowerRankingsPageContent() {
                       const info = playerLookup.get(name.toLowerCase())
                       if (!info || info.pos === 'DEF') continue
                       const pts = parseNumber(row?.[`S${i}_Pts`])
-                      if (!star || pts > star.pts) star = { id: info.id, name, label: info.short || name, pts }
+                      if (!star || pts > star.pts) star = { id: info.id, name, label: info.short || name, pts, pos: info.pos }
                     }
                     // Foto: a guardada na PR_FOTOS (Form ou automática já copiada para o
                     // Drive) ou, se ainda não houver, a busca automática ao vivo
@@ -1090,7 +1093,7 @@ function PowerRankingsPageContent() {
                     const auto = saved && !liveBetter ? (saved.auto && saved.playerId ? { playerId: saved.playerId, player: saved.player, pts: saved.pts } : null) : live
                     if (auto && (!star || star.id !== auto.playerId)) {
                       const info = playerLookup.get(String(auto.player || '').toLowerCase())
-                      star = { id: auto.playerId, name: auto.player, label: info?.short || auto.player, pts: auto.pts }
+                      star = { id: auto.playerId, name: auto.player, label: info?.short || auto.player, pts: auto.pts, pos: info?.pos }
                     }
                     return (
                       <div key={t.team} data-card={t.team} className="w-full flex-shrink-0 snap-center snap-always sm:w-[340px] sm:snap-start">
@@ -1110,6 +1113,7 @@ function PowerRankingsPageContent() {
                           week={week}
                           expanded={notesOpen}
                           onToggleExpanded={() => setNotesOpen(o => !o)}
+                          onOpenStar={star && row ? () => setStarProfile({ ...star, team: t.team, opponent: String(row?.Opponent || '').trim() }) : undefined}
                         />
                       </div>
                     )
@@ -1268,6 +1272,20 @@ function PowerRankingsPageContent() {
       </div>
 
       <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={allSeasons} />
+      {starProfile && (
+        <PlayerProfileModal
+          key={`${starProfile.name}|${starProfile.team}|${season}|${week}`}
+          rawName={starProfile.name}
+          displayName={starProfile.label}
+          position={starProfile.pos}
+          playerId={starProfile.id}
+          games={games}
+          initialTeams={[starProfile.team]}
+          initialSeasons={[season]}
+          matchup={{ season, week, team: starProfile.team, opponent: starProfile.opponent }}
+          onClose={() => setStarProfile(null)}
+        />
+      )}
     </PageShell>
   )
 }

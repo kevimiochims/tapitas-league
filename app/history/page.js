@@ -718,7 +718,7 @@ export default function HistoryPage() {
         {playerRow('Most points', selected.topScorer, selected.topScorer?.total.toFixed(1), () => setProfile({ name: selected.topScorer.name, team: selected.topScorer.team, season: selected.season }))}
         {playerRow('Best average (6+ starts)', selected.topAverage, selected.topAverage ? (selected.topAverage.total / selected.topAverage.starts).toFixed(2) : null, () => setProfile({ name: selected.topAverage.name, team: selected.topAverage.team, season: selected.season }))}
         {selected.bestPlayerGame && (
-          <StatRow href={selected.bestPlayerGame.href} left={<PlayerPhoto playerId={playerInfo(selected.bestPlayerGame.name)?.playerId} name={selected.bestPlayerGame.name} />} eyebrow="Best single game" title={selected.bestPlayerGame.name} subtitle={`${selected.bestPlayerGame.team} vs ${selected.bestPlayerGame.opp} · Wk ${selected.bestPlayerGame.week}`} value={selected.bestPlayerGame.pts.toFixed(2)} valueClass="text-[#1E8E3E]" />
+          <StatRow onClick={() => setProfile({ name: selected.bestPlayerGame.name, team: selected.bestPlayerGame.team, season: selected.season, week: selected.bestPlayerGame.week, opp: selected.bestPlayerGame.opp })} subtitleHref={selected.bestPlayerGame.href} left={<PlayerPhoto playerId={playerInfo(selected.bestPlayerGame.name)?.playerId} name={selected.bestPlayerGame.name} />} eyebrow="Best single game" title={selected.bestPlayerGame.name} subtitle={`${selected.bestPlayerGame.team} vs ${selected.bestPlayerGame.opp} · Wk ${selected.bestPlayerGame.week}`} value={selected.bestPlayerGame.pts.toFixed(2)} valueClass="text-[#1E8E3E]" />
         )}
       </CardGroup>
       <CardGroup label="Single games">
@@ -813,7 +813,7 @@ export default function HistoryPage() {
 
       {profile && (
         <PlayerProfileModal
-          key={`${profile.name}|${profile.team}|${profile.season || ""}`}
+          key={`${profile.name}|${profile.team}|${profile.season || ""}|${profile.week || ""}`}
           rawName={profile.name}
           displayName={profile.name}
           position={playerInfo(profile.name)?.pos}
@@ -821,6 +821,8 @@ export default function HistoryPage() {
           games={games}
           initialTeams={[profile.team]}
           initialSeasons={profile.season ? [profile.season] : undefined}
+          // Melhor jogo da temporada: abre já na semana (estatísticas da NFL)
+          matchup={profile.week ? { season: profile.season, week: profile.week, team: profile.team, opponent: profile.opp } : undefined}
           onClose={closeProfile}
         />
       )}

@@ -14,7 +14,7 @@ import PlayerCutout from './PlayerCutout'
 const matchupLink = (season, week, team, opp) =>
   `/matchups?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}&team=${encodeURIComponent(team)}&opp=${encodeURIComponent(opp)}`
 
-export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, markdownComponents, history = [], totalTeams = 10, photo = null, credit = '', season, week, expanded = false, onToggleExpanded }) {
+export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, markdownComponents, history = [], totalTeams = 10, photo = null, credit = '', season, week, expanded = false, onToggleExpanded, onOpenStar }) {
   // Read more / Show less vale para todos os cards (estado vem da página)
   const open = expanded
   const up = team.delta > 0
@@ -39,12 +39,18 @@ export default function PowerCard({ team, next, h2h, star, prevRank, tierColor, 
         {photo && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent" />}
         {/* Crédito exigido pelas fotos livres (Wikimedia Commons) */}
         {photo && credit && <div className="absolute left-2 top-2 max-w-[62%] truncate rounded bg-black/40 px-1.5 py-0.5 text-[9px] text-white/80" title={credit}>{credit}</div>}
-        {star && (
+        {/* Destaque da semana: toque abre o Player Profile já nesta semana */}
+        {star && (onOpenStar ? (
+          <button type="button" onClick={onOpenStar} className="absolute bottom-3 right-3 max-w-[48%] rounded-lg bg-black/45 px-2 py-1 text-right backdrop-blur-sm transition-colors hover:bg-black/60">
+            <div className="truncate text-[11px] font-semibold">{star.label}</div>
+            <div className="text-[10px] tabular-nums text-white/75">{star.pts.toFixed(2)} pts this week</div>
+          </button>
+        ) : (
           <div className="absolute bottom-3 right-3 max-w-[48%] rounded-lg bg-black/45 px-2 py-1 text-right backdrop-blur-sm">
             <div className="truncate text-[11px] font-semibold">{star.label}</div>
             <div className="text-[10px] tabular-nums text-white/75">{star.pts.toFixed(2)} pts this week</div>
           </div>
-        )}
+        ))}
         <div className="absolute bottom-3 left-3 flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white text-[26px] font-black italic tabular-nums shadow-lg" style={{ background: tierColor || '#02275F' }}>
           {team.rank}
         </div>

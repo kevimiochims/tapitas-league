@@ -232,20 +232,32 @@ export function CardGroup({ label, first = false, children }) {
   )
 }
 
-export function StatRow({ left, eyebrow, title, subtitle, value, valueClass = 'text-[#111]', href, onClick }) {
+// Com `onClick` + `subtitleHref` (ex.: melhor jogo de um jogador): a linha
+// abre o perfil e o subtítulo (o confronto) é um link à parte.
+export function StatRow({ left, eyebrow, title, subtitle, subtitleHref, value, valueClass = 'text-[#111]', href, onClick }) {
   const interactive = Boolean(href || onClick)
   const className = `flex w-full items-center gap-2 px-3 py-2 text-left lg:gap-3 lg:px-4 lg:py-2.5 ${interactive ? 'group transition-colors hover:bg-black/[0.03]' : ''}`
+  const splitLink = Boolean(onClick && subtitleHref && !href)
   const inner = (
     <>
       {left}
       <div className="min-w-0 flex-1">
         {eyebrow && <div className="truncate text-[11px] text-[#6B7280]">{eyebrow}</div>}
         <div className={`truncate text-[13px] font-medium leading-tight text-[#111] ${interactive ? 'group-hover:text-[#D01F2D]' : ''}`}>{title}</div>
-        {subtitle && <div className="truncate text-[11px] text-[#6B7280]">{subtitle}</div>}
+        {subtitle && (splitLink
+          ? <a href={subtitleHref} onClick={e => e.stopPropagation()} className="block truncate text-[11px] text-[#6B7280] underline-offset-2 hover:text-[#D01F2D] hover:underline">{subtitle}</a>
+          : <div className="truncate text-[11px] text-[#6B7280]">{subtitle}</div>)}
       </div>
       {value !== undefined && value !== null && <div className={`flex-shrink-0 text-[13px] font-semibold tabular-nums ${valueClass}`}>{value}</div>}
     </>
   )
+  if (splitLink) {
+    return (
+      <div role="button" tabIndex={0} onClick={onClick} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick() }} className={`${className} cursor-pointer`}>
+        {inner}
+      </div>
+    )
+  }
   if (href) return <a href={href} className={className}>{inner}</a>
   if (onClick) return <button type="button" onClick={onClick} className={className}>{inner}</button>
   return <div className={className}>{inner}</div>

@@ -429,6 +429,9 @@ export default function TeamsPage() {
   const [logHighestOnly, setLogHighestOnly] = useState(false)
   const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
   const [profileTab, setProfileTab] = useState(null)
+  // Jogo em que o perfil abre (Best single game): semana com as estatísticas
+  // da NFL e o jogo em destaque no game log
+  const [profileGame, setProfileGame] = useState(null)
   // Jogador do Sleeper que nunca jogou pela franquia (fora do Player Archive)
   const [nflProfile, setNflProfile] = useState(null)
   const [playerSearch, setPlayerSearch] = useState('')
@@ -487,6 +490,7 @@ export default function TeamsPage() {
 
   const openPlayerProfile = (playerKey, teamName = selected?.team, tab = null) => {
     if (!playerKey) return
+    setProfileGame(null)
     const cleanTeam = String(teamName || '').trim()
     if (typeof window !== 'undefined') {
       const current = window.history.state || {}
@@ -1260,6 +1264,7 @@ export default function TeamsPage() {
             avgTotal: 0,
             avgCount: 0,
             bestPts: 0,
+            bestGame: null,
             seasons: new Set(),
             first: null,
             last: null,
@@ -1277,7 +1282,10 @@ export default function TeamsPage() {
           entry.avgCount += 1
         }
         // Double-weeks contribute to AVG but are intentionally excluded from BEST.
-        if (!isDoubleWeek(g)) entry.bestPts = Math.max(entry.bestPts, app.pts)
+        if (!isDoubleWeek(g) && (!entry.bestGame || app.pts > entry.bestPts)) {
+          entry.bestPts = app.pts
+          entry.bestGame = g
+        }
         const marker = {
           season: Number(season) || 0,
           week: parseFloat(week.replace(/[^0-9.]/g, '')) || 0,
@@ -1382,7 +1390,7 @@ export default function TeamsPage() {
       mostRostered.length > 0 ? { label: 'Most appearances', p: mostRostered[0], value: mostRostered[0].count } : null,
       mostStarted.length > 0 ? { label: 'Most starts', p: mostStarted[0], value: mostStarted[0].count } : null,
       bestAvgPlayer ? { label: 'Best average (10+ apps)', p: bestAvgPlayer, value: bestAvgPlayer.avgPts.toFixed(2) } : null,
-      bestScorePlayer ? { label: 'Best single game', p: bestScorePlayer, value: bestScorePlayer.bestPts.toFixed(2) } : null,
+      bestScorePlayer ? { label: 'Best single game', p: bestScorePlayer, value: bestScorePlayer.bestPts.toFixed(2), game: bestScorePlayer.bestGame } : null,
     ].filter(Boolean)
 
     const hasLogFilters = logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly
@@ -1513,10 +1521,17 @@ export default function TeamsPage() {
           {franchisePlayers.slice(1).map(item => (
             <StatRow
               key={item.label}
-              onClick={() => openPlayerProfile(item.p.archiveKey || `raw:${item.p.rawName}`)}
+              onClick={() => {
+                const key = item.p.archiveKey || `raw:${item.p.rawName}`
+                openPlayerProfile(key)
+                if (item.game) setProfileGame({ key, game: item.game })
+              }}
               left={<PlayerAvatar name={item.p.rawName} playerLookup={playerLookup} size={32} />}
               eyebrow={item.label}
               title={item.p.name}
+              // Melhor jogo: o confronto é um link à parte para a Matchups
+              subtitle={item.game ? `vs ${shortName(String(item.game.Opponent || '').trim())} · ${item.game.Season} Wk ${item.game.Week}` : undefined}
+              subtitleHref={item.game ? canonicalMatchupHref(item.game, games) : undefined}
               value={item.value}
             />
           ))}
@@ -1717,15 +1732,23 @@ export default function TeamsPage() {
       </CardShell>
     )
 
+    const openGame = profileGame && profileGame.key === selectedPlayerKey ? profileGame.game : null
     const PlayerProfile = selectedPlayer ? (
       <PlayerProfileModal
-        key={selectedPlayer.rawName}
+        key={`${selectedPlayer.rawName}|${openGame ? `${openGame.Season}|${openGame.Week}` : ''}`}
         rawName={selectedPlayer.rawName}
         displayName={selectedPlayer.name}
         position={selectedPlayer.position}
         playerId={getPlayerId(selectedPlayer.rawName, playerLookup)}
         games={games}
         initialTeams={[selected.team]}
+        initialSeasons={openGame ? [String(openGame.Season || '').trim()] : undefined}
+        matchup={openGame ? {
+          season: String(openGame.Season || '').trim(),
+          week: String(openGame.Week || '').trim(),
+          team: String(openGame.Team || '').trim(),
+          opponent: String(openGame.Opponent || '').trim(),
+        } : undefined}
         initialTab={profileTab}
         onClose={closePlayerProfile}
       />

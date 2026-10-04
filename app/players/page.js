@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Trophy, Activity, Target, Flame, TrendingUp, TrendingDown, Star, Swords, ChevronLeft, ChevronRight, Skull, Zap, Filter, Users } from 'lucide-react'
 import { BrandBackdrop, PageShell, PageBar, BarTab, LeaderCard, CardShell, FilterBar, MultiFilterPill, ToggleChip, SearchInput, SortHeader, Tag, ResultBadge, PositionBadge, TeamLogo, Pager, StableHeight } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
@@ -456,7 +455,6 @@ function formatSeasonList(seasons) {
 export default function PlayersPage() {
   // Dono de cada nome abreviado na liga (separa homônimos no perfil)
   const nameOwners = useNameOwners()
-  const router = useRouter()
   const [games, setGames] = useState([]), [playerLookup, setPlayerLookup] = useState(new Map()), [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [position, setPosition] = useState(['All'])
@@ -480,6 +478,10 @@ export default function PlayersPage() {
   const [consolidatedPage, setConsolidatedPage] = useState(0)
   const [selected, setSelected] = useState(null)
   const closeProfile = () => setSelected(null)
+  // Top Performances: jogador/pontos abrem o perfil já no jogo (estatísticas
+  // da NFL daquela semana); o confronto continua indo para a Matchups
+  const [perfGame, setPerfGame] = useState(null)
+  const stop = e => e.stopPropagation()
 
   useEffect(() => {
     let alive = true
@@ -835,10 +837,13 @@ export default function PlayersPage() {
             {performanceShowcase.podium.map((g, i) => {
               const first = i === 0
               return (
-                <a
+                <div
                   key={`${g.identityKey}-${g.season}-${g.week}-${i}`}
-                  href={g.href}
-                  className={`group relative flex items-center gap-4 overflow-hidden rounded-xl p-4 transition-shadow hover:shadow-md ${first ? 'min-h-[118px] pr-[120px] text-white' : 'bg-white text-[#111]'}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setPerfGame(g)}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setPerfGame(g) }}
+                  className={`group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-xl p-4 transition-shadow hover:shadow-md ${first ? 'min-h-[118px] pr-[120px] text-white' : 'bg-white text-[#111]'}`}
                 >
                   {first && <BrandBackdrop />}
                   <span className={`absolute right-3 top-2 text-[64px] font-black italic leading-none tabular-nums ${first ? 'text-white/10' : 'text-[#02275F]/[0.06]'}`}>{i + 1}</span>
@@ -860,19 +865,26 @@ export default function PlayersPage() {
                       <span className="text-[32px] font-bold leading-none tabular-nums">{g.pts.toFixed(2)}</span>
                       <span className={`text-[12px] ${first ? 'text-white/70' : 'text-[#6B7280]'}`}>pts</span>
                     </div>
-                    <div className={`mt-1.5 flex min-w-0 items-center gap-1.5 text-[12px] ${first ? 'text-white/80' : 'text-[#6B7280]'}`}>
+                    <a href={g.href} onClick={stop} className={`relative mt-1.5 flex min-w-0 items-center gap-1.5 text-[12px] underline-offset-2 hover:underline ${first ? 'text-white/80' : 'text-[#6B7280]'}`}>
                       <TeamLogo name={g.team} size={16} />
                       <span className="truncate">{shortName(g.team)} vs {shortName(g.opponent)} · {g.season} W{g.week}</span>
-                    </div>
+                    </a>
                   </div>
-                </a>
+                </div>
               )
             })}
           </div>
 
           <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
             {performanceShowcase.positions.map(({ label, row }) => (
-              <a key={label} href={row?.href} className="group flex flex-col rounded-xl bg-white p-3 transition-shadow hover:shadow-md">
+              <div
+                key={label}
+                role={row ? 'button' : undefined}
+                tabIndex={row ? 0 : undefined}
+                onClick={() => row && setPerfGame(row)}
+                onKeyDown={e => { if (row && (e.key === 'Enter' || e.key === ' ')) setPerfGame(row) }}
+                className={`group flex flex-col rounded-xl bg-white p-3 transition-shadow ${row ? 'cursor-pointer hover:shadow-md' : ''}`}
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">Best {label}</span>
                   {label === 'Bench' ? <Tag>Bench</Tag> : <PositionBadge position={label} />}
@@ -882,12 +894,12 @@ export default function PlayersPage() {
                     <PlayerAvatar name={row.rawName} playerLookup={playerLookup} size={40} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{row.name}</div>
-                      <div className="truncate text-[11px] text-[#6B7280]">{row.season} W{row.week} · {shortName(row.team)}</div>
+                      <a href={row.href} onClick={stop} className="block truncate text-[11px] text-[#6B7280] underline-offset-2 hover:underline">{row.season} W{row.week} · {shortName(row.team)} vs {shortName(row.opponent)}</a>
                     </div>
                     <span className="flex-shrink-0 text-[18px] font-bold tabular-nums text-[#111]">{row.pts.toFixed(1)}</span>
                   </div>
                 ) : <div className="mt-2.5 py-2 text-[12px] text-[#9CA3AF]">No data</div>}
-              </a>
+              </div>
             ))}
           </div>
         </>
@@ -1056,8 +1068,8 @@ export default function PlayersPage() {
                     {visiblePerformanceRows.map((g, i) => (
                       <tr
                         key={`${g.identityKey}-${g.season}-${g.week}-${g.team}-${i}`}
-                        onClick={() => router.push(canonicalMatchupHref(g, games))}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(canonicalMatchupHref(g, games)) }}
+                        onClick={() => setPerfGame(g)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPerfGame(g) }}
                         tabIndex={0}
                         className="group cursor-pointer border-b border-[#F1F2F4] transition-colors hover:bg-[#F7F8FA] focus:bg-[#F7F8FA] focus:outline-none"
                       >
@@ -1072,11 +1084,11 @@ export default function PlayersPage() {
                         <td className={`${td} text-[13px] font-semibold text-[#111]`}>{g.season}</td>
                         <td className={`${td} whitespace-nowrap text-[13px] tabular-nums text-[#3F4757]`}>{g.week}</td>
                         <td className={td}>
-                          <div className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-[#111]">
+                          <a href={g.href} onClick={stop} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md text-[13px] text-[#111] underline-offset-2 hover:text-[#D01F2D] hover:underline">
                             <TeamLogo name={g.team} size={18} />{shortName(g.team)}
                             <span className="text-[#9CA3AF]">vs</span>
                             <TeamLogo name={g.opponent} size={18} />{shortName(g.opponent)}
-                          </div>
+                          </a>
                         </td>
                         <td className={`${td} whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-[#111]`}>
                           {g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1"><Tag>DW</Tag></span>}
@@ -1124,6 +1136,21 @@ export default function PlayersPage() {
           initialTeams={teamFilter.includes('All') ? undefined : teamFilter}
           initialSeasons={season.includes('All') ? undefined : season}
           onClose={closeProfile}
+        />
+      )}
+
+      {perfGame && (
+        <PlayerProfileModal
+          key={`perf-${perfGame.identityKey}-${perfGame.season}-${perfGame.week}-${perfGame.team}`}
+          rawName={perfGame.rawName}
+          displayName={perfGame.name}
+          position={perfGame.position}
+          playerId={getPlayerId(perfGame.rawName, playerLookup)}
+          games={games}
+          initialTeams={[perfGame.team]}
+          initialSeasons={[perfGame.season]}
+          matchup={{ season: perfGame.season, week: perfGame.week, team: perfGame.team, opponent: perfGame.opponent }}
+          onClose={() => setPerfGame(null)}
         />
       )}
     </PageShell>
