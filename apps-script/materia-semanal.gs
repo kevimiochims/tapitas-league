@@ -68,6 +68,8 @@ Nos playoffs, na final e no jogo do Unicórnio, o texto gira em torno disso.
 NÃO SE REPITA: cada confronto é contado UMA vez, num único trecho. Um placar,
 uma pontuação de jogador ou um fato já citado não aparece de novo em outra
 seção. O "atual campeão" é chamado assim no máximo uma vez no texto inteiro.
+Só diga que um jogador "estreou" pelo time quando o dossiê disser ESTREIA;
+quando disser "NÃO é estreia", ele já tinha jogado pelo time antes.
 Não invente apelidos, cargos ou papéis de ninguém (quem é comissário, fundador
 etc.) que não estejam no dossiê ou na LORE.
 Cite os times pelo nome (pode usar **negrito** na primeira menção). Nunca diga

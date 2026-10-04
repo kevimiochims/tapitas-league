@@ -269,15 +269,23 @@ function franchiseLine(team, hon, rows) {
   return parts.join(' · ')
 }
 
-// Trades / adições recentes envolvendo os times e quem jogou neste confronto
-function transactionAngles(transactions, teams, g, players) {
+// Trades / adições recentes envolvendo os times e quem jogou neste confronto.
+// Diz sempre se é a estreia do jogador pelo time ou quantos jogos ele já fez
+// desde a chegada (sem isso, a IA chamava de "estreia" uma troca de semanas atrás)
+function transactionAngles(transactions, teams, g, players, rows = []) {
   const season = str(g.Season)
   const week = weekNum(g)
   const out = []
+  // Jogos do jogador pelo time nesta temporada, depois da semana da transação e antes deste jogo
+  const gamesSince = (name, team, fromWeek) => rows.filter(x =>
+    str(x.Season) === season && norm(x.Team) === norm(team) && weekNum(x) >= fromWeek && order(x) < order(g)
+    && [...lineup(x).starters, ...lineup(x).bench].some(p => abbr(p.name) === abbr(name))).length
   const recent = transactions.filter(t => str(t.season) === season && (Number(t.week) || 0) <= week && (Number(t.week) || 0) >= week - 3)
   recent.filter(t => t.type === 'trade' && t.teams.some(x => teams.map(norm).includes(norm(x)))).forEach(t => {
     const desc = t.moves.map(m => `${m.team} recebeu ${m.adds.map(p => p.name).join(', ') || 'nada'}`).join('; ')
-    out.push({ w: 3, text: `Trade recente (week ${t.week}): ${desc}.` })
+    const tw = Number(t.week) || 0
+    const when = tw >= week ? 'nesta semana, antes deste jogo' : `na week ${tw}, ${week - tw === 1 ? 'na semana passada' : `há ${week - tw} semanas`}`
+    out.push({ w: 3, text: `Trade ${when}: ${desc}.` })
   })
   // Jogador deste jogo que chegou ao time por troca/waiver na temporada
   const byAbbr = new Map(players.map(p => [abbr(p.name), p]))
@@ -286,7 +294,9 @@ function transactionAngles(transactions, teams, g, players) {
       const hit = byAbbr.get(abbr(p.name))
       if (!hit || norm(hit.team) !== norm(m.team) || hit.pts < 15) return
       const how = t.type === 'trade' ? `veio numa trade na week ${t.week}` : t.type === 'waiver' ? `foi pego no waiver na week ${t.week}` : `foi pego como free agent na week ${t.week}`
-      out.push({ w: 3, text: `${hit.name} (${f2(hit.pts)} pts por ${m.team}) ${how}.` })
+      const before = gamesSince(hit.name, m.team, Number(t.week) || 0)
+      const debut = before === 0 ? 'ESTREIA dele pelo time' : `NÃO é estreia: é o ${ordinal(before + 1)} jogo dele pelo time desde que chegou`
+      out.push({ w: 3, text: `${hit.name} (${f2(hit.pts)} pts por ${m.team}) ${how} — ${debut}.` })
     }))
   })
   return out
@@ -375,7 +385,7 @@ export async function buildMatchupContext({ season, week, team, opp }) {
     ...lineup(target).starters.map(p => ({ ...p, team: a })),
     ...(gB ? lineup(gB).starters.map(p => ({ ...p, team: b })) : []),
   ]
-  angles.push(...transactionAngles(transactions, [a, b], target, players))
+  angles.push(...transactionAngles(transactions, [a, b], target, players, rowsAll))
 
   // Campeão atual (última temporada encerrada antes desta)
   const lastSeason = Object.keys(hon).filter(s => Number(s) < Number(season) && hon[s].champion).sort((x, y) => Number(y) - Number(x))[0]
