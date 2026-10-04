@@ -540,7 +540,7 @@ export default function PlayersPage() {
             name: displayName,
             position: getPlayerPosition(raw, playerLookup),
             aliases: new Set(), appearances: 0, starts: 0, bench: 0,
-            total: 0, avgTotal: 0, avgCount: 0, best: 0,
+            total: 0, avgTotal: 0, avgCount: 0, best: 0, bestGame: null,
             seasons: new Set(), teams: new Set(), teamApps: {}, rostered: 0,
           })
         }
@@ -557,7 +557,11 @@ export default function PlayersPage() {
           p.avgTotal += points
           p.avgCount++
         }
-        if (!doubleWeek) p.best = Math.max(p.best, app.pts || 0)
+        // Melhor jogo (semanas simples): guarda qual foi, para abrir o perfil nele
+        if (!doubleWeek && (!p.bestGame || (app.pts || 0) > p.best)) {
+          p.best = app.pts || 0
+          p.bestGame = { season: gSeason, week: String(g?.Week || '').trim(), team: gTeam, opponent: String(g?.Opponent || '').trim() }
+        }
       })
     })
     return Array.from(map.values())
@@ -805,7 +809,8 @@ export default function PlayersPage() {
           {[
             { title: 'Most appearances', icon: Users, accent: 'bg-[#EEF3FF] text-[#02275F]', list: [...filtered].sort((a, b) => b.appearances - a.appearances), value: p => p.appearances },
             { title: 'Best average (10+ apps)', icon: TrendingUp, accent: 'bg-[#E8F5EC] text-[#1E8E3E]', list: [...filtered].filter(p => p.appearances >= 10).sort((a, b) => b.avg - a.avg), value: p => p.avg.toFixed(2) },
-            { title: 'Best single game', icon: Flame, accent: 'bg-[#FFF2B8] text-[#8D6A00]', list: [...filtered].sort((a, b) => b.best - a.best), value: p => p.best.toFixed(2) },
+            // Best single game: o perfil já abre na semana do jogo (aba Week com as stats)
+            { title: 'Best single game', icon: Flame, accent: 'bg-[#FFF2B8] text-[#8D6A00]', list: [...filtered].sort((a, b) => b.best - a.best), value: p => p.best.toFixed(2), open: p => (p.bestGame ? setPerfGame({ ...p.bestGame, identityKey: p.identityKey, rawName: p.rawName, name: p.name, position: p.position }) : setSelected(p)) },
             { title: 'Most starts', icon: Star, accent: 'bg-[#FDECEE] text-[#D01F2D]', list: [...filtered].sort((a, b) => b.starts - a.starts), value: p => p.starts },
           ].map((card, cardIndex) => {
             const [first, ...rest] = card.list.slice(0, 5)
@@ -822,9 +827,9 @@ export default function PlayersPage() {
                   badge: <PositionBadge position={first.position} />,
                   sub: `${first.appearances} apps · ${formatSeasonList(Array.from(first.seasons))}`,
                   value: card.value(first),
-                  onClick: () => setSelected(first),
+                  onClick: () => (card.open ? card.open(first) : setSelected(first)),
                 }}
-                others={rest.map(p => ({ key: p.identityKey, avatar: <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={22} />, name: p.name, value: card.value(p), onClick: () => setSelected(p) }))}
+                others={rest.map(p => ({ key: p.identityKey, avatar: <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={22} />, name: p.name, value: card.value(p), onClick: () => (card.open ? card.open(p) : setSelected(p)) }))}
               />
             )
           })}

@@ -237,8 +237,12 @@ function PowerRankingsPageContent() {
   const [notesOpen, setNotesOpen] = useState(false)
   // Cards que estão na tela (destacados na fileira de logos acima)
   const [visibleCards, setVisibleCards] = useState([])
-  // Hero: arrastar para o lado troca de semana
+  // Hero: arrastar para o lado troca de semana, com o card acompanhando o dedo,
+  // saindo da tela e o da outra semana entrando (como no carrossel dos cards)
   const heroTouch = useRef(null)
+  const heroRef = useRef(null)
+  const [heroX, setHeroX] = useState(0)
+  const [heroAnim, setHeroAnim] = useState(false)
   // Destaque do card aberto no Player Profile (já na semana do ranking)
   const [starProfile, setStarProfile] = useState(null)
   // Celular (um card por vez): quando a rolagem termina, a faixa fica da altura
@@ -1032,20 +1036,43 @@ function PowerRankingsPageContent() {
         const leader = rankings[0]
         const riser = risers[0]
         return (
+          // Arrastar para o lado troca de semana (anterior / próxima)
+          <div className="mb-2 overflow-hidden rounded-xl">
           <div
-            className="relative mb-2 overflow-hidden rounded-xl text-white"
-            // Arrastar para o lado troca de semana (anterior / próxima)
-            onTouchStart={e => { heroTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }}
-            onTouchEnd={e => {
-              const start = heroTouch.current
-              heroTouch.current = null
-              if (!start) return
-              const dx = e.changedTouches[0].clientX - start.x
-              const dy = e.changedTouches[0].clientY - start.y
-              if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+            ref={heroRef}
+            className="relative overflow-hidden rounded-xl text-white"
+            style={{ transform: `translateX(${heroX}px)`, transition: heroAnim ? 'transform 220ms ease-out' : 'none', touchAction: 'pan-y' }}
+            onTouchStart={e => { heroTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: null } }}
+            onTouchMove={e => {
+              const t = heroTouch.current
+              if (!t) return
+              const dx = e.touches[0].clientX - t.x
+              const dy = e.touches[0].clientY - t.y
+              if (!t.lock && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) t.lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+              if (t.lock !== 'x') return
               const i = weeks.indexOf(week)
-              const next = weeks[i + (dx < 0 ? 1 : -1)]
-              if (next) setWeek(next)
+              const hasNext = Boolean(weeks[i + (dx < 0 ? 1 : -1)])
+              setHeroAnim(false)
+              setHeroX(hasNext ? dx : dx * 0.25) // sem semana daquele lado: só "elástico"
+            }}
+            onTouchEnd={e => {
+              const t = heroTouch.current
+              heroTouch.current = null
+              if (!t || t.lock !== 'x') return
+              const dx = e.changedTouches[0].clientX - t.x
+              const dir = dx < 0 ? 1 : -1
+              const next = weeks[weeks.indexOf(week) + dir]
+              const w = heroRef.current?.offsetWidth || 360
+              setHeroAnim(true)
+              if (Math.abs(dx) < 60 || !next) { setHeroX(0); return }
+              // Sai pela lateral, troca a semana e a nova entra pelo outro lado
+              setHeroX(-dir * w)
+              setTimeout(() => {
+                setHeroAnim(false)
+                setWeek(next)
+                setHeroX(dir * w)
+                requestAnimationFrame(() => requestAnimationFrame(() => { setHeroAnim(true); setHeroX(0) }))
+              }, 220)
             }}
           >
             <BrandBackdrop />
@@ -1071,6 +1098,7 @@ function PowerRankingsPageContent() {
               <div className="flex-shrink-0 self-end sm:hidden"><Podium rows={rankings.slice(0, 3)} mini /></div>
               <div className="hidden flex-shrink-0 self-end sm:block"><Podium rows={rankings.slice(0, 3)} /></div>
             </div>
+          </div>
           </div>
         )
       })()}
