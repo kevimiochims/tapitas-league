@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BarChart3, Swords } from 'lucide-react'
 import { PageShell, CardShell, Tag } from '../../components/ui'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation, Pagination } from 'swiper/modules'
@@ -94,6 +94,10 @@ export default function NewsArticle() {
     }
 
     const images = post?.imageUrl?.split('|') || []
+    // Matéria semanal da rodada (slug "rodada-2026-semana-3"): links para o
+    // Power Rankings e os confrontos daquela semana
+    const roundMatch = String(post?.slug || '').match(/^(?:teste-)?rodada-(\d{4})-semana-([\d-]+)$/)
+    const round = roundMatch ? { season: roundMatch[1], week: roundMatch[2] } : null
     const related = posts.filter(p => p.slug !== post.slug).slice(0, 5)
 
     const formatNewsDate = (value) => {
@@ -167,6 +171,24 @@ export default function NewsArticle() {
                         >
                             {post.content || ''}
                         </ReactMarkdown>
+
+                        {round && (
+                            <div className="mt-8 grid gap-2 border-t border-[#EEF0F2] pt-5 sm:grid-cols-2">
+                                {[
+                                    [`/powerrankings?season=${round.season}&week=${encodeURIComponent(round.week)}`, BarChart3, 'Full power rankings', `Week ${round.week} · ${round.season}`],
+                                    [`/matchups?season=${round.season}&week=${encodeURIComponent(round.week)}`, Swords, 'Game matchups and recaps', `Week ${round.week} · ${round.season}`],
+                                ].map(([href, Icon, label, sub]) => (
+                                    <Link key={label} href={href} className="group flex items-center gap-3 rounded-xl bg-[#F6F7F9] px-4 py-3 transition-colors hover:bg-[#EEF3FF]">
+                                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#02275F] text-white"><Icon className="h-4 w-4" /></span>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block text-[14px] font-semibold text-[#111] group-hover:text-[#02275F]">{label}</span>
+                                            <span className="block text-[12px] text-[#6B7280]">{sub}</span>
+                                        </span>
+                                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#9CA3AF] group-hover:text-[#02275F]" />
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Anterior / próxima */}
