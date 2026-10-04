@@ -172,20 +172,17 @@ function RankHistory({ history, total }) {
 
 // Foto do card: em foto "em pé" (retrato), o rosto costuma estar no alto, então
 // o enquadramento sobe para perto do topo; em paisagem, um pouco acima do meio
-// Foto do card. Paisagem: preenche o quadro. Retrato ou quadrada: aparece
-// inteira no centro (cortar deixava só o capacete, e o ranking e o nome
-// cobriam o resto), com a própria foto desfocada preenchendo as laterais
+// Foto do card. Retrato: alinhada perto do topo, mas com uma folga (o alto da
+// foto fica um pouco para fora), para o rosto não ficar colado na borda nem
+// atrás do ranking e do nome
 function CardPhoto({ src, alt }) {
   const [tall, setTall] = useState(false)
   return (
-    <>
-      {tall && <img src={src} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-90 blur-xl" />}
-      <img
-        src={src}
-        alt={alt}
-        onLoad={e => setTall(e.currentTarget.naturalHeight > e.currentTarget.naturalWidth * 0.8)}
-        className={`absolute inset-0 h-full w-full ${tall ? 'object-contain' : 'object-cover object-[50%_25%]'}`}
-      />
-    </>
+    <img
+      src={src}
+      alt={alt}
+      onLoad={e => setTall(e.currentTarget.naturalHeight > e.currentTarget.naturalWidth * 0.8)}
+      className={`absolute inset-0 h-full w-full object-cover ${tall ? 'object-[50%_20%]' : 'object-[50%_25%]'}`}
+    />
   )
 }
