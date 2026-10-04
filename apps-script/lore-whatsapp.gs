@@ -32,7 +32,8 @@
 //      quem não quiser participar) e rode de novo.
 //   3. Se a conversa for grande, ele para perto do limite de 6 minutos e
 //      continua de onde parou na próxima execução (rode de novo até o log
-//      dizer que terminou). Das próximas vezes, exporte de novo: só as
+//      dizer que terminou, ou rode instalaWhatsAppLore() uma vez: um gatilho
+//      continua sozinho a cada 15 minutos e se desliga no fim). Das próximas vezes, exporte de novo: só as
 //      mensagens novas (depois da última processada) são lidas.
 //   Pode ter mais de um grupo na pasta (ex.: o grupo antigo, até 2023, e o
 //   atual): cada arquivo é lido, do grupo mais antigo para o mais novo, e cada
@@ -76,6 +77,27 @@ function processaWhatsAppLore() {
   waExecuta_(false);
 }
 
+// Conversa grande: cria um gatilho que roda processaWhatsAppLore a cada 15
+// minutos até terminar (e se desliga sozinho). Se o Gemini estiver ocupado,
+// a próxima rodada tenta de novo.
+function instalaWhatsAppLore() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'continuaWhatsAppLore')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('continuaWhatsAppLore').timeBased().everyMinutes(15).create();
+  Logger.log('[LORE WA] Gatilho de 15 em 15 minutos criado (desliga sozinho no fim). Rodando a primeira leva agora...');
+  continuaWhatsAppLore();
+}
+
+function continuaWhatsAppLore() {
+  const status = waExecuta_(false);
+  if (status === 'parcial') return;
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'continuaWhatsAppLore')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  Logger.log('[LORE WA] Gatilho automático desligado.');
+}
+
 // Mostra no log o que seria enviado ao Gemini (nada é enviado nem gravado)
 function testaWhatsAppLore() {
   waExecuta_(true);
@@ -99,7 +121,7 @@ function waExecuta_(simulacao) {
   const arquivos = waArquivos_();
   if (!arquivos.length) {
     Logger.log(`[LORE WA] Nenhuma conversa na pasta "${WA_PASTA}" do Drive. Exporte o grupo (sem mídia) e salve o arquivo lá.`);
-    return;
+    return 'vazio';
   }
   arquivos.forEach(a => Logger.log(`[LORE WA] ${a.nome}: ${a.mensagens.length} mensagens (${a.periodo}).`));
 
@@ -107,12 +129,13 @@ function waExecuta_(simulacao) {
   const pessoas = waPessoas_(lore, [].concat(...arquivos.map(a => a.mensagens)));
   if (pessoas.faltando.length) {
     Logger.log(`[LORE WA] Preencha a coluna Time (ou Ignorar = Sim) na aba ${WA_ABA_PESSOAS} para: ${pessoas.faltando.join(', ')}. Depois rode de novo.`);
-    if (!simulacao) return;
+    if (!simulacao) return 'faltando';
   }
 
   const props = PropertiesService.getScriptProperties();
   const existentes = simulacao ? [] : waLoreExistente_(lore);
   let sugestoes = 0;
+  let envios = 0;
   for (const arquivo of arquivos) {
     // Cada grupo guarda até onde já foi lido (exportar de novo só lê o que é novo)
     const ultima = Number(props.getProperty(arquivo.chave) || 0);
@@ -133,10 +156,19 @@ function waExecuta_(simulacao) {
     for (let i = 0; i < blocos.length; i++) {
       if (Date.now() - inicio > WA_TEMPO_MAX_MS) {
         Logger.log(`[LORE WA] Parei perto do limite de tempo (${arquivo.nome}: ${i} de ${blocos.length} partes; ${sugestoes} sugestões até aqui). Rode de novo para continuar.`);
-        return;
+        return 'parcial';
       }
-      if (sugestoes || i) Utilities.sleep(RECAP_PAUSA_MS);
-      const itens = waPedeSugestoes_(cfg, blocos[i].texto, existentes, pessoas.times);
+      if (envios++) Utilities.sleep(RECAP_PAUSA_MS);
+      let itens;
+      try {
+        itens = waPedeSugestoes_(cfg, blocos[i].texto, existentes, pessoas.times);
+      } catch (e) {
+        // Gemini lotado ou sem cota: para sem perder nada (o que já foi feito
+        // fica salvo) e continua na próxima execução
+        if (!/Gemini (429|500|503)/.test(e.message)) throw e;
+        Logger.log(`[LORE WA] Gemini indisponível agora (${arquivo.nome}: ${i} de ${blocos.length} partes; ${sugestoes} sugestões nesta rodada). Tente de novo mais tarde: ${e.message.slice(0, 120)}`);
+        return 'parcial';
+      }
       const novosItens = itens.filter(it => !existentes.some(e => waParecido_(e, it.texto)));
       novosItens.forEach(it => existentes.push(it.texto));
       waGravaSugestoes_(lore, novosItens, blocos[i].periodo);
@@ -146,6 +178,7 @@ function waExecuta_(simulacao) {
     waTerminaArquivo_(arquivo, props, novas);
   }
   if (!simulacao) Logger.log(`[LORE WA] Pronto: ${sugestoes} sugestões novas na aba LORE (Ativo = Não). Revise e troque para "Sim" o que quiser usar.`);
+  return 'pronto';
 }
 
 function waTerminaArquivo_(arquivo, props, mensagens) {
