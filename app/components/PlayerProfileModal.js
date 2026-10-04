@@ -435,6 +435,8 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const [rosteredBy, setRosteredBy] = useState(undefined)
   // Altura visível do corpo do perfil (o game log usa isso como altura máxima)
   const bodyRef = useRef(null)
+  // Linha do jogo em destaque no Game Log (a aba Career rola até ela)
+  const currentRowRef = useRef(null)
   const [bodyHeight, setBodyHeight] = useState(0)
   useEffect(() => {
     const el = bodyRef.current
@@ -505,6 +507,22 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     if (exists) return cur.length === 1 ? cur : cur.filter(t => normalizeTeamName(t) !== key)
     return [...cur, team]
   })
+
+  // Aba Career: a tabela rola até o jogo em destaque (ex.: aberto de um recorde)
+  useEffect(() => {
+    if (tab !== 'career') return undefined
+    const frame = requestAnimationFrame(() => {
+      const row = currentRowRef.current
+      const box = row?.closest('.overflow-auto')
+      if (!row || !box) return
+      const top = box.scrollTop + (row.getBoundingClientRect().top - box.getBoundingClientRect().top) - box.clientHeight / 2 + row.offsetHeight / 2
+      box.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      // Se a tabela ainda não estiver à vista, traz o card dela para a tela
+      const body = bodyRef.current
+      if (body && box.getBoundingClientRect().top > body.getBoundingClientRect().bottom - 80) box.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [tab, pickedGame])
 
   // Trava o scroll da página e fecha com Esc.
   useEffect(() => {
@@ -1052,6 +1070,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
                   {sorted.map((x, i) => (
                     <tr
                       key={`${x.season}-${x.week}-${x.team}-${x.opponent}-${i}`}
+                      ref={x.isCurrent ? currentRowRef : undefined}
                       onClick={() => openGame(x)}
                       className={`cursor-pointer border-b border-[#F1F2F4] transition-colors last:border-b-0 hover:bg-[#F7F8FA] ${x.isCurrent ? 'bg-[#FFF3F4]' : ''}`}
                     >

@@ -1215,8 +1215,6 @@ function StatsPageContent() {
         >
           <FilterBar>
             {multi(gfSeason, setGfSeason, gameFactFilterOptions.seasons, 'Season')}
-            {multi(gfStage, setGfStage, gameFactFilterOptions.stages, 'Stage')}
-            {multi(gfResult, setGfResult, ['W', 'L', 'T'], 'Result')}
             <ToggleChip active={gfInclude200Plus} onClick={() => setGfInclude200Plus(v => !v)}>200+ pts</ToggleChip>
             <ToggleChip active={!gfIncludeDoubleWeeks} onClick={() => setGfIncludeDoubleWeeks(v => !v)}>Hide double weeks</ToggleChip>
           </FilterBar>
@@ -1231,9 +1229,11 @@ function StatsPageContent() {
                           const sortable = ['Season', 'Week', 'PF', 'PA', 'Margin', 'Streak', 'Max PF', 'Starters Accuracy'].includes(col)
                           const right = ['PF', 'PA', 'Margin', 'Streak', 'Power Ranking', 'Max PF', 'Starters Accuracy'].includes(col)
                           const label = { 'Power Ranking': 'PR', 'Starters Accuracy': 'Accuracy' }[col] || col
-                          // Time, oponente, PR e HS: o filtro fica no próprio cabeçalho
+                          // Time, oponente, resultado, fase, PR e HS: o filtro fica no próprio cabeçalho
                           const header = col === 'Team' ? <HeaderFilter label="Team" options={gameFactFilterOptions.teams} value={gfTeam} onChange={setGfTeam} />
                             : col === 'Opponent' ? <HeaderFilter label="Opponent" options={gameFactFilterOptions.opponents} value={gfOpponent} onChange={setGfOpponent} />
+                            : col === 'Result' ? <HeaderFilter label="Result" options={['W', 'L', 'T']} value={gfResult} onChange={setGfResult} />
+                            : col === 'Stage' ? <HeaderFilter label="Stage" options={gameFactFilterOptions.stages} value={gfStage} onChange={setGfStage} />
                             : col === 'Power Ranking' ? <HeaderFilter label="PR" options={gameFactFilterOptions.powerRankings} value={gfPowerRanking} onChange={setGfPowerRanking} align="right" />
                             : col === 'HS' ? (
                               <button type="button" title="Week high scorer only" onClick={() => setGfHS(gfHS.includes('HS') ? [] : ['HS'])} className={`inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors ${gfHS.includes('HS') ? 'bg-[#02275F] font-semibold text-white' : 'hover:bg-[#F4F5F7] hover:text-[#111]'}`}>

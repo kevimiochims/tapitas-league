@@ -1688,7 +1688,8 @@ export default function TeamsPage() {
     const playerArchiveCard = (
       <CardShell title="Player Archive" subtitle={`${filteredPlayers.length} of ${playerArchive.length} players who suited up for ${shortName(selected.team)}`} withMenus>
         <div className="flex flex-wrap gap-1.5 border-b border-[#EEF0F2] px-3 py-2.5 lg:px-4">
-          <FilterPill value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} label="Sort" neutral />
+          {/* Rótulos curtos (cabem no celular); a ordenação continua a mesma */}
+          <FilterPill value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} label="Sort" neutral hideLabel displayOption={o => ({ Appearances: 'Apps', Benchs: 'Bench', 'Average Points': 'Avg pts', 'Highest Score': 'Best' }[o] || o)} />
           <FilterPill value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
           <FilterPill value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} label="Season" />
           {playerMinAppOptions.length > 1 && <FilterPill value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} label="Min apps" />}

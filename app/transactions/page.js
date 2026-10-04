@@ -55,7 +55,9 @@ export default function TransactionsPage() {
   const mostActive = Object.entries(activity).sort((a, b) => b[1] - a[1])[0]
   // Jogador mais adicionado (waivers + free agents)
   const addCount = {}
+  // Defesas ficam de fora deste card (trocam toda semana); continuam nos moves
   scoped.filter(t => t.type !== 'trade').forEach(t => t.moves.forEach(m => m.adds.forEach(p => {
+    if (String(p.pos || '').toUpperCase() === 'DEF') return
     if (!addCount[p.id]) addCount[p.id] = { p, n: 0 }
     addCount[p.id].n++
   })))

@@ -19,6 +19,20 @@ export default function NewsTicker({ onOpenPlayer }) {
   const [reading, setReading] = useState(null)
   const trackRef = useRef(null)
   const pausedRef = useRef(false)
+  // Posição da faixa (px) e arraste com o dedo/mouse
+  const xRef = useRef(0)
+  const dragRef = useRef(null)
+  const resumeRef = useRef(null)
+  const movedRef = useRef(false)
+  // Mantém a posição dentro de uma volta da faixa (ela é duplicada)
+  const place = x => {
+    const track = trackRef.current
+    if (!track) return
+    const half = track.scrollWidth / 2
+    if (half > 0) { while (x > 0) x -= half; while (-x >= half) x += half }
+    xRef.current = x
+    track.style.transform = `translate3d(${x}px, 0, 0)`
+  }
 
   // Rolagem em JS (pixels por segundo): pausa de verdade com o mouse em cima,
   // sem voltar ao início, e mais rápida no desktop.
@@ -26,18 +40,14 @@ export default function NewsTicker({ onOpenPlayer }) {
     const track = trackRef.current
     if (!track || !news.length) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    let x = 0
     let last = performance.now()
     let frame
     const step = now => {
       const dt = Math.min(now - last, 100) / 1000
       last = now
-      if (!pausedRef.current) {
+      if (!pausedRef.current && !dragRef.current) {
         const speed = window.innerWidth >= 1024 ? 58 : 40
-        const half = track.scrollWidth / 2
-        x -= speed * dt
-        if (half > 0 && -x >= half) x += half
-        track.style.transform = `translate3d(${x}px, 0, 0)`
+        place(xRef.current - speed * dt)
       }
       frame = requestAnimationFrame(step)
     }
@@ -79,11 +89,33 @@ export default function NewsTicker({ onOpenPlayer }) {
         Tapitas wire
       </div>
       <div
-        className="relative min-w-0 flex-1 overflow-hidden py-2.5"
+        className="relative min-w-0 flex-1 cursor-grab select-none overflow-hidden py-2.5 active:cursor-grabbing"
+        style={{ touchAction: 'pan-y' }}
         onMouseEnter={() => { pausedRef.current = true }}
         onMouseLeave={() => { pausedRef.current = false }}
-        onTouchStart={() => { pausedRef.current = true }}
-        onTouchEnd={() => { setTimeout(() => { pausedRef.current = false }, 2500) }}
+        // Arrastar para os lados: a faixa segue o dedo e volta a andar sozinha depois
+        onPointerDown={e => {
+          clearTimeout(resumeRef.current)
+          pausedRef.current = true
+          movedRef.current = false
+          dragRef.current = { startX: e.clientX, x: xRef.current, id: e.pointerId }
+        }}
+        onPointerMove={e => {
+          const d = dragRef.current
+          if (!d) return
+          const dx = e.clientX - d.startX
+          if (Math.abs(dx) > 5) movedRef.current = true
+          if (movedRef.current) place(d.x + dx)
+        }}
+        onPointerUp={() => {
+          dragRef.current = null
+          if (window.matchMedia('(hover: none)').matches) resumeRef.current = setTimeout(() => { pausedRef.current = false }, 2500)
+        }}
+        onPointerCancel={() => { dragRef.current = null; resumeRef.current = setTimeout(() => { pausedRef.current = false }, 2500) }}
+        // Trackpad / roda horizontal também movem a faixa
+        onWheel={e => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) place(xRef.current - e.deltaX) }}
+        // Depois de arrastar, soltar não conta como toque na manchete
+        onClickCapture={e => { if (movedRef.current) { e.preventDefault(); e.stopPropagation(); movedRef.current = false } }}
       >
         <div ref={trackRef} className="flex w-max will-change-transform">
           {renderItems('a')}

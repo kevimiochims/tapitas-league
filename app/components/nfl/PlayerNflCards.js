@@ -77,19 +77,24 @@ export function PlayerNewsCard({ playerId, emptyText }) {
         <div className="@container">
           {/* Celular: destaque em cima */}
           {hero && <div className="px-3 pb-1 pt-3 sm:px-4 @2xl:hidden"><NewsHero item={hero} meta={meta(hero)} onClick={e => { e.preventDefault(); setReading(hero) }} /></div>}
-          {/* Telas maiores: colunas "de jornal" (cada card com a sua altura), sem
-              buracos quando uma notícia tem foto e a do lado não */}
-          <div className="divide-y divide-[#F1F2F4] @2xl:columns-2 @2xl:gap-3 @2xl:divide-y-0 @2xl:p-3 @4xl:columns-3">
+          {/* Telas maiores: grade alinhada; todo card tem a área da foto (sem foto,
+              entra a do jogador sobre o azul), então nenhum fica mais baixo */}
+          <div className="divide-y divide-[#F1F2F4] @2xl:grid @2xl:grid-cols-2 @2xl:gap-3 @2xl:divide-y-0 @2xl:p-3 @4xl:grid-cols-3">
             {list.map(n => (
               <button
                 key={n.id}
                 type="button"
                 onClick={() => setReading(n)}
-                className={`group flex w-full gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#F7F8FA] sm:px-4 @2xl:mb-3 @2xl:break-inside-avoid @2xl:flex-col @2xl:gap-0 @2xl:overflow-hidden @2xl:rounded-xl @2xl:bg-[#F6F7F9] @2xl:p-0 @2xl:hover:bg-[#EEF0F2] ${n === hero ? 'hidden @2xl:flex' : ''}`}
+                className={`group flex w-full gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#F7F8FA] sm:px-4 @2xl:h-full @2xl:flex-col @2xl:gap-0 @2xl:overflow-hidden @2xl:rounded-xl @2xl:bg-[#F6F7F9] @2xl:p-0 @2xl:hover:bg-[#EEF0F2] ${n === hero ? 'hidden @2xl:flex' : ''}`}
               >
-                {imageOf(n) && (
+                {imageOf(n) ? (
                   <span className="block h-[54px] w-[80px] flex-shrink-0 overflow-hidden rounded-md bg-[#E6E8EB] @2xl:aspect-[16/9] @2xl:h-auto @2xl:w-full @2xl:rounded-none">
                     <NewsImage src={imageOf(n)} className="h-full w-full object-[50%_25%]" />
+                  </span>
+                ) : (
+                  // Sem foto: só nas telas maiores, a foto do jogador no azul da marca
+                  <span className="hidden aspect-[16/9] w-full items-end justify-center overflow-hidden bg-[#02275F] @2xl:flex">
+                    <img src={`https://sleepercdn.com/content/nfl/players/${encodeURIComponent(playerId)}.jpg`} alt="" className="h-[85%] object-contain" onError={e => { e.currentTarget.style.display = 'none' }} />
                   </span>
                 )}
                 <div className="min-w-0 flex-1 @2xl:px-3 @2xl:pb-3 @2xl:pt-2.5">
