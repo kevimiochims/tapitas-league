@@ -33,7 +33,7 @@
 //   3. Se a conversa for grande, ele para perto do limite de 6 minutos e
 //      continua de onde parou na próxima execução (rode de novo até o log
 //      dizer que terminou), ou rode instalaWhatsAppLore() uma vez: um gatilho
-//      continua sozinho de madrugada (0h às 7h) e se desliga no fim. Das
+//      continua sozinho de madrugada (23h às 7h) e se desliga no fim. Das
 //      próximas vezes, exporte de novo: só as mensagens novas (depois da
 //      última processada) são lidas.
 //   Pode ter mais de um grupo na pasta (ex.: o grupo antigo, até 2023, e o
@@ -82,8 +82,9 @@ function processaWhatsAppLore() {
 // de madrugada (horário de Brasília), e se desliga sozinho quando termina.
 // Se o Gemini estiver ocupado, a rodada seguinte tenta de novo. Cada rodada
 // grava as sugestões com Ativo = Não, como na execução manual.
-const WA_MADRUGADA_INICIO = 0; // hora em que começa (0 = meia-noite)
-const WA_MADRUGADA_FIM = 7;    // hora em que para (7 = 7h da manhã)
+// Pode passar da meia-noite (ex.: 23 e 7 = das 23h às 7h)
+const WA_MADRUGADA_INICIO = 23; // hora em que começa (23 = 23h, 0 = meia-noite)
+const WA_MADRUGADA_FIM = 7;     // hora em que para (7 = 7h da manhã)
 
 function instalaWhatsAppLore() {
   desligaGatilhoWhatsAppLore_();
@@ -99,7 +100,10 @@ function paraWhatsAppLore() {
 
 function continuaWhatsAppLore() {
   const hora = Number(Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'H'));
-  if (hora < WA_MADRUGADA_INICIO || hora >= WA_MADRUGADA_FIM) return; // fora da madrugada: não faz nada
+  const dentro = WA_MADRUGADA_INICIO <= WA_MADRUGADA_FIM
+    ? hora >= WA_MADRUGADA_INICIO && hora < WA_MADRUGADA_FIM
+    : hora >= WA_MADRUGADA_INICIO || hora < WA_MADRUGADA_FIM; // janela que passa da meia-noite
+  if (!dentro) return; // fora do horário: não faz nada
   const status = waExecuta_(false);
   if (status === 'parcial') return;
   desligaGatilhoWhatsAppLore_();
