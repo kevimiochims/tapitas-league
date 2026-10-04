@@ -78,7 +78,9 @@ Não recalcule nada e não use informação que não esteja no dossiê.
 `
 
 // LORE: planilha privada (só o dono acessa; o Apps Script roda como o dono).
-// Colunas: Tipo | Alvo | Texto | Ativo. Alvo vazio = vale para todos os jogos.
+// Colunas: Tipo | Alvo | Texto | Ativo | Origem (opcional). Alvo vazio = vale
+// para todos os jogos. Origem com datas (ex.: "WhatsApp 12/09/2022–30/10/2022",
+// gravada pelo lore-whatsapp.gs) diz quando o assunto apareceu no grupo.
 let LORE_CACHE_ = null
 function loreRows_(cfg) {
   if (LORE_CACHE_) return LORE_CACHE_
@@ -89,11 +91,11 @@ function loreRows_(cfg) {
     const sh = ss.getSheetByName('LORE') || ss.getSheets()[0]
     const [head, ...rows] = sh.getDataRange().getValues()
     const idx = name => head.map(h => String(h).trim().toLowerCase()).indexOf(name)
-    const iT = idx('tipo'), iA = idx('alvo'), iX = idx('texto'), iOn = idx('ativo')
+    const iT = idx('tipo'), iA = idx('alvo'), iX = idx('texto'), iOn = idx('ativo'), iO = idx('origem')
     LORE_CACHE_ = rows
       .filter(r => String(r[iX] || '').trim())
       .filter(r => iOn < 0 || !/^(n|não|nao|no|false|0)$/i.test(String(r[iOn]).trim()))
-      .map(r => ({ tipo: String(r[iT] || 'Geral').trim(), alvo: String(r[iA] || '').trim(), texto: String(r[iX]).trim() }))
+      .map(r => ({ tipo: String(r[iT] || 'Geral').trim(), alvo: String(r[iA] || '').trim(), texto: String(r[iX]).trim(), ...periodoLore_(iO < 0 ? '' : r[iO]) }))
   } catch (e) {
     Logger.log(`[LORE] Não consegui ler a planilha da LORE: ${e.message}`)
   }
@@ -102,13 +104,48 @@ function loreRows_(cfg) {
 
 const semAcento_ = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
-// Itens gerais + os que citam algum dos times do jogo
-function loreTexto_(cfg, times) {
+// Período da coluna Origem: { de, ate } (datas) a partir de "dd/mm/aaaa" no
+// texto ou de uma célula de data. Sem data reconhecível = item atemporal.
+function periodoLore_(origem) {
+  if (origem instanceof Date && !isNaN(origem)) return { de: origem, ate: origem }
+  const datas = (String(origem || '').match(/\d{1,2}\/\d{1,2}\/\d{4}/g) || [])
+    .map(d => { const [dia, mes, ano] = d.split('/').map(Number); return new Date(ano, mes - 1, dia) })
+    .filter(d => !isNaN(d))
+  if (!datas.length) return {}
+  return { de: new Date(Math.min(...datas)), ate: new Date(Math.max(...datas)) }
+}
+
+const MESES_ = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+const mesAno_ = d => `${MESES_[d.getMonth()]}/${d.getFullYear()}`
+
+// Data aproximada do jogo (a temporada da NFL começa no início de setembro)
+function dataDoJogo_(season, week) {
+  const semana = parseInt(String(week || '1'), 10) || 1
+  return new Date(Number(season), 8, 7 + (semana - 1) * 7)
+}
+
+// Itens gerais + os que citam algum dos times do jogo. Com season/week, só
+// entra o que já existia na época do jogo (nada de piada de 2025 num recap de
+// 2022), e cada item com data vai marcado com a época em que surgiu.
+function loreTexto_(cfg, times, season, week) {
   const chaves = times.filter(Boolean).map(semAcento_)
-  const itens = loreRows_(cfg).filter(r => !r.alvo || chaves.some(k => semAcento_(r.alvo).includes(k)))
+  const jogo = season ? dataDoJogo_(season, week) : null
+  const limite = jogo ? new Date(jogo.getTime() + 4 * 24 * 3600 * 1000) : null
+  const itens = loreRows_(cfg)
+    .filter(r => !r.alvo || chaves.some(k => semAcento_(r.alvo).includes(k)))
+    .filter(r => !limite || !r.de || r.de <= limite)
   if (!itens.length) return ''
+  const quando = r => {
+    if (!r.de) return ''
+    const de = mesAno_(r.de), ate = mesAno_(r.ate)
+    return ` · ${de === ate ? de : `${de} a ${ate}`}`
+  }
+  const comData = itens.some(r => r.de)
   return '\n\n## LORE DA LIGA (piadas internas, apelidos e histórias do grupo — use só quando encaixar com o que aconteceu; respeite os itens "Proibido")\n' +
-    itens.map(r => `- [${r.tipo}${r.alvo ? ` · ${r.alvo}` : ''}] ${r.texto}`).join('\n')
+    (comData ? `A data no item é quando o assunto rolou no grupo${jogo ? `; este jogo é de ${mesAno_(jogo)}` : ''}. ` +
+      'Assunto recente pode ser tratado como atual; o que é bem mais antigo é um clássico da liga (ex.: "lembra quando..."), ' +
+      'não algo que acabou de acontecer. Itens sem data valem para qualquer época.\n' : '') +
+    itens.map(r => `- [${r.tipo}${r.alvo ? ` · ${r.alvo}` : ''}${quando(r)}] ${r.texto}`).join('\n')
 }
 
 function fetchDossie_(cfg, params) {
@@ -272,7 +309,7 @@ function gerarRecapsDaLiga() {
       const outros = escritos.length
         ? `\n\n## JÁ ESCRITOS NESTA SEMANA (não repita aberturas, piadas nem estrutura)\n${escritos.map(t => `- Abertura usada: "${primeiraFrase_(t)}"`).join('\n')}`
         : ''
-      const texto = `Escreva o recap desta partida.\n\n${dossie}${loreTexto_(cfg, [team, opp])}${outros}`
+      const texto = `Escreva o recap desta partida.\n\n${dossie}${loreTexto_(cfg, [team, opp], season, week)}${outros}`
       const { texto: recap, modelo } = chamaGemini_(cfg, sistema, texto)
 
       sheet.getRange(i + 1, cRecap + 1).setValue(recap)
@@ -333,7 +370,7 @@ function gerarRecapsDoPowerRanking() {
       const outros = escritos.length
         ? `\n\n## VERBETES JÁ ESCRITOS NESTA SEMANA (não repita aberturas, piadas nem estrutura)\n${escritos.map(t => `- "${primeiraFrase_(t)}"`).join('\n')}`
         : ''
-      const texto = `Escreva o verbete de Power Ranking de ${team} nesta semana.\n\n${dossie}${loreTexto_(cfg, [team, String(r[cOpp]).trim()])}${outros}`
+      const texto = `Escreva o verbete de Power Ranking de ${team} nesta semana.\n\n${dossie}${loreTexto_(cfg, [team, String(r[cOpp]).trim()], season, week)}${outros}`
       const { texto: note, modelo } = chamaGemini_(cfg, sistema, texto)
       sheet.getRange(i + 1, cNote + 1).setValue(note)
       SpreadsheetApp.flush()
@@ -352,7 +389,7 @@ function gerarRecapsDoPowerRanking() {
 // Para testar: mostra no log o dossiê de um jogo, sem chamar o Gemini
 function testarDossie() {
   const cfg = recapConfig_()
-  Logger.log(fetchDossie_(cfg, { season: 2025, week: 1, team: 'Moneyball' }) + loreTexto_(cfg, ['Moneyball']))
+  Logger.log(fetchDossie_(cfg, { season: 2025, week: 1, team: 'Moneyball' }) + loreTexto_(cfg, ['Moneyball'], 2025, 1))
 }
 
 // Mostra no log os modelos que a sua chave pode usar, com o nome técnico
