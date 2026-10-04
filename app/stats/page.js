@@ -263,14 +263,23 @@ function ColumnChart({ data, format = v => v, labelFormat = l => l, fontSize = 1
             const cx = padX + bw * i + bw / 2
             const cy = y(d[line.key] || 0)
             const logo = d.maxTeam ? getTeamImage(d.maxTeam) : null
-            if (!logo) return <circle key={i} cx={cx} cy={cy} r="3" fill="#D01F2D" />
+            if (!d.maxTeam) return <circle key={i} cx={cx} cy={cy} r="3" fill="#D01F2D" />
             const r = fontSize * 1.05
+            // Time que saiu da liga (sem logo): círculo com as iniciais, como o TeamLogo
+            const initials = String(d.maxTeam).trim().split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase()
             const mark = (
               <g>
                 <title>{`${d.maxTeam} · ${(line.format || format)(d[line.key])}`}</title>
                 <clipPath id={`lg-${uid}-${i}`}><circle cx={cx} cy={cy} r={r} /></clipPath>
                 <circle cx={cx} cy={cy} r={r + 1.5} fill="#fff" stroke="#D01F2D" strokeWidth="1.5" />
-                <image href={logo} x={cx - r} y={cy - r} width={r * 2} height={r * 2} clipPath={`url(#lg-${uid}-${i})`} preserveAspectRatio="xMidYMid slice" />
+                {logo
+                  ? <image href={logo} x={cx - r} y={cy - r} width={r * 2} height={r * 2} clipPath={`url(#lg-${uid}-${i})`} preserveAspectRatio="xMidYMid slice" />
+                  : (
+                    <>
+                      <circle cx={cx} cy={cy} r={r} fill="#16274F" />
+                      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={r * 0.75} fontWeight="700" fill="#fff">{initials}</text>
+                    </>
+                  )}
               </g>
             )
             return d.href ? <a key={i} href={d.href}>{mark}</a> : <g key={i}>{mark}</g>

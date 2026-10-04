@@ -424,6 +424,11 @@ export default function HistoryPage() {
           parseNumber(getField(b, 'PF', 'pf')) - parseNumber(getField(a, 'PF', 'pf'))
       )[0]
 
+      // Maior pontuação só de semanas simples (rodada dupla soma duas semanas)
+      const highestSingleGame = [...seasonGames]
+        .filter(g => !String(getField(g, 'Week', 'week')).includes('-'))
+        .sort((a, b) => parseNumber(getField(b, 'PF', 'pf')) - parseNumber(getField(a, 'PF', 'pf')))[0]
+
       // CLOSEST GAME
       const closestGame = [...seasonGames].sort((a, b) => {
         const marginA = Math.abs(
@@ -479,6 +484,7 @@ export default function HistoryPage() {
         champion,
         unicorn,
         highestScoreGame,
+        highestSingleGame,
         closestGame,
         biggestBlowout,
         recap,
@@ -722,7 +728,9 @@ export default function HistoryPage() {
         )}
       </CardGroup>
       <CardGroup label="Single games">
-        <StatRow href={matchupHref(selected.highestScoreGame)} left={<TeamLogo name={getTeam(selected.highestScoreGame)} size={28} />} eyebrow="Highest score" title={getTeam(selected.highestScoreGame) || '—'} subtitle={`vs ${getOpponent(selected.highestScoreGame) || '—'} · Wk ${getField(selected.highestScoreGame, 'Week', 'week') || '—'}`} value={parseNumber(getField(selected.highestScoreGame, 'PF', 'pf')).toFixed(2)} valueClass="text-[#1E8E3E]" />
+        {/* Semana simples primeiro (é o que vale); a com rodada dupla só aparece se for outra */}
+        {selected.highestSingleGame && <StatRow href={matchupHref(selected.highestSingleGame)} left={<TeamLogo name={getTeam(selected.highestSingleGame)} size={28} />} eyebrow={selected.highestSingleGame === selected.highestScoreGame ? 'Highest score' : 'Highest score (single weeks)'} title={getTeam(selected.highestSingleGame) || '—'} subtitle={`vs ${getOpponent(selected.highestSingleGame) || '—'} · Wk ${getField(selected.highestSingleGame, 'Week', 'week') || '—'}`} value={parseNumber(getField(selected.highestSingleGame, 'PF', 'pf')).toFixed(2)} valueClass="text-[#1E8E3E]" />}
+        {selected.highestScoreGame && selected.highestScoreGame !== selected.highestSingleGame && <StatRow href={matchupHref(selected.highestScoreGame)} left={<TeamLogo name={getTeam(selected.highestScoreGame)} size={28} />} eyebrow="Highest score incl. double weeks" title={getTeam(selected.highestScoreGame) || '—'} subtitle={`vs ${getOpponent(selected.highestScoreGame) || '—'} · Wk ${getField(selected.highestScoreGame, 'Week', 'week') || '—'}`} value={parseNumber(getField(selected.highestScoreGame, 'PF', 'pf')).toFixed(2)} valueClass="text-[#1E8E3E]" />}
         <StatRow href={matchupHref(selected.worstPFGame)} left={<TeamLogo name={getTeam(selected.worstPFGame)} size={28} />} eyebrow="Lowest score" title={getTeam(selected.worstPFGame) || '—'} subtitle={`vs ${getOpponent(selected.worstPFGame) || '—'} · Wk ${getField(selected.worstPFGame, 'Week', 'week') || '—'}`} value={parseNumber(getField(selected.worstPFGame, 'PF', 'pf')).toFixed(2)} valueClass="text-[#D01F2D]" />
         <StatRow href={matchupHref(selected.closestGame)} left={<TeamLogo name={getTeam(selected.closestGame)} size={28} />} eyebrow="Closest game" title={`${getTeam(selected.closestGame) || '—'} vs ${getOpponent(selected.closestGame) || '—'}`} subtitle={`${gameScore(selected.closestGame)} · Wk ${getField(selected.closestGame, 'Week', 'week') || '—'}`} value={gameMargin(selected.closestGame)} />
         <StatRow href={matchupHref(selected.biggestBlowout)} left={<TeamLogo name={getTeam(selected.biggestBlowout)} size={28} />} eyebrow="Biggest win" title={`${getTeam(selected.biggestBlowout) || '—'} vs ${getOpponent(selected.biggestBlowout) || '—'}`} subtitle={`${gameScore(selected.biggestBlowout)} · Wk ${getField(selected.biggestBlowout, 'Week', 'week') || '—'}`} value={`+${gameMargin(selected.biggestBlowout)}`} />
