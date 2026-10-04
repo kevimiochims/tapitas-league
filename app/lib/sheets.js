@@ -13,6 +13,7 @@ export const SHEET_TABS = new Set([
   'DRAFT_NOTES',
   'GAME_FACTS_ALL',
   'HEAD_TO_HEAD_SORTED',
+  'MATERIAS_TESTE',
   'PR_FOTOS',
   'TEAM_ALL_TIME',
   'TEAM_HISTORY_RAW',

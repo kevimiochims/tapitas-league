@@ -53,8 +53,15 @@ export default function NewsArticle() {
 
                 setPosts(data)
 
-                const foundPost =
+                let foundPost =
                     data.find(post => post.slug === slug)
+
+                // Prévia das matérias automáticas em teste (aba MATERIAS_TESTE):
+                // abre só pelo link direto, não aparece na lista da News
+                if (!foundPost && String(slug).startsWith('teste-')) {
+                    const tests = await fetch('/api/sheet/MATERIAS_TESTE').then(r => (r.ok ? r.json() : [])).catch(() => [])
+                    foundPost = (Array.isArray(tests) ? tests : []).filter(t => t.slug === slug).pop()
+                }
 
                 setPost(foundPost)
 
@@ -145,7 +152,13 @@ export default function NewsArticle() {
                                 li: ({ children }) => <li className="leading-[1.7]">{children}</li>,
                                 hr: () => <hr className="my-6 border-[#E6E8EB]" />,
                                 blockquote: ({ children }) => <blockquote className="my-4 border-l-4 border-[#02275F] bg-[#F6F7F9] py-2 pl-4 pr-3 text-[#3F4757]">{children}</blockquote>,
-                                img: ({ src, alt }) => <img src={src} alt={alt} className="my-6 w-full rounded-lg" />,
+                                // Foto no meio do texto, com a legenda (texto alternativo) embaixo
+                                img: ({ src, alt }) => (
+                                    <span className="my-6 block">
+                                        <img src={src} alt={alt} className="w-full rounded-lg bg-[#F4F5F7]" />
+                                        {alt && <span className="mt-1.5 block text-[12px] leading-snug text-[#6B7280]">{alt}</span>}
+                                    </span>
+                                ),
                             }}
                         >
                             {post.content || ''}

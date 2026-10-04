@@ -12,6 +12,7 @@
 
 import { getSheetRows } from './sheets'
 import { getLeagueTransactions } from './leagueTransactions'
+import { getLeagueInfo, getSleeperWeek } from './leagueSchedule'
 
 const ROSTER_CONFIG = {
   2014: { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, k: 1, def: 1 },
@@ -507,4 +508,152 @@ export function renderContext(ctx) {
     ctx.previousRecaps.forEach(r => lines.push(`- ${r}`))
   }
   return lines.join('\n')
+}
+
+// ── Contexto da rodada inteira (matéria semanal da Tapitas News) ───────
+// Todos os confrontos com os seus ganchos, os destaques da rodada, a
+// classificação, o Power Ranking e a próxima rodada. Mesma regra de
+// cronologia: nada do que aconteceu depois da semana pedida.
+export async function buildWeekContext({ season, week }) {
+  const { games } = await loadData()
+  const rowsAll = teamGames(games)
+  const weekRows = rowsAll.filter(x => str(x.Season) === str(season) && str(x.Week) === str(week))
+  if (!weekRows.length) return null
+  const ref = weekRows[0]
+  const rows = rowsAll.filter(x => order(x) <= order(ref))
+  const seasonRows = rows.filter(x => str(x.Season) === str(season))
+  const previousRows = rows.filter(x => order(x) < order(ref))
+
+  // Um contexto por confronto (sem repetir o espelho)
+  const pairs = []
+  const seen = new Set()
+  weekRows.forEach(x => {
+    const key = [norm(x.Team), norm(x.Opponent)].sort().join('|')
+    if (seen.has(key)) return
+    seen.add(key)
+    pairs.push(x)
+  })
+  // Jogos que valem mais primeiro: final, playoffs, unicórnio, temporada regular, consolação
+  const weight = x => (isFinal(x) ? 0 : stage(x) === 'playoffs' ? 1 : isUnicorn(x) ? 2 : stage(x) === 'reg season' ? 3 : 4)
+  pairs.sort((x, y) => weight(x) - weight(y))
+  const matchups = (await Promise.all(pairs.map(x => buildMatchupContext({ season, week, team: str(x.Team), opp: str(x.Opponent) })))).filter(Boolean)
+
+  // Destaques da rodada
+  const byScore = [...weekRows].sort((a, b) => num(b.PF) - num(a.PF))
+  // (o placar do contexto já vem formatado "123.45": Number, não num)
+  const margins = matchups.map(m => ({ m, margin: Math.abs(Number(m.score[m.teams[0]]) - Number(m.score[m.teams[1]])) })).sort((a, b) => b.margin - a.margin)
+  const players = weekRows.flatMap(x => lineup(x).starters.filter(p => p.slot !== 'DEF').map(p => ({ ...p, team: str(x.Team) }))).sort((a, b) => b.pts - a.pts)
+  const flops = players.filter(p => p.slot !== 'K').sort((a, b) => a.pts - b.pts).slice(0, 3)
+  const table = standings(seasonRows, str(season))
+  const tableBefore = standings(seasonRows.filter(x => order(x) < order(ref)), str(season))
+  const pr = weekRows
+    .filter(x => num(x['Power Ranking']) > 0)
+    .sort((x, y) => num(x['Power Ranking']) - num(y['Power Ranking']))
+    .map(x => ({ team: str(x.Team), pos: num(x['Power Ranking']), delta: str(x['PR Delta']) }))
+
+  // Próxima rodada: os pares (sem placar) da planilha ou do Sleeper
+  let nextWeek = null
+  const later = rowsAll.filter(x => str(x.Season) === str(season) && order(x) > order(ref)).sort((a, b) => order(a) - order(b))
+  if (later.length) {
+    const w = str(later[0].Week)
+    const ps = []
+    const s2 = new Set()
+    later.filter(x => str(x.Week) === w).forEach(x => {
+      const key = [norm(x.Team), norm(x.Opponent)].sort().join('|')
+      if (s2.has(key)) return
+      s2.add(key)
+      ps.push([str(x.Team), str(x.Opponent)])
+    })
+    nextWeek = { week: w, pairs: ps }
+  } else {
+    const info = await getLeagueInfo().catch(() => null)
+    if (info?.season === str(season)) {
+      const n = Math.floor(weekNum(ref)) + 1
+      const ms = await getSleeperWeek(n).catch(() => [])
+      if (ms.length) nextWeek = { week: String(n), pairs: ms.map(m => m.teams.map(t => t.team)) }
+    }
+  }
+  if (nextWeek) {
+    nextWeek.pairs = nextWeek.pairs.map(([a, b]) => {
+      const hh = h2h(rows, a, b, { ...ref, Season: str(season), Week: String(Number(str(week)) + 0.5) })
+      const ra = table.find(r => norm(r.team) === norm(a))
+      const rb = table.find(r => norm(r.team) === norm(b))
+      return { a, b, series: hh.meetings.length ? `${a} ${hh.wa} x ${hh.wb} ${b} em ${hh.meetings.length} jogos` : 'primeiro confronto', records: [ra && recordStr(ra), rb && recordStr(rb)] }
+    })
+  }
+
+  const first = matchups[0]
+  return {
+    mode: 'week',
+    season: str(season),
+    week: str(week),
+    stage: str((pairs[0] || ref).GameStage),
+    matchups,
+    highs: {
+      top: byScore[0] && { team: str(byScore[0].Team), pf: f2(num(byScore[0].PF)) },
+      low: byScore[byScore.length - 1] && { team: str(byScore[byScore.length - 1].Team), pf: f2(num(byScore[byScore.length - 1].PF)) },
+      biggest: margins[0] && { teams: margins[0].m.teams, winner: margins[0].m.winner, margin: f2(margins[0].margin) },
+      closest: margins[margins.length - 1] && { teams: margins[margins.length - 1].m.teams, winner: margins[margins.length - 1].m.winner, margin: f2(margins[margins.length - 1].margin) },
+      players: players.slice(0, 6),
+      flops,
+    },
+    table: table.map(r => {
+      const was = tableBefore.find(b => norm(b.team) === norm(r.team))
+      return { ...r, was: was?.rank || null }
+    }),
+    powerRanking: pr,
+    recaps: weekRows.filter(x => str(x['Recap da Partida'])).map(x => `${str(x.Team)} vs ${str(x.Opponent)}: ${trimRecap(x['Recap da Partida'], 700)}`),
+    nextWeek,
+    honors: first?.honors || honors(previousRows),
+    currentChampion: first?.currentChampion || null,
+  }
+}
+
+export function renderWeekContext(ctx) {
+  const L = []
+  L.push(`# DOSSIÊ DA RODADA — ${ctx.season} · Week ${ctx.week} · ${ctx.stage}`)
+  L.push('')
+  L.push('## CONFRONTOS (placar e os ganchos mais fortes de cada um — já calculados e verificados)')
+  ctx.matchups.forEach(m => {
+    const [a, b] = m.teams
+    L.push(`### ${a} ${m.score[a]} x ${m.score[b]} ${b}${m.winner ? ` → vitória de ${m.winner}` : ' → empate'}${m.gameType && m.gameType !== m.stage ? ` (${m.gameType})` : ''}`)
+    m.angles.filter(x => x.w >= 2).slice(0, 6).forEach(x => L.push(`- ${x.text}`))
+    Object.entries(m.lineups).forEach(([t, l]) => {
+      const top = [...l.starters].sort((x, y) => y.pts - x.pts).slice(0, 3).map(p => `${p.name} ${f2(p.pts)}`).join(', ')
+      if (top) L.push(`- Melhores de ${t}: ${top}`)
+    })
+  })
+  const h = ctx.highs
+  L.push('')
+  L.push('## DESTAQUES DA RODADA')
+  if (h.top) L.push(`- Maior pontuação: ${h.top.team} (${h.top.pf})`)
+  if (h.low) L.push(`- Menor pontuação: ${h.low.team} (${h.low.pf})`)
+  if (h.biggest) L.push(`- Maior vitória: ${h.biggest.winner} (${h.biggest.teams.join(' x ')}, margem ${h.biggest.margin})`)
+  if (h.closest) L.push(`- Jogo mais apertado: ${h.closest.teams.join(' x ')}, margem ${h.closest.margin}${h.closest.winner ? `, vitória de ${h.closest.winner}` : ''}`)
+  if (h.players.length) L.push(`- Melhores jogadores (titulares): ${h.players.map(p => `${p.name} (${p.team}) ${f2(p.pts)}`).join(' · ')}`)
+  if (h.flops.length) L.push(`- Decepções (titulares): ${h.flops.map(p => `${p.name} (${p.team}) ${f2(p.pts)}`).join(' · ')}`)
+  if (ctx.table.length && /reg/i.test(ctx.stage)) {
+    L.push('')
+    L.push('## CLASSIFICAÇÃO DA TEMPORADA REGULAR (depois desta rodada)')
+    ctx.table.forEach(r => L.push(`${r.rank}. ${r.team} ${recordStr(r)} · ${Math.round(r.pf)} pts${r.was && r.was !== r.rank ? ` (era ${r.was}º)` : ''}`))
+  }
+  if (ctx.powerRanking.length) {
+    L.push('')
+    L.push(`## POWER RANKINGS DA SEMANA: ${ctx.powerRanking.map(p => `#${p.pos} ${p.team}${p.delta ? ` (${p.delta})` : ''}`).join(' · ')}`)
+  }
+  if (ctx.nextWeek?.pairs?.length) {
+    L.push('')
+    L.push(`## PRÓXIMA RODADA (Week ${ctx.nextWeek.week}) — só os confrontos, ainda sem resultado`)
+    ctx.nextWeek.pairs.forEach(p => L.push(`- ${p.a}${p.records[0] ? ` (${p.records[0]})` : ''} x ${p.b}${p.records[1] ? ` (${p.records[1]})` : ''} · série: ${p.series}`))
+  }
+  L.push('')
+  L.push('## CAMPEÕES / VICES / UNICÓRNIOS (temporadas já decididas)')
+  if (ctx.currentChampion) L.push(`ATUAL CAMPEÃO: ${ctx.currentChampion.team} (${ctx.currentChampion.season}). Só ele pode ser chamado de "atual campeão".`)
+  Object.entries(ctx.honors).sort((x, y) => Number(x[0]) - Number(y[0])).forEach(([s, hh]) => L.push(`- ${s}: campeão ${hh.champion || '—'}, vice ${hh.vice || '—'}, unicórnio ${hh.unicorn || '—'}`))
+  if (ctx.recaps.length) {
+    L.push('')
+    L.push('## RECAPS JÁ PUBLICADOS DESTA RODADA (use como apoio e para manter a mesma versão dos fatos; não copie frases)')
+    ctx.recaps.forEach(r => L.push(`- ${r}`))
+  }
+  return L.join('\n')
 }
