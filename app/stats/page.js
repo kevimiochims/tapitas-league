@@ -186,7 +186,8 @@ function HeaderFilter({ label, options, value, onChange, format = v => v, align 
   useEffect(() => {
     if (!open) return undefined
     const close = e => { if (!btn.current?.contains(e.target) && !menu.current?.contains(e.target)) setOpen(false) }
-    const hide = () => setOpen(false)
+    // Rolar a própria lista não fecha; rolar a página (fora dela) fecha
+    const hide = e => { if (!menu.current?.contains(e.target)) setOpen(false) }
     document.addEventListener('mousedown', close)
     window.addEventListener('scroll', hide, true)
     window.addEventListener('resize', hide)
