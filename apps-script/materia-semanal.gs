@@ -290,7 +290,11 @@ function gravaMateria_(nome, linha, teste) {
   const row = new Array(head.length).fill('');
   Object.keys(idx).forEach(k => { if (idx[k] >= 0 && linha[k] !== undefined) row[idx[k]] = linha[k]; });
   if (rowNum > 0) sh.getRange(rowNum, 1, 1, row.length).setValues([row]);
-  else sh.appendRow(row);
+  else { sh.appendRow(row); rowNum = sh.getLastRow(); }
+  // Linha de altura normal: o texto longo fica cortado na célula (sem quebrar
+  // linha), em vez de esticar a linha da planilha
+  sh.getRange(rowNum, 1, 1, row.length).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+  sh.setRowHeightsForced(rowNum, 1, 21);
 }
 
 function slugsDaAba_(nome) {
@@ -350,4 +354,16 @@ function buscaTexto_(url) {
   const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
   if (res.getResponseCode() !== 200) throw new Error(`Site respondeu ${res.getResponseCode()}: ${res.getContentText().slice(0, 200)}`);
   return res.getContentText();
+}
+
+// Arruma de uma vez a altura das linhas que já existem (MEMES e MATERIAS_TESTE):
+// texto cortado na célula e linhas de altura normal
+function ajustaAlturaLinhasNoticias() {
+  [MATERIA_ABA, MATERIA_ABA_TESTE].forEach(nome => {
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nome);
+    if (!sh || sh.getLastRow() < 2) return;
+    sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+    sh.setRowHeightsForced(2, sh.getLastRow() - 1, 21);
+    Logger.log(`[MATÉRIA] ${nome}: ${sh.getLastRow() - 1} linhas ajustadas.`);
+  });
 }

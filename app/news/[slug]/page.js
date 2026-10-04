@@ -141,7 +141,8 @@ export default function NewsArticle() {
                     )}
 
                     {/* Texto */}
-                    <div className="mx-auto max-w-[720px] px-4 py-6 text-[16px] sm:px-8 sm:py-8">
+                    {/* Texto na largura do card (antes era uma coluna estreita no centro) */}
+                    <div className="px-4 py-6 text-[16px] sm:px-8 sm:py-8">
                         <ReactMarkdown
                             components={{
                                 h1: ({ children }) => <h1 className="mb-3 mt-6 text-[24px] font-bold leading-tight text-[#111]">{children}</h1>,
