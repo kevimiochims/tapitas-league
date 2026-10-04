@@ -92,6 +92,41 @@ export async function getRssNews() {
   return sources.flatMap(s => s.items)
 }
 
+// Palavras com inicial maiúscula que podem vir antes do sobrenome sem ser o
+// primeiro nome de outra pessoa ("Bills QB Allen", "Rookie Achane")
+const NOT_FIRST_NAMES = new Set([
+  'the', 'a', 'an', 'and', 'but', 'or', 'if', 'as', 'at', 'by', 'for', 'from', 'in', 'of', 'on', 'to', 'with', 'without',
+  'after', 'before', 'when', 'while', 'why', 'how', 'what', 'who', 'is', 'will', 'can', 'could', 'should', 'would', 'did', 'does',
+  'not', 'no', 'per', 'report', 'reports', 'source', 'sources', 'update', 'status', 'injury', 'watch', 'fantasy', 'week',
+  'coach', 'quarterback', 'receiver', 'running', 'back', 'tight', 'end', 'kicker', 'rookie', 'veteran', 'star', 'starter',
+  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'nfl', 'qb', 'rb', 'wr', 'te', 'k', 'hc',
+  'cardinals', 'falcons', 'ravens', 'bills', 'panthers', 'bears', 'bengals', 'browns', 'cowboys', 'broncos', 'lions', 'packers',
+  'texans', 'colts', 'jaguars', 'jags', 'chiefs', 'raiders', 'chargers', 'rams', 'dolphins', 'vikings', 'patriots', 'pats',
+  'saints', 'giants', 'jets', 'eagles', 'steelers', '49ers', 'niners', 'seahawks', 'buccaneers', 'bucs', 'titans', 'commanders',
+])
+
+// Busca só pelo sobrenome: não vale se o texto cita o sobrenome com OUTRO
+// primeiro nome em algum ponto ("Keenan Allen: Ruled out... Allen (hamstring)"
+// não é notícia do Josh Allen); "Dolphins' Achane carted off" é do De'Von Achane
+function surnameIsThisPlayer(raw, fullName) {
+  // Sem sufixo ("Kenneth Walker III" → walker) e sem apóstrofo (De'Von → devon)
+  const parts = normalizePlayerKey(String(fullName).replace(/['’`.-]/g, '')).split(' ')
+  const last = parts[parts.length - 1]
+  const first = parts[0]
+  const words = String(raw).split(/\s+/)
+  const conflicts = []
+  words.forEach((w, i) => {
+    if (normalizePlayerKey(w.replace(/['’]s$/, '').replace(/['’`.-]/g, '')).replace(/ /g, '') !== last) return
+    const prev = (words[i - 1] || '').replace(/[,:;()"“”]/g, '')
+    const endsSentence = /[.!?]$/.test(prev) && !/^([A-Za-z]\.)+$/.test(prev) // "D.J." é nome, não fim de frase
+    if (!prev || /['’]s?$/.test(prev) || endsSentence) { conflicts.push(false); return } // começo de frase ou "Dolphins' Achane"
+    const prevKey = normalizePlayerKey(prev.replace(/['’`.-]/g, '')).replace(/ /g, '')
+    // Outro primeiro nome: "Keenan", "D.J.", "AJ" (inicial maiúscula)
+    conflicts.push(prevKey !== first && !NOT_FIRST_NAMES.has(prevKey) && /^[A-Z]/.test(prev))
+  })
+  return conflicts.length > 0 && !conflicts.some(Boolean)
+}
+
 // Liga notícias a jogadores pelo nome completo no título ou no resumo.
 // `loose` (busca de um jogador só): também aceita só o sobrenome, se ele tiver
 // 5+ letras (ex.: "Dolphins' Achane carted off").
@@ -117,7 +152,7 @@ export function matchNewsToPlayers(items, players, { loose = false } = {}) {
       .sort((a, b) => a.at - b.at)
       .map(h => h.k)
     if (!hits.length && loose) {
-      const hit = keyed.find(k => k.last.length >= 5 && (text.includes(` ${k.last} `) || textJoined.includes(` ${k.last} `)))
+      const hit = keyed.find(k => k.last.length >= 5 && (text.includes(` ${k.last} `) || textJoined.includes(` ${k.last} `)) && surnameIsThisPlayer(raw, k.player.name))
       if (hit) hits = [hit]
     }
     if (hits.length) out.push({ ...n, player: hits[0].player, players: hits.map(h => h.player) })
