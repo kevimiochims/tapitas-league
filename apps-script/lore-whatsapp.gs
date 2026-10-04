@@ -32,9 +32,10 @@
 //      quem não quiser participar) e rode de novo.
 //   3. Se a conversa for grande, ele para perto do limite de 6 minutos e
 //      continua de onde parou na próxima execução (rode de novo até o log
-//      dizer que terminou, ou rode instalaWhatsAppLore() uma vez: um gatilho
-//      continua sozinho a cada 15 minutos e se desliga no fim). Das próximas vezes, exporte de novo: só as
-//      mensagens novas (depois da última processada) são lidas.
+//      dizer que terminou), ou rode instalaWhatsAppLore() uma vez: um gatilho
+//      continua sozinho de madrugada (0h às 7h) e se desliga no fim. Das
+//      próximas vezes, exporte de novo: só as mensagens novas (depois da
+//      última processada) são lidas.
 //   Pode ter mais de um grupo na pasta (ex.: o grupo antigo, até 2023, e o
 //   atual): cada arquivo é lido, do grupo mais antigo para o mais novo, e cada
 //   grupo guarda separado até onde já foi processado.
@@ -77,25 +78,40 @@ function processaWhatsAppLore() {
   waExecuta_(false);
 }
 
-// Conversa grande: cria um gatilho que roda processaWhatsAppLore a cada 15
-// minutos até terminar (e se desliga sozinho). Se o Gemini estiver ocupado,
-// a próxima rodada tenta de novo.
+// Conversa grande: cria um gatilho que roda a cada 15 minutos, mas só trabalha
+// de madrugada (horário de Brasília), e se desliga sozinho quando termina.
+// Se o Gemini estiver ocupado, a rodada seguinte tenta de novo. Cada rodada
+// grava as sugestões com Ativo = Não, como na execução manual.
+const WA_MADRUGADA_INICIO = 0; // hora em que começa (0 = meia-noite)
+const WA_MADRUGADA_FIM = 7;    // hora em que para (7 = 7h da manhã)
+
 function instalaWhatsAppLore() {
-  ScriptApp.getProjectTriggers()
-    .filter(t => t.getHandlerFunction() === 'continuaWhatsAppLore')
-    .forEach(t => ScriptApp.deleteTrigger(t));
+  desligaGatilhoWhatsAppLore_();
   ScriptApp.newTrigger('continuaWhatsAppLore').timeBased().everyMinutes(15).create();
-  Logger.log('[LORE WA] Gatilho de 15 em 15 minutos criado (desliga sozinho no fim). Rodando a primeira leva agora...');
-  continuaWhatsAppLore();
+  Logger.log(`[LORE WA] Gatilho criado: roda de ${WA_MADRUGADA_INICIO}h às ${WA_MADRUGADA_FIM}h, a cada 15 minutos, até terminar (depois se desliga sozinho). Para parar antes: paraWhatsAppLore().`);
+}
+
+// Desliga o gatilho da madrugada (o que já foi gerado fica na LORE)
+function paraWhatsAppLore() {
+  desligaGatilhoWhatsAppLore_();
+  Logger.log('[LORE WA] Gatilho da madrugada desligado.');
 }
 
 function continuaWhatsAppLore() {
+  const hora = Number(Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'H'));
+  if (hora < WA_MADRUGADA_INICIO || hora >= WA_MADRUGADA_FIM) return; // fora da madrugada: não faz nada
   const status = waExecuta_(false);
   if (status === 'parcial') return;
+  desligaGatilhoWhatsAppLore_();
+  Logger.log(status === 'faltando'
+    ? `[LORE WA] Gatilho desligado: falta preencher a aba ${WA_ABA_PESSOAS}. Preencha e rode instalaWhatsAppLore() de novo.`
+    : '[LORE WA] Terminou. Gatilho da madrugada desligado.');
+}
+
+function desligaGatilhoWhatsAppLore_() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'continuaWhatsAppLore')
     .forEach(t => ScriptApp.deleteTrigger(t));
-  Logger.log('[LORE WA] Gatilho automático desligado.');
 }
 
 // Mostra no log o que seria enviado ao Gemini (nada é enviado nem gravado)
