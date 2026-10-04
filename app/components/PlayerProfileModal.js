@@ -198,6 +198,14 @@ function nflSeasonLabel(yearsExp) {
 
 // ── Sleeper (cache em módulo para não baixar os mesmos dados de novo) ──
 let SLEEPER_PLAYERS_PROMISE = null
+// Elencos atuais da liga (para mostrar quem tem o jogador hoje)
+let LEAGUE_ROSTERS_PROMISE = null
+function fetchLeagueRosters() {
+  if (!LEAGUE_ROSTERS_PROMISE) {
+    LEAGUE_ROSTERS_PROMISE = fetch('/api/nfl/league').then(r => (r.ok ? r.json() : null)).then(d => d?.teams || []).catch(() => { LEAGUE_ROSTERS_PROMISE = null; return [] })
+  }
+  return LEAGUE_ROSTERS_PROMISE
+}
 const SLEEPER_WEEKLY_PROMISES = new Map()
 const SLEEPER_PLAYER_WEEKLY_PROMISES = new Map()
 const SLEEPER_SCHEDULE_PROMISES = new Map()
@@ -407,7 +415,7 @@ const DEFAULT_SORT = { key: 'season', dir: 'desc', seasonDir: 'desc', weekDir: '
  * @param initialSeasons temporadas pré-selecionadas (ex.: aberto como MVP de 2023)
  * @param matchup     { season, week, team, opponent } quando aberto de um confronto
  */
-export default function PlayerProfileModal({ rawName, displayName, position, playerId, games, initialTeams, initialSeasons, matchup, initialTab, liveGame, onClose }) {
+export default function PlayerProfileModal({ rawName, displayName, position, playerId, games, initialTeams, initialSeasons, matchup: originMatchup, initialTab, liveGame: originLiveGame, onClose }) {
   const pos = String(position || '').toUpperCase()
   const [sleeperInfo, setSleeperInfo] = useState(null)
   const [weeklyStats, setWeeklyStats] = useState(null)
@@ -419,7 +427,12 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const [stageFilter, setStageFilter] = useState('All')
   const [sort, setSort] = useState(DEFAULT_SORT)
   // initialTab: 'news' quando o perfil é aberto a partir de uma lesão/notícia
-  const [tab, setTab] = useState(initialTab || (matchup ? 'week' : 'career'))
+  const [tab, setTab] = useState(initialTab || (originMatchup ? 'week' : 'career'))
+  // Jogo escolhido na aba Week e adversário escolhido na aba vs
+  const [pickedGame, setPickedGame] = useState(null)
+  const [vsPick, setVsPick] = useState(null)
+  // Time da liga que tem o jogador hoje (elencos atuais do Sleeper)
+  const [rosteredBy, setRosteredBy] = useState(undefined)
   // Altura visível do corpo do perfil (o game log usa isso como altura máxima)
   const bodyRef = useRef(null)
   const [bodyHeight, setBodyHeight] = useState(0)
@@ -501,6 +514,54 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     document.body.style.overflow = 'hidden'
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
   }, [onClose])
+
+  // Aparições do jogador (franquias e temporadas selecionadas), sem marcar o
+  // jogo atual ainda
+  const appearances = (games || []).flatMap(g => {
+    const app = extractPlayerAppearances(g).find(a => isSelf(a.name))
+    if (!app) return []
+    const team = String(g?.Team || '').trim()
+    if (!activeTeamKeys.has(normalizeTeamName(team))) return []
+    const season = String(g?.Season || '').trim()
+    if (!activeSeasonSet.has(season)) return []
+    const week = String(g?.Week || '').trim()
+    const opponent = String(g?.Opponent || '').trim()
+    const doubleWeek = isDoubleWeekValue(week)
+    return [{
+      g, season, week, team, opponent,
+      key: `${season}|${week}|${team}|${opponent}`,
+      status: app.status,
+      // O placar exibido é sempre o real; o ajustado (÷2 em rodada dupla)
+      // serve só para AVG/BEST.
+      pts: app.pts,
+      adjustedPts: doubleWeek ? app.pts / 2 : app.pts,
+      isDoubleWeek: doubleWeek,
+      teamPF: parseNumber(g?.PF),
+      result: String(g?.Result || '').trim().toUpperCase(),
+      stage: String(g?.GameStage || '').trim(),
+    }]
+  })
+  const byRecency = [...appearances].sort((a, b) => (Number(b.season) - Number(a.season)) || ((parseFloat(b.week) || 0) - (parseFloat(a.week) || 0)))
+  // Jogo da aba Week: o escolhido no seletor; senão o confronto de onde o
+  // perfil foi aberto; senão o jogo mais recente dele na liga
+  const picked = pickedGame ? appearances.find(x => x.key === pickedGame) : null
+  const matchup = picked
+    ? { season: picked.season, week: picked.week, team: picked.team, opponent: picked.opponent }
+    : originMatchup || (byRecency[0] ? { season: byRecency[0].season, week: byRecency[0].week, team: byRecency[0].team, opponent: byRecency[0].opponent } : null)
+  // Pontos ao vivo só valem para o confronto de origem (semana em andamento)
+  const liveGame = picked ? null : originLiveGame
+
+  // Time da liga que tem o jogador hoje
+  useEffect(() => {
+    let cancelled = false
+    if (!playerId) return undefined
+    fetchLeagueRosters().then(teams => {
+      if (cancelled) return
+      const owner = (teams || []).find(t => (t.players || []).some(p => String(p.id) === String(playerId)))
+      setRosteredBy(owner ? owner.team : null)
+    }).catch(() => { if (!cancelled) setRosteredBy(null) })
+    return () => { cancelled = true }
+  }, [playerId])
 
   // Dados do Sleeper: cadastro do jogador e, se veio de um confronto, os
   // números daquela semana + adversário NFL histórico.
@@ -586,30 +647,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   }
 
   // Todas as aparições do jogador nas franquias selecionadas.
-  const profileGames = (games || []).flatMap(g => {
-    const app = extractPlayerAppearances(g).find(a => isSelf(a.name))
-    if (!app) return []
-    const team = String(g?.Team || '').trim()
-    if (!activeTeamKeys.has(normalizeTeamName(team))) return []
-    const season = String(g?.Season || '').trim()
-    if (!activeSeasonSet.has(season)) return []
-    const week = String(g?.Week || '').trim()
-    const opponent = String(g?.Opponent || '').trim()
-    const doubleWeek = isDoubleWeekValue(week)
-    return [{
-      g, season, week, team, opponent,
-      status: app.status,
-      // O placar exibido é sempre o real; o ajustado (÷2 em rodada dupla)
-      // serve só para AVG/BEST.
-      pts: app.pts,
-      adjustedPts: doubleWeek ? app.pts / 2 : app.pts,
-      isDoubleWeek: doubleWeek,
-      teamPF: parseNumber(g?.PF),
-      result: String(g?.Result || '').trim().toUpperCase(),
-      stage: String(g?.GameStage || '').trim(),
-      isCurrent: isMatchupGame(season, week, team, opponent),
-    }]
-  })
+  const profileGames = appearances.map(x => ({ ...x, isCurrent: isMatchupGame(x.season, x.week, x.team, x.opponent) }))
 
   const summarize = rows => {
     const forAvg = rows.filter(x => !(x.status === 'Bench' && x.adjustedPts === 0))
@@ -626,13 +664,16 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   }
   const stats = summarize(profileGames)
 
-  // Retrospecto contra o adversário do confronto, nas franquias selecionadas.
-  const versusGames = matchup
+  // Retrospecto contra um adversário (o do jogo, ou o escolhido no seletor),
+  // nas franquias selecionadas
+  const vsOpponent = vsPick || matchup?.opponent || null
+  const opponentsFaced = Array.from(new Set(profileGames.map(x => x.opponent).filter(Boolean))).sort((a, b) => a.localeCompare(b))
+  const versusGames = vsOpponent
     ? profileGames
-        .filter(x => normalizeTeamName(x.opponent) === normalizeTeamName(matchup.opponent))
+        .filter(x => normalizeTeamName(x.opponent) === normalizeTeamName(vsOpponent))
         .sort((a, b) => (Number(b.season) - Number(a.season)) || ((parseFloat(b.week) || 0) - (parseFloat(a.week) || 0)))
     : []
-  const versus = matchup ? summarize(profileGames.filter(x => normalizeTeamName(x.opponent) === normalizeTeamName(matchup.opponent))) : null
+  const versus = vsOpponent ? summarize(versusGames) : null
   // Semana já na planilha: pontos dela. Semana em andamento: pontos ao vivo
   // que a página Matchups passa em `liveGame` (Sleeper).
   const currentGame = matchup
@@ -644,7 +685,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const weeklyGroups = formatCompactPlayerStatGroups(weeklyStats, pos)
 
   const profileTabs = [
-    ...(matchup ? [['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(matchup.opponent)}`]] : []),
+    ...(matchup ? [['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(vsOpponent)}`]] : []),
     ['career', 'Career'],
     ['news', 'News'],
     ['transactions', 'Transactions'],
@@ -765,6 +806,15 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
                     <span className="text-white/35">·</span><span title="Sleeper years_exp counts completed NFL seasons">{nflSeasonLabel(sleeperInfo?.years_exp)}</span>
                   </>
                 )}
+                {/* Time da liga que tem o jogador hoje */}
+                {rosteredBy !== undefined && pos !== 'DEF' && (
+                  <>
+                    <span className="text-white/35">·</span>
+                    {rosteredBy
+                      ? <span className="flex items-center gap-1 font-semibold text-white"><span className="rounded-full bg-white p-px"><TeamAvatar name={rosteredBy} size={16} /></span>{shortName(rosteredBy)}</span>
+                      : <span className="text-white/70">Free agent</span>}
+                  </>
+                )}
                 {loadingInfo && <span className="text-white/50">Loading…</span>}
               </div>
             </div>
@@ -815,6 +865,24 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
         )}
 
         <div ref={bodyRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2 sm:p-3">
+          {/* Seletor do jogo (qualquer jogo dele nas franquias selecionadas) */}
+          {matchup && tab === 'week' && byRecency.length > 0 && (
+            <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-[12px] text-[#6B7280] sm:px-4">
+              <span className="flex-shrink-0">Game</span>
+              <span className="relative min-w-0 flex-1">
+                <select
+                  value={profileGames.find(x => x.isCurrent)?.key || ''}
+                  onChange={e => { setPickedGame(e.target.value || null); setVsPick(null) }}
+                  className="h-8 w-full cursor-pointer appearance-none truncate rounded-full bg-[#F4F5F7] pl-3 pr-8 text-[13px] font-semibold text-[#111] outline-none"
+                >
+                  {!profileGames.some(x => x.isCurrent) && <option value="">{`${matchup.season} · Week ${matchup.week} · ${shortName(matchup.team)} vs ${shortName(matchup.opponent)}`}</option>}
+                  {byRecency.map(x => <option key={x.key} value={x.key}>{`${x.season} · Week ${x.week} · ${shortName(x.team)} vs ${shortName(x.opponent)} · ${x.pts.toFixed(1)} pts`}</option>)}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B7280]" />
+              </span>
+            </label>
+          )}
+
           {matchup && tab === 'week' && (() => {
             const row = profileGames.find(x => x.isCurrent) || null
             const teamPA = row ? parseNumber(row.g?.PA) : 0
@@ -894,9 +962,18 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
 
           {matchup && tab === 'opponent' && (
             <ProfileCard
-              title={`vs ${matchup.opponent}`}
+              title={`vs ${vsOpponent}`}
               subtitle="All-time history in the selected franchises"
-              right={<TeamAvatar name={matchup.opponent} size={28} />}
+              right={(
+                // Escolher outro adversário
+                <span className="relative flex-shrink-0">
+                  <select value={vsOpponent || ''} onChange={e => setVsPick(e.target.value || null)} className="h-8 max-w-[170px] cursor-pointer appearance-none truncate rounded-full bg-[#F4F5F7] pl-3 pr-8 text-[12px] font-semibold text-[#111] outline-none">
+                    {vsOpponent && !opponentsFaced.includes(vsOpponent) && <option value={vsOpponent}>{shortName(vsOpponent)}</option>}
+                    {opponentsFaced.map(o => <option key={o} value={o}>{shortName(o)}</option>)}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B7280]" />
+                </span>
+              )}
             >
               <div className="grid grid-cols-4 border-b border-[#F1F2F4]">
                 {[['Games', versus.apps], ['Starts', versus.starts], ['Avg pts', versus.avg.toFixed(2)], ['Best', versus.best.toFixed(2)]].map(([label, value]) => (
