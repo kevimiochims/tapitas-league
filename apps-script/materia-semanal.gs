@@ -24,7 +24,7 @@
 //     MATERIAS_TESTE e rode outra vez.
 //
 // AUTOMÁTICO:
-//   - Rode instalaMateriaSemanal() uma vez. Todo dia às 11h ele confere se há
+//   - Rode instalaMateriaSemanal() uma vez. Todo dia às 5h ele confere se há
 //     rodada nova fechada (Power Ranking calculado e recaps escritos) sem
 //     matéria; se houver, escreve e publica. Cada rodada sai uma vez só.
 //   - Para publicar uma rodada na mão: publicaMateriaSemana('2026', '4').
@@ -38,6 +38,8 @@ const MATERIA_ABA_TESTE = 'MATERIAS_TESTE';
 const MATERIA_CATEGORIA = 'Recap';
 const MATERIA_AUTOR = 'Tapitas News';
 const MATERIA_TEMPO_MAX_MS = 4.5 * 60 * 1000;
+// Hora do gatilho diário (o Google roda em algum momento dentro dessa hora)
+const MATERIA_HORA = 5;
 
 const MATERIA_INSTRUCOES = `
 Você é o editor-chefe da Tapitas News, o jornal da Tapitas League, uma liga de
@@ -120,8 +122,8 @@ function instalaMateriaSemanal() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'materiaDaSemanaAutomatica')
     .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('materiaDaSemanaAutomatica').timeBased().everyDays(1).atHour(11).create();
-  Logger.log('[MATÉRIA] Gatilho diário (11h) criado. Ele só publica quando há rodada nova fechada sem matéria.');
+  ScriptApp.newTrigger('materiaDaSemanaAutomatica').timeBased().everyDays(1).atHour(MATERIA_HORA).create();
+  Logger.log(`[MATÉRIA] Gatilho diário (${MATERIA_HORA}h) criado. Ele só publica quando há rodada nova fechada sem matéria.`);
 }
 
 // Gatilho diário: publica a matéria da última rodada fechada, uma vez só
