@@ -489,24 +489,42 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const [selectedSeasons, setSelectedSeasons] = useState(() => (initialSeasons && initialSeasons.length ? initialSeasons.map(String) : null))
   const chosenSeasons = (selectedSeasons || []).filter(s => availableSeasons.includes(s))
   const activeSeasons = chosenSeasons.length ? chosenSeasons : availableSeasons
-  const allSeasons = activeSeasons.length === availableSeasons.length
+  // "All" só quando nenhuma temporada foi escolhida (escolher 2024 mostra 2024
+  // marcado, mesmo que seja a única temporada do time que sobrou)
+  const allSeasons = chosenSeasons.length === 0
   const activeSeasonSet = new Set(activeSeasons)
+  const clubOf = team => clubs.find(c => normalizeTeamName(c.team) === normalizeTeamName(team))
   // Com todas marcadas, tocar numa temporada mostra só ela; depois cada toque
-  // liga/desliga (sempre fica pelo menos uma)
-  const toggleSeason = season => setSelectedSeasons(() => {
-    if (allSeasons) return [season]
-    if (activeSeasonSet.has(season)) return activeSeasons.length === 1 ? null : activeSeasons.filter(s => s !== season)
-    const next = [...activeSeasons, season]
-    return next.length === availableSeasons.length ? null : next
-  })
+  // liga/desliga (sempre fica pelo menos uma). As franquias acompanham: fica
+  // marcada só quem jogou nas temporadas escolhidas
+  const toggleSeason = season => {
+    let next
+    if (allSeasons) next = [season]
+    else if (activeSeasonSet.has(season)) next = activeSeasons.length === 1 ? null : activeSeasons.filter(s => s !== season)
+    else { const all = [...activeSeasons, season]; next = all.length === availableSeasons.length ? null : all }
+    setSelectedSeasons(next)
+    if (next) {
+      const set = new Set(next)
+      const keep = activeTeams.filter(t => clubOf(t)?.seasons.some(s => set.has(s)))
+      if (keep.length && keep.length !== activeTeams.length) setSelectedTeams(keep)
+    }
+  }
 
-  const toggleTeam = team => setSelectedTeams(() => {
+  const toggleTeam = team => {
     const cur = activeTeams
     const key = normalizeTeamName(team)
     const exists = cur.some(t => normalizeTeamName(t) === key)
-    if (exists) return cur.length === 1 ? cur : cur.filter(t => normalizeTeamName(t) !== key)
-    return [...cur, team]
-  })
+    if (exists) {
+      setSelectedTeams(cur.length === 1 ? cur : cur.filter(t => normalizeTeamName(t) !== key))
+      return
+    }
+    setSelectedTeams([...cur, team])
+    // Time novo sem jogos nas temporadas escolhidas: as temporadas da franquia
+    // nova entram junto, para ela não ficar marcada sem nenhum jogo
+    if (!allSeasons && !clubOf(team)?.seasons.some(s => activeSeasonSet.has(s))) {
+      setSelectedSeasons([...chosenSeasons, ...(clubOf(team)?.seasons || [])])
+    }
+  }
 
   // Aba Career: a tabela rola até o jogo em destaque (ex.: aberto de um recorde)
   useEffect(() => {
@@ -855,7 +873,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
             })}
           </div>
           {/* Temporadas das franquias selecionadas */}
-          {availableSeasons.length > 1 && (
+          {(availableSeasons.length > 1 || !allSeasons) && (
             <div className="scroll-hide mt-1.5 flex items-center gap-1 overflow-x-auto">
               <span className="mr-0.5 flex-shrink-0 text-[11px] font-medium text-[#6B7280]">Season</span>
               <button type="button" onClick={() => setSelectedSeasons(null)} className={`h-6 flex-shrink-0 rounded-full px-2.5 text-[11px] transition-colors ${allSeasons ? 'bg-[#02275F] font-semibold text-white' : 'bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]'}`}>All</button>
