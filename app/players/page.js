@@ -1112,7 +1112,20 @@ export default function PlayersPage() {
         />
       )}
 
-      {selected && <PlayerProfileModal key={selected.identityKey} rawName={selected.rawName} displayName={selected.name} position={selected.position} playerId={getPlayerId(selected.rawName, playerLookup)} games={games} onClose={closeProfile} />}
+      {selected && (
+        <PlayerProfileModal
+          key={selected.identityKey}
+          rawName={selected.rawName}
+          displayName={selected.name}
+          position={selected.position}
+          playerId={getPlayerId(selected.rawName, playerLookup)}
+          games={games}
+          // Abre no mesmo recorte da lista (franquia e temporada filtradas)
+          initialTeams={teamFilter.includes('All') ? undefined : teamFilter}
+          initialSeasons={season.includes('All') ? undefined : season}
+          onClose={closeProfile}
+        />
+      )}
     </PageShell>
   )
 }

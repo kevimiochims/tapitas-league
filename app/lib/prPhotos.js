@@ -51,7 +51,7 @@ async function mapLimit(items, limit, fn) {
 }
 
 export function getPowerRankingPhotos(season, week) {
-  return cached(`pr-photos:v22:${season}|${week}`, 3 * 3600, async () => {
+  return cached(`pr-photos:v23:${season}|${week}`, 3 * 3600, async () => {
     const [games, cacheRows, espnIds, players, window] = await Promise.all([
       getSheetRows('GAME_FACTS_ALL'),
       getSheetRows('_PLAYER_CACHE'),
@@ -287,11 +287,13 @@ export function getPowerRankingPhotos(season, week) {
             : list.sort((a, b) => (b.width || 0) - (a.width || 0))[0]
           if (found) { hit = found; who = p; break }
         }
-        if (!hit && starters.indexOf(p) < 3) {
+        // Arquivo e Commons: os 3 maiores primeiro; se nenhum deles tiver foto,
+        // segue pelos outros titulares (melhor um titular do que card sem foto)
+        if (!hit) {
           const archived = await archiveFor(p, team).catch(() => null)
           if (archived) { hit = { ...archived, caption: archived.caption || archived.headline || '' }; who = p }
         }
-        if (!hit && starters.indexOf(p) < 3) {
+        if (!hit) {
           const free = await commonsFor(p, team)
           if (free) { hit = { ...free, caption: free.title.replace(/^File:/, '').replace(/\.[a-z]+$/i, ''), commons: true }; who = p }
         }

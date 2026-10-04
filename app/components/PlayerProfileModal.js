@@ -457,7 +457,13 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
       })
   })()
 
-  const [selectedTeams, setSelectedTeams] = useState(() => (initialTeams && initialTeams.length ? initialTeams : null))
+  // Só as franquias do contexto em que ele de fato jogou (ex.: filtro de time
+  // da página Players); nenhuma = todas
+  const [selectedTeams, setSelectedTeams] = useState(() => {
+    const keys = new Set((initialTeams || []).map(normalizeTeamName))
+    const matched = clubs.filter(c => keys.has(normalizeTeamName(c.team))).map(c => c.team)
+    return matched.length ? matched : null
+  })
   const activeTeams = selectedTeams || clubs.map(c => c.team)
   const activeTeamKeys = new Set(activeTeams.map(normalizeTeamName))
 

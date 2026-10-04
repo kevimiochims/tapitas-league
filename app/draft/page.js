@@ -454,6 +454,11 @@ export default function DraftPage() {
             .sort((a, b) => a.pick - b.pick)
     }, [draftData, season])
 
+    // Tag_Ok da planilha: quem terminou a temporada com o time e pode receber
+    // a tag na temporada seguinte (só aparece onde a coluna foi preenchida)
+    const hasTagInfo = seasonPicks.some((p) => p.tagOk)
+    const tagSeason = Number(season) + 1
+
     const teams = useMemo(() => {
         return [...new Set(seasonPicks.map((p) => p.team))].filter(Boolean)
     }, [seasonPicks])
@@ -664,12 +669,12 @@ export default function DraftPage() {
                         <CardShell
                             title={`Draft Board · ${season}`}
                             subtitle={`${rounds.length} rounds · ${teams.length} teams`}
-                            action={
+                            action={hasTagInfo && (
                                 <span className="flex flex-shrink-0 items-center gap-1.5 text-[11px] text-[#6B7280]">
                                     <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#F5C518] text-[9px] font-bold text-[#111]">✓</span>
-                                    Tag eligible 2026
+                                    Tag eligible {tagSeason}
                                 </span>
-                            }
+                            )}
                         >
                             {/* Barra de rolagem horizontal */}
                             <div className="px-3 pt-3 lg:px-4">
@@ -707,7 +712,7 @@ export default function DraftPage() {
                                                                     return (
                                                                         <div key={pick.pick} className={`relative rounded-lg p-2 ${pick.tagOk ? 'bg-[#FFF6D6]' : 'bg-[#F4F5F7]'}`}>
                                                                             {pick.tagOk && (
-                                                                                <span title="Elegível para tag em 2026" className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#F5C518] text-[9px] font-bold text-[#111]">✓</span>
+                                                                                <span title={`Elegível para tag em ${tagSeason}`} className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#F5C518] text-[9px] font-bold text-[#111]">✓</span>
                                                                             )}
                                                                             <div className="mb-1.5 flex items-center gap-1.5 pr-5 text-[11px] tabular-nums text-[#6B7280]">
                                                                                 <span>{round}.{String(pickInRound).padStart(2, '0')}</span>

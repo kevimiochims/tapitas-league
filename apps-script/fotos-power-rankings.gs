@@ -296,7 +296,7 @@ function salvaFotosHistoricoPR() {
 // Refaz semanas específicas: edite a lista e rode refazSemanasPR(). Só
 // preenche os times sem foto (ou troca por foto de quem pontuou mais); foto do
 // Form/manual nunca é trocada.
-const SEMANAS_PARA_REFAZER = [['2021', '9'], ['2021', '10']];
+const SEMANAS_PARA_REFAZER = [['2022', '1'], ['2022', '6']];
 
 function refazSemanasPR() {
   SEMANAS_PARA_REFAZER.forEach(([season, week]) => salvaFotosAutomaticasPR(String(season), String(week)));

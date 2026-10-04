@@ -5,6 +5,7 @@ import SummaryDrawer from '../components/SummaryDrawer'
 import React, { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import PlayerCutout from '../components/PlayerCutout'
+import PlayerProfileModal from '../components/PlayerProfileModal'
 import { Trophy, Flame, Swords, Activity, Users, Star, Zap, Shield, Target, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ChevronRight, Skull, RotateCw } from 'lucide-react'
 
 const BASE_URL = '/api/sheet'
@@ -104,6 +105,9 @@ function isDoubleWeek(game) {
   const week = String(game?.Week || '')
   return week.includes('-') || week.includes('&')
 }
+
+// Mínimo de jogos pela franquia para entrar no Best Average (Records, Teams e Players)
+const MIN_APPS_FOR_AVG = 10
 
 function teamHref(name) {
   return `/teams?team=${encodeURIComponent(String(name || '').trim())}`
@@ -263,7 +267,7 @@ function VersusLogos({ teams, size }) {
   )
 }
 
-function RecordCard({ label, value, sub, sub2, subHref, sub2Href, subItems, accent, icon: Icon, top5, team, player, tone }) {
+function RecordCard({ label, value, sub, sub2, subHref, sub2Href, subItems, accent, icon: Icon, top5, team, player, tone, onPlayer }) {
   const [open, setOpen] = useState(false)
   const t = tone || CARD_TONES[0][2]
   const rarity = RARITY[accent] || RARITY.slate
@@ -286,6 +290,9 @@ function RecordCard({ label, value, sub, sub2, subHref, sub2Href, subItems, acce
   const badge = (lead?.position || items?.[0]?.position) ? <PositionBadge position={lead?.position || items?.[0]?.position} /> : null
   const href = lead?.href || items?.[0]?.href || subHref || sub2Href || (leadTeam ? teamHref(leadTeam) : undefined)
   const tied = Math.max(teamArr.length, playerArr.length, items?.length || 0, subArr.length)
+  // Recordes de jogador: nome e pontos abrem o Player Profile; a linha de
+  // baixo (confronto ou time) continua sendo link
+  const openLead = onPlayer && lead?.profile ? () => onPlayer(lead.profile) : null
 
   return (
     <div className={`relative flex flex-col overflow-hidden rounded-xl ${t.card}`}>
@@ -302,14 +309,20 @@ function RecordCard({ label, value, sub, sub2, subHref, sub2Href, subItems, acce
         </div>
         <div className="min-w-0 flex-1">
           <div className={`truncate text-[11px] font-semibold uppercase tracking-[0.12em] ${t.label || rarity.text}`}>{label}</div>
-          {href
-            ? <a href={href} className={`mt-0.5 flex min-w-0 items-center gap-1.5 text-[15px] font-semibold ${t.nameHover}`}><span className="truncate">{name}</span>{badge}</a>
-            : <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[15px] font-semibold"><span className="truncate">{name}</span>{badge}</div>}
+          {openLead
+            ? <button type="button" onClick={openLead} className={`mt-0.5 flex max-w-full min-w-0 items-center gap-1.5 text-left text-[15px] font-semibold ${t.nameHover}`}><span className="truncate">{name}</span>{badge}</button>
+            : href
+              ? <a href={href} className={`mt-0.5 flex min-w-0 items-center gap-1.5 text-[15px] font-semibold ${t.nameHover}`}><span className="truncate">{name}</span>{badge}</a>
+              : <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[15px] font-semibold"><span className="truncate">{name}</span>{badge}</div>}
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-[32px] font-bold leading-none tabular-nums tracking-tight">{value ?? '—'}</span>
+            {openLead
+              ? <button type="button" onClick={openLead} className={`text-[32px] font-bold leading-none tabular-nums tracking-tight ${t.nameHover}`}>{value ?? '—'}</button>
+              : <span className="text-[32px] font-bold leading-none tabular-nums tracking-tight">{value ?? '—'}</span>}
             {tied > 1 && <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${t.chip}`}>{tied}-way tie</span>}
           </div>
-          {meta && <div className={`mt-1.5 truncate text-[12px] ${t.meta}`}>{meta}</div>}
+          {meta && (openLead && href
+            ? <a href={href} className={`mt-1.5 block truncate text-[12px] underline-offset-2 hover:underline ${t.meta}`}>{meta}</a>
+            : <div className={`mt-1.5 truncate text-[12px] ${t.meta}`}>{meta}</div>)}
         </div>
       </div>
       {rows.length > 1 && (
@@ -335,6 +348,22 @@ function RecordCard({ label, value, sub, sub2, subHref, sub2Href, subItems, acce
               </>
             )
             const cls = `flex items-center gap-2 border-t px-4 py-1.5 ${t.rowBorder} ${t.rowHover}`
+            if (onPlayer && item.profile) {
+              const openRow = () => onPlayer(item.profile)
+              return (
+                <div key={i} className={cls}>
+                  <span className={`w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums ${t.rank}`}>{i + 2}</span>
+                  <button type="button" onClick={openRow} aria-label={labelText} className="flex-shrink-0"><PlayerAvatar playerId={item.playerId} name={labelText} size="sm" /></button>
+                  <span className="min-w-0 flex-1">
+                    <button type="button" onClick={openRow} className={`block max-w-full truncate text-left text-[12px] font-medium ${t.rowText} ${t.nameHover}`}>{labelText}</button>
+                    {(item.meta || item.sub) && (item.href
+                      ? <a href={item.href} className={`block truncate text-[10px] underline-offset-2 hover:underline ${t.rowSub}`}>{item.meta || item.sub}</a>
+                      : <span className={`block truncate text-[10px] ${t.rowSub}`}>{item.meta || item.sub}</span>)}
+                  </span>
+                  <button type="button" onClick={openRow} className={`flex-shrink-0 text-[12px] font-semibold tabular-nums ${t.nameHover}`}>{item.value}</button>
+                </div>
+              )
+            }
             return item.href ? <a key={i} href={item.href} className={cls}>{content}</a> : <div key={i} className={cls}>{content}</div>
           })}
         </div>
@@ -626,6 +655,8 @@ function RecordsPageContent() {
   const pickTab = key => { setTab(key); setSection('All') }
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [allSeasons, setAllSeasons] = useState([])
+  // Player Profile aberto a partir de um recorde de jogador
+  const [profile, setProfile] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -1503,6 +1534,7 @@ function RecordsPageContent() {
           if (!map.has(key)) {
             map.set(key, {
               identity,
+              rawName,
               playerId: lookup.get(normalizePlayerKey(rawName))?.playerId || '',
               team,
               name: displayName(rawName),
@@ -1551,7 +1583,9 @@ function RecordsPageContent() {
     }
 
     const makeMetric = (rows, metric, higher = true) => {
-      const eligible = rows.filter(r => Number(r?.[metric]) > 0)
+      // Best Average: só quem tem 10+ jogos pela franquia (mesma regra da
+      // página Players e dos recordes de cada time)
+      const eligible = rows.filter(r => Number(r?.[metric]) > 0 && (metric !== 'avgPts' || r.appearances >= MIN_APPS_FOR_AVG))
       const sorted = [...eligible].sort((a, b) => {
         const av = Number(a?.[metric]) || 0
         const bv = Number(b?.[metric]) || 0
@@ -1621,6 +1655,8 @@ function RecordsPageContent() {
         teams: winners.map(r => r.team),
         players: winners.map(r => ({ playerId: r.playerId, name: r.name, position: r.position })),
         top5: sorted.slice(0, 5).map(r => ({
+          // Abre o Player Profile (no Most Points, já no jogo do recorde)
+          profile: { rawName: r.rawName, name: r.name, position: r.position, playerId: r.playerId, team: r.team, game: metric === 'bestPts' ? r.bestGame : null },
           label: r.name,
           position: r.position,
           playerId: r.playerId,
@@ -2063,7 +2099,7 @@ function RecordsPageContent() {
     ],
     players: [
       heroTile(playerRecords?.all?.bestPts, { label: 'Best player game', section: 'Most Points', tab: 'players' }),
-      heroTile(playerRecords?.all?.avgPts, { label: 'Best average', section: 'Best Average', tab: 'players' }),
+      heroTile(playerRecords?.all?.avgPts, { label: 'Best average', section: 'Best Average (10+ games)', tab: 'players' }),
       heroTile(playerRecords?.all?.mostStarted, { label: 'Most started', section: 'Most Started', tab: 'players' }),
       heroTile(playerRecords?.all?.mostRostered, { label: 'Most rostered', section: 'Most Rostered', tab: 'players' }),
       heroTile(playerRecords?.from23?.bestPts, { label: 'Best game since 2023', section: 'Most Points', tab: 'players' }),
@@ -2229,7 +2265,7 @@ function RecordsPageContent() {
                   ['mostRostered', 'Most Rostered', 'gold', Users],
                   ['mostStarted', 'Most Started', 'cyan', Star],
                   ['bestPts', 'Most Points', 'red', Flame],
-                  ['avgPts', 'Best Average', 'emerald', Activity],
+                  ['avgPts', 'Best Average (10+ games)', 'emerald', Activity],
                 ].map(([key, title, accent, Icon]) => (
                   <RecordSection key={key} title={title}>
                     {[['all', 'All-Time'], ['from21', 'Since 2021'], ['from23', 'Since 2023']].map(([era, eraLabel]) => {
@@ -2247,6 +2283,7 @@ function RecordsPageContent() {
                           accent={accent}
                           icon={Icon}
                           top5={rec?.top5}
+                          onPlayer={setProfile}
                         />
                       )
                     })}
@@ -2346,6 +2383,27 @@ function RecordsPageContent() {
           </div>
         )}
       <SummaryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} allSeasons={allSeasons} />
+      {profile && (
+        <PlayerProfileModal
+          key={`${profile.rawName}|${profile.team}|${profile.game?.Season || ''}|${profile.game?.Week || ''}`}
+          rawName={profile.rawName}
+          displayName={profile.name}
+          position={profile.position}
+          playerId={profile.playerId}
+          games={games}
+          initialTeams={[profile.team]}
+          // Most Points: abre no jogo do recorde (aba da semana com as
+          // estatísticas da NFL e o jogo em destaque no game log)
+          initialSeasons={profile.game ? [String(profile.game.Season || '').trim()] : undefined}
+          matchup={profile.game ? {
+            season: String(profile.game.Season || '').trim(),
+            week: String(profile.game.Week || '').trim(),
+            team: String(profile.game.Team || '').trim(),
+            opponent: String(profile.game.Opponent || '').trim(),
+          } : undefined}
+          onClose={() => setProfile(null)}
+        />
+      )}
     </PageShell>
   )
 }

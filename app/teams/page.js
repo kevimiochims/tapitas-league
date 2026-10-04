@@ -1297,7 +1297,10 @@ export default function TeamsPage() {
 
     // Player Archive already calculates AVG Pts and Best Pts for every player
     // who wore the franchise jersey. These leaders feed the team record cards.
-    const bestAvgPlayer = [...playerArchive]
+    // Best average: só quem tem 10+ jogos pela franquia (mesma regra de
+    // Records e Players)
+    const bestAvgPlayer = playerArchive
+      .filter(p => p.appearances >= 10)
       .sort((a, b) => b.avgPts - a.avgPts || b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))[0] || null
     const bestScorePlayer = [...playerArchive]
       .sort((a, b) => b.bestPts - a.bestPts || b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))[0] || null
@@ -1378,7 +1381,7 @@ export default function TeamsPage() {
     const franchisePlayers = [
       mostRostered.length > 0 ? { label: 'Most appearances', p: mostRostered[0], value: mostRostered[0].count } : null,
       mostStarted.length > 0 ? { label: 'Most starts', p: mostStarted[0], value: mostStarted[0].count } : null,
-      bestAvgPlayer ? { label: 'Best average', p: bestAvgPlayer, value: bestAvgPlayer.avgPts.toFixed(2) } : null,
+      bestAvgPlayer ? { label: 'Best average (10+ apps)', p: bestAvgPlayer, value: bestAvgPlayer.avgPts.toFixed(2) } : null,
       bestScorePlayer ? { label: 'Best single game', p: bestScorePlayer, value: bestScorePlayer.bestPts.toFixed(2) } : null,
     ].filter(Boolean)
 
