@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { TeamLogo } from '../ui'
+import NewsReader from './NewsReader'
 
 // Tira o nome do jogador do começo da manchete (ele já aparece em negrito)
 function cleanHeadline(n) {
@@ -12,8 +13,10 @@ function cleanHeadline(n) {
 
 // Faixa de manchetes rolando ("Tapitas wire"): últimas notícias da NFL sobre
 // jogadores dos elencos da liga. Pausa com o mouse (ou o dedo) em cima.
-export default function NewsTicker() {
+// Toque numa manchete abre a prévia da notícia (NewsReader), como no resto do site
+export default function NewsTicker({ onOpenPlayer }) {
   const [news, setNews] = useState([])
+  const [reading, setReading] = useState(null)
   const trackRef = useRef(null)
   const pausedRef = useRef(false)
 
@@ -54,20 +57,19 @@ export default function NewsTicker() {
   if (!news.length) return null
 
   const renderItems = copy => news.map((n, i) => (
-    <a
+    <button
+      type="button"
       key={`${copy}-${n.id || n.headline}-${i}`}
       aria-hidden={copy === 'b' || undefined}
       tabIndex={copy === 'b' ? -1 : undefined}
-      href={n.url || undefined}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex flex-shrink-0 items-center gap-2 px-5 text-[13px] text-white/85 hover:text-white"
+      onClick={() => { pausedRef.current = true; setReading(n) }}
+      className="inline-flex flex-shrink-0 items-center gap-2 px-5 text-left text-[13px] text-white/85 hover:text-white"
     >
       {n.player?.fantasyTeam && <span className="rounded-full bg-white p-px"><TeamLogo name={n.player.fantasyTeam} size={16} /></span>}
       {n.player?.name && <span className="font-semibold text-white">{n.player.name}</span>}
       <span className="whitespace-nowrap">{cleanHeadline(n)}</span>
       <span className="pl-3 text-[#E8C766]">●</span>
-    </a>
+    </button>
   ))
 
   return (
@@ -88,6 +90,7 @@ export default function NewsTicker() {
           {renderItems('b')}
         </div>
       </div>
+      {reading && <NewsReader item={reading} onClose={() => { setReading(null); pausedRef.current = false }} onOpenPlayer={onOpenPlayer} />}
     </div>
   )
 }

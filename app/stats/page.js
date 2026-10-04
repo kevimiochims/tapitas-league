@@ -1,10 +1,11 @@
 'use client'
 
-import { Suspense, useEffect, useState, useMemo } from 'react'
+import { Suspense, useEffect, useState, useMemo, useRef, useId } from 'react'
+import { createPortal } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Activity, Swords, Flame } from 'lucide-react'
-import { HighlightCards, HighlightIcon, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, StableHeight, LoadingState } from '../components/ui'
+import { ChevronRight, ChevronDown, Activity, Swords, Flame, Check } from 'lucide-react'
+import { HighlightCards, HighlightIcon, SummaryButton, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, MultiFilterPill, ToggleChip, SortHeader, StatGrid, StatTile, Tag, ResultBadge, StreakBadge, TeamLogo, Pager, StableHeight, LoadingState, Segmented, getTeamImage } from '../components/ui'
 import SummaryDrawer from '../components/SummaryDrawer'
 import { useDrawer } from '../context/DrawerContext'
 import { useTeamFocus, getTeamFocus } from '../context/TeamFocus'
@@ -173,12 +174,71 @@ function FinishHeatmap({ history, teams, focus = '' }) {
   )
 }
 
+// Filtro no cabeçalho da coluna (Game Log): o nome da coluna vira um botão
+// com a lista de opções. A lista abre por cima da tabela (portal), para não
+// ser cortada pela rolagem horizontal.
+function HeaderFilter({ label, options, value, onChange, format = v => v, align = 'left' }) {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState(null)
+  const btn = useRef(null)
+  const menu = useRef(null)
+  const active = value.length > 0
+  useEffect(() => {
+    if (!open) return undefined
+    const close = e => { if (!btn.current?.contains(e.target) && !menu.current?.contains(e.target)) setOpen(false) }
+    const hide = () => setOpen(false)
+    document.addEventListener('mousedown', close)
+    window.addEventListener('scroll', hide, true)
+    window.addEventListener('resize', hide)
+    return () => { document.removeEventListener('mousedown', close); window.removeEventListener('scroll', hide, true); window.removeEventListener('resize', hide) }
+  }, [open])
+  const toggleOpen = () => {
+    const r = btn.current?.getBoundingClientRect()
+    if (r) setPos({ top: r.bottom + 4, left: align === 'right' ? Math.max(8, r.right - 220) : Math.min(r.left, window.innerWidth - 228) })
+    setOpen(o => !o)
+  }
+  const toggle = opt => onChange(value.includes(opt) ? value.filter(v => v !== opt) : [...value, opt])
+  return (
+    <>
+      <button ref={btn} type="button" onClick={toggleOpen} className={`inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors ${active ? 'bg-[#02275F] font-semibold text-white' : 'hover:bg-[#F4F5F7] hover:text-[#111]'}`}>
+        {label}{active && <span className="tabular-nums">· {value.length}</span>}
+        <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && pos && typeof document !== 'undefined' && createPortal(
+        <div ref={menu} className="fixed z-[120] w-[220px] overflow-hidden rounded-lg bg-white py-1 text-left shadow-lg ring-1 ring-black/5" style={{ top: pos.top, left: pos.left }}>
+          <button type="button" onClick={() => onChange([])} className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-[#3F4757] hover:bg-[#F4F5F7]">
+            <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${!active ? 'border-[#02275F] bg-[#02275F] text-white' : 'border-[#C9CDD4] bg-white'}`}>{!active && <Check className="h-3 w-3" />}</span>
+            <span className={!active ? 'font-semibold text-[#111]' : ''}>All</span>
+          </button>
+          <div className="max-h-64 overflow-y-auto">
+            {options.map(opt => {
+              const checked = value.includes(opt)
+              return (
+                <button key={opt} type="button" onClick={() => toggle(opt)} className="flex w-full items-center gap-2 px-3 py-2 text-[13px] font-normal text-[#3F4757] hover:bg-[#F4F5F7]">
+                  <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${checked ? 'border-[#02275F] bg-[#02275F] text-white' : 'border-[#C9CDD4] bg-white'}`}>{checked && <Check className="h-3 w-3" />}</span>
+                  <span className={`truncate ${checked ? 'font-semibold text-[#111]' : ''}`}>{format(opt)}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
+// Épocas dos gráficos de pontos por jogo e % de vitórias
+const ERA_OPTIONS = [['all', 'All'], ['2021', "'21+"], ['2023', "'23+"]]
+const ERA_LABEL = { all: 'All-time', 2021: 'Since 2021', 2023: 'Since 2023' }
+
 function ColumnChart({ data, format = v => v, labelFormat = l => l, fontSize = 11, height = 180, width = 640, accentIndex = -1, line = null }) {
   const W = width, H = height, padB = 26, padT = line ? 30 : 20, padX = 8
   const max = Math.max(...data.map(d => d.value), ...(line ? data.map(d => d[line.key] || 0) : []), 1)
   const bw = (W - padX * 2) / data.length
   const y = v => padT + (1 - v / max) * (H - padT - padB)
   const linePoints = line ? data.map((d, i) => `${padX + bw * i + bw / 2},${y(d[line.key] || 0)}`).join(' ') : ''
+  const uid = useId().replace(/:/g, '')
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" role="img">
       {data.map((d, i) => {
@@ -198,10 +258,26 @@ function ColumnChart({ data, format = v => v, labelFormat = l => l, fontSize = 1
       {line && (
         <>
           <polyline points={linePoints} fill="none" stroke="#D01F2D" strokeWidth="2" strokeLinejoin="round" />
-          {data.map((d, i) => <circle key={i} cx={padX + bw * i + bw / 2} cy={y(d[line.key] || 0)} r="3" fill="#D01F2D" />)}
+          {/* Ponto da linha: logo do time que fez a pontuação (clique abre o confronto) */}
+          {data.map((d, i) => {
+            const cx = padX + bw * i + bw / 2
+            const cy = y(d[line.key] || 0)
+            const logo = d.maxTeam ? getTeamImage(d.maxTeam) : null
+            if (!logo) return <circle key={i} cx={cx} cy={cy} r="3" fill="#D01F2D" />
+            const r = fontSize * 1.05
+            const mark = (
+              <g>
+                <title>{`${d.maxTeam} · ${(line.format || format)(d[line.key])}`}</title>
+                <clipPath id={`lg-${uid}-${i}`}><circle cx={cx} cy={cy} r={r} /></clipPath>
+                <circle cx={cx} cy={cy} r={r + 1.5} fill="#fff" stroke="#D01F2D" strokeWidth="1.5" />
+                <image href={logo} x={cx - r} y={cy - r} width={r * 2} height={r * 2} clipPath={`url(#lg-${uid}-${i})`} preserveAspectRatio="xMidYMid slice" />
+              </g>
+            )
+            return d.href ? <a key={i} href={d.href}>{mark}</a> : <g key={i}>{mark}</g>
+          })}
           {/* Valor da linha em cada ponto (ex.: maior pontuação da temporada) */}
           {data.map((d, i) => d[line.key] ? (
-            <text key={`v${i}`} x={padX + bw * i + bw / 2} y={y(d[line.key]) - 8} textAnchor="middle" fontSize={fontSize} fontWeight="600" fill="#D01F2D" stroke="#fff" strokeWidth="3" paintOrder="stroke">{(line.format || format)(d[line.key])}</text>
+            <text key={`v${i}`} x={padX + bw * i + bw / 2} y={y(d[line.key]) - (d.maxTeam ? fontSize * 1.05 + 6 : 8)} textAnchor="middle" fontSize={fontSize} fontWeight="600" fill="#D01F2D" stroke="#fff" strokeWidth="3" paintOrder="stroke">{(line.format || format)(d[line.key])}</text>
           ) : null)}
         </>
       )}
@@ -309,6 +385,9 @@ function StatsPageContent() {
   const [sortDir, setSortDir] = useState('desc')
   const [chartStat, setChartStat] = useState('Wins')
   const [chartScope, setChartScope] = useState('Reg Season')
+  // Época dos gráficos de pontos por jogo e % de vitórias (padrão: desde 2023)
+  const [ppgEra, setPpgEra] = useState('2023')
+  const [winEra, setWinEra] = useState('2023')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [allSeasons, setAllSeasons] = useState([])
 
@@ -891,12 +970,40 @@ function StatsPageContent() {
     const bySeason = {}
     rows.forEach(g => {
       const s = String(g?.Season || '').trim()
-      bySeason[s] = bySeason[s] || { pts: 0, games: 0, max: 0 }
+      bySeason[s] = bySeason[s] || { pts: 0, games: 0, max: 0, game: null }
       bySeason[s].pts += parseNumber(g?.PF)
       bySeason[s].games += 1
-      bySeason[s].max = Math.max(bySeason[s].max, parseNumber(g?.PF))
+      if (parseNumber(g?.PF) > bySeason[s].max) { bySeason[s].max = parseNumber(g?.PF); bySeason[s].game = g }
     })
-    const seasonScoring = Object.entries(bySeason).sort((a, b) => Number(a[0]) - Number(b[0])).map(([s, v]) => ({ label: `'${s.slice(2)}`, value: v.pts / v.games, max: v.max }))
+    const seasonScoring = Object.entries(bySeason).sort((a, b) => Number(a[0]) - Number(b[0])).map(([s, v]) => ({
+      label: `'${s.slice(2)}`,
+      value: v.pts / v.games,
+      max: v.max,
+      maxTeam: String(v.game?.Team || '').trim(),
+      href: v.game ? `/matchups?season=${encodeURIComponent(s)}&week=${encodeURIComponent(String(v.game.Week || '').trim())}&team=${encodeURIComponent(String(v.game.Team || '').trim())}&opp=${encodeURIComponent(String(v.game.Opponent || '').trim())}` : null,
+    }))
+
+    // Pontos por jogo e % de vitórias por época (o número de times e o tamanho
+    // dos elencos mudaram em 2021 e em 2023)
+    const eraOf = minSeason => {
+      const per = {}
+      gamesData.forEach(g => {
+        if ((Number(String(g?.Season || '').trim()) || 0) < minSeason) return
+        const team = String(g?.Team || '').trim()
+        if (!current.has(normalizeString(team))) return
+        per[team] = per[team] || { pts: 0, n: 0, w: 0, l: 0 }
+        const res = String(g?.Result || '').trim().toUpperCase()
+        if (res === 'W') per[team].w += 1
+        if (res === 'L') per[team].l += 1
+        if (parseNumber(g?.PF) > 0 && singleWeek(g)) { per[team].pts += parseNumber(g?.PF); per[team].n += 1 }
+      })
+      const entries = Object.entries(per)
+      return {
+        ppg: entries.filter(([, v]) => v.n).map(([team, v]) => ({ team, value: v.pts / v.n })).sort((a, b) => b.value - a.value),
+        winPct: entries.filter(([, v]) => v.w + v.l).map(([team, v]) => ({ team, value: (v.w / (v.w + v.l)) * 100 })).sort((a, b) => b.value - a.value),
+      }
+    }
+    const eras = { 2021: eraOf(2021), 2023: eraOf(2023) }
 
     const winPct = allTimeData.map(r => ({ team: String(r?.Team || r?.team || '').trim(), value: parseNumber(String(r?.['W%'] || '0').replace('%', '')) / (String(r?.['W%'] || '').includes('%') ? 1 : 1) }))
       .filter(r => r.team).sort((a, b) => b.value - a.value)
@@ -910,7 +1017,7 @@ function StatsPageContent() {
     const over200ByTeam = {}
     rows.forEach(g => { if (parseNumber(g?.PF) >= 200) { const t = String(g?.Team || '').trim(); over200ByTeam[t] = (over200ByTeam[t] || 0) + 1 } })
     const over200Leader = Object.entries(over200ByTeam).sort((a, b) => b[1] - a[1])[0] || null
-    return { ppg, distribution, seasonScoring, winPct, titles, playoffApps, leagueAvg, maxScore: Math.max(0, ...allScores), maxGame, over200Leader, seasons: Object.keys(bySeason).length, games, over200: allScores.filter(v => v >= 200).length }
+    return { eras, ppg, distribution, seasonScoring, winPct, titles, playoffApps, leagueAvg, maxScore: Math.max(0, ...allScores), maxGame, over200Leader, seasons: Object.keys(bySeason).length, games, over200: allScores.filter(v => v >= 200).length }
   }, [allTimeData, gamesData])
 
   const overviewTab = (
@@ -940,12 +1047,12 @@ function StatsPageContent() {
           </div>
         </CardShell>
 
-        <CardShell title="Points per game" subtitle="All-time · single weeks">
-          <HBarChart focus={teamFocus} rows={overview.ppg} format={v => v.toFixed(1)} />
+        <CardShell title="Points per game" subtitle={`${ERA_LABEL[ppgEra]} · single weeks`} action={<Segmented options={ERA_OPTIONS} value={ppgEra} onChange={setPpgEra} />}>
+          <HBarChart focus={teamFocus} rows={ppgEra === 'all' ? overview.ppg : overview.eras[ppgEra].ppg} format={v => v.toFixed(1)} />
         </CardShell>
 
-        <CardShell title="Win % all-time" subtitle="Green above .500 · red below">
-          <HBarChart focus={teamFocus} rows={overview.winPct} format={v => `${v.toFixed(1)}%`} center={50} />
+        <CardShell title="Win %" subtitle={`${ERA_LABEL[winEra]} · green above .500 · red below`} action={<Segmented options={ERA_OPTIONS} value={winEra} onChange={setWinEra} />}>
+          <HBarChart focus={teamFocus} rows={winEra === 'all' ? overview.winPct : overview.eras[winEra].winPct} format={v => `${v.toFixed(1)}%`} center={50} />
         </CardShell>
 
         <CardShell title="Score distribution" subtitle="How many weekly scores fall in each 20-point range">
@@ -993,8 +1100,8 @@ function StatsPageContent() {
           withMenus
         >
           <FilterBar>
-            <FilterPill value={season} onChange={setSeason} options={seasons} label="Season" neutral />
-            {TABS.map(t => <ToggleChip key={t} active={tab === t} onClick={() => setTab(t)}>{t}</ToggleChip>)}
+            <FilterPill value={season} onChange={setSeason} options={seasons} label="Season" neutral hideLabel />
+            {TABS.map(t => <ToggleChip key={t} active={tab === t} onClick={() => setTab(t)}>{t === 'Reg Season' ? 'RS' : t}</ToggleChip>)}
           </FilterBar>
           {loading ? <LoadingState /> : (
             <div className="overflow-hidden rounded-b-xl">
@@ -1056,9 +1163,9 @@ function StatsPageContent() {
       {section === 'evolution' && (
         <CardShell title="Team evolution" subtitle={`${chartTeam} · ${chartStat.toLowerCase()} per season (${chartScope.toLowerCase()})`} withMenus>
           <FilterBar>
-            <FilterPill value={chartTeam} onChange={setChartTeam} options={allTeams} label="Team" neutral />
-            <FilterPill value={chartStat} onChange={setChartStat} options={CHART_STATS.map(s => s.label)} label="Stat" neutral />
-            <FilterPill value={chartScope} onChange={setChartScope} options={['Reg Season', 'Playoffs', 'Total']} label="Scope" neutral />
+            <FilterPill value={chartTeam} onChange={setChartTeam} options={allTeams} label="Team" neutral hideLabel />
+            <FilterPill value={chartStat} onChange={setChartStat} options={CHART_STATS.map(s => s.label)} label="Stat" neutral hideLabel />
+            <FilterPill value={chartScope} onChange={setChartScope} options={['Reg Season', 'Playoffs', 'Total']} label="Scope" neutral hideLabel />
           </FilterBar>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 px-3 pt-3 text-[12px] text-[#6B7280]">
             <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#B8860B]" /> Championship</span>
@@ -1081,6 +1188,15 @@ function StatsPageContent() {
         </CardShell>
       )}
 
+      {/* Aviso: o Game Log está filtrado pelo time em foco (igual à Players) */}
+      {section === 'games' && teamFocus && gfTeam.length === 1 && gfTeam[0] === teamFocus && (
+        <div className="mb-2 flex items-center gap-2 rounded-xl bg-[#EEF3FF] px-3 py-2 text-[12px] text-[#02275F] lg:px-4">
+          <TeamLogo name={teamFocus} size={18} />
+          <span className="min-w-0 flex-1">Showing <b>{teamFocus}</b> only · your team in the site filter</span>
+          <button type="button" onClick={() => setGfTeam([])} className="flex-shrink-0 font-semibold text-[#D01F2D] hover:underline">Show all teams</button>
+        </div>
+      )}
+
       {section === 'games' && (
         <CardShell
           title="Game log"
@@ -1090,12 +1206,8 @@ function StatsPageContent() {
         >
           <FilterBar>
             {multi(gfSeason, setGfSeason, gameFactFilterOptions.seasons, 'Season')}
-            {multi(gfTeam, setGfTeam, gameFactFilterOptions.teams, 'Team')}
-            {multi(gfOpponent, setGfOpponent, gameFactFilterOptions.opponents, 'Opponent')}
             {multi(gfStage, setGfStage, gameFactFilterOptions.stages, 'Stage')}
             {multi(gfResult, setGfResult, ['W', 'L', 'T'], 'Result')}
-            {multi(gfPowerRanking, setGfPowerRanking, gameFactFilterOptions.powerRankings, 'Power ranking')}
-            <ToggleChip active={gfHS.includes('HS')} onClick={() => setGfHS(gfHS.includes('HS') ? [] : ['HS'])}>Week high scorer</ToggleChip>
             <ToggleChip active={gfInclude200Plus} onClick={() => setGfInclude200Plus(v => !v)}>200+ pts</ToggleChip>
             <ToggleChip active={!gfIncludeDoubleWeeks} onClick={() => setGfIncludeDoubleWeeks(v => !v)}>Hide double weeks</ToggleChip>
           </FilterBar>
@@ -1110,10 +1222,18 @@ function StatsPageContent() {
                           const sortable = ['Season', 'Week', 'PF', 'PA', 'Margin', 'Streak', 'Max PF', 'Starters Accuracy'].includes(col)
                           const right = ['PF', 'PA', 'Margin', 'Streak', 'Power Ranking', 'Max PF', 'Starters Accuracy'].includes(col)
                           const label = { 'Power Ranking': 'PR', 'Starters Accuracy': 'Accuracy' }[col] || col
+                          // Time, oponente, PR e HS: o filtro fica no próprio cabeçalho
+                          const header = col === 'Team' ? <HeaderFilter label="Team" options={gameFactFilterOptions.teams} value={gfTeam} onChange={setGfTeam} />
+                            : col === 'Opponent' ? <HeaderFilter label="Opponent" options={gameFactFilterOptions.opponents} value={gfOpponent} onChange={setGfOpponent} />
+                            : col === 'Power Ranking' ? <HeaderFilter label="PR" options={gameFactFilterOptions.powerRankings} value={gfPowerRanking} onChange={setGfPowerRanking} align="right" />
+                            : col === 'HS' ? (
+                              <button type="button" title="Week high scorer only" onClick={() => setGfHS(gfHS.includes('HS') ? [] : ['HS'])} className={`inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors ${gfHS.includes('HS') ? 'bg-[#02275F] font-semibold text-white' : 'hover:bg-[#F4F5F7] hover:text-[#111]'}`}>
+                                HS {gfHS.includes('HS') ? <Check className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              </button>
+                            )
+                            : sortable ? <SortHeader label={label} active={gfSortCol === col} dir={gfSortDir} onClick={() => handleGameFactSort(col)} align={right ? 'right' : 'left'} /> : label
                           return (
-                            <th key={col} className={`${th} ${right ? 'text-right' : 'text-left'}`}>
-                              {sortable ? <SortHeader label={label} active={gfSortCol === col} dir={gfSortDir} onClick={() => handleGameFactSort(col)} align={right ? 'right' : 'left'} /> : label}
-                            </th>
+                            <th key={col} className={`${th} ${right ? 'text-right' : 'text-left'}`}>{header}</th>
                           )
                         })}
                       </tr>

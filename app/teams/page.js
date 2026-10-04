@@ -501,8 +501,10 @@ export default function TeamsPage() {
         // an already-open profile also prevents duplicate profile entries.
         window.history.pushState(profileState, '', window.location.href)
       } else if (current.__teamsHistory && current.teamsView === 'all') {
-        // Defensive path: selecting a profile from All Teams still gets one
-        // child entry so Back returns to All Teams.
+        // Página aberta direto num time (?team=): a entrada atual ainda diz
+        // "todos os times". Cria a entrada do time antes da do perfil, para o
+        // Voltar (fechar o perfil) cair no time sem perder os filtros.
+        if (selected?.team) window.history.pushState(makeTeamsState('team', selected.team), '', window.location.href)
         window.history.pushState(profileState, '', window.location.href)
       } else {
         window.history.replaceState(makeTeamsState('all'), '', window.location.href)
@@ -608,11 +610,13 @@ export default function TeamsPage() {
     setPlayerSort('Appearances')
     setPlayerSeasonFilter('All')
     setPlayerMinApps('All')
-  }, [selected])
+    // Só quando o time muda de verdade: fechar o Player Profile (voltar no
+    // histórico) recria o objeto do mesmo time e não pode limpar os filtros
+  }, [selected?.team])
 
   // Game Log / Player Archive go back to the first page when the filters change.
-  useEffect(() => { setLogPage(0) }, [selected, logSeason, logOpponent, logGameType, log200Only, logHighestOnly])
-  useEffect(() => { setPlayerPage(0) }, [selected, playerSearch, playerPositionFilter, playerSort, playerSeasonFilter, playerMinApps])
+  useEffect(() => { setLogPage(0) }, [selected?.team, logSeason, logOpponent, logGameType, log200Only, logHighestOnly])
+  useEffect(() => { setPlayerPage(0) }, [selected?.team, playerSearch, playerPositionFilter, playerSort, playerSeasonFilter, playerMinApps])
 
   // Keep the selected franchise visible in the team switcher strip.
   useEffect(() => {
@@ -1439,6 +1443,10 @@ export default function TeamsPage() {
       </div>
     )
 
+    // Anos de unicórnio (último lugar de temporada já encerrada)
+    const unicornSeasons = unicorns.filter(r => Number(r.Standing) > 0).map(r => String(r.Season)).sort()
+    const unicornSet = new Set(unicornSeasons)
+
     // ── Franchise header ───────────────────────────────────────────
     const heroCard = (
       <div className="mb-2 overflow-hidden rounded-xl bg-white">
@@ -1455,9 +1463,11 @@ export default function TeamsPage() {
                 <span>·</span><span>{teamSeasons} seasons</span>
                 {firstSeason && <><span>·</span><span>Since {firstSeason}</span></>}
               </div>
-              {titles.length > 0 && (
+              {/* Títulos e anos de unicórnio (último lugar) na mesma linha */}
+              {(titles.length > 0 || unicornSeasons.length > 0) && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {titles.map(t => <span key={t.Season} className="inline-flex items-center gap-0.5 rounded-full bg-[#E8C766]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[#E8C766]">🏆 {t.Season}</span>)}
+                  {unicornSeasons.map(sn => <span key={`u-${sn}`} title={`Unicorn ${sn}`} className="inline-flex items-center gap-0.5 rounded-full bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold text-white/85">🦄 {sn}</span>)}
                 </div>
               )}
             </div>
@@ -1592,6 +1602,7 @@ export default function TeamsPage() {
                   {isChamp ? <Tag tone="gold">🏆 Champ</Tag>
                     : isFinal ? <Tag tone="navy">Final</Tag>
                     : isPlayoff ? <Tag>Playoffs</Tag>
+                    : unicornSet.has(String(r.Season)) ? <Tag tone="red">🦄 Unicorn</Tag>
                     : standing > 0 ? <span className="text-[11px] text-[#9CA3AF]">—</span>
                     : <Tag tone="green">Live</Tag>}
                 </span>

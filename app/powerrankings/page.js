@@ -235,6 +235,10 @@ function PowerRankingsPageContent() {
   const cardsRef = useRef(null)
   // Read more / Show less abre ou fecha o texto de todos os cards juntos
   const [notesOpen, setNotesOpen] = useState(false)
+  // Cards que estão na tela (destacados na fileira de logos acima)
+  const [visibleCards, setVisibleCards] = useState([])
+  // Hero: arrastar para o lado troca de semana
+  const heroTouch = useRef(null)
   // Destaque do card aberto no Player Profile (já na semana do ranking)
   const [starProfile, setStarProfile] = useState(null)
   // Celular (um card por vez): quando a rolagem termina, a faixa fica da altura
@@ -418,6 +422,41 @@ function PowerRankingsPageContent() {
       )
     ].sort((a, b) => Number(a) - Number(b))
   }, [games])
+
+  // Quais cards estão visíveis no carrossel (para destacar os logos)
+  useEffect(() => {
+    const el = cardsRef.current
+    if (!el) return undefined
+    let frame = null
+    const measure = () => {
+      frame = null
+      const box = el.getBoundingClientRect()
+      const seen = Array.from(el.children).filter(c => {
+        const r = c.getBoundingClientRect()
+        const inside = Math.min(r.right, box.right) - Math.max(r.left, box.left)
+        return inside > r.width * 0.6
+      }).map(c => c.getAttribute('data-card'))
+      setVisibleCards(prev => (prev.join('|') === seen.join('|') ? prev : seen))
+    }
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(measure) }
+    measure()
+    el.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => { el.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); if (frame) cancelAnimationFrame(frame) }
+  }, [view, season, week, games])
+
+  // A fileira de logos acompanha o carrossel: o logo destacado fica à vista
+  useEffect(() => {
+    const team = visibleCards[0]
+    if (!team) return
+    const chip = document.querySelector(`[data-chip="${CSS.escape(team)}"]`)
+    const strip = chip?.parentElement
+    if (!chip || !strip) return
+    const left = chip.offsetLeft - strip.offsetLeft
+    if (left < strip.scrollLeft || left + chip.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollTo({ left: Math.max(0, left - 12), behavior: 'smooth' })
+    }
+  }, [visibleCards])
 
   const weeks = useMemo(() => {
 
@@ -993,7 +1032,22 @@ function PowerRankingsPageContent() {
         const leader = rankings[0]
         const riser = risers[0]
         return (
-          <div className="relative mb-2 overflow-hidden rounded-xl text-white">
+          <div
+            className="relative mb-2 overflow-hidden rounded-xl text-white"
+            // Arrastar para o lado troca de semana (anterior / próxima)
+            onTouchStart={e => { heroTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }}
+            onTouchEnd={e => {
+              const start = heroTouch.current
+              heroTouch.current = null
+              if (!start) return
+              const dx = e.changedTouches[0].clientX - start.x
+              const dy = e.changedTouches[0].clientY - start.y
+              if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+              const i = weeks.indexOf(week)
+              const next = weeks[i + (dx < 0 ? 1 : -1)]
+              if (next) setWeek(next)
+            }}
+          >
             <BrandBackdrop />
             <div className="relative flex min-h-[176px] items-stretch gap-3 px-4 pt-4 sm:gap-4 sm:px-6 sm:pt-5">
               <div className="min-w-0 flex-1 pb-4 sm:pb-5">
@@ -1059,8 +1113,10 @@ function PowerRankingsPageContent() {
                     <button
                       key={t.team}
                       type="button"
+                      data-chip={t.team}
                       onClick={() => cardsRef.current?.querySelector(`[data-card="${CSS.escape(t.team)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })}
-                      className="flex flex-shrink-0 items-center gap-1 rounded-full bg-[#F4F5F7] py-1 pl-1 pr-2 text-[12px] font-semibold tabular-nums text-[#111] hover:bg-[#ECEEF1]"
+                      // Destaque: o(s) card(s) que estão na tela agora
+                      className={`flex flex-shrink-0 items-center gap-1 rounded-full py-1 pl-1 pr-2 text-[12px] font-semibold tabular-nums transition-colors ${visibleCards.includes(t.team) ? 'bg-[#02275F] text-white' : 'bg-[#F4F5F7] text-[#111] hover:bg-[#ECEEF1]'}`}
                     >
                       <TeamLogo name={t.team} size={20} />{t.rank}
                     </button>

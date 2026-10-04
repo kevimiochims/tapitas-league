@@ -304,15 +304,16 @@ export function Tabs({ tabs, value, onChange, className = '' }) {
 }
 
 // Controle segmentado (troca de visão dentro de um card).
-export function Segmented({ options, value, onChange }) {
+// `full`: ocupa a largura do card e divide o espaço (colunas estreitas)
+export function Segmented({ options, value, onChange, full = false }) {
   return (
-    <div className="inline-flex flex-shrink-0 rounded-full bg-[#F1F2F4] p-0.5">
+    <div className={`${full ? 'flex w-full' : 'inline-flex flex-shrink-0'} rounded-full bg-[#F1F2F4] p-0.5`}>
       {options.map(([key, label]) => (
         <button
           key={key}
           type="button"
           onClick={() => onChange(key)}
-          className={`h-7 whitespace-nowrap rounded-full px-3 text-[12px] transition-colors ${value === key ? 'bg-white font-semibold text-[#111] shadow-sm' : 'text-[#6B7280] hover:text-[#111]'}`}
+          className={`h-7 whitespace-nowrap rounded-full text-[12px] transition-colors ${full ? 'min-w-0 flex-1 truncate px-1.5' : 'px-3'} ${value === key ? 'bg-white font-semibold text-[#111] shadow-sm' : 'text-[#6B7280] hover:text-[#111]'}`}
         >
           {label}
         </button>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTeamFocus } from '../context/TeamFocus'
 import { ChevronDown, ChevronLeft, Flame, Swords } from 'lucide-react'
-import { PageShell, PageBar, BarTab, CardShell, FilterPill, Tag, TeamLogo, VersusPoster, TaleOfTape } from '../components/ui'
+import { PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, Tag, TeamLogo, VersusPoster, TaleOfTape } from '../components/ui'
 
 const BASE_URL = '/api/sheet'
 
@@ -284,6 +284,9 @@ export default function RivalriesPage() {
   const [teamFilterB, setTeamFilterB] =
     useState('ALL')
 
+  // Filtro da lista (Heat / Most games / Closest): Time A e Time B
+  const [listA, setListA] = useState('All')
+  const [listB, setListB] = useState('All')
   const [sortBy, setSortBy] =
     useState('HEAT')
 
@@ -866,10 +869,19 @@ RENDER
     </span>
   )
 
+  const listTeams = Array.from(new Set(rivalries.flatMap(r => [r.teamA, r.teamB]))).sort((a, b) => a.localeCompare(b))
+  const hasTeam = (r, t) => t === 'All' || [r.teamA, r.teamB].some(x => normalizeString(x) === normalizeString(t))
+  const listed = rivalries.filter(r => hasTeam(r, listA) && hasTeam(r, listB))
   const listCard = (
-    <CardShell title="Rivalries" subtitle={`${rivalries.length} matchups · sorted by ${sortBy === 'HEAT' ? 'heat' : sortBy === 'GAMES' ? 'games played' : 'closest record'}`} sidebar>
+    <CardShell title="Rivalries" subtitle={`${listed.length} matchups · sorted by ${sortBy === 'HEAT' ? 'heat' : sortBy === 'GAMES' ? 'games played' : 'closest record'}`} sidebar withMenus>
+      <FilterBar>
+        <FilterPill value={listA} onChange={setListA} options={['All', ...listTeams]} label="Team A" allLabel="Any team" />
+        <span className="text-[12px] text-[#9CA3AF]">vs</span>
+        <FilterPill value={listB} onChange={setListB} options={['All', ...listTeams.filter(t => t !== listA)]} label="Team B" allLabel="Any team" align="right" />
+        {(listA !== 'All' || listB !== 'All') && <button type="button" onClick={() => { setListA('All'); setListB('All') }} className="text-[12px] font-medium text-[#D01F2D] hover:underline">Clear</button>}
+      </FilterBar>
       <div className="py-1">
-        {rivalries.map((r, i) => {
+        {listed.map((r, i) => {
           const active = isSameRivalry(r)
           const aLead = r.aWins > r.bWins
           const bLead = r.bWins > r.aWins
@@ -899,7 +911,7 @@ RENDER
             </button>
           )
         })}
-        {rivalries.length === 0 && <div className="py-10 text-center text-[13px] text-[#6B7280]">No rivalries found</div>}
+        {listed.length === 0 && <div className="py-10 text-center text-[13px] text-[#6B7280]">No rivalries found</div>}
       </div>
     </CardShell>
   )

@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeftRight, UserPlus, Zap, Info } from 'lucide-react'
+import { ArrowLeftRight, UserPlus, Zap, Info, Search } from 'lucide-react'
 import { HighlightCards, HighlightIcon, PageShell, PageBar, BarTab, CardShell, FilterBar, FilterPill, TeamLogo, PositionBadge, Pager, usePager } from '../components/ui'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 import { useTransactions, TradeCard, MoveRow } from '../components/Transactions'
 import { PlayerThumb } from '../components/nfl/shared'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
-import { useFocusFilter } from '../context/TeamFocus'
+import { useFocusFilter, useTeamFocus } from '../context/TeamFocus'
 import { useNameOwners } from '../lib/useNameOwners'
 
 const TABS = [
@@ -25,6 +25,9 @@ export default function TransactionsPage() {
   const [tab, setTab] = useState('all')
   const [season, setSeason] = useState('All')
   const [team, setTeam] = useFocusFilter('All')
+  const [teamFocus] = useTeamFocus()
+  // Busca por jogador envolvido (adicionado, dispensado ou trocado)
+  const [query, setQuery] = useState('')
   const [games, setGames] = useState([])
   const [profile, setProfile] = useState(null)
 
@@ -38,10 +41,13 @@ export default function TransactionsPage() {
   const seasons = data?.seasons?.filter(s => all.some(t => t.season === s)) || []
   const teams = useMemo(() => [...new Set(all.flatMap(t => t.teams))].sort((a, b) => a.localeCompare(b)), [all])
 
-  const scoped = all.filter(t => (season === 'All' || t.season === season) && (team === 'All' || t.teams.includes(team)))
+  const norm = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const q = norm(query.trim())
+  const hasPlayer = t => !q || t.moves.some(m => [...(m.adds || []), ...(m.drops || [])].some(p => norm(p.name).includes(q)))
+  const scoped = all.filter(t => (season === 'All' || t.season === season) && (team === 'All' || t.teams.includes(team)) && hasPlayer(t))
   const count = type => scoped.filter(t => type === 'all' || t.type === type).length
   const list = scoped.filter(t => tab === 'all' || t.type === tab)
-  const { visible, totalPages, pagerProps, listProps } = usePager(list, tab === 'trade' ? 6 : 12, `${tab}|${season}|${team}`)
+  const { visible, totalPages, pagerProps, listProps } = usePager(list, tab === 'trade' ? 6 : 12, `${tab}|${season}|${team}|${q}`)
 
   // Números do topo (respeitam os filtros de temporada e time)
   const activity = {}
@@ -88,6 +94,15 @@ export default function TransactionsPage() {
         ))}
       </PageBar>
 
+      {/* Aviso: a página está filtrada pelo time em foco (igual à Players) */}
+      {teamFocus && team === teamFocus && (
+        <div className="mb-2 flex items-center gap-2 rounded-xl bg-[#EEF3FF] px-3 py-2 text-[12px] text-[#02275F] lg:px-4">
+          <TeamLogo name={teamFocus} size={18} />
+          <span className="min-w-0 flex-1">Showing <b>{teamFocus}</b> only · your team in the site filter</span>
+          <button type="button" onClick={() => setTeam('All')} className="flex-shrink-0 font-semibold text-[#D01F2D] hover:underline">Show all teams</button>
+        </div>
+      )}
+
       {error && <div className="rounded-xl bg-white py-16 text-center text-[13px] text-[#6B7280]">Could not load transactions from Sleeper right now.</div>}
 
       {data && (
@@ -114,9 +129,16 @@ export default function TransactionsPage() {
               <FilterPill value={season} onChange={setSeason} options={['All', ...seasons]} label="Season" allLabel="All seasons" />
               <FilterPill value={team} onChange={setTeam} options={['All', ...teams]} label="Team" allLabel="All teams" />
             </FilterBar>
+            <div className="border-b border-[#EEF0F2] px-3 py-2.5 lg:px-4">
+              <label className="flex h-9 items-center gap-2 rounded-lg bg-[#F4F5F7] px-3 text-[#6B7280] focus-within:ring-2 focus-within:ring-[#02275F]/20">
+                <Search className="h-4 w-4 flex-shrink-0" />
+                <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a player" className="min-w-0 flex-1 bg-transparent text-[13px] text-[#111] outline-none placeholder:text-[#9CA3AF]" />
+                {query && <button type="button" onClick={() => setQuery('')} className="text-[12px] font-medium text-[#D01F2D]">Clear</button>}
+              </label>
+            </div>
 
             {list.length === 0 ? (
-              <div className="py-12 text-center text-[13px] text-[#6B7280]">No {tab === 'trade' ? 'trades' : 'moves'} for these filters.</div>
+              <div className="py-12 text-center text-[13px] text-[#6B7280]">No {tab === 'trade' ? 'trades' : 'moves'} for these filters{query ? ` with "${query}"` : ''}.</div>
             ) : tab === 'trade' ? (
               <div {...listProps} className="grid content-start gap-2 p-3 lg:p-4 2xl:grid-cols-2">
                 {visible.map(t => <TradeCard key={t.id} t={t} onOpenPlayer={openPlayer} />)}

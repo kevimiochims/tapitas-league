@@ -2236,14 +2236,14 @@ export default function TapitasLeagueHomepage() {
   // Rankings, standings e líderes num card só com abas (desktop e mobile).
   const tablesMeta = {
     pr: { title: 'Power Rankings', subtitle: `${currentSeason} · latest week`, link: cardLink('/powerrankings', 'Full power rankings') },
-    standings: { title: 'Standings', subtitle: standingsSubtitle, link: cardLink('/stats', 'Full standings') },
+    standings: { title: 'Standings', subtitle: standingsSubtitle, link: cardLink(`/stats?tab=standings&season=${encodeURIComponent(currentSeason)}`, 'Full standings') },
     leaders: { title: 'Franchise leaders', subtitle: 'All-time', link: cardLink('/records', 'Record book') },
   }
   const tablesTab = tablesMeta[mobileTableTab] ? mobileTableTab : 'pr'
   const tablesCard = (
     <CardShell title={tablesMeta[tablesTab].title} subtitle={tablesMeta[tablesTab].subtitle} sidebar withMenus>
       <div className="px-3 pt-2.5 lg:px-4">
-        <Segmented options={[['pr', 'Rankings'], ['standings', 'Standings'], ['leaders', 'Leaders']]} value={tablesTab} onChange={setMobileTableTab} />
+        <Segmented full options={[['pr', 'Rankings'], ['standings', 'Standings'], ['leaders', 'Leaders']]} value={tablesTab} onChange={setMobileTableTab} />
       </div>
       {tablesTab === 'pr' && powerList}
       {tablesTab === 'standings' && standingsList}

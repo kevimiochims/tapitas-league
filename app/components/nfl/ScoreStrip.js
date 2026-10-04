@@ -252,7 +252,10 @@ export default function ScoreStrip({ onTapitasWeek }) {
 
   // Time em foco: só os jogos da NFL com jogadores dele e o confronto dele primeiro
   const [focus] = useTeamFocus()
-  const allGames = nfl.data?.games || []
+  // Sempre em ordem de kickoff (quinta, domingo, segunda). A ESPN devolve os
+  // jogos encerrados no fim da lista, o que jogava o de quinta para depois
+  // dos de domingo
+  const allGames = [...(nfl.data?.games || [])].sort((a, b) => (Date.parse(a.date || '') || 0) - (Date.parse(b.date || '') || 0))
   const games = focus ? allGames.filter(g => (g.leaguePlayers || []).some(p => p.fantasyTeam === focus)) : allGames
   const allMatchups = tap.data?.matchups || []
   const matchups = focus ? [...allMatchups].sort((a, b) => Number(b.teams.some(t => t.team === focus)) - Number(a.teams.some(t => t.team === focus))) : allMatchups

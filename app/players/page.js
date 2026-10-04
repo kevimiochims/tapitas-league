@@ -782,9 +782,9 @@ export default function PlayersPage() {
   return (
     <PageShell loading={loading}>
       <PageBar title="Players">
-        <BarTab active={archiveView === 'consolidated'} onClick={() => setArchiveView('consolidated')}>Player Archive</BarTab>
+        <BarTab active={archiveView === 'consolidated'} onClick={() => setArchiveView('consolidated')}><span className="sm:hidden">Archive</span><span className="hidden sm:inline">Player Archive</span></BarTab>
         <BarTab active={archiveView === 'performances'} onClick={() => setArchiveView('performances')}>Top Performances</BarTab>
-        <BarTab active={archiveView === 'news'} onClick={() => setArchiveView('news')}>Player News</BarTab>
+        <BarTab active={archiveView === 'news'} onClick={() => setArchiveView('news')}><span className="sm:hidden">News</span><span className="hidden sm:inline">Player News</span></BarTab>
       </PageBar>
 
       {/* Aviso: a página está filtrada pelo time em foco */}
@@ -890,14 +890,19 @@ export default function PlayersPage() {
                   {label === 'Bench' ? <Tag>Bench</Tag> : <PositionBadge position={label} />}
                 </div>
                 {row ? (
-                  <div className="mt-2.5 flex items-center gap-2.5">
-                    <PlayerAvatar name={row.rawName} playerLookup={playerLookup} size={40} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{row.name}</div>
-                      <a href={row.href} onClick={stop} className="block truncate text-[11px] text-[#6B7280] underline-offset-2 hover:underline">{row.season} W{row.week} · {shortName(row.team)} vs {shortName(row.opponent)}</a>
+                  <>
+                    <div className="mt-2.5 flex items-center gap-2.5">
+                      <PlayerAvatar name={row.rawName} playerLookup={playerLookup} size={36} />
+                      <div className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{row.name}</div>
+                      <span className="flex-shrink-0 text-[18px] font-bold tabular-nums text-[#111]">{row.pts.toFixed(1)}</span>
                     </div>
-                    <span className="flex-shrink-0 text-[18px] font-bold tabular-nums text-[#111]">{row.pts.toFixed(1)}</span>
-                  </div>
+                    {/* Semana e confronto embaixo, na largura toda do card (no
+                        celular não cabiam ao lado da foto) */}
+                    <a href={row.href} onClick={stop} className="mt-2 block border-t border-[#F1F2F4] pt-1.5 text-[11px] leading-snug text-[#6B7280] underline-offset-2 hover:underline">
+                      <span className="block truncate">{row.season} · Week {row.week}</span>
+                      <span className="block truncate">{shortName(row.team)} vs {shortName(row.opponent)}</span>
+                    </a>
+                  </>
                 ) : <div className="mt-2.5 py-2 text-[12px] text-[#9CA3AF]">No data</div>}
               </div>
             ))}
@@ -1057,8 +1062,8 @@ export default function PlayersPage() {
                       <th className={th}>Player</th>
                       <th className={th}><SortHeader label="Season" active={performanceSort.key === 'season'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('season')} /></th>
                       <th className={th}><SortHeader label="Week" active={performanceSort.key === 'week'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('week')} /></th>
-                      <th className={th}>Matchup</th>
                       <th className={thRight}><SortHeader label="Points" active={performanceSort.key === 'pts'} dir={performanceSort.dir} onClick={() => togglePerformanceSort('pts')} align="right" /></th>
+                      <th className={th}>Matchup</th>
                       <th className={th}>Status</th>
                       <th className={th}>Result</th>
                       <th className={th}>Stage</th>
@@ -1083,18 +1088,18 @@ export default function PlayersPage() {
                         </td>
                         <td className={`${td} text-[13px] font-semibold text-[#111]`}>{g.season}</td>
                         <td className={`${td} whitespace-nowrap text-[13px] tabular-nums text-[#3F4757]`}>{g.week}</td>
+                        <td className={`${td} whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-[#111]`}>
+                          {g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1"><Tag>DW</Tag></span>}
+                          <div className="ml-auto mt-1 h-1 w-20 overflow-hidden rounded-full bg-[#EEF0F2]">
+                            <div className="ml-auto h-full rounded-full bg-[#02275F]" style={{ width: `${performanceShowcase.max > 0 ? Math.max(0, g.pts) / performanceShowcase.max * 100 : 0}%` }} />
+                          </div>
+                        </td>
                         <td className={td}>
                           <a href={g.href} onClick={stop} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md text-[13px] text-[#111] underline-offset-2 hover:text-[#D01F2D] hover:underline">
                             <TeamLogo name={g.team} size={18} />{shortName(g.team)}
                             <span className="text-[#9CA3AF]">vs</span>
                             <TeamLogo name={g.opponent} size={18} />{shortName(g.opponent)}
                           </a>
-                        </td>
-                        <td className={`${td} whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-[#111]`}>
-                          {g.pts.toFixed(2)}{g.isDoubleWeek && <span className="ml-1"><Tag>DW</Tag></span>}
-                          <div className="ml-auto mt-1 h-1 w-20 overflow-hidden rounded-full bg-[#EEF0F2]">
-                            <div className="ml-auto h-full rounded-full bg-[#02275F]" style={{ width: `${performanceShowcase.max > 0 ? Math.max(0, g.pts) / performanceShowcase.max * 100 : 0}%` }} />
-                          </div>
                         </td>
                         <td className={td}><Tag tone={g.status === 'Starter' ? 'green' : undefined}>{g.status}</Tag></td>
                         <td className={td}><ResultBadge result={g.result} /></td>

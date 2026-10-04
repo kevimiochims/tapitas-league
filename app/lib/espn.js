@@ -57,7 +57,7 @@ export function getScoreboard({ week, season } = {}) {
 // Manchetes recentes de um jogador (ID da ESPN, que o Sleeper informa).
 // Tenta o feed de notícias do fantasy da ESPN e, se falhar, o feed geral da NFL.
 export function getPlayerNews(espnId) {
-  return cached(`espn:news:${espnId}`, 1800, async () => {
+  return cached(`espn:news:v2:${espnId}`, 1800, async () => {
     const id = encodeURIComponent(espnId)
     const urls = [
       `https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=${id}&limit=8`,
@@ -93,23 +93,34 @@ function athleteIds(a) {
   return Array.from(ids)
 }
 
+const stripHtml = v => String(v || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+
 function mapNews(data) {
   const list = data?.feed || data?.articles || data?.headlines || data?.news?.articles || data?.news || []
-  return (Array.isArray(list) ? list : []).map(a => ({
-    id: String(a?.id || a?.dataSourceIdentifier || a?.headline || ''),
-    headline: a?.headline || a?.title || '',
-    description: a?.description || '',
-    published: a?.published || a?.lastModified || null,
-    url: a?.links?.web?.href || a?.link?.href || null,
-    image: a?.images?.[0]?.url || null,
-    athleteIds: athleteIds(a),
-    source: 'ESPN',
-  })).filter(a => a.headline)
+  return (Array.isArray(list) ? list : []).map(a => {
+    const headline = a?.headline || a?.title || ''
+    // Notas da RotoWire republicadas pela ESPN: não têm página no site (o link
+    // "mobile" cai na home da ESPN) e o resumo repete o título; o texto da
+    // análise vem em `story`
+    const rotowire = String(a?.type || '').toLowerCase() === 'rotowire'
+    const story = stripHtml(a?.story)
+    const description = a?.description && a.description.trim() !== headline.trim() ? a.description : story
+    return {
+      id: String(a?.id || a?.dataSourceIdentifier || headline || ''),
+      headline,
+      description: rotowire && story ? story : description,
+      published: a?.published || a?.lastModified || null,
+      url: a?.links?.web?.href || a?.link?.href || null,
+      image: a?.images?.[0]?.url || null,
+      athleteIds: athleteIds(a),
+      source: rotowire ? 'ESPN · RotoWire' : 'ESPN',
+    }
+  }).filter(a => a.headline)
 }
 
 // Feed geral de notícias de fantasy da ESPN (todas as notícias recentes de jogadores)
 export function getFantasyNewsFeed() {
-  return cached('espn:news:feed', 900, async () => {
+  return cached('espn:news:feed:v2', 900, async () => {
     const data = await fetchJson('https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?limit=150')
     return mapNews(data)
   })
