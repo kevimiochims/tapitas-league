@@ -28,6 +28,8 @@
 //     rodada nova fechada (Power Ranking calculado e recaps escritos) sem
 //     matéria; se houver, escreve e publica. Cada rodada sai uma vez só.
 //   - Para publicar uma rodada na mão: publicaMateriaSemana('2026', '4').
+//   - Para publicar as matérias de teste que você aprovou (ex.: as semanas
+//     de 2026 que já passaram): publicaTestesMateria().
 // =============================================================================
 
 const MATERIA_SEMANAS_TESTE = [['2026', '1'], ['2026', '2'], ['2026', '3']];
@@ -135,6 +137,53 @@ function materiaDaSemanaAutomatica() {
     return;
   }
   geraMateria_(season, week, false);
+}
+
+// Publica na Tapitas News as matérias que estão na aba MATERIAS_TESTE (as que
+// você aprovou). Cada uma entra com a data da própria rodada, para a lista da
+// News ficar na ordem das semanas. Rodada já publicada é pulada. Para publicar
+// só algumas, apague antes as outras linhas da MATERIAS_TESTE.
+function publicaTestesMateria() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(MATERIA_ABA_TESTE);
+  if (!sh || sh.getLastRow() < 2) { Logger.log('[MATÉRIA] A aba MATERIAS_TESTE está vazia.'); return; }
+  const [h, ...rows] = sh.getDataRange().getValues();
+  const head = h.map(x => semAcento_(String(x).trim()));
+  const col = k => head.findIndex(x => MATERIA_COLUNAS[k].map(semAcento_).includes(x));
+  const publicadas = slugsDaAba_(MATERIA_ABA);
+  let n = 0;
+  rows.forEach(r => {
+    const slugTeste = String(r[col('slug')] || '').trim();
+    const m = slugTeste.match(/^teste-rodada-(\d{4})-semana-([\d-]+)$/);
+    if (!m) return;
+    const slug = slugTeste.replace(/^teste-/, '');
+    if (publicadas.has(slug)) { Logger.log(`[MATÉRIA] ${slug} já está publicada.`); return; }
+    gravaMateria_(MATERIA_ABA, {
+      title: String(r[col('title')] || ''),
+      subtitle: col('subtitle') >= 0 ? String(r[col('subtitle')] || '') : '',
+      slug,
+      category: MATERIA_CATEGORIA,
+      date: dataDaRodada_(m[1], m[2]),
+      imageUrl: col('imageUrl') >= 0 ? String(r[col('imageUrl')] || '') : '',
+      content: String(r[col('content')] || ''),
+      author: MATERIA_AUTOR,
+    }, false);
+    n++;
+    Logger.log(`[MATÉRIA] Publicada: ${slug}`);
+  });
+  if (n && typeof avisaSiteNovaNoticia_ === 'function') avisaSiteNovaNoticia_();
+  Logger.log(`[MATÉRIA] ${n} matéria(s) publicada(s).`);
+}
+
+// Data da matéria de uma rodada: a terça-feira depois dos jogos da semana.
+// A NFL começa na quinta depois do Labor Day (1ª segunda de setembro).
+function dataDaRodada_(season, week) {
+  const laborDay = new Date(Number(season), 8, 1, 12)
+  while (laborDay.getDay() !== 1) laborDay.setDate(laborDay.getDate() + 1)
+  const ultima = Math.max.apply(null, (String(week).match(/\d+/g) || ['1']).map(Number))
+  const d = new Date(laborDay)
+  d.setDate(d.getDate() + 8 + 7 * (ultima - 1))
+  // Nunca no futuro (matéria publicada antes da terça)
+  return d > new Date() ? new Date() : d
 }
 
 // -----------------------------------------------------------------------------
