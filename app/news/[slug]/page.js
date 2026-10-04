@@ -98,6 +98,9 @@ export default function NewsArticle() {
 
     const formatNewsDate = (value) => {
         if (!value) return ''
+        // Data como a planilha mostra (dia/mês/ano): já está no formato certo
+        const br = String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+        if (br) return `${br[1].padStart(2, '0')}/${br[2].padStart(2, '0')}/${br[3]}`
         const date = new Date(value)
         if (Number.isNaN(date.getTime())) return value
         return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(date)

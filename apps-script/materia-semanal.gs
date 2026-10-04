@@ -53,15 +53,23 @@ histórias do grupo) é o tempero: use quando encaixar, sem forçar, respeitando
 época indicada em cada item e os itens "Proibido".
 
 TAMANHO E ESTRUTURA: texto longo, entre 900 e 1300 palavras, em português do
-Brasil, em Markdown, com 4 a 6 intertítulos "## " criativos. Um bom roteiro:
-  - abertura forte com a grande história da rodada;
-  - o jogo da semana, com mais detalhes;
+Brasil, em Markdown, com 4 a 6 intertítulos "## " criativos. Roteiro:
+  - abertura: já é o jogo da semana (a grande história da rodada), contado ali
+    mesmo, com os detalhes. Nada de parágrafo de "resumo da rodada" antes;
   - um giro por TODOS os outros confrontos (nenhum fica de fora);
-  - os destaques individuais (o melhor jogador e a maior decepção);
-  - o que mudou na classificação e no Power Ranking;
+  - destaques individuais: só quem ainda NÃO apareceu no texto, ou uma frase
+    curta de ranking (sem recontar o jogo de ninguém);
+  - classificação e Power Ranking: só o movimento da tabela (quem subiu, quem
+    caiu, quem lidera), sem recontar placares nem jogos;
   - de olho na próxima rodada (os confrontos e o que está em jogo, sem prever
     resultado como se fosse fato).
 Nos playoffs, na final e no jogo do Unicórnio, o texto gira em torno disso.
+
+NÃO SE REPITA: cada confronto é contado UMA vez, num único trecho. Um placar,
+uma pontuação de jogador ou um fato já citado não aparece de novo em outra
+seção. O "atual campeão" é chamado assim no máximo uma vez no texto inteiro.
+Não invente apelidos, cargos ou papéis de ninguém (quem é comissário, fundador
+etc.) que não estejam no dossiê ou na LORE.
 Cite os times pelo nome (pode usar **negrito** na primeira menção). Nunca diga
 em que vaga um jogador atuou nem fale em FLEX.
 
@@ -177,7 +185,9 @@ function geraMateria_(season, week, teste) {
     subtitle: materia.linhaFina,
     slug: slugMateria_(season, week, teste),
     category: MATERIA_CATEGORIA,
-    date: new Date(),
+    // Data em texto ISO ("2026-10-04"): no formato da planilha (04/10/2026) o
+    // site leria como mês/dia
+    date: teste ? `'${Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyy-MM-dd')}` : new Date(),
     imageUrl: capa ? capa.url : '',
     content: corpo,
     author: MATERIA_AUTOR,
