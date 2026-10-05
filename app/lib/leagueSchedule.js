@@ -108,12 +108,31 @@ export function getSleeperWeek(week) {
   })
 }
 
+// Estado do jogo da NFL de um jogador (ID do Sleeper) na rodada atual:
+// 'pre' (ainda vai jogar) · 'in' (em campo) · 'post' (já jogou) · 'bye'
+async function getStarterGameState() {
+  const [board, players] = await Promise.all([getScoreboard().catch(() => ({ games: [] })), getSleeperPlayers().catch(() => new Map())])
+  const byTeam = new Map()
+  board.games.forEach(g => [g.home.team, g.away.team].filter(Boolean).forEach(t => byTeam.set(t, g.state)))
+  if (!byTeam.size) return () => null
+  return id => byTeam.get(players.get(String(id))?.team) || 'bye'
+}
+
 // Função que diz se um jogador (ID do Sleeper) está num jogo da NFL em andamento
 async function getLiveStarterCheck() {
-  const [board, players] = await Promise.all([getScoreboard().catch(() => ({ games: [] })), getSleeperPlayers().catch(() => new Map())])
-  const liveTeams = new Set(board.games.filter(g => g.state === 'in').flatMap(g => [g.home.team, g.away.team]))
-  if (!liveTeams.size) return () => false
-  return id => liveTeams.has(players.get(String(id))?.team)
+  const stateOf = await getStarterGameState()
+  return id => stateOf(id) === 'in'
+}
+
+// Ainda tem jogo da NFL por jogar (ou rolando) nesta semana? Só olhamos a
+// semana em destaque: é ela que pode ter o Monday Night pendente. Serve de
+// trava para o calendário e para uma semana que entrou na planilha antes da
+// hora: enquanto houver jogo pendente, o confronto não é Final.
+async function nflWeekPending(season, week, currentWeek) {
+  if (!season || !week || week !== currentWeek) return false
+  const board = await getScoreboard({ week, season }).catch(() => null)
+  const games = board?.games || []
+  return games.length > 0 && games.some(g => g.state !== 'post')
 }
 
 // Semana da liga: status (final / current / upcoming) + confrontos
@@ -123,22 +142,29 @@ export async function getLeagueWeek(requestedWeek) {
   const currentWeek = state?.seasonType === 'regular' || state?.seasonType === 'post' ? state.week : null
   const week = Number(requestedWeek) || currentWeek || 1
 
-  const sheet = season ? await getSheetWeek(season, week).catch(() => []) : []
-  if (sheet.length) {
+  const [sheet, pending] = await Promise.all([
+    season ? getSheetWeek(season, week).catch(() => []) : [],
+    nflWeekPending(season, week, currentWeek),
+  ])
+  if (sheet.length && !pending) {
     return { season, week, currentWeek, source: 'sheet', status: 'final', matchups: sheet }
   }
 
   const sleeper = await getSleeperWeek(week).catch(err => { console.error('[league-week]', err.message); return [] })
   // final: semana encerrada · current: semana em andamento · upcoming: futura
-  const final = state?.seasonStartDate ? isWeekFinal(state.seasonStartDate, week) : !currentWeek || week < currentWeek
+  const final = !pending && (state?.seasonStartDate ? isWeekFinal(state.seasonStartDate, week) : !currentWeek || week < currentWeek)
   const status = final ? 'final' : week === currentWeek ? 'current' : 'upcoming'
-  const liveIds = status === 'current' ? await getLiveStarterCheck() : null
+  const stateOf = status === 'current' ? await getStarterGameState() : null
+  const starterIds = t => t.starters.filter(id => id && id !== '0')
   const matchups = sleeper.map(m => ({
     ...m,
     // "Live" só quando há jogo da NFL rolando com algum titular do confronto
-    live: Boolean(liveIds && m.teams.some(t => t.starters.some(liveIds))),
-    // Na lista resumida não mandamos a escalação completa
-    teams: m.teams.map(({ starters, startersPoints, playersPoints, players, projections, ...t }) => t),
+    live: Boolean(stateOf && m.teams.some(t => starterIds(t).some(id => stateOf(id) === 'in'))),
+    // Na lista resumida não mandamos a escalação completa; só quantos
+    // titulares ainda vão jogar e quantos estão em campo
+    teams: m.teams.map(({ starters, startersPoints, playersPoints, players, projections, ...t }) => (stateOf
+      ? { ...t, toPlay: starterIds({ starters }).filter(id => stateOf(id) === 'pre').length, playing: starterIds({ starters }).filter(id => stateOf(id) === 'in').length }
+      : t)),
   }))
   return { season, week, currentWeek, source: 'sleeper', status, live: matchups.some(m => m.live), matchups }
 }
@@ -177,10 +203,15 @@ export function getSleeperSeasonRows() {
     const season = info.season
     if (!season) return []
     const lastRegular = info.playoffWeekStart ? info.playoffWeekStart - 1 : 17
+    const currentWeek = state?.seasonType === 'regular' ? state.week : state?.seasonType === 'pre' ? 1 : null
+    // Semana em destaque com jogo da NFL ainda por jogar: segue ao vivo pelo
+    // Sleeper mesmo que já tenha linhas na planilha (a página Matchups dá
+    // preferência a estas linhas enquanto o confronto não termina)
+    const pending = await nflWeekPending(season, currentWeek, currentWeek)
     const inSheet = new Set(sheetRows
       .filter(r => Number(r?.Season) === Number(season) && num(r?.PF) > 0)
       .flatMap(r => weekNumbers(r?.Week)))
-    const currentWeek = state?.seasonType === 'regular' ? state.week : state?.seasonType === 'pre' ? 1 : null
+    if (pending) inSheet.delete(currentWeek)
     // Todas as semanas da temporada que ainda não estão (terminadas) na planilha
     const startWeek = 1
 
@@ -212,7 +243,7 @@ export function getSleeperSeasonRows() {
     }
     weeks.forEach((week, wi) => {
       const matchups = allMatchups[wi]
-      const weekFinal = state?.seasonStartDate ? isWeekFinal(state.seasonStartDate, week) : week < (currentWeek || 0)
+      const weekFinal = !(pending && week === currentWeek) && (state?.seasonStartDate ? isWeekFinal(state.seasonStartDate, week) : week < (currentWeek || 0))
       const weekStatus = weekFinal ? 'final' : week === currentWeek ? 'current' : 'upcoming'
       matchups.forEach(m => {
         const status = weekStatus === 'current' && m.teams.some(t => t.starters.some(isLive)) ? 'live' : weekStatus

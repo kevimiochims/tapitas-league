@@ -184,7 +184,15 @@ function TapitasChip({ season, status, m, focus }) {
           <span className={`tabular-nums ${won || !final ? 'font-semibold text-[#111]' : 'text-[#6B7280]'}`}>{played ? t.score.toFixed(2) : '–'}</span>
         </div>
       ))}
-      <div className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-[#02275F]">Details<ChevronRight className="h-3 w-3" /></div>
+      <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] font-medium">
+        <span className="flex items-center gap-0.5 text-[#02275F]">Details<ChevronRight className="h-3 w-3" /></span>
+        {/* Titulares que ainda vão jogar (time de cima · de baixo) */}
+        {!final && a.toPlay != null && b.toPlay != null && (
+          <span className="whitespace-nowrap tabular-nums text-[#6B7280]" title={`Yet to play: ${getTeamAbbr(a.team)} ${a.toPlay}, ${getTeamAbbr(b.team)} ${b.toPlay}`}>
+            <span className="font-bold text-[#111]">{a.toPlay}·{b.toPlay}</span> to play
+          </span>
+        )}
+      </div>
     </a>
   )
 }
