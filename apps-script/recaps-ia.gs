@@ -25,6 +25,23 @@
 //                     existir, a fila é: GEMINI_MODEL, GEMINI_MODEL_RESERVA,
 //                     gemini-3.8-flash, gemini-3.7-flash, gemini-3.6-flash, gemini-2.5-flash
 //   RECAP_TOKEN     = (opcional, não é necessário)
+//
+// PAUTA DO EDITOR (opcional): aba "PAUTA" na mesma planilha privada da LORE,
+// para mandar a IA falar de um assunto. Rode criaAbaPauta() uma vez para criar
+// a aba com o cabeçalho e exemplos. Colunas:
+//   Season | Week | Produto | Time | Instrução | Imagem
+//   - Produto: Recap (recap do confronto), Note (verbete do Power Ranking),
+//     Matéria (matéria da rodada na News), Meme (charge) ou Todos.
+//   - Time: opcional. No Recap vale para o jogo desse time; na Note, só para o
+//     verbete dele. Vazio = vale para todos os textos daquele produto.
+//   - Season/Week vazios = vale para todas as semanas (até você apagar a linha).
+//   - Imagem: só para Meme (usa a sua imagem em vez de desenhar) e Matéria
+//     (vira a foto de capa). Cole o link de compartilhamento do Google Drive
+//     ou o link de uma imagem da internet; o script faz uma cópia pública por
+//     link (pasta "Tapitas League - Imagens da Pauta") e o seu arquivo original
+//     não é alterado.
+//   A pauta precisa estar preenchida ANTES de o texto ser gerado. Para refazer
+//   um texto já gerado: apague a célula (Recap da Partida / Note) e rode de novo.
 // =============================================================================
 
 const RECAP_MAX_POR_EXECUCAO = 12   // evita estourar o limite de 6 min do Apps Script
@@ -71,6 +88,10 @@ Não recalcule nada e não use informação que não esteja no dossiê.
   aconteceu, nunca force, e respeite os itens marcados como "Proibido".
 - ESCALAÇÕES: nunca diga que um jogador estava no FLEX nem comente em que vaga
   ele atuou. Estar no FLEX é estratégia do time, não demérito do jogador.
+- PAUTA DO EDITOR (quando vier): pedidos do editor da liga para ESTE texto.
+  Cumpra todos, de forma natural, sem dizer que foi pedido. O que o editor
+  afirma na pauta é verdade e pode ser usado mesmo que não esteja no dossiê
+  (ele conhece a liga); fora isso, continue sem inventar nada.
 - RECAPS ANTERIORES / JÁ ESCRITOS NESTA SEMANA: servem para dar continuidade a
   histórias ("a crise continua") e, principalmente, para você NÃO repetir
   aberturas, piadas, metáforas, estrutura ou tom. Se outro recap da semana abriu
@@ -146,6 +167,134 @@ function loreTexto_(cfg, times, season, week) {
       'Assunto recente pode ser tratado como atual; o que é bem mais antigo é um clássico da liga (ex.: "lembra quando..."), ' +
       'não algo que acabou de acontecer. Itens sem data valem para qualquer época.\n' : '') +
     itens.map(r => `- [${r.tipo}${r.alvo ? ` · ${r.alvo}` : ''}${quando(r)}] ${r.texto}`).join('\n')
+}
+
+// -----------------------------------------------------------------------------
+// PAUTA DO EDITOR (aba PAUTA da planilha privada da LORE)
+// -----------------------------------------------------------------------------
+const PAUTA_ABA = 'PAUTA'
+const PAUTA_HEADERS = ['Season', 'Week', 'Produto', 'Time', 'Instrução', 'Imagem']
+const PAUTA_PASTA = 'Tapitas League - Imagens da Pauta'
+let PAUTA_CACHE_ = null
+
+// Nome do produto como o script entende (aceita variações)
+function produtoPauta_(v) {
+  const p = semAcento_(v).replace(/[^a-z]/g, '')
+  if (!p || p === 'todos' || p === 'tudo') return 'todos'
+  if (/^(recap|recapdapartida|recapdoconfronto|confronto|partida)$/.test(p)) return 'recap'
+  if (/^(note|notes|nota|verbete|pr|powerranking|powerrankings)$/.test(p)) return 'note'
+  if (/^(materia|materiadarodada|recapsemanal|news|noticia)$/.test(p)) return 'materia'
+  if (/^(meme|charge|memedasemana)$/.test(p)) return 'meme'
+  return p
+}
+
+function pautaRows_(cfg) {
+  if (PAUTA_CACHE_) return PAUTA_CACHE_
+  PAUTA_CACHE_ = []
+  if (!cfg.loreSheetId) return PAUTA_CACHE_
+  try {
+    const sh = SpreadsheetApp.openById(cfg.loreSheetId).getSheetByName(PAUTA_ABA)
+    if (!sh || sh.getLastRow() < 2) return PAUTA_CACHE_
+    const [head, ...rows] = sh.getDataRange().getValues()
+    const h = head.map(x => semAcento_(String(x).trim()))
+    const idx = (...nomes) => h.findIndex(x => nomes.includes(x))
+    const iS = idx('season', 'temporada'), iW = idx('week', 'semana'), iP = idx('produto')
+    const iT = idx('time', 'team'), iI = idx('instrucao', 'instrucoes', 'pedido', 'assunto'), iImg = idx('imagem', 'foto', 'image')
+    PAUTA_CACHE_ = rows
+      .map(r => ({
+        season: iS < 0 ? '' : String(r[iS]).trim(),
+        week: iW < 0 ? '' : String(r[iW]).trim(),
+        produto: produtoPauta_(iP < 0 ? '' : r[iP]),
+        time: iT < 0 ? '' : String(r[iT]).trim(),
+        instrucao: iI < 0 ? '' : String(r[iI]).trim(),
+        imagem: iImg < 0 ? '' : String(r[iImg]).trim(),
+      }))
+      .filter(r => (r.instrucao || r.imagem) && !/^\(preencher\)/i.test(r.instrucao))
+  } catch (e) {
+    Logger.log(`[PAUTA] Não consegui ler a aba PAUTA: ${e.message}`)
+  }
+  return PAUTA_CACHE_
+}
+
+// Itens da pauta para um texto. produto: 'recap' | 'note' | 'materia' | 'meme'.
+// times: os times do texto (recap: os dois do jogo; note: só o do verbete;
+// matéria/meme: vazio = qualquer time)
+function pautaItens_(cfg, produto, season, week, times) {
+  const semana = String(week).replace(/\s+/g, '')
+  const chaves = (times || []).filter(Boolean).map(semAcento_)
+  return pautaRows_(cfg).filter(r =>
+    (r.produto === produto || r.produto === 'todos') &&
+    (!r.season || r.season === String(season)) &&
+    (!r.week || r.week.replace(/\s+/g, '') === semana) &&
+    (!r.time || !chaves.length || chaves.includes(semAcento_(r.time))))
+}
+
+function pautaTexto_(itens) {
+  const lista = itens.filter(r => r.instrucao)
+  if (!lista.length) return ''
+  return '\n\n## PAUTA DO EDITOR (OBRIGATÓRIO: este texto tem que tratar de cada item abaixo)\n' +
+    lista.map(r => `- ${r.time ? `[${r.time}] ` : ''}${r.instrucao}`).join('\n')
+}
+
+// Link de imagem (Drive ou internet) → link que o site consegue exibir.
+// Arquivo do Drive: faz uma CÓPIA pública por link na pasta da pauta (o
+// original continua como está). Link de fora: baixa e guarda no Drive. Link
+// que já é do site (/api/pr-photo/...) fica como está. A cópia é lembrada,
+// para não duplicar quando o mesmo link é usado de novo.
+function imagemParaSite_(link, nome) {
+  const url = String(link || '').trim()
+  if (!url) return ''
+  const site = (PropertiesService.getScriptProperties().getProperty('SITE_URL') || '').replace(/\/+$/, '')
+  if (/\/api\/pr-photo\//.test(url)) return url
+  const props = PropertiesService.getScriptProperties()
+  const chave = 'PAUTA_IMG_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, url)).replace(/=+$/, '')
+  const salvo = props.getProperty(chave)
+  if (salvo) return `${site}/api/pr-photo/${salvo}`
+  const it = DriveApp.getFoldersByName(PAUTA_PASTA)
+  const pasta = it.hasNext() ? it.next() : DriveApp.createFolder(PAUTA_PASTA)
+  let file = null
+  try {
+    const m = url.match(/(?:\/d\/|[?&]id=)([\w-]{10,})/)
+    if (m && /drive\.google|docs\.google/.test(url)) {
+      file = DriveApp.getFileById(m[1]).makeCopy(nome, pasta)
+    } else if (/^https?:\/\//.test(url)) {
+      const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true })
+      const tipo = String(res.getHeaders()['Content-Type'] || res.getHeaders()['content-type'] || '')
+      if (res.getResponseCode() !== 200 || !/^image\//.test(tipo)) {
+        Logger.log(`[PAUTA] O link não é uma imagem (${res.getResponseCode()}, ${tipo}): ${url}`)
+        return ''
+      }
+      file = pasta.createFile(res.getBlob().setName(`${nome}.jpg`))
+    }
+  } catch (e) {
+    Logger.log(`[PAUTA] Não consegui usar a imagem ${url}: ${e.message}`)
+    return ''
+  }
+  if (!file) { Logger.log(`[PAUTA] Link de imagem não reconhecido: ${url}`); return '' }
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW)
+  props.setProperty(chave, file.getId())
+  return `${site}/api/pr-photo/${file.getId()}`
+}
+
+// Cria a aba PAUTA na planilha privada da LORE (rodar uma vez)
+function criaAbaPauta() {
+  const id = PropertiesService.getScriptProperties().getProperty('LORE_SHEET_ID')
+  if (!id) throw new Error('Falta LORE_SHEET_ID nas Propriedades do script (a planilha privada da LORE).')
+  const ss = SpreadsheetApp.openById(id)
+  let sh = ss.getSheetByName(PAUTA_ABA)
+  if (sh) { Logger.log('[PAUTA] A aba PAUTA já existe: ' + ss.getUrl()); return }
+  sh = ss.insertSheet(PAUTA_ABA)
+  sh.getRange('A:B').setNumberFormat('@') // semana "14-15" não pode virar data
+  sh.getRange(1, 1, 1, PAUTA_HEADERS.length).setValues([PAUTA_HEADERS]).setFontWeight('bold')
+  sh.getRange(2, 1, 4, PAUTA_HEADERS.length).setValues([
+    ['2026', '5', 'Meme', 'Pequers Verde', '(preencher) Zoar que ele perdeu fazendo 150 pontos', ''],
+    ['2026', '5', 'Recap', 'Moneyball', '(preencher) Comentar a trade do Bijan, que estreou bem', ''],
+    ['2026', '5', 'Matéria', '', '(preencher) Lembrar que a liga faz aniversário nesta semana', ''],
+    ['', '', 'Todos', '', '(preencher) Linha sem temporada/semana vale para todas as semanas', ''],
+  ])
+  sh.setFrozenRows(1)
+  sh.autoResizeColumns(1, PAUTA_HEADERS.length)
+  Logger.log('[PAUTA] Aba PAUTA criada (linhas com "(preencher)" são ignoradas): ' + ss.getUrl())
 }
 
 function fetchDossie_(cfg, params) {
@@ -309,7 +458,9 @@ function gerarRecapsDaLiga() {
       const outros = escritos.length
         ? `\n\n## JÁ ESCRITOS NESTA SEMANA (não repita aberturas, piadas nem estrutura)\n${escritos.map(t => `- Abertura usada: "${primeiraFrase_(t)}"`).join('\n')}`
         : ''
-      const texto = `Escreva o recap desta partida.\n\n${dossie}${loreTexto_(cfg, [team, opp], season, week)}${outros}`
+      const pauta = pautaTexto_(pautaItens_(cfg, 'recap', season, week, [team, opp]))
+      if (pauta) Logger.log('[RECAP] Com pauta do editor')
+      const texto = `Escreva o recap desta partida.\n\n${dossie}${loreTexto_(cfg, [team, opp], season, week)}${pauta}${outros}`
       const { texto: recap, modelo } = chamaGemini_(cfg, sistema, texto)
 
       sheet.getRange(i + 1, cRecap + 1).setValue(recap)
@@ -370,7 +521,9 @@ function gerarRecapsDoPowerRanking() {
       const outros = escritos.length
         ? `\n\n## VERBETES JÁ ESCRITOS NESTA SEMANA (não repita aberturas, piadas nem estrutura)\n${escritos.map(t => `- "${primeiraFrase_(t)}"`).join('\n')}`
         : ''
-      const texto = `Escreva o verbete de Power Ranking de ${team} nesta semana.\n\n${dossie}${loreTexto_(cfg, [team, String(r[cOpp]).trim()], season, week)}${outros}`
+      const pauta = pautaTexto_(pautaItens_(cfg, 'note', season, week, [team]))
+      if (pauta) Logger.log('[PR] Com pauta do editor')
+      const texto = `Escreva o verbete de Power Ranking de ${team} nesta semana.\n\n${dossie}${loreTexto_(cfg, [team, String(r[cOpp]).trim()], season, week)}${pauta}${outros}`
       const { texto: note, modelo } = chamaGemini_(cfg, sistema, texto)
       sheet.getRange(i + 1, cNote + 1).setValue(note)
       SpreadsheetApp.flush()

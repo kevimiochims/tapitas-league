@@ -35,6 +35,14 @@
 //     memeDaSemanaAutomatico() para gerar outro.
 //   - Para gerar e publicar uma rodada direto, sem aprovação:
 //     publicaMemeSemana('2026', '4').
+//   - Para usar uma imagem sua no lugar da charge: na MATERIAS_TESTE, cole na
+//     célula imageUrl o link de compartilhamento do Drive (ou de uma imagem da
+//     internet) e rode publicaTestesMeme(); o script faz uma cópia pública por
+//     link e o seu arquivo original não muda.
+//
+// ESCOLHER O ASSUNTO: aba PAUTA da planilha da LORE, com Produto = Meme (veja
+// o recaps-ia.gs). A Instrução vira o assunto obrigatório do meme; com um link
+// na coluna Imagem, usa a sua imagem e não desenha a charge.
 // =============================================================================
 
 const MEME_SEMANAS_TESTE = [['2026', '1'], ['2026', '2'], ['2026', '3']];
@@ -168,7 +176,7 @@ function publicaTestesMeme() {
       slug,
       category: MEME_CATEGORIA,
       date: dataDaRodada_(m[1], m[2]),
-      imageUrl: String(r[col('imageUrl')] || '').split('|')[0].trim(),
+      imageUrl: imagemColadaParaSite_(String(r[col('imageUrl')] || '').split('|')[0], `meme-${m[1]}-w${m[2]}-escolhida`),
       content: String(r[col('content')] || ''),
       author: MATERIA_AUTOR,
     }, false);
@@ -191,27 +199,39 @@ function geraMeme_(season, week, teste) {
   const dados = JSON.parse(buscaTexto_(`${base}&format=json`));
   const times = Array.from(new Set((dados.matchups || []).flatMap(m => m.teams)));
 
+  // Pauta do editor (aba PAUTA da planilha da LORE): o assunto do meme e, se
+  // tiver Imagem, a imagem pronta (não desenha a charge)
+  const pautaItens = typeof pautaItens_ === 'function' ? pautaItens_(cfg, 'meme', season, week, []) : [];
+  const imagemPauta = pautaItens.filter(r => r.imagem).map(r => imagemParaSite_(r.imagem, `pauta-meme-${season}-w${week}`)).find(Boolean) || '';
+  const assunto = pautaItens.filter(r => r.instrucao).map(r => `- ${r.time ? `[${r.time}] ` : ''}${r.instrucao}`);
+  if (pautaItens.length) Logger.log(`[MEME] Com pauta do editor${imagemPauta ? ' e imagem própria (sem charge desenhada)' : ''}.`);
+
   const mascotes = Object.keys(MEME_MASCOTES).map(t => `- ${t}: ${MEME_MASCOTES[t]}`).join('\n');
   const texto = [
     `Faça o meme da rodada (${season}, semana ${week}).`,
     '',
     dossie,
     loreTexto_(cfg, times, season, week),
+    assunto.length ? `\n\n## ASSUNTO ESCOLHIDO PELO EDITOR (OBRIGATÓRIO: o meme é sobre isto, não escolha outra história; o que o editor afirma é verdade)\n${assunto.join('\n')}` : '',
+    imagemPauta ? '\n\nA IMAGEM DO MEME JÁ FOI ESCOLHIDA PELO EDITOR: no campo "cena" escreva só "editor". A legenda e o texto devem combinar com o assunto acima.' : '',
     `\n\n## MASCOTES (para a cena; copie a descrição em inglês)\n${mascotes}`,
   ].join('\n');
 
   const { texto: resposta, modelo } = chamaGemini_(cfg, MEME_INSTRUCOES, texto);
   const meme = parseMeme_(resposta);
-  if (!meme.titulo || !meme.cena || !meme.texto) throw new Error(`Resposta do Gemini fora do formato:\n${resposta.slice(0, 500)}`);
+  if (!meme.titulo || (!meme.cena && !imagemPauta) || !meme.texto) throw new Error(`Resposta do Gemini fora do formato:\n${resposta.slice(0, 500)}`);
 
   // Duas versões da charge: o modelo não aceita "seed", então a variação vem
-  // do enquadramento (plano aberto x mais perto dos personagens)
+  // do enquadramento (plano aberto x mais perto dos personagens). Com imagem
+  // do editor na pauta, vai só ela.
   const enquadramentos = [' Wide shot showing the whole scene.', ' Close-up on the characters\' faces and reactions.'];
-  const imagens = [];
-  [1, 2].forEach(i => {
-    const blob = desenhaCharge_(MEME_ESTILO + meme.cena + enquadramentos[i - 1] + MEME_SEM_TEXTO);
-    if (blob) imagens.push(salvaImagemMeme_(blob.setName(`meme-${season}-w${week}-${i}.jpg`), cfg.site));
-  });
+  const imagens = imagemPauta ? [imagemPauta] : [];
+  if (!imagemPauta) {
+    [1, 2].forEach(i => {
+      const blob = desenhaCharge_(MEME_ESTILO + meme.cena + enquadramentos[i - 1] + MEME_SEM_TEXTO);
+      if (blob) imagens.push(salvaImagemMeme_(blob.setName(`meme-${season}-w${week}-${i}.jpg`), cfg.site));
+    });
+  }
   if (!imagens.length) throw new Error('A Cloudflare não devolveu nenhuma imagem (veja o log acima).');
 
   const corpo = `> ${meme.legenda}\n\n${meme.texto}`.trim();
