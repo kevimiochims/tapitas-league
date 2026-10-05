@@ -619,6 +619,13 @@ function MatchupsPageContent() {
   const [benchOpen, setBenchOpen] = useState(true)
   // Abas do celular: Matchup | Head to head | Game recap | Rankings
   const [mobileTab, setMobileTab] = useState('matchup')
+  // Matérias da Tapitas News (a matéria da rodada aparece no Week Recap)
+  const [newsPosts, setNewsPosts] = useState([])
+  useEffect(() => {
+    let alive = true
+    fetch('/api/news').then(r => (r.ok ? r.json() : [])).then(d => { if (alive) setNewsPosts(Array.isArray(d) ? d : []) }).catch(() => {})
+    return () => { alive = false }
+  }, [])
   // Página dos "Last meetings" do head to head (volta à 1ª ao trocar de confronto)
   const [h2hPageState, setH2hPageState] = useState({ key: '', page: 0 })
   // Card da direita: Power Rankings ou Standings
@@ -1373,8 +1380,40 @@ function MatchupsPageContent() {
       <span className={`mt-1.5 text-[18px] font-bold leading-none tabular-nums ${bench ? 'text-[#6B7280]' : 'text-[#111]'}`}>{p.pts.toFixed(2)}</span>
     </button>
   )
+  // Matéria da rodada na Tapitas News (gerada pelo Apps Script com o slug
+  // rodada-<temporada>-semana-<semana>)
+  const weekStorySlug = season && week ? `rodada-${season}-semana-${String(week).replace(/[^0-9]+/g, '-')}` : ''
+  const weekStory = weekStorySlug ? newsPosts.find(p => String(p?.slug || '').trim() === weekStorySlug) : null
+  const storyExcerpt = text => {
+    const t = String(text || '')
+      .replace(/\[\[[^\]]*\]\]/g, '')
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/^#+\s.*$/gm, '')
+      .replace(/[#>*_`~]+/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    return t.length > 200 ? `${t.slice(0, 200).trim()}…` : t
+  }
+  const weekStoryCard = weekStory ? (
+    <a href={`/news/${weekStory.slug}`} className="group mb-3 flex gap-3 overflow-hidden rounded-xl bg-[#02275F] p-2.5 text-white transition-colors hover:bg-[#06357C]">
+      {String(weekStory.imageUrl || '').trim() && (
+        <span className="h-[84px] w-[112px] flex-shrink-0 overflow-hidden rounded-lg bg-white/10 @md:h-[96px] @md:w-[150px]">
+          <img src={String(weekStory.imageUrl).split('|')[0]} alt="" className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.04]" />
+        </span>
+      )}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-[#E8C766]">Tapitas News<span className="hidden @md:inline"> · Matéria da rodada</span></span>
+        <span className="mt-0.5 line-clamp-2 text-[14px] font-bold leading-snug @md:text-[15px]">{weekStory.title}</span>
+        <span className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-white/75">{weekStory.subtitle || storyExcerpt(weekStory.content)}</span>
+        <span className="mt-auto inline-flex items-center gap-0.5 pt-1 text-[12px] font-semibold text-white">Ler a matéria <ChevronRight className="h-3.5 w-3.5" /></span>
+      </span>
+    </a>
+  ) : null
+
   const weekRecapView = weekRecapReady ? (
     <div className="@container">
+      {weekStoryCard}
       {/* Melhor e pior time da semana */}
       <div className="grid grid-cols-2 gap-2">
         {[
