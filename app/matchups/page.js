@@ -40,6 +40,18 @@ const ROSTER_CONFIG = {
   2025: { qb: 2, rb: 2, wr: 2, te: 1, flex: 3, k: 1, def: 1 },
 }
 
+// Junta a planilha às linhas do Sleeper. Semana com confronto ainda aberto
+// (jogo da NFL por jogar) fica com as linhas ao vivo do Sleeper, mesmo que já
+// tenha entrado na planilha antes da hora
+function mergeLiveRows(sheetRows, sleeperRows) {
+  const open = new Set(sleeperRows
+    .filter(r => r?.Status && r.Status !== 'final')
+    .map(r => `${String(r.Season).trim()}|${String(r.Week).trim()}`))
+  if (!open.size) return [...sheetRows, ...sleeperRows]
+  const keep = sheetRows.filter(r => !open.has(`${String(r?.Season || '').trim()}|${String(r?.Week || '').trim()}`))
+  return [...keep, ...sleeperRows]
+}
+
 function getRosterPositions(seasonYear) {
   const config = ROSTER_CONFIG[Number(seasonYear)] || ROSTER_CONFIG[2025]
   const positions = []
@@ -673,7 +685,7 @@ function MatchupsPageContent() {
         safeFetch('/api/league/sleeper-rows'),
       ])
       sheetRowsRef.current = sheetData
-      const data = [...sheetData, ...sleeperRows]
+      const data = mergeLiveRows(sheetData, sleeperRows)
       setGames(data)
       setPlayerLookup(buildPlayerLookup(cacheRows))
       setPlayerCandidates(buildPlayerCandidates(cacheRows))
@@ -808,7 +820,7 @@ function MatchupsPageContent() {
       const rows = await safeFetch(`/api/league/sleeper-rows?_=${Math.floor(Date.now() / 5000)}`)
       if (cancelled) return
       if (rows.length) {
-        setGames([...sheetRowsRef.current, ...rows])
+        setGames(mergeLiveRows(sheetRowsRef.current, rows))
         setSelected(prev => (prev ? rows.find(r => sameGame(r, prev)) || prev : prev))
       }
       timer = setTimeout(refresh, liveMode === 'live' ? 10000 : 60000)
@@ -2159,13 +2171,28 @@ function MatchupsPageContent() {
                     <ChevronRight className={`h-4 w-4 text-[#9CA3AF] transition-transform group-hover:text-[#111] ${startersOpen ? 'rotate-90' : ''}`} />
                   </button>
                   {/* Legenda do estado do jogo (só na semana em andamento) */}
-                  {[...starters, ...oppStarters].some(p => p.gs) && (
-                    <div className="flex items-center gap-2.5 text-[10px] text-[#6B7280]">
-                      <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-[#EAF7EE] ring-1 ring-inset ring-[#1E8E3E]/50" />Playing</span>
-                      <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-white ring-1 ring-[#E6E8EB]" />Final</span>
-                      <span className="flex items-center gap-1 text-[#9CA3AF]"><span className="h-2.5 w-2.5 rounded-sm bg-white opacity-60 ring-1 ring-[#E6E8EB]" />Yet to play</span>
-                    </div>
-                  )}
+                  {[...starters, ...oppStarters].some(p => p.gs) && (() => {
+                    // Quantos titulares de cada time em cada estado (time da esquerda · da direita)
+                    const count = (list, st) => list.filter(p => p.gs === st).length
+                    const item = (st, label, swatch, labelCls = '') => (
+                      <span className={`flex items-center gap-1 whitespace-nowrap ${labelCls}`}>
+                        <span className={`h-2.5 w-2.5 rounded-sm ${swatch}`} />
+                        {label}
+                        <span className="tabular-nums font-bold">
+                          <span className="text-[#02275F]">{count(starters, st)}</span>
+                          <span className="font-normal text-[#9CA3AF]">·</span>
+                          <span className="text-[#C8102E]">{count(oppStarters, st)}</span>
+                        </span>
+                      </span>
+                    )
+                    return (
+                      <div className="flex flex-wrap items-center justify-end gap-x-2.5 gap-y-1 text-[10px] text-[#6B7280] md:text-[11px]">
+                        {item('in', 'Playing', 'bg-[#EAF7EE] ring-1 ring-inset ring-[#1E8E3E]/50')}
+                        {item('post', 'Final', 'bg-white ring-1 ring-[#E6E8EB]')}
+                        {item('pre', 'Yet to play', 'bg-white opacity-60 ring-1 ring-[#E6E8EB]', 'text-[#9CA3AF]')}
+                      </div>
+                    )
+                  })()}
                   </div>
                   <div className={startersOpen ? '' : 'hidden'}>
 
