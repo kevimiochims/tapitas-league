@@ -1,5 +1,5 @@
 import { cached } from './cache'
-import { getFantasyNewsFeed, getPlayerNews } from './espn'
+import { getFantasyNewsFeed, getPlayerNews, getEspnIdMap } from './espn'
 import { getLeagueRosters } from './leagueRosters'
 import { getSleeperPlayers } from './sleeper'
 import { getRssNews, matchNewsToPlayers } from './rssNews'
@@ -11,8 +11,10 @@ import { getRssNews, matchNewsToPlayers } from './rssNews'
 const normalizeHeadline = h => String(h || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80)
 
 export function getLeagueNews() {
-  return cached('league:news:v7', 900, async () => {
-    const [rosters, players] = await Promise.all([getLeagueRosters(), getSleeperPlayers()])
+  return cached('league:news:v10', 900, async () => {
+    // ID da ESPN: o do Sleeper ou, quando ele não informa (muitos jogadores), o
+    // achado nos elencos da ESPN (mesmo mapa das fotos)
+    const [rosters, players, espnIds] = await Promise.all([getLeagueRosters(), getSleeperPlayers(), getEspnIdMap().catch(() => ({}))])
 
     const byEspn = new Map()
     const rosterPlayersWithoutEspn = []
@@ -20,8 +22,9 @@ export function getLeagueNews() {
       const info = p.id ? players.get(p.id) : null
       if (!info) return
       const entry = { id: p.id, name: info.name, pos: info.pos, nflTeam: info.team, sheetName: p.sheetName, fantasyTeam: r.team, starter: p.starter }
-      if (!info.espnId) rosterPlayersWithoutEspn.push(entry)
-      else if (!byEspn.has(info.espnId)) byEspn.set(info.espnId, entry)
+      const espnId = info.espnId || espnIds[p.id] || null
+      if (!espnId) rosterPlayersWithoutEspn.push(entry)
+      else if (!byEspn.has(String(espnId))) byEspn.set(String(espnId), entry)
     }))
 
     // Cada notícia guarda todos os jogadores da liga citados nela (`players`;
@@ -49,17 +52,29 @@ export function getLeagueNews() {
     matchNewsToPlayers(rss, allPlayers).forEach(n => add(n, n.players))
     matchNewsToPlayers(feed, allPlayers).forEach(n => add(n, n.players))
 
-    if (items.size < 8) {
-      const starters = Array.from(byEspn.entries()).filter(([, p]) => p.starter).slice(0, 40)
-      for (let i = 0; i < starters.length; i += 6) {
-        await Promise.all(starters.slice(i, i + 6).map(([espnId, player]) =>
-          getPlayerNews(espnId).then(list => list.slice(0, 2).forEach(n => add(n, player))).catch(() => {})))
-      }
+    // O feed geral da ESPN só cobre as últimas horas da NFL inteira. Para a Home
+    // mostrar o mesmo que o Player Profile, entram também as 2 últimas do feed
+    // individual de cada titular da liga (guardado por 10 min por jogador)
+    const toFetch = Array.from(byEspn.entries()).filter(([, p]) => p.starter)
+    for (let i = 0; i < toFetch.length; i += 8) {
+      await Promise.all(toFetch.slice(i, i + 8).map(([espnId, player]) =>
+        getPlayerNews(espnId).then(list => list.slice(0, 2).forEach(n => add(n, player))).catch(() => {})))
     }
 
-    return dedupeStories(Array.from(items.values()))
+    // As 40 mais recentes da liga + as mais recentes de cada time (até 8), para o
+    // filtro por time nunca ficar vazio
+    const sorted = dedupeStories(Array.from(items.values()))
       .sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0))
-      .slice(0, 40)
+    const keep = new Set(sorted.slice(0, 40))
+    const perTeam = {}
+    sorted.forEach(n => {
+      const teams = Array.from(new Set(n.players.map(p => p.fantasyTeam)))
+      if (teams.some(t => (perTeam[t] || 0) < 8)) {
+        keep.add(n)
+        teams.forEach(t => { perTeam[t] = (perTeam[t] || 0) + 1 })
+      }
+    })
+    return sorted.filter(n => keep.has(n))
   })
 }
 
