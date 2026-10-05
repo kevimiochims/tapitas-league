@@ -30,6 +30,10 @@
 //   - Para publicar uma rodada na mão: publicaMateriaSemana('2026', '4').
 //   - Para publicar as matérias de teste que você aprovou (ex.: as semanas
 //     de 2026 que já passaram): publicaTestesMateria().
+//
+// PAUTA DO EDITOR: aba PAUTA da planilha da LORE, com Produto = Matéria (veja
+// o recaps-ia.gs). A Instrução vira assunto obrigatório da matéria; com um
+// link na coluna Imagem, ela vira a foto de capa.
 // =============================================================================
 
 const MATERIA_SEMANAS_TESTE = [['2026', '1'], ['2026', '2'], ['2026', '3']];
@@ -165,7 +169,7 @@ function publicaTestesMateria() {
       slug,
       category: MATERIA_CATEGORIA,
       date: dataDaRodada_(m[1], m[2]),
-      imageUrl: col('imageUrl') >= 0 ? String(r[col('imageUrl')] || '') : '',
+      imageUrl: col('imageUrl') >= 0 ? imagemColadaParaSite_(String(r[col('imageUrl')] || '').split('|')[0], `capa-${slug}`) : '',
       content: String(r[col('content')] || ''),
       author: MATERIA_AUTOR,
     }, false);
@@ -174,6 +178,15 @@ function publicaTestesMateria() {
   });
   if (n && typeof avisaSiteNovaNoticia_ === 'function') avisaSiteNovaNoticia_();
   Logger.log(`[MATÉRIA] ${n} matéria(s) publicada(s).`);
+}
+
+// imageUrl trocada à mão na MATERIAS_TESTE: link de compartilhamento do Drive
+// ou de uma imagem da internet vira uma cópia pública que o site exibe (ver
+// imagemParaSite_ no recaps-ia.gs). Link que já é do site fica como está.
+function imagemColadaParaSite_(link, nome) {
+  const url = String(link || '').trim();
+  if (!url || /\/api\/pr-photo\//.test(url) || typeof imagemParaSite_ !== 'function') return url;
+  return imagemParaSite_(url, nome) || url;
 }
 
 // Data da matéria de uma rodada: a terça-feira depois dos jogos da semana.
@@ -208,12 +221,19 @@ function geraMateria_(season, week, teste) {
     .filter(t => t !== capaTime)
     .map(t => `- ${t}: ${fotos[t].player || 'foto do time'}${fotos[t].pts ? ` (${fotos[t].pts} pts)` : ''}`);
 
+  // Pauta do editor (aba PAUTA da planilha da LORE): assuntos obrigatórios e,
+  // se tiver Imagem, a foto de capa
+  const pautaItens = typeof pautaItens_ === 'function' ? pautaItens_(cfg, 'materia', season, week, []) : [];
+  const capaPauta = pautaItens.filter(r => r.imagem).map(r => imagemParaSite_(r.imagem, `pauta-materia-${season}-w${week}`)).find(Boolean) || '';
+  if (pautaItens.length) Logger.log(`[MATÉRIA] Com pauta do editor (${pautaItens.length} item(ns)${capaPauta ? ', com capa' : ''}).`);
+
   const anteriores = aberturasAnteriores_(teste);
   const texto = [
     `Escreva a matéria da rodada (${season}, semana ${week}).`,
     '',
     dossie,
     loreTexto_(cfg, times, season, week),
+    pautaItens.length ? pautaTexto_(pautaItens) : '',
     lista.length ? `\n\n## FOTOS DISPONÍVEIS (use [[FOTO: time]])\n${lista.join('\n')}` : '',
     anteriores.length ? `\n\n## MATÉRIAS ANTERIORES (não repita títulos, aberturas nem piadas)\n${anteriores.map(a => `- ${a}`).join('\n')}` : '',
   ].join('\n');
@@ -241,7 +261,7 @@ function geraMateria_(season, week, teste) {
     // Data em texto ISO ("2026-10-04"): no formato da planilha (04/10/2026) o
     // site leria como mês/dia
     date: teste ? `'${Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyy-MM-dd')}` : new Date(),
-    imageUrl: capa ? capa.url : '',
+    imageUrl: capaPauta || (capa ? capa.url : ''),
     content: corpo,
     author: MATERIA_AUTOR,
   };
