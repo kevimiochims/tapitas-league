@@ -1572,6 +1572,14 @@ export default function TeamsPage() {
     )
 
     // ── Main column ────────────────────────────────────────────────
+    // Posição do PPG (temporada regular) do time entre todos daquela temporada
+    const ppgOf = h => (parseNumber(h.RS_GP) > 0 ? parseNumber(h.RS_PF) / parseNumber(h.RS_GP) : null)
+    const ppgRank = r => {
+      const mine = ppgOf(r)
+      if (mine == null) return null
+      return historySource.filter(h => String(h.Season) === String(r.Season) && ppgOf(h) != null && ppgOf(h) > mine).length + 1
+    }
+
     // Temporadas em lista compacta (coluna da direita): clicar filtra o Game Log.
     const seasonHistoryCard = (
       <CardShell title="Season History" subtitle={`${teamSeasons} seasons · tap to filter the game log`} sidebar action={logSeason !== 'All' ? <button type="button" onClick={() => setLogSeason('All')} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All</button> : null}>
@@ -1596,9 +1604,10 @@ export default function TeamsPage() {
                 <span className={`text-[13px] font-bold tabular-nums ${active ? 'text-[#02275F]' : 'text-[#111]'}`}>{r.Season}</span>
                 <span className="min-w-0 truncate text-[12px] text-[#6B7280]">
                   <span className="font-semibold tabular-nums text-[#111]">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</span>
-                  {standing > 0 ? ` · #${standing}` : ''} · {Math.round(parseNumber(r.RS_PF)).toLocaleString()} pts
-                  {/* PPG: pontos por jogo na temporada regular */}
-                  {parseNumber(r.RS_GP) > 0 && ` · ${(parseNumber(r.RS_PF) / parseNumber(r.RS_GP)).toFixed(1)} ppg`}
+                  {standing > 0 ? ` · #${standing}` : ''}
+                  {/* PPG na temporada regular e a posição do time nesse quesito
+                      entre todos os times daquela temporada (#1 = mais pontos por jogo) */}
+                  {parseNumber(r.RS_GP) > 0 && ` · ${(parseNumber(r.RS_PF) / parseNumber(r.RS_GP)).toFixed(1)} ppg${ppgRank(r) ? ` (#${ppgRank(r)})` : ''}`}
                 </span>
                 <span className="flex-shrink-0">
                   {isChamp ? <Tag tone="gold">🏆 Champ</Tag>
