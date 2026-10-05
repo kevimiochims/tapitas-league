@@ -200,9 +200,9 @@ function teamAngles({ rows, team, opp, g, oppG, weekRows, seasonRows }) {
     const single = rows.filter(x => !isDouble(x))
     const all = single.map(x => num(x.PF)).sort((a, b) => b - a)
     const rank = all.indexOf(pf) + 1
-    if (rank > 0 && rank <= 15) angles.push({ w: 5, text: `${f2(pf)} pontos é ${rankF(rank, 'maior pontuação')} da história da liga (semanas simples, ${all.length} pontuações).` })
+    if (rank > 0 && rank <= 15 && all.length >= 50) angles.push({ w: 5, text: `${f2(pf)} pontos é ${rankF(rank, 'maior pontuação')} da história da liga (semanas simples, ${all.length} pontuações).` })
     const low = [...all].reverse().indexOf(pf) + 1
-    if (low > 0 && low <= 15) angles.push({ w: 5, text: `${f2(pf)} pontos é ${rankF(low, 'MENOR pontuação')} da história da liga (semanas simples).` })
+    if (low > 0 && low <= 15 && all.length >= 50) angles.push({ w: 5, text: `${f2(pf)} pontos é ${rankF(low, 'MENOR pontuação')} da história da liga (semanas simples).` })
     const own = single.filter(x => norm(x.Team) === norm(team)).map(x => num(x.PF)).sort((a, b) => b - a)
     if (own.length > 5 && own[0] === pf) angles.push({ w: 4, text: `Maior pontuação de ${team} em toda a história da franquia.` })
     if (own.length > 5 && own[own.length - 1] === pf) angles.push({ w: 4, text: `Menor pontuação de ${team} em toda a história da franquia.` })
@@ -233,8 +233,9 @@ function teamAngles({ rows, team, opp, g, oppG, weekRows, seasonRows }) {
     const weekPlayerPts = weekRows.flatMap(x => lineup(x).starters.map(p => p.pts)).sort((a, b) => b - a)
     let line = `Destaque de ${team}: ${top.name}${slotLabel(top)} com ${f2(top.pts)} pontos (${top.pts && pf ? Math.round((top.pts / pf) * 100) : 0}% do time).`
     if (weekPlayerPts[0] === top.pts) line += ' Maior pontuação de um jogador na semana.'
-    if (pr > 0 && pr <= 25) line += ` É ${rankF(pr, 'maior pontuação')} de um jogador na história da liga.`
-    angles.push({ w: pr > 0 && pr <= 25 ? 4 : 2, text: line })
+    const prOk = pr > 0 && pr <= 25 && allPlayerPts.length >= 500
+    if (prOk) line += ` É ${rankF(pr, 'maior pontuação')} de um jogador na história da liga.`
+    angles.push({ w: prOk ? 4 : 2, text: line })
   }
   const flop = starters.filter(p => p.slot !== 'K' && p.slot !== 'DEF').sort((a, b) => a.pts - b.pts)[0]
   if (flop && flop.pts <= 3) angles.push({ w: 2, text: flop.pts === 0 ? `${flop.name}${slotLabel(flop)} zerou como titular de ${team}.` : `${flop.name}${slotLabel(flop)} fez só ${f2(flop.pts)} pontos como titular de ${team}.` })
@@ -245,6 +246,252 @@ function teamAngles({ rows, team, opp, g, oppG, weekRows, seasonRows }) {
   // Margem
   if (r === 'W' && margin < 5) angles.push({ w: 3, text: `Vitória por apenas ${f2(margin)} pontos.` })
   return angles
+}
+
+// ── Livro de recordes e ganchos históricos ──────────────────────────────
+// Tudo calculado só com os jogos até a semana pedida (cronologia). Pontuações
+// e margens contam só semanas simples (semana dupla soma dois jogos).
+
+const byOrder = (x, y) => order(x) - order(y)
+const where = g => `${str(g.Team)} em ${str(g.Season)} W${str(g.Week)}`
+const isReg = g => stage(g) === 'reg season'
+const pct = r => (r.w + r.l + r.t ? (r.w + r.t / 2) / (r.w + r.l + r.t) : 0)
+
+// Um jogo por confronto (sem o espelho), para somas e margens
+function uniqueGames(rows) {
+  const seen = new Set()
+  return rows.filter(x => {
+    const key = `${str(x.Season)}|${str(x.Week)}|${[norm(x.Team), norm(x.Opponent)].sort().join('|')}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+// Jogos da temporada regular de cada time em cada temporada, em ordem
+function teamSeasons(rows) {
+  const map = new Map()
+  rows.filter(isReg).forEach(x => {
+    const key = `${str(x.Season)}|${str(x.Team)}`
+    if (!map.has(key)) map.set(key, { season: str(x.Season), team: str(x.Team), games: [] })
+    map.get(key).games.push(x)
+  })
+  map.forEach(v => v.games.sort(byOrder))
+  return Array.from(map.values())
+}
+
+function recordAfter(games, n) {
+  const r = { w: 0, l: 0, t: 0, pf: 0 }
+  games.slice(0, n).forEach(x => {
+    const res = resultOf(x)
+    if (res === 'W') r.w++
+    else if (res === 'L') r.l++
+    else r.t++
+    r.pf += num(x.PF)
+  })
+  return r
+}
+
+// Como uma temporada já encerrada terminou para o time
+// kind: champion | vice | unicorn | playoffs | out
+function seasonOutcome(ts, rows, hon) {
+  const fin = recordAfter(ts.games, ts.games.length)
+  const h = hon[ts.season] || {}
+  const own = rows.filter(x => str(x.Season) === ts.season && norm(x.Team) === norm(ts.team))
+  const playoffs = own.some(x => stage(x) === 'playoffs' || isFinal(x))
+  const kind = norm(h.champion) === norm(ts.team) ? 'champion'
+    : norm(h.vice) === norm(ts.team) ? 'vice'
+      : norm(h.unicorn) === norm(ts.team) ? 'unicorn'
+        : playoffs ? 'playoffs' : 'out'
+  const end = { champion: 'campeão', vice: 'vice-campeão', unicorn: 'levou o Unicórnio', playoffs: 'foi aos playoffs', out: 'ficou fora dos playoffs' }[kind]
+  return { kind, text: `terminou ${recordStr(fin)}, ${end}` }
+}
+
+// Todas as sequências de vitórias/derrotas (todas as fases)
+function allStreaks(rows) {
+  const byTeam = new Map()
+  rows.forEach(x => { const t = str(x.Team); if (!byTeam.has(t)) byTeam.set(t, []); byTeam.get(t).push(x) })
+  const out = []
+  byTeam.forEach((list, team) => {
+    list.sort(byOrder)
+    let type = null, n = 0, start = null, last = null
+    const close = () => { if (type && (type === 'W' || type === 'L')) out.push({ team, type, n, start, end: last }) }
+    list.forEach(x => {
+      const r = resultOf(x)
+      if (r === type) n++
+      else { close(); type = r; n = 1; start = x }
+      last = x
+    })
+    close()
+  })
+  return out
+}
+
+const streakWhere = s => `${s.team}, ${str(s.start.Season)} W${str(s.start.Week)} a ${str(s.end.Season)} W${str(s.end.Week)}`
+
+// Posição de cada titular por vaga (sem FLEX: a vaga não diz a posição)
+function starterEntries(rows) {
+  return rows.flatMap(x => lineup(x).starters.map(p => ({ ...p, g: x })))
+}
+
+// Livro de recordes da liga (até esta semana)
+export function recordBook(rows, hon) {
+  const single = rows.filter(x => !isDouble(x))
+  const games = uniqueGames(single)
+  const top = (list, val, n, fmt) => [...list].sort((a, b) => val(b) - val(a)).slice(0, n).map(fmt)
+  const low = (list, val, n, fmt) => [...list].sort((a, b) => val(a) - val(b)).slice(0, n).map(fmt)
+  const lines = []
+  const add = (label, items) => { if (items.length) lines.push(`${label}: ${items.join(' · ')}`) }
+  add('Maiores pontuações', top(single, x => num(x.PF), 3, x => `${f2(num(x.PF))} (${where(x)})`))
+  add('Menores pontuações', low(single, x => num(x.PF), 3, x => `${f2(num(x.PF))} (${where(x)})`))
+  const wins = single.filter(x => resultOf(x) === 'W')
+  add('Maiores vitórias (margem)', top(wins, x => num(x.PF) - num(x.PA), 3, x => `${f2(num(x.PF) - num(x.PA))} (${where(x)} vs ${str(x.Opponent)})`))
+  add('Vitórias mais apertadas', low(wins.filter(x => num(x.PF) > num(x.PA)), x => num(x.PF) - num(x.PA), 3, x => `${f2(num(x.PF) - num(x.PA))} (${where(x)} vs ${str(x.Opponent)})`))
+  add('Maior pontuação de um derrotado', top(single.filter(x => resultOf(x) === 'L'), x => num(x.PF), 2, x => `${f2(num(x.PF))} (${where(x)}, perdeu para ${str(x.Opponent)})`))
+  add('Menor pontuação de um vencedor', low(wins, x => num(x.PF), 2, x => `${f2(num(x.PF))} (${where(x)}, venceu ${str(x.Opponent)})`))
+  add('Jogos com mais pontos somados', top(games, x => num(x.PF) + num(x.PA), 2, x => `${f2(num(x.PF) + num(x.PA))} (${str(x.Team)} x ${str(x.Opponent)}, ${str(x.Season)} W${str(x.Week)})`))
+  add('Jogos com menos pontos somados', low(games, x => num(x.PF) + num(x.PA), 2, x => `${f2(num(x.PF) + num(x.PA))} (${str(x.Team)} x ${str(x.Opponent)}, ${str(x.Season)} W${str(x.Week)})`))
+  const streaks = allStreaks(rows)
+  add('Maiores sequências de vitórias', top(streaks.filter(s => s.type === 'W'), s => s.n, 3, s => `${s.n} (${streakWhere(s)})`))
+  add('Maiores sequências de derrotas', top(streaks.filter(s => s.type === 'L'), s => s.n, 3, s => `${s.n} (${streakWhere(s)})`))
+  // Temporadas regulares completas (as já encerradas)
+  const current = rows.length ? str([...rows].sort(byOrder)[rows.length - 1].Season) : ''
+  const done = teamSeasons(rows).filter(ts => ts.season !== current && ts.games.length >= 8).map(ts => ({ ...ts, r: recordAfter(ts.games, ts.games.length) }))
+  add('Melhores campanhas na temporada regular', top(done, ts => pct(ts.r) * 1000 + ts.r.pf / 10000, 3, ts => `${recordStr(ts.r)} (${ts.team} ${ts.season})`))
+  add('Piores campanhas na temporada regular', low(done, ts => pct(ts.r) * 1000 + ts.r.pf / 10000, 3, ts => `${recordStr(ts.r)} (${ts.team} ${ts.season})`))
+  add('Maiores médias de pontos numa temporada regular', top(done, ts => ts.r.pf / ts.games.length, 2, ts => `${f2(ts.r.pf / ts.games.length)} por jogo (${ts.team} ${ts.season})`))
+  add('Menores médias de pontos numa temporada regular', low(done, ts => ts.r.pf / ts.games.length, 2, ts => `${f2(ts.r.pf / ts.games.length)} por jogo (${ts.team} ${ts.season})`))
+  const starters = starterEntries(single)
+  add('Maiores pontuações de um jogador (titular)', top(starters, p => p.pts, 3, p => `${p.name} ${f2(p.pts)} (por ${where(p.g)})`))
+  ;['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].forEach(pos => {
+    add(`Recorde de ${pos} (titular na vaga de ${pos})`, top(starters.filter(p => p.slot === pos), p => p.pts, 1, p => `${p.name} ${f2(p.pts)} (por ${where(p.g)})`))
+  })
+  const titles = {}, unis = {}
+  Object.values(hon).forEach(h => {
+    if (h.champion) titles[h.champion] = (titles[h.champion] || 0) + 1
+    if (h.unicorn) unis[h.unicorn] = (unis[h.unicorn] || 0) + 1
+  })
+  const rank = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${t} ${n}`)
+  add('Títulos', rank(titles))
+  add('Unicórnios', rank(unis))
+  return lines
+}
+
+// Ganchos históricos de um time neste jogo: início de campanha, total de
+// pontos, sequências perto do recorde, pontuação perto dos recordes da liga e
+// da franquia, recordes de posição e da carreira do jogador
+function historyAngles({ rows, team, g, hon }) {
+  const out = []
+  const season = str(g.Season)
+  const pf = num(g.PF)
+  const r = resultOf(g)
+  const before = rows.filter(x => order(x) < order(g))
+  const seasons = teamSeasons(rows)
+
+  // Início de campanha (temporada regular, a partir do 3º jogo)
+  if (isReg(g)) {
+    const mine = seasons.find(ts => ts.season === season && norm(ts.team) === norm(team))
+    const n = mine ? mine.games.filter(x => order(x) <= order(g)).length : 0
+    if (n >= 3) {
+      const now = recordAfter(mine.games, n)
+      const others = seasons.filter(ts => !(ts.season === season && norm(ts.team) === norm(team)) && ts.games.length >= n && ts.season !== season)
+        .map(ts => ({ ts, r: recordAfter(ts.games, n) }))
+      const same = others.filter(o => o.r.w === now.w && o.r.l === now.l && o.r.t === now.t)
+        .sort((a, b) => Number(b.ts.season) - Number(a.ts.season))
+      const rec = recordStr(now)
+      const prec = same.slice(0, 6).map(o => `${o.ts.team} ${o.ts.season} (${seasonOutcome(o.ts, rows, hon).text})`).join('; ')
+      // Resumo de como terminaram os que começaram igual
+      const ends = same.map(o => seasonOutcome(o.ts, rows, hon).kind)
+      const count = (...kinds) => ends.filter(k => kinds.includes(k)).length
+      const summary = same.length >= 2
+        ? ` Desses ${same.length}: ${count('champion')} foram campeões, ${count('champion', 'vice', 'playoffs')} foram aos playoffs, ${count('unicorn')} levaram o Unicórnio.`
+        : ''
+      const extreme = now.w === 0 || now.l === 0
+      if (extreme || same.length <= 3) {
+        out.push({
+          w: extreme ? 5 : 3,
+          text: same.length
+            ? `${team} está ${rec} depois de ${n} jogos. Em temporadas anteriores, ${same.length} ${same.length === 1 ? 'time começou' : 'times começaram'} assim: ${prec}${same.length > 6 ? '; …' : ''}.${summary}`
+            : `${team} está ${rec} depois de ${n} jogos: nenhum time tinha começado uma temporada assim na história da liga.`,
+        })
+      }
+      const better = others.filter(o => pct(o.r) > pct(now)).length
+      const worse = others.filter(o => pct(o.r) < pct(now)).length
+      if (others.length >= 10 && better === 0) out.push({ w: 4, text: `${rec} é o melhor início de temporada da história da liga depois de ${n} jogos${same.length ? ' (igualado, veja acima)' : ''}.` })
+      if (others.length >= 10 && worse === 0) out.push({ w: 4, text: `${rec} é o pior início de temporada da história da liga depois de ${n} jogos${same.length ? ' (igualado, veja acima)' : ''}.` })
+      const own = others.filter(o => norm(o.ts.team) === norm(team))
+      if (own.length >= 2) {
+        if (own.every(o => pct(o.r) < pct(now))) out.push({ w: 3, text: `Melhor início de temporada da história de ${team} (${rec} em ${n} jogos; antes, o melhor era ${recordStr([...own].sort((a, b) => pct(b.r) - pct(a.r))[0].r)}).` })
+        if (own.every(o => pct(o.r) > pct(now))) out.push({ w: 3, text: `Pior início de temporada da história de ${team} (${rec} em ${n} jogos; antes, o pior era ${recordStr([...own].sort((a, b) => pct(a.r) - pct(b.r))[0].r)}).` })
+      }
+      // Pontos somados até aqui, comparados com todos os times depois de n jogos
+      const totals = [...others.map(o => o.r.pf), now.pf].sort((a, b) => b - a)
+      const hi = totals.indexOf(now.pf) + 1
+      const lo = [...totals].reverse().indexOf(now.pf) + 1
+      if (totals.length >= 10 && hi <= 3) out.push({ w: 3, text: `${team} soma ${f2(now.pf)} pontos em ${n} jogos: ${rankF(hi, 'maior marca')} da história depois de ${n} jogos.` })
+      if (totals.length >= 10 && lo <= 3) out.push({ w: 3, text: `${team} soma só ${f2(now.pf)} pontos em ${n} jogos: ${rankF(lo, 'menor marca')} da história depois de ${n} jogos.` })
+    }
+  }
+
+  // Sequência atual perto (ou acima) do recorde da liga e da franquia
+  const streaks = allStreaks(rows)
+  const cur = streaks.find(s => norm(s.team) === norm(team) && s.end === g)
+  if (cur && cur.n >= 3) {
+    const word = cur.type === 'W' ? 'vitórias' : 'derrotas'
+    const prev = streaks.filter(s => s !== cur && s.type === cur.type)
+    const best = prev.sort((a, b) => b.n - a.n)[0]
+    if (best && cur.n > best.n) out.push({ w: 5, text: `${cur.n} ${word} seguidas: NOVO RECORDE da liga (o anterior era ${best.n}, ${streakWhere(best)}).` })
+    else if (best && cur.n === best.n) out.push({ w: 5, text: `${cur.n} ${word} seguidas: igualou o recorde da liga (${streakWhere(best)}).` })
+    else if (best && best.n - cur.n <= 2) out.push({ w: 3, text: `${cur.n} ${word} seguidas: o recorde da liga é ${best.n} (${streakWhere(best)}).` })
+    const ownBest = prev.filter(s => norm(s.team) === norm(team)).sort((a, b) => b.n - a.n)[0]
+    if (ownBest && cur.n > ownBest.n) out.push({ w: 3, text: `${cur.n} ${word} seguidas: maior sequência de ${word} da história de ${team} (antes: ${ownBest.n}).` })
+  }
+
+  if (!isDouble(g)) {
+    const single = before.filter(x => !isDouble(x))
+    // Perto dos recordes de pontuação (sem bater: bater já aparece nos ganchos de pontuação)
+    const hiRec = [...single].sort((a, b) => num(b.PF) - num(a.PF))[0]
+    const loRec = [...single].sort((a, b) => num(a.PF) - num(b.PF))[0]
+    if (hiRec && pf < num(hiRec.PF) && num(hiRec.PF) - pf <= 15) out.push({ w: 4, text: `${team} ficou a ${f2(num(hiRec.PF) - pf)} pontos do recorde da liga (${f2(num(hiRec.PF))}, ${where(hiRec)}).` })
+    if (loRec && pf > num(loRec.PF) && pf - num(loRec.PF) <= 10) out.push({ w: 4, text: `${team} passou a só ${f2(pf - num(loRec.PF))} pontos da menor pontuação da história (${f2(num(loRec.PF))}, ${where(loRec)}).` })
+    const own = single.filter(x => norm(x.Team) === norm(team))
+    const ownHi = [...own].sort((a, b) => num(b.PF) - num(a.PF))[0]
+    if (own.length > 5 && ownHi && pf < num(ownHi.PF) && num(ownHi.PF) - pf <= 10) out.push({ w: 3, text: `${team} ficou a ${f2(num(ownHi.PF) - pf)} pontos do recorde da franquia (${f2(num(ownHi.PF))}, ${str(ownHi.Season)} W${str(ownHi.Week)}).` })
+    // Pontuação alta na derrota / baixa na vitória
+    const all = rows.filter(x => !isDouble(x))
+    if (r === 'L') {
+      const ls = all.filter(x => resultOf(x) === 'L').map(x => num(x.PF)).sort((a, b) => b - a)
+      const k = ls.indexOf(pf) + 1
+      if (k > 0 && k <= 10 && ls.length >= 30) out.push({ w: 4, text: `${team} perdeu fazendo ${f2(pf)}: ${rankF(k, 'maior pontuação')} de um time derrotado na história da liga.` })
+    }
+    if (r === 'W') {
+      const ws = all.filter(x => resultOf(x) === 'W').map(x => num(x.PF)).sort((a, b) => a - b)
+      const k = ws.indexOf(pf) + 1
+      if (k > 0 && k <= 10 && ws.length >= 30) out.push({ w: 4, text: `${team} venceu com só ${f2(pf)}: ${rankF(k, 'menor pontuação')} de um vencedor na história da liga.` })
+    }
+    // Soma do jogo (só no lado do time da casa da linha, para não repetir)
+    if (norm(team) < norm(g.Opponent)) {
+      const totals = uniqueGames(all).map(x => num(x.PF) + num(x.PA)).sort((a, b) => b - a)
+      const sum = pf + num(g.PA)
+      const k = totals.indexOf(sum) + 1
+      const k2 = [...totals].reverse().indexOf(sum) + 1
+      if (k > 0 && k <= 10 && totals.length >= 30) out.push({ w: 3, text: `${team} x ${str(g.Opponent)} somaram ${f2(sum)} pontos: ${ordinal(k)} jogo com mais pontos na história.` })
+      if (k2 > 0 && k2 <= 10 && totals.length >= 30) out.push({ w: 3, text: `${team} x ${str(g.Opponent)} somaram só ${f2(sum)} pontos: ${ordinal(k2)} jogo com menos pontos na história.` })
+    }
+    // Jogadores: recorde da vaga e melhor jogo do jogador na liga
+    const hist = starterEntries(all)
+    lineup(g).starters.forEach(p => {
+      if (p.slot && p.slot !== 'FLEX' && p.pts > 0) {
+        const bySlot = hist.filter(x => x.slot === p.slot).map(x => x.pts).sort((a, b) => b - a)
+        const k = bySlot.indexOf(p.pts) + 1
+        if (k > 0 && k <= 3 && bySlot.length > 50) out.push({ w: 4, text: `${p.name} fez ${f2(p.pts)}: ${rankF(k, 'maior pontuação')} de um ${p.slot} titular na história da liga.` })
+      }
+      const career = hist.filter(x => abbr(x.name) === abbr(p.name))
+      const prevBest = career.filter(x => order(x.g) < order(g)).sort((a, b) => b.pts - a.pts)[0]
+      if (career.length >= 8 && prevBest && p.pts > prevBest.pts && p.pts >= 20) out.push({ w: 3, text: `${p.name} fez ${f2(p.pts)}: melhor jogo dele na história da liga (em ${career.length} jogos como titular; o melhor era ${f2(prevBest.pts)}).` })
+    })
+  }
+  return out
 }
 
 function franchiseLine(team, hon, rows) {
@@ -266,6 +513,21 @@ function franchiseLine(team, hon, rows) {
   const firstSeason = seasons.map(Number).sort((a, b) => a - b)[0]
   if (titles.length && lastTitle) parts.push(`último título em ${lastTitle}`)
   else if (firstSeason) parts.push(`na liga desde ${firstSeason}, ainda sem título`)
+  // Recordes da franquia (semanas simples; campanhas só de temporadas encerradas)
+  const single = own.filter(x => !isDouble(x))
+  const hi = [...single].sort((x, y) => num(y.PF) - num(x.PF))[0]
+  const lo = [...single].sort((x, y) => num(x.PF) - num(y.PF))[0]
+  if (hi && single.length > 5) parts.push(`recorde de pontos da franquia ${f2(num(hi.PF))} (${str(hi.Season)} W${str(hi.Week)}), menor ${f2(num(lo.PF))} (${str(lo.Season)} W${str(lo.Week)})`)
+  const current = rows.length ? str([...rows].sort(byOrder)[rows.length - 1].Season) : ''
+  const done = teamSeasons(own).filter(ts => ts.season !== current && ts.games.length >= 8).map(ts => ({ ...ts, r: recordAfter(ts.games, ts.games.length) }))
+  if (done.length >= 2) {
+    const sorted = [...done].sort((x, y) => pct(y.r) - pct(x.r))
+    parts.push(`melhor campanha ${recordStr(sorted[0].r)} (${sorted[0].season}), pior ${recordStr(sorted[sorted.length - 1].r)} (${sorted[sorted.length - 1].season})`)
+  }
+  const streaks = allStreaks(own)
+  const bw = streaks.filter(x => x.type === 'W').sort((x, y) => y.n - x.n)[0]
+  const bl = streaks.filter(x => x.type === 'L').sort((x, y) => y.n - x.n)[0]
+  if (bw || bl) parts.push(`maiores sequências: ${bw ? `${bw.n} vitórias` : ''}${bw && bl ? ', ' : ''}${bl ? `${bl.n} derrotas` : ''}`)
   return parts.join(' · ')
 }
 
@@ -357,9 +619,9 @@ export async function buildMatchupContext({ season, week, team, opp }) {
   if (!isDouble(target)) {
     const margins = rows.filter(x => !isDouble(x) && resultOf(x) === 'W').map(x => num(x.PF) - num(x.PA)).sort((x, y) => y - x)
     const big = margins.indexOf(margin) + 1
-    if (big > 0 && big <= 10) angles.push({ w: 5, text: `Margem de ${f2(margin)}: ${rankF(big, 'maior vitória')} da história da liga.` })
+    if (big > 0 && big <= 10 && margins.length >= 30) angles.push({ w: 5, text: `Margem de ${f2(margin)}: ${rankF(big, 'maior vitória')} da história da liga.` })
     const close = [...margins].reverse().indexOf(margin) + 1
-    if (close > 0 && close <= 10) angles.push({ w: 5, text: `Margem de ${f2(margin)}: ${rankF(close, 'vitória mais apertada')} da história da liga.` })
+    if (close > 0 && close <= 10 && margins.length >= 30) angles.push({ w: 5, text: `Margem de ${f2(margin)}: ${rankF(close, 'vitória mais apertada')} da história da liga.` })
   }
 
   // Campanha / tabela
@@ -381,6 +643,9 @@ export async function buildMatchupContext({ season, week, team, opp }) {
   // Ganchos de cada time e transações
   angles.push(...teamAngles({ rows, team: a, opp: b, g: target, oppG: gB, weekRows, seasonRows }))
   if (gB) angles.push(...teamAngles({ rows, team: b, opp: a, g: gB, oppG: target, weekRows, seasonRows }))
+  // Histórico: inícios de campanha, sequências e pontuações perto dos recordes
+  angles.push(...historyAngles({ rows, team: a, g: target, hon }))
+  if (gB) angles.push(...historyAngles({ rows, team: b, g: gB, hon }))
   const players = [
     ...lineup(target).starters.map(p => ({ ...p, team: a })),
     ...(gB ? lineup(gB).starters.map(p => ({ ...p, team: b })) : []),
@@ -423,6 +688,7 @@ export async function buildMatchupContext({ season, week, team, opp }) {
     franchises: [a, b].map(t => franchiseLine(t, hon, previousRows)),
     honors: hon,
     currentChampion,
+    records: recordBook(rows, hon),
     otherGames: others,
     previousRecaps: [a, b].map(prevRecap).filter(Boolean),
   }
@@ -507,6 +773,11 @@ export function renderContext(ctx) {
     lines.push('')
     lines.push('## CAMPEÕES / VICES / UNICÓRNIOS (temporadas já decididas)')
     hon.forEach(([s, h]) => lines.push(`- ${s}: campeão ${h.champion || '—'}, vice ${h.vice || '—'}, unicórnio ${h.unicorn || '—'}`))
+  }
+  if (ctx.records?.length) {
+    lines.push('')
+    lines.push('## LIVRO DE RECORDES DA LIGA (até esta semana; pontuações em semanas simples) — consulta: cite só se tiver relação com este jogo')
+    ctx.records.forEach(r => lines.push(`- ${r}`))
   }
   if (ctx.otherGames.length) {
     lines.push('')
@@ -616,6 +887,7 @@ export async function buildWeekContext({ season, week }) {
     nextWeek,
     honors: first?.honors || honors(previousRows),
     currentChampion: first?.currentChampion || null,
+    records: first?.records || recordBook(rows, honors(previousRows)),
   }
 }
 
@@ -627,7 +899,7 @@ export function renderWeekContext(ctx) {
   ctx.matchups.forEach(m => {
     const [a, b] = m.teams
     L.push(`### ${a} ${m.score[a]} x ${m.score[b]} ${b}${m.winner ? ` → vitória de ${m.winner}` : ' → empate'}${m.gameType && m.gameType !== m.stage ? ` (${m.gameType})` : ''}`)
-    m.angles.filter(x => x.w >= 2).slice(0, 6).forEach(x => L.push(`- ${x.text}`))
+    m.angles.filter(x => x.w >= 2).slice(0, 8).forEach(x => L.push(`- ${x.text}`))
     Object.entries(m.lineups).forEach(([t, l]) => {
       const top = [...l.starters].sort((x, y) => y.pts - x.pts).slice(0, 3).map(p => `${p.name} ${f2(p.pts)}`).join(', ')
       if (top) L.push(`- Melhores de ${t}: ${top}`)
@@ -655,6 +927,11 @@ export function renderWeekContext(ctx) {
     L.push('')
     L.push(`## PRÓXIMA RODADA (Week ${ctx.nextWeek.week}) — só os confrontos, ainda sem resultado`)
     ctx.nextWeek.pairs.forEach(p => L.push(`- ${p.a}${p.records[0] ? ` (${p.records[0]})` : ''} x ${p.b}${p.records[1] ? ` (${p.records[1]})` : ''} · série: ${p.series}`))
+  }
+  if (ctx.records?.length) {
+    L.push('')
+    L.push('## LIVRO DE RECORDES DA LIGA (até esta rodada; pontuações em semanas simples) — consulta: cite só quando tiver relação com a rodada')
+    ctx.records.forEach(r => L.push(`- ${r}`))
   }
   L.push('')
   L.push('## CAMPEÕES / VICES / UNICÓRNIOS (temporadas já decididas)')
