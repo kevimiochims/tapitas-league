@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { loadNewsPosts } from './lib/newsPosts'
 import {
   Shield, Calendar, Trophy, Flame, ChevronRight, ChevronLeft,
   Swords, Stars, Activity, Radar, Target, Medal, Clock3, ScrollText,
@@ -620,7 +621,6 @@ function buildStreakMap(gamesJson, teamsJson) {
 
 // ── NEW CONSTANTS ─────────────────────────────────────────────────────────────
 
-const NEWS_SCRIPT_URL = '/api/news'
 const BASE_URL_HOME = '/api/sheet'
 
 const CATEGORY_STYLE = {
@@ -1153,12 +1153,9 @@ export default function TapitasLeagueHomepage() {
 
   // ── News posts ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch(NEWS_SCRIPT_URL)
-      .then(r => r.json())
-      .then(data => {
-        const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date))
-        setNewsPosts(sorted.slice(0, 4))
-      })
+    // Mesma lista da página News (fica guardada: abrir a matéria é instantâneo)
+    loadNewsPosts()
+      .then(sorted => setNewsPosts(sorted.slice(0, 4)))
       .catch(() => setNewsPosts([]))
       .finally(() => setNewsLoading(false))
   }, [])
@@ -2273,11 +2270,12 @@ export default function TapitasLeagueHomepage() {
         <div className="min-w-0">
           {heroCard}
           {weekCard}
-          {/* Ordem no celular: notícias de jogadores → rivalry → lesões → news → rankings → trending → draft */}
+          {/* Ordem no celular: notícias de jogadores → Tapitas News → rivalry → lesões → rankings → trending → draft
+              (a Tapitas News vem antes do rivalry: tem a matéria da rodada toda semana) */}
           <div className="lg:hidden"><LeagueNewsCard onOpenPlayer={openNflPlayer} /></div>
+          {newsCard}
           {rivalryCard}
           <div className="lg:hidden"><RosterAlertsCard onOpenPlayer={openNflPlayer} /></div>
-          {newsCard}
           <div className="lg:hidden">
             {tablesCard}
             <TrendingCard onOpenPlayer={openNflPlayer} />

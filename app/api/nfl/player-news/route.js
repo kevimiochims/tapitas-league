@@ -32,7 +32,8 @@ export async function GET(request) {
       .map(({ athleteIds, player, ...n }) => n)
       .sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0))
       .slice(0, 12)
-    return Response.json({ news }, { headers: cdnHeaders(1800) })
+    // 10 min: a lista do jogador não pode ficar atrás da Home (que renova a cada 15)
+    return Response.json({ news }, { headers: cdnHeaders(600) })
   } catch (err) {
     console.error('[api/nfl/player-news]', err)
     return Response.json({ error: 'Failed to load player news' }, { status: 502 })

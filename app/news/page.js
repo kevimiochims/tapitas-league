@@ -1,14 +1,14 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Newspaper, Laugh, FileText, ChevronRight, SquarePen } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import NewsTicker from '../components/nfl/NewsTicker'
 import { BrandBackdrop, PageShell, PageBar, BarTab, CardShell, StatRow, Tag, Pager, usePager, LoadingState, Skeleton } from '../components/ui'
 import ReactMarkdown from 'react-markdown'
 import { NEWS_FORM_URL } from '../config/news'
+import { cachedNewsPosts, loadNewsPosts } from '../lib/newsPosts'
 
-const SCRIPT_URL = '/api/news'
 
 const CATEGORIES = ['Todos', 'Meme', 'Recap', 'Notícia']
 
@@ -65,17 +65,15 @@ export default function NewsPage() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('Todos')
-  const router = useRouter()
   const PER_PAGE = 8
 
   useEffect(() => {
-    fetch(SCRIPT_URL)
-      .then(r => r.json())
-      .then(data => {
-        const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date))
-        setPosts(sorted)
-      })
-      .catch(() => setPosts([]))
+    // Mostra na hora o que já foi carregado (Home ou visita anterior) e atualiza
+    const cached = cachedNewsPosts()
+    if (cached) { setPosts(cached); setLoading(false) }
+    loadNewsPosts()
+      .then(setPosts)
+      .catch(() => { if (!cached) setPosts([]) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -118,7 +116,7 @@ export default function NewsPage() {
         <>
           {/* Matéria em destaque: imagem inteira com o título por cima */}
           {featured && (
-            <button onClick={() => router.push(`/news/${featured.slug}`)} className="group relative mb-2 block h-[300px] w-full overflow-hidden rounded-xl bg-[#02275F] text-left sm:h-[420px]">
+            <Link href={`/news/${featured.slug}`} className="group relative mb-2 block h-[300px] w-full overflow-hidden rounded-xl bg-[#02275F] text-left transition-transform active:scale-[0.995] sm:h-[420px]">
               {featured.imageUrl && (
                 <img src={featured.imageUrl.split('|')[0]} alt={featured.title} className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]" />
               )}
@@ -131,9 +129,9 @@ export default function NewsPage() {
                 </div>
                 <h2 className="max-w-[820px] text-[24px] font-bold leading-tight tracking-tight sm:text-[36px]">{featured.title}</h2>
                 <p className="mt-2 hidden max-w-[720px] text-[14px] leading-relaxed text-white/80 sm:line-clamp-2">{excerpt(featured.content)}</p>
-                <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-white">Read the story <ChevronRight className="h-4 w-4" /></span>
+                <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-[13px] font-semibold text-white backdrop-blur-sm transition-colors group-hover:bg-white group-hover:text-[#02275F]">Read the story <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></span>
               </div>
-            </button>
+            </Link>
           )}
 
           {/* Letreiro de manchetes da NFL entre o destaque e a lista */}
@@ -145,7 +143,7 @@ export default function NewsPage() {
                 <CardShell title="Latest" subtitle={filter === 'Todos' ? 'All stories, newest first' : `${filter} · newest first`}>
                   <div {...listProps} className="divide-y divide-[#F1F2F4]">
                     {rest.map((post, i) => (
-                      <button key={post.id || i} onClick={() => router.push(`/news/${post.slug}`)} className="group flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-[#F7F8FA] sm:gap-4 lg:px-4">
+                      <Link key={post.id || i} href={`/news/${post.slug}`} className="group flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-[#F4F6FA] active:bg-[#EEF3FF] sm:gap-4 lg:px-4">
                         <div className="h-[72px] w-[108px] flex-shrink-0 overflow-hidden rounded-lg bg-[#F4F5F7] sm:h-[104px] sm:w-[168px]">
                           {post.imageUrl && <img src={post.imageUrl.split('|')[0]} alt="" className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.04]" />}
                         </div>
@@ -157,7 +155,8 @@ export default function NewsPage() {
                           <h3 className="mt-1 line-clamp-2 text-[15px] font-bold leading-snug text-[#111] group-hover:text-[#02275F] sm:text-[17px]">{post.title}</h3>
                           <p className="mt-1 hidden text-[13px] leading-relaxed text-[#6B7280] sm:line-clamp-2">{excerpt(post.content)}</p>
                         </div>
-                      </button>
+                        <ChevronRight className="mt-1 h-4 w-4 flex-shrink-0 self-center text-[#C4C7CC] transition-all group-hover:translate-x-0.5 group-hover:text-[#02275F]" />
+                      </Link>
                     ))}
                   </div>
                   {totalPages > 1 && <Pager {...pagerProps} />}

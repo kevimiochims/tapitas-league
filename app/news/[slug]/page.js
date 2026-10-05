@@ -6,14 +6,13 @@ import { useParams } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import { ChevronLeft, ChevronRight, BarChart3, Swords } from 'lucide-react'
 import { PageShell, CardShell, Tag } from '../../components/ui'
+import { cachedNewsPosts, loadNewsPosts } from '../../lib/newsPosts'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation, Pagination } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 
-const SCRIPT_URL =
-    '/api/news'
 
 export default function NewsArticle() {
 
@@ -42,43 +41,31 @@ export default function NewsArticle() {
 
 
     useEffect(() => {
+        // Abre na hora com a lista que a News/Home já carregou; atualiza em seguida
+        const cached = cachedNewsPosts()
+        const cachedPost = cached?.find(p => p.slug === slug)
+        if (cachedPost) { setPosts(cached); setPost(cachedPost); setLoading(false) }
 
         async function loadPost() {
-
             try {
-
-                const response = await fetch(SCRIPT_URL)
-
-                const data = await response.json()
-
+                const data = await loadNewsPosts()
                 setPosts(data)
-
-                let foundPost =
-                    data.find(post => post.slug === slug)
-
+                let foundPost = data.find(p => p.slug === slug)
                 // Prévia das matérias automáticas em teste (aba MATERIAS_TESTE):
                 // abre só pelo link direto, não aparece na lista da News
                 if (!foundPost && String(slug).startsWith('teste-')) {
                     const tests = await fetch('/api/sheet/MATERIAS_TESTE').then(r => (r.ok ? r.json() : [])).catch(() => [])
                     foundPost = (Array.isArray(tests) ? tests : []).filter(t => t.slug === slug).pop()
                 }
-
-                setPost(foundPost)
-
+                if (foundPost || !cachedPost) setPost(foundPost)
             } catch (err) {
-
                 console.error(err)
-
             } finally {
-
                 setLoading(false)
-
             }
-
         }
 
         loadPost()
-
     }, [slug])
 
     if (loading) return <PageShell loading />
@@ -113,7 +100,7 @@ export default function NewsArticle() {
     return (
         <PageShell>
             <div data-sticky-cols className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
-                <article className="mb-2 overflow-hidden rounded-xl bg-white">
+                <article key={post.slug} className="news-enter mb-2 overflow-hidden rounded-xl bg-white">
                     {/* Título */}
                     <div className="px-4 pb-4 pt-4 sm:px-8 sm:pt-6">
                         <Link href="/news" className="inline-flex items-center gap-1 text-[12px] font-medium text-[#6B7280] hover:text-[#111]">

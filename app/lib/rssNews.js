@@ -66,11 +66,24 @@ export function parseRss(xml, source) {
   }).filter(n => n.headline)
 }
 
+// Notícias sem data no feed (o RotoBaller às vezes manda assim): ficam com a
+// hora em que o site as viu pela primeira vez. Sem isso iam para o fim da lista
+// do jogador, abaixo de notícias de semanas atrás.
+const FIRST_SEEN = new Map()
+function datedNow(items) {
+  const now = new Date().toISOString()
+  return items.map(n => {
+    if (n.published) return n
+    if (!FIRST_SEEN.has(n.id)) FIRST_SEEN.set(n.id, now)
+    return { ...n, published: FIRST_SEEN.get(n.id) }
+  })
+}
+
 async function loadSource(src) {
   const attempts = []
   for (const url of src.urls) {
     try {
-      const items = parseRss(await fetchText(url, { timeoutMs: 12000 }), src.name)
+      const items = datedNow(parseRss(await fetchText(url, { timeoutMs: 12000 }), src.name))
       attempts.push({ url, ok: true, items: items.length })
       if (items.length) return { name: src.name, items, attempts }
     } catch (err) {

@@ -1597,6 +1597,8 @@ export default function TeamsPage() {
                 <span className="min-w-0 truncate text-[12px] text-[#6B7280]">
                   <span className="font-semibold tabular-nums text-[#111]">{parseNumber(r.RS_W)}–{parseNumber(r.RS_L)}</span>
                   {standing > 0 ? ` · #${standing}` : ''} · {Math.round(parseNumber(r.RS_PF)).toLocaleString()} pts
+                  {/* PPG: pontos por jogo na temporada regular */}
+                  {parseNumber(r.RS_GP) > 0 && ` · ${(parseNumber(r.RS_PF) / parseNumber(r.RS_GP)).toFixed(1)} ppg`}
                 </span>
                 <span className="flex-shrink-0">
                   {isChamp ? <Tag tone="gold">🏆 Champ</Tag>

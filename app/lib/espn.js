@@ -57,7 +57,7 @@ export function getScoreboard({ week, season } = {}) {
 // Manchetes recentes de um jogador (ID da ESPN, que o Sleeper informa).
 // Tenta o feed de notícias do fantasy da ESPN e, se falhar, o feed geral da NFL.
 export function getPlayerNews(espnId) {
-  return cached(`espn:news:v2:${espnId}`, 1800, async () => {
+  return cached(`espn:news:v2:${espnId}`, 600, async () => {
     const id = encodeURIComponent(espnId)
     const urls = [
       `https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=${id}&limit=8`,
