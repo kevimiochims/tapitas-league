@@ -53,7 +53,7 @@ const MEME_MASCOTES = {
 
 const MEME_ESTILO = 'Editorial cartoon in the style of a Brazilian newspaper sports comic: bold black ink outlines, flat bright colors, ' +
   'exaggerated funny expressions, one single clear scene, simple background. ';
-const MEME_SEM_TEXTO = ' Absolutely no text: no letters, no words, no numbers on signs, no speech bubbles, no captions, no signature, no logos.';
+const MEME_SEM_TEXTO = ' Absolutely no text anywhere: no letters, no words, no signs, no posters, no papers, no screens, no scoreboards, no speech bubbles, no captions, no artist signature in the corners, no logos. Jersey numbers are the only allowed characters.';
 
 const MEME_INSTRUCOES = `
 Você é o chargista e humorista da Tapitas News, o jornal da Tapitas League (fantasy
@@ -74,7 +74,9 @@ nada de fantasy football:
   - uma ação clara e engraçada que conte a piada sozinha (alguém chorando com um
     troféu de unicórnio, sendo atropelado, dormindo no banco, fugindo...);
   - cenário simples (vestiário, campo, banco de reservas, escritório...);
-  - nada de texto, placar, número ou palavra escrita na cena.
+  - nada de texto, placar, número ou palavra escrita na cena, e nenhum objeto
+    que costuma ter escrita (placas, cartazes, papéis, quadros, telas, jornais):
+    o desenhista inventa letras sem sentido neles.
 
 RESPOSTA: só um JSON, sem texto em volta:
 {
