@@ -1,6 +1,6 @@
 import { cached } from './cache'
 import { getFantasyNewsFeed, getPlayerNews, getEspnIdMap } from './espn'
-import { getLeagueRosters } from './leagueRosters'
+import { getLeagueRosters, normalizePlayerKey } from './leagueRosters'
 import { getSleeperPlayers } from './sleeper'
 import { getRssNews, matchNewsToPlayers } from './rssNews'
 
@@ -11,7 +11,7 @@ import { getRssNews, matchNewsToPlayers } from './rssNews'
 const normalizeHeadline = h => String(h || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80)
 
 export function getLeagueNews() {
-  return cached('league:news:v10', 900, async () => {
+  return cached('league:news:v12', 900, async () => {
     // ID da ESPN: o do Sleeper ou, quando ele não informa (muitos jogadores), o
     // achado nos elencos da ESPN (mesmo mapa das fotos)
     const [rosters, players, espnIds] = await Promise.all([getLeagueRosters(), getSleeperPlayers(), getEspnIdMap().catch(() => ({}))])
@@ -30,9 +30,28 @@ export function getLeagueNews() {
     // Cada notícia guarda todos os jogadores da liga citados nela (`players`;
     // `player` é o primeiro), para aparecer no filtro de todos os times envolvidos
     const items = new Map()
+    // Só fica ligado à notícia quem é citado no título ou no resumo: a ESPN marca
+    // dezenas de atletas em matérias gerais ("os maiores pontuadores até as 16h"),
+    // inclusive quem ainda nem jogou
+    // Nome completo no texto; só o sobrenome vale se nenhum outro jogador dos
+    // elencos tiver o mesmo ("Kyren Williams" não puxa o Javonte Williams)
+    const keyOf = name => normalizePlayerKey(String(name || '').replace(/['’`.-]/g, ''))
+    const lastCount = {}
+    rosters.forEach(r => r.players.forEach(p => {
+      const info = p.id ? players.get(p.id) : null
+      const last = keyOf(info?.name).split(' ').pop()
+      if (last) lastCount[last] = (lastCount[last] || 0) + 1
+    }))
+    const mentions = (n, p) => {
+      const text = ` ${keyOf(`${n.headline} ${n.description}`)} `
+      const full = keyOf(p.name)
+      const last = full.split(' ').pop()
+      if (full.includes(' ') && text.includes(` ${full} `)) return true
+      return last.length >= 3 && (lastCount[last] || 0) <= 1 && text.includes(` ${last} `)
+    }
     const add = (n, list) => {
       const key = normalizeHeadline(n.headline)
-      const players = (Array.isArray(list) ? list : [list]).filter(Boolean)
+      const players = (Array.isArray(list) ? list : [list]).filter(Boolean).filter(p => mentions(n, p))
       if (!players.length) return
       const prev = items.get(key)
       if (prev) {

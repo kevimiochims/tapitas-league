@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, ExternalLink } from 'lucide-react'
 import { TeamLogo, PositionBadge } from '../ui'
@@ -19,7 +19,11 @@ function timeAgo(iso) {
 // manchete, o resumo que o site de origem publica no feed e os jogadores da
 // liga envolvidos (cada um abre o perfil). O texto completo continua no site
 // de origem (botão no fim), já que o artigo é deles.
+// Pop-up mostra até 6 jogadores; os outros ficam atrás de um "+N"
+const MAX_PLAYERS = 6
+
 export default function NewsReader({ item, photo, photoCredit = '', onClose, onOpenPlayer }) {
+  const [allPlayers, setAllPlayers] = useState(false)
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
@@ -72,7 +76,7 @@ export default function NewsReader({ item, photo, photoCredit = '', onClose, onO
               <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B7280]">{players.length > 1 ? 'Tapitas players in this story' : 'Tapitas player'}</div>
               {/* Um chip por jogador (time, nome, posição); toque abre o perfil */}
               <div className="flex flex-wrap gap-1.5">
-                {players.map(p => (
+                {(allPlayers ? players : players.slice(0, MAX_PLAYERS)).map(p => (
                   <button
                     key={p.id || p.name}
                     type="button"
@@ -85,6 +89,11 @@ export default function NewsReader({ item, photo, photoCredit = '', onClose, onO
                     <PositionBadge position={p.pos} />
                   </button>
                 ))}
+                {!allPlayers && players.length > MAX_PLAYERS && (
+                  <button type="button" onClick={() => setAllPlayers(true)} className="flex items-center rounded-full bg-[#EEF3FF] px-2.5 py-1 text-[12px] font-semibold text-[#02275F] hover:bg-[#E3EBFB]">
+                    +{players.length - MAX_PLAYERS} more
+                  </button>
+                )}
               </div>
             </div>
           )}
