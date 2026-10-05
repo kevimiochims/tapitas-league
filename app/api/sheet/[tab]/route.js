@@ -1,4 +1,4 @@
-import { SHEET_TABS, SHEET_TTL, getSheetRows } from '@/app/lib/sheets'
+import { SHEET_TABS, SHEET_TTL, FRESH_TABS, getSheetRows } from '@/app/lib/sheets'
 
 export async function GET(_request, { params }) {
   const { tab } = await params
@@ -8,6 +8,9 @@ export async function GET(_request, { params }) {
   }
 
   try {
+    if (FRESH_TABS.has(tab)) {
+      return Response.json(await getSheetRows(tab, { fresh: true }), { headers: { 'Cache-Control': 'no-store' } })
+    }
     const rows = await getSheetRows(tab)
     return Response.json(rows, {
       headers: {

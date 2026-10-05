@@ -24,6 +24,9 @@ export const SHEET_TABS = new Set([
 // Tempo (segundos) que uma aba fica em cache antes de buscar de novo no Google
 export const SHEET_TTL = 300
 
+// Abas lidas sempre na hora, sem cache (prévias que você acabou de gerar)
+export const FRESH_TABS = new Set(['MATERIAS_TESTE'])
+
 const UPSTREAM_TIMEOUT_MS = 20000
 
 // Mesmo formato do opensheet: primeira linha vira as chaves de cada objeto
@@ -61,7 +64,9 @@ async function fetchSheetFromUpstream(tab) {
 const memory = new Map()
 const inflight = new Map()
 
-export async function getSheetRows(tab) {
+export async function getSheetRows(tab, { fresh = false } = {}) {
+  // fresh: lê direto da planilha, sem a memória (prévias de teste)
+  if (fresh) return fetchSheetFromUpstream(tab)
   const hit = memory.get(tab)
   if (hit && Date.now() - hit.at < SHEET_TTL * 1000) return hit.rows
 
