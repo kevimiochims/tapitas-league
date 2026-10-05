@@ -9,11 +9,16 @@
 
 const DAY = 86400000
 
-// season_start_date do Sleeper é a quinta do kickoff; a semana 1 começa na quarta anterior
+// A semana 1 começa na quarta-feira do kickoff (a quarta igual ou anterior ao
+// season_start_date do Sleeper). O Sleeper nem sempre manda a quinta: em 2026
+// veio a quarta (09/09), e subtrair um dia jogava o calendário um dia para
+// trás (confronto "Final" na segunda, antes do Monday Night). Assim bate com o
+// script semanal da planilha (quarta antes da quinta do kickoff)
 export function weekOneStart(seasonStartDate) {
   const d = new Date(`${seasonStartDate}T09:00:00Z`)
   if (Number.isNaN(d.getTime())) return null
-  return new Date(d.getTime() - DAY)
+  const back = (d.getUTCDay() - 3 + 7) % 7 // dias desde a quarta
+  return new Date(d.getTime() - back * DAY)
 }
 
 export function weekStart(seasonStartDate, week) {
