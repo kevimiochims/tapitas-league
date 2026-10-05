@@ -183,10 +183,12 @@ function geraMeme_(season, week, teste) {
   const meme = parseMeme_(resposta);
   if (!meme.titulo || !meme.cena || !meme.texto) throw new Error(`Resposta do Gemini fora do formato:\n${resposta.slice(0, 500)}`);
 
-  // Duas versões da charge (sementes diferentes)
+  // Duas versões da charge: o modelo não aceita "seed", então a variação vem
+  // do enquadramento (plano aberto x mais perto dos personagens)
+  const enquadramentos = [' Wide shot showing the whole scene.', ' Close-up on the characters\' faces and reactions.'];
   const imagens = [];
   [1, 2].forEach(i => {
-    const blob = desenhaCharge_(MEME_ESTILO + meme.cena + MEME_SEM_TEXTO, Number(season) * 1000 + parseInt(week, 10) * 10 + i);
+    const blob = desenhaCharge_(MEME_ESTILO + meme.cena + enquadramentos[i - 1] + MEME_SEM_TEXTO);
     if (blob) imagens.push(salvaImagemMeme_(blob.setName(`meme-${season}-w${week}-${i}.jpg`), cfg.site));
   });
   if (!imagens.length) throw new Error('A Cloudflare não devolveu nenhuma imagem (veja o log acima).');
@@ -231,7 +233,7 @@ function parseMeme_(resposta) {
 }
 
 // Cloudflare Workers AI (Flux, cota diária grátis): devolve a imagem ou null
-function desenhaCharge_(prompt, seed) {
+function desenhaCharge_(prompt) {
   const props = PropertiesService.getScriptProperties();
   const conta = props.getProperty('CF_ACCOUNT_ID');
   const token = props.getProperty('CF_API_TOKEN');
@@ -242,7 +244,7 @@ function desenhaCharge_(prompt, seed) {
       contentType: 'application/json',
       headers: { Authorization: `Bearer ${token}` },
       muteHttpExceptions: true,
-      payload: JSON.stringify({ prompt: prompt.slice(0, 2000), steps: 8, seed }),
+      payload: JSON.stringify({ prompt: prompt.slice(0, 2000), steps: 8 }),
     });
     const json = JSON.parse(res.getContentText() || '{}');
     if (json.success && json.result && json.result.image) return Utilities.newBlob(Utilities.base64Decode(json.result.image), 'image/jpeg');
