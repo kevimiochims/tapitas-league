@@ -31,7 +31,8 @@
 //     (aba MATERIAS_TESTE, com as duas charges). Nada vai para o site sozinho:
 //     você recebe um e-mail com o link da prévia.
 //   - Para aprovar: escolha a charge (apague a outra da célula imageUrl) e rode
-//     publicaTestesMeme(). Não gostou da semana: apague a linha.
+//     publicaTestesMeme(). Não gostou: apague a linha e rode
+//     memeDaSemanaAutomatico() para gerar outro.
 //   - Para gerar e publicar uma rodada direto, sem aprovação:
 //     publicaMemeSemana('2026', '4').
 // =============================================================================
@@ -141,7 +142,7 @@ function memeDaSemanaAutomatico() {
     MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `Meme da semana ${week} pronto para aprovar`,
       `O meme da rodada ${season}, semana ${week}, está pronto.\n\nPrévia (com as duas charges): ${link}\n\n` +
       'Para publicar: na aba MATERIAS_TESTE, deixe na célula imageUrl só a charge escolhida e rode publicaTestesMeme().\n' +
-      'Não gostou? Apague a linha (e rode testaMemeSemana para gerar outro).');
+      'Não gostou? Apague a linha e rode memeDaSemanaAutomatico para gerar outro.');
   } catch (e) {
     Logger.log(`[MEME] Não consegui mandar o e-mail: ${e}`);
   }
