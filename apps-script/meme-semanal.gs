@@ -25,10 +25,15 @@
 //   - Para publicar os testes aprovados: publicaTestesMeme(). Vai a 1ª charge;
 //     para usar a 2ª, apague a 1ª da célula imageUrl antes (o que vem antes do |).
 //
-// AUTOMÁTICO:
+// AUTOMÁTICO (com a sua aprovação):
 //   - Rode instalaMemeSemanal() uma vez. Todo dia às 6h (depois da matéria das
-//     5h) ele confere se há rodada fechada sem meme e publica.
-//   - Para publicar uma rodada na mão: publicaMemeSemana('2026', '4').
+//     5h) ele confere se há rodada fechada sem meme e GERA o meme como TESTE
+//     (aba MATERIAS_TESTE, com as duas charges). Nada vai para o site sozinho:
+//     você recebe um e-mail com o link da prévia.
+//   - Para aprovar: escolha a charge (apague a outra da célula imageUrl) e rode
+//     publicaTestesMeme(). Não gostou da semana: apague a linha.
+//   - Para gerar e publicar uma rodada direto, sem aprovação:
+//     publicaMemeSemana('2026', '4').
 // =============================================================================
 
 const MEME_SEMANAS_TESTE = [['2026', '1'], ['2026', '2'], ['2026', '3']];
@@ -121,12 +126,25 @@ function instalaMemeSemanal() {
   Logger.log(`[MEME] Gatilho diário (${MEME_HORA}h) criado. Ele só publica quando há rodada nova fechada sem meme.`);
 }
 
+// Gatilho diário: gera o meme da rodada como TESTE e avisa por e-mail; a
+// publicação fica com você (publicaTestesMeme)
 function memeDaSemanaAutomatico() {
   const { season, week } = ultimaRodadaFechada_();
   if (!season) return;
-  if (slugsDaAba_(MATERIA_ABA).has(slugMeme_(season, week, false))) { Logger.log(`[MEME] ${season} semana ${week} já tem meme.`); return; }
+  if (slugsDaAba_(MATERIA_ABA).has(slugMeme_(season, week, false))) { Logger.log(`[MEME] ${season} semana ${week} já tem meme publicado.`); return; }
+  if (slugsDaAba_(MATERIA_ABA_TESTE).has(slugMeme_(season, week, true))) { Logger.log(`[MEME] ${season} semana ${week} já está esperando aprovação.`); return; }
   if (!recapsProntos_(season, week)) { Logger.log(`[MEME] ${season} semana ${week}: recaps ainda não escritos. Tento amanhã.`); return; }
-  geraMeme_(season, week, false);
+  geraMeme_(season, week, true);
+  const site = (PropertiesService.getScriptProperties().getProperty('SITE_URL') || '').replace(/\/+$/, '');
+  const link = `${site}/news/${slugMeme_(season, week, true)}`;
+  try {
+    MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `Meme da semana ${week} pronto para aprovar`,
+      `O meme da rodada ${season}, semana ${week}, está pronto.\n\nPrévia (com as duas charges): ${link}\n\n` +
+      'Para publicar: na aba MATERIAS_TESTE, deixe na célula imageUrl só a charge escolhida e rode publicaTestesMeme().\n' +
+      'Não gostou? Apague a linha (e rode testaMemeSemana para gerar outro).');
+  } catch (e) {
+    Logger.log(`[MEME] Não consegui mandar o e-mail: ${e}`);
+  }
 }
 
 // Publica os memes de teste aprovados (aba MATERIAS_TESTE), com a data da rodada
