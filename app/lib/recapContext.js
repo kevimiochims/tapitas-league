@@ -709,6 +709,57 @@ export async function buildPowerRankingContext({ season, week, team }) {
   const prevNote = rowsAll
     .filter(x => norm(x.Team) === norm(team) && order(x) < order(me) && str(x.Note))
     .sort((x, y) => order(y) - order(x))[0]
+  const focus = str(me?.Team || team)
+  const rows = rowsAll.filter(x => order(x) <= order(me))
+  const seasonReg = rows.filter(x => str(x.Season) === str(season) && stage(x) === 'reg season')
+
+  // Todos contra todos: em cada semana, quantos times ele teria vencido
+  const allPlay = {}
+  ;[...new Set(seasonReg.map(x => str(x.Week)))].forEach(w => {
+    const wk = seasonReg.filter(x => str(x.Week) === w)
+    wk.forEach(x => {
+      const t = str(x.Team)
+      allPlay[t] = allPlay[t] || { w: 0, l: 0 }
+      wk.forEach(y => { if (y !== x) { if (num(x.PF) > num(y.PF)) allPlay[t].w++; else if (num(x.PF) < num(y.PF)) allPlay[t].l++ } })
+    })
+  })
+  const apPct = r => (r.w + r.l ? r.w / (r.w + r.l) : 0)
+  const apRank = Object.entries(allPlay).sort((x, y) => apPct(y[1]) - apPct(x[1])).map(([t]) => t)
+  const ap = allPlay[focus]
+
+  // Pontos por jogo na temporada e posição entre os times
+  const ppg = {}
+  seasonReg.forEach(x => { const t = str(x.Team); ppg[t] = ppg[t] || { pf: 0, n: 0 }; ppg[t].pf += num(x.PF); ppg[t].n++ })
+  const ppgRank = Object.entries(ppg).sort((x, y) => y[1].pf / y[1].n - x[1].pf / x[1].n).map(([t]) => t)
+
+  // Próximo adversário: a próxima semana da planilha ou, na temporada atual, do Sleeper
+  let nextOpp = ''
+  let nextWeek = ''
+  const later = rowsAll.filter(x => str(x.Season) === str(season) && norm(x.Team) === norm(focus) && order(x) > order(me)).sort((x, y) => order(x) - order(y))[0]
+  if (later) { nextOpp = str(later.Opponent); nextWeek = str(later.Week) } else {
+    const info = await getLeagueInfo().catch(() => null)
+    if (info?.season === str(season)) {
+      const n = Math.floor(weekNum(me)) + 1
+      const ms = await getSleeperWeek(n).catch(() => [])
+      const m = ms.find(x => x.teams.some(t => norm(t.team) === norm(focus)))
+      if (m) { nextOpp = m.teams.find(t => norm(t.team) !== norm(focus)).team; nextWeek = String(n) }
+    }
+  }
+  let next = null
+  if (nextOpp) {
+    const hh = h2h(rows, focus, nextOpp, { ...me, Week: String(weekNum(me) + 0.5) })
+    const table = standings(rows.filter(x => str(x.Season) === str(season)), str(season))
+    const oppRec = table.find(r => norm(r.team) === norm(nextOpp))
+    const last = hh.meetings[hh.meetings.length - 1]
+    next = {
+      week: nextWeek,
+      opp: nextOpp,
+      oppRecord: oppRec ? recordStr(oppRec) : '',
+      series: hh.meetings.length ? `${focus} ${hh.wa} x ${hh.wb} ${nextOpp} em ${hh.meetings.length} jogos` : 'nunca se enfrentaram',
+      streak: hh.streakTeam && hh.streakN >= 2 ? `${hh.streakTeam} venceu os últimos ${hh.streakN}` : '',
+      last: last ? `${gameLabel(last)}: ${focus} ${f2(num(last.PF))} x ${f2(num(last.PA))} ${nextOpp}` : '',
+    }
+  }
   return {
     ...base,
     mode: 'pr',
@@ -721,6 +772,9 @@ export async function buildPowerRankingContext({ season, week, team }) {
       avgPF: str(me?.AVG_PF),
       overallWins: str(me?.OVW),
       table: ranking,
+      allPlay: ap ? `${ap.w}-${ap.l} (${Math.round(apPct(ap) * 100)}% dos confrontos possíveis; ${ordinal(apRank.indexOf(focus) + 1)} melhor de ${apRank.length})` : '',
+      ppg: ppg[focus] ? `${f2(ppg[focus].pf / ppg[focus].n)} pontos por jogo (${ordinal(ppgRank.indexOf(focus) + 1)} de ${ppgRank.length})` : '',
+      next,
     },
     previousPrNote: prevNote ? `${gameLabel(prevNote)}: ${trimRecap(prevNote.Note, 400)}` : '',
   }
@@ -744,7 +798,10 @@ export function renderContext(ctx) {
       p.overallWins && `Overall wins ${p.overallWins}`,
     ].filter(Boolean)
     if (facts.length) lines.push(facts.join(' · '))
+    if (p.ppg) lines.push(`Ataque na temporada: ${p.ppg}`)
+    if (p.allPlay) lines.push(`Todos contra todos (se enfrentasse todos os times toda semana): ${p.allPlay}`)
     if (p.table.length) lines.push(`Ranking da semana: ${p.table.join(' · ')}`)
+    if (p.next) lines.push(`PRÓXIMO JOGO (Week ${p.next.week}): contra ${p.next.opp}${p.next.oppRecord ? ` (${p.next.oppRecord})` : ''} · série: ${p.next.series}${p.next.streak ? ` · ${p.next.streak}` : ''}${p.next.last ? ` · último encontro: ${p.next.last}` : ''}. É o futuro: pode provocar e falar do que está em jogo, sem prever o resultado.`)
     if (ctx.previousPrNote) lines.push(`Verbete da semana anterior (não repita): ${ctx.previousPrNote}`)
   }
   lines.push('')
