@@ -406,23 +406,37 @@ function historyAngles({ rows, team, g, hon }) {
       const summary = same.length >= 2
         ? ` Desses ${same.length}: ${count('champion')} foram campeões, ${count('champion', 'vice', 'playoffs')} foram aos playoffs, ${count('unicorn')} levaram o Unicórnio.`
         : ''
+      // Sempre dizendo o escopo: "na história da LIGA (todas as franquias)" ou
+      // "na história da PRÓPRIA franquia" (sem isso a IA escrevia "igualou o
+      // melhor início" sem dizer de quem)
       const extreme = now.w === 0 || now.l === 0
       if (extreme || same.length <= 3) {
         out.push({
           w: extreme ? 5 : 3,
           text: same.length
-            ? `${team} está ${rec} depois de ${n} jogos. Em temporadas anteriores, ${same.length} ${same.length === 1 ? 'time começou' : 'times começaram'} assim: ${prec}${same.length > 6 ? '; …' : ''}.${summary}`
-            : `${team} está ${rec} depois de ${n} jogos: nenhum time tinha começado uma temporada assim na história da liga.`,
+            ? `${team} está ${rec} depois de ${n} jogos. Na história da LIGA (todas as franquias, temporadas anteriores), ${same.length} ${same.length === 1 ? 'time já tinha começado' : 'times já tinham começado'} uma temporada ${rec}: ${prec}${same.length > 6 ? '; …' : ''}.${summary}`
+            : `${team} está ${rec} depois de ${n} jogos: nenhuma franquia na história da LIGA tinha começado uma temporada ${rec}.`,
         })
       }
       const better = others.filter(o => pct(o.r) > pct(now)).length
       const worse = others.filter(o => pct(o.r) < pct(now)).length
-      if (others.length >= 10 && better === 0) out.push({ w: 4, text: `${rec} é o melhor início de temporada da história da liga depois de ${n} jogos${same.length ? ' (igualado, veja acima)' : ''}.` })
-      if (others.length >= 10 && worse === 0) out.push({ w: 4, text: `${rec} é o pior início de temporada da história da liga depois de ${n} jogos${same.length ? ' (igualado, veja acima)' : ''}.` })
+      // Recorde da liga só quando é raro (ou inédito): 3-0 empatado com 15
+      // times não é notícia
+      if (others.length >= 10 && better === 0 && same.length <= 2) out.push({ w: 4, text: same.length
+        ? `${rec} em ${n} jogos iguala o melhor início de temporada da história da LIGA (entre todas as franquias); só ${same.length === 1 ? '1 time tinha conseguido' : `${same.length} times tinham conseguido`} antes (veja acima).`
+        : `${rec} em ${n} jogos é o MELHOR início de temporada da história da LIGA (entre todas as franquias): nenhum time tinha começado tão bem.` })
+      if (others.length >= 10 && worse === 0 && same.length <= 2) out.push({ w: 4, text: same.length
+        ? `${rec} em ${n} jogos iguala o pior início de temporada da história da LIGA (entre todas as franquias); só ${same.length === 1 ? '1 time tinha começado' : `${same.length} times tinham começado`} tão mal antes (veja acima).`
+        : `${rec} em ${n} jogos é o PIOR início de temporada da história da LIGA (entre todas as franquias): nenhum time tinha começado tão mal.` })
       const own = others.filter(o => norm(o.ts.team) === norm(team))
       if (own.length >= 2) {
-        if (own.every(o => pct(o.r) < pct(now))) out.push({ w: 3, text: `Melhor início de temporada da história de ${team} (${rec} em ${n} jogos; antes, o melhor era ${recordStr([...own].sort((a, b) => pct(b.r) - pct(a.r))[0].r)}).` })
-        if (own.every(o => pct(o.r) > pct(now))) out.push({ w: 3, text: `Pior início de temporada da história de ${team} (${rec} em ${n} jogos; antes, o pior era ${recordStr([...own].sort((a, b) => pct(a.r) - pct(b.r))[0].r)}).` })
+        const ownBest = [...own].sort((a, b) => pct(b.r) - pct(a.r))[0]
+        const ownWorst = [...own].sort((a, b) => pct(a.r) - pct(b.r))[0]
+        const yearsLike = r => own.filter(o => pct(o.r) === pct(r)).map(o => o.ts.season).sort().join(', ')
+        if (pct(now) > pct(ownBest.r)) out.push({ w: 3, text: `Melhor início de temporada da história da PRÓPRIA franquia ${team} (${rec} em ${n} jogos; o melhor de ${team} até então era ${recordStr(ownBest.r)}, em ${yearsLike(ownBest.r)}).` })
+        else if (pct(now) === pct(ownBest.r)) out.push({ w: 2, text: `${team} iguala o melhor início de temporada da história da PRÓPRIA franquia (${rec} em ${n} jogos, como em ${yearsLike(ownBest.r)}).` })
+        if (pct(now) < pct(ownWorst.r)) out.push({ w: 3, text: `Pior início de temporada da história da PRÓPRIA franquia ${team} (${rec} em ${n} jogos; o pior de ${team} até então era ${recordStr(ownWorst.r)}, em ${yearsLike(ownWorst.r)}).` })
+        else if (pct(now) === pct(ownWorst.r)) out.push({ w: 2, text: `${team} iguala o pior início de temporada da história da PRÓPRIA franquia (${rec} em ${n} jogos, como em ${yearsLike(ownWorst.r)}).` })
       }
       // Pontos somados até aqui, comparados com todos os times depois de n jogos
       const totals = [...others.map(o => o.r.pf), now.pf].sort((a, b) => b - a)
@@ -444,7 +458,7 @@ function historyAngles({ rows, team, g, hon }) {
     else if (best && cur.n === best.n) out.push({ w: 5, text: `${cur.n} ${word} seguidas: igualou o recorde da liga (${streakWhere(best)}).` })
     else if (best && best.n - cur.n <= 2) out.push({ w: 3, text: `${cur.n} ${word} seguidas: o recorde da liga é ${best.n} (${streakWhere(best)}).` })
     const ownBest = prev.filter(s => norm(s.team) === norm(team)).sort((a, b) => b.n - a.n)[0]
-    if (ownBest && cur.n > ownBest.n) out.push({ w: 3, text: `${cur.n} ${word} seguidas: maior sequência de ${word} da história de ${team} (antes: ${ownBest.n}).` })
+    if (ownBest && cur.n > ownBest.n) out.push({ w: 3, text: `${cur.n} ${word} seguidas: maior sequência de ${word} da história da PRÓPRIA franquia ${team} (antes: ${ownBest.n}).` })
   }
 
   if (!isDouble(g)) {
@@ -452,11 +466,11 @@ function historyAngles({ rows, team, g, hon }) {
     // Perto dos recordes de pontuação (sem bater: bater já aparece nos ganchos de pontuação)
     const hiRec = [...single].sort((a, b) => num(b.PF) - num(a.PF))[0]
     const loRec = [...single].sort((a, b) => num(a.PF) - num(b.PF))[0]
-    if (hiRec && pf < num(hiRec.PF) && num(hiRec.PF) - pf <= 15) out.push({ w: 4, text: `${team} ficou a ${f2(num(hiRec.PF) - pf)} pontos do recorde da liga (${f2(num(hiRec.PF))}, ${where(hiRec)}).` })
+    if (hiRec && pf < num(hiRec.PF) && num(hiRec.PF) - pf <= 15) out.push({ w: 4, text: `${team} ficou a ${f2(num(hiRec.PF) - pf)} pontos do recorde de pontos da LIGA (${f2(num(hiRec.PF))}, ${where(hiRec)}).` })
     if (loRec && pf > num(loRec.PF) && pf - num(loRec.PF) <= 10) out.push({ w: 4, text: `${team} passou a só ${f2(pf - num(loRec.PF))} pontos da menor pontuação da história (${f2(num(loRec.PF))}, ${where(loRec)}).` })
     const own = single.filter(x => norm(x.Team) === norm(team))
     const ownHi = [...own].sort((a, b) => num(b.PF) - num(a.PF))[0]
-    if (own.length > 5 && ownHi && pf < num(ownHi.PF) && num(ownHi.PF) - pf <= 10) out.push({ w: 3, text: `${team} ficou a ${f2(num(ownHi.PF) - pf)} pontos do recorde da franquia (${f2(num(ownHi.PF))}, ${str(ownHi.Season)} W${str(ownHi.Week)}).` })
+    if (own.length > 5 && ownHi && pf < num(ownHi.PF) && num(ownHi.PF) - pf <= 10) out.push({ w: 3, text: `${team} ficou a ${f2(num(ownHi.PF) - pf)} pontos do recorde de pontos da PRÓPRIA franquia (${f2(num(ownHi.PF))}, ${str(ownHi.Season)} W${str(ownHi.Week)}).` })
     // Pontuação alta na derrota / baixa na vitória
     const all = rows.filter(x => !isDouble(x))
     if (r === 'L') {

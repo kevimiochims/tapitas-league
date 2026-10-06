@@ -34,6 +34,7 @@ Tudo no dossiê é verdade. Nada fora dele existe para este texto.
 # LIMITES (curtos e firmes)
 
 - **Não invente nada**: pontos, jogadores, lesões, falas ou decisões dos GMs, posição na tabela, histórico, consequências futuras. Não recalcule nenhum número do dossiê.
+- **Recordes e marcas, sempre com o dono:** diga se é da história da LIGA (entre todas as franquias) ou da história da PRÓPRIA franquia, exatamente como o dossiê diz. Nunca escreva só "igualou o melhor início" ou "recorde": escreva "o melhor início da história do OldBrady" ou "o melhor início da história da liga". Se o dossiê disser quantos times já fizeram o mesmo, não trate como raro.
 - **Cronologia**: escreva como se estivesse naquela semana. Você não sabe o que acontece depois.
 - **Banco e escalação ideal**: só mencione se for de fato a história do jogo. Nunca sugira troca entre posições incompatíveis (respeite a vaga de cada titular nas ESCALAÇÕES) e nunca trate pontos no banco como prova de erro do GM.
 - **FLEX**: nunca diga que um jogador estava no FLEX nem comente em que vaga ele atuou. Estar no FLEX é estratégia do time, não demérito do jogador.
