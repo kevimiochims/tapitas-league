@@ -18,14 +18,16 @@ function kickoffLabel(iso) {
   return `${day} ${time}`
 }
 
-// Ritmo da atualização: jogo rolando → a cada 10s; semana em andamento (ainda
-// vai ter jogo) → a cada 60s; semana fechada ou futura → não busca de novo.
+// Ritmo da atualização: jogo rolando → a cada 20s; semana em andamento (ainda
+// vai ter jogo) → a cada 5 min; semana fechada ou futura → não busca de novo.
+// Cada atualização roda uma função na Vercel (CPU conta na cota): ritmo mais
+// calmo e nada de atualizar com a aba escondida.
 export function liveDelay(data) {
   if (!data) return 60000
-  if (data.live) return 10000
+  if (data.live) return 20000
   const pendingGames = Array.isArray(data.games) && data.games.some(g => !g.completed)
   const isCurrent = data.status === 'current' || (data.currentWeek && Number(data.week) === Number(data.currentWeek) && pendingGames)
-  return isCurrent ? 60000 : null
+  return isCurrent ? 300000 : null
 }
 
 // Busca os dados da semana e continua atualizando sozinho em horário de jogo.
@@ -36,11 +38,13 @@ function useWeekData(url) {
     let cancelled = false
     let timer = null
     let last = null
-    const schedule = delay => { clearTimeout(timer); if (delay != null && !cancelled) timer = setTimeout(load, delay) }
+    // Aba escondida não agenda nada; ao voltar para a aba, atualiza na hora
+    const schedule = delay => { clearTimeout(timer); if (delay != null && !cancelled && document.visibilityState !== 'hidden') timer = setTimeout(load, delay) }
     function load() {
       clearTimeout(timer)
-      // Parâmetro que muda a cada 5s: garante resposta nova, sem cópia antiga do CDN
-      const fresh = `${url}${url.includes('?') ? '&' : '?'}_=${Math.floor(Date.now() / 5000)}`
+      // Parâmetro que muda a cada 15s: resposta nova, e todo mundo nesses 15s
+      // divide a mesma cópia do CDN (uma execução da função só)
+      const fresh = `${url}${url.includes('?') ? '&' : '?'}_=${Math.floor(Date.now() / 15000)}`
       fetch(fresh, { cache: 'no-store' })
         .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json() })
         .then(data => {
@@ -175,7 +179,10 @@ function TapitasChip({ season, status, m, focus }) {
           {m.live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D] align-middle" />}
           {label}
         </span>
-        {m.gameType && <span className="truncate text-[#6B7280]">{m.gameType}</span>}
+        {/* Ao vivo: titulares em campo agora (time de cima · de baixo) */}
+        {m.live && a.playing != null && b.playing != null
+          ? <span className="whitespace-nowrap font-bold tabular-nums text-[#D01F2D]" title={`Playing now: ${getTeamAbbr(a.team)} ${a.playing}, ${getTeamAbbr(b.team)} ${b.playing}`}>{a.playing}·{b.playing}</span>
+          : m.gameType && <span className="truncate text-[#6B7280]">{m.gameType}</span>}
       </div>
       {[[a, aWon], [b, bWon]].map(([t, won]) => (
         <div key={t.team} className="flex items-center gap-1.5 text-[13px] leading-5" title={t.team}>
