@@ -9,7 +9,7 @@ import TeamNflNotice from '../components/nfl/TeamNflNotice'
 import { TeamTransactionsCard } from '../components/Transactions'
 import PlayerCutout from '../components/PlayerCutout'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
-import { BrandBackdrop, SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager, StableHeight } from '../components/ui'
+import { BrandBackdrop, SiteFooter, PageSkeleton, PageBar, BarTab, FilterPill, MultiFilterPill, SortHeader, ToggleChip, Tag, ResultBadge, CardShell, CardGroup, StatRow, Pager, StableHeight } from '../components/ui'
 import { getTeamFocus } from '../context/TeamFocus'
 import { useNameOwners } from '../lib/useNameOwners'
 
@@ -422,9 +422,11 @@ export default function TeamsPage() {
   const gameLogRef = useRef(null)
 
   // ── Game Log filters ─────────────────────────────────────────────
-  const [logSeason, setLogSeason] = useState('All')
-  const [logOpponent, setLogOpponent] = useState('All')
-  const [logGameType, setLogGameType] = useState('All')
+  // Filtros de seleção múltipla: ['All'] = todos
+  const [logSeason, setLogSeason] = useState(['All'])
+  const [logWeek, setLogWeek] = useState(['All'])
+  const [logOpponent, setLogOpponent] = useState(['All'])
+  const [logGameType, setLogGameType] = useState(['All'])
   const [log200Only, setLog200Only] = useState(false)
   const [logHighestOnly, setLogHighestOnly] = useState(false)
   const [selectedPlayerKey, setSelectedPlayerKey] = useState(null)
@@ -435,9 +437,11 @@ export default function TeamsPage() {
   // Jogador do Sleeper que nunca jogou pela franquia (fora do Player Archive)
   const [nflProfile, setNflProfile] = useState(null)
   const [playerSearch, setPlayerSearch] = useState('')
-  const [playerPositionFilter, setPlayerPositionFilter] = useState('All')
-  const [playerSort, setPlayerSort] = useState('Appearances')
-  const [playerSeasonFilter, setPlayerSeasonFilter] = useState('All')
+  const [playerPositionFilter, setPlayerPositionFilter] = useState(['All'])
+  // Ordenação pelo cabeçalho da tabela do Player Archive
+  const [playerSort, setPlayerSort] = useState({ key: 'apps', dir: 'desc' })
+  const [playerSeasonFilter, setPlayerSeasonFilter] = useState(['All'])
+  const [playerWeekFilter, setPlayerWeekFilter] = useState(['All'])
   const [playerMinApps, setPlayerMinApps] = useState('All')
   const [logPage, setLogPage] = useState(0)
   const [playerPage, setPlayerPage] = useState(0)
@@ -599,24 +603,26 @@ export default function TeamsPage() {
   }, [allTime])
 
   useEffect(() => {
-    setLogSeason('All')
-    setLogOpponent('All')
-    setLogGameType('All')
+    setLogSeason(['All'])
+    setLogWeek(['All'])
+    setLogOpponent(['All'])
+    setLogGameType(['All'])
     setLog200Only(false)
     setLogHighestOnly(false)
     setSelectedPlayerKey(null)
     setPlayerSearch('')
-    setPlayerPositionFilter('All')
-    setPlayerSort('Appearances')
-    setPlayerSeasonFilter('All')
+    setPlayerPositionFilter(['All'])
+    setPlayerSort({ key: 'apps', dir: 'desc' })
+    setPlayerSeasonFilter(['All'])
+    setPlayerWeekFilter(['All'])
     setPlayerMinApps('All')
     // Só quando o time muda de verdade: fechar o Player Profile (voltar no
     // histórico) recria o objeto do mesmo time e não pode limpar os filtros
   }, [selected?.team])
 
   // Game Log / Player Archive go back to the first page when the filters change.
-  useEffect(() => { setLogPage(0) }, [selected?.team, logSeason, logOpponent, logGameType, log200Only, logHighestOnly])
-  useEffect(() => { setPlayerPage(0) }, [selected?.team, playerSearch, playerPositionFilter, playerSort, playerSeasonFilter, playerMinApps])
+  useEffect(() => { setLogPage(0) }, [selected?.team, logSeason, logWeek, logOpponent, logGameType, log200Only, logHighestOnly])
+  useEffect(() => { setPlayerPage(0) }, [selected?.team, playerSearch, playerPositionFilter, playerSort, playerSeasonFilter, playerWeekFilter, playerMinApps])
 
   // Keep the selected franchise visible in the team switcher strip.
   useEffect(() => {
@@ -1208,16 +1214,23 @@ export default function TeamsPage() {
         return parseFloat(String(b?.Week || '0')) - parseFloat(String(a?.Week || '0'))
       })
 
+    // Seleção múltipla: ['All'] = sem filtro. Semana dupla ("14-15") conta nas duas semanas
+    const anySel = sel => !sel.includes('All')
+    const inSel = (sel, v) => !anySel(sel) || sel.includes(v)
+    const weekNums = g => String(g?.Week || '').match(/\d+/g) || []
+    const inWeeks = (sel, g) => !anySel(sel) || weekNums(g).some(w => sel.includes(w))
+    const logWeekOptions = ['All', ...Array.from(new Set(teamGames.flatMap(weekNums).map(Number))).sort((a, b) => a - b).map(String)]
     const logSeasonOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.Season || '').trim()).filter(Boolean))).sort((a, b) => b.localeCompare(a))]
     const logOpponentOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.Opponent || '').trim()).filter(Boolean))).sort()]
     // Filter by GameStage (column I in GAME_FACTS_ALL): Reg Season / Playoffs / Consolation.
     const logGameTypeOptions = ['All', ...Array.from(new Set(teamGames.map(g => String(g?.GameStage || '').trim()).filter(Boolean)))]
 
     const filteredLog = teamGames.filter(g => {
-      if (logSeason !== 'All' && String(g?.Season || '').trim() !== logSeason) return false
-      if (logOpponent !== 'All' && String(g?.Opponent || '').trim() !== logOpponent) return false
+      if (!inSel(logSeason, String(g?.Season || '').trim())) return false
+      if (!inWeeks(logWeek, g)) return false
+      if (!inSel(logOpponent, String(g?.Opponent || '').trim())) return false
       const gameStage = String(g?.GameStage || '').trim()
-      if (logGameType !== 'All' && gameStage !== logGameType) return false
+      if (!inSel(logGameType, gameStage)) return false
       // 200+ filter: only single-week games; double weeks are excluded.
       if (log200Only && (isDoubleWeek(g) || parseNumber(g?.PF) < 200)) return false
       // Highest score of week (RS): Reg Season only, where every franchise is eligible.
@@ -1241,7 +1254,7 @@ export default function TeamsPage() {
     // eligible for BEST.
     // IMPORTANT: the archive identity is the EXACT name stored in GAME_FACTS_ALL.
     // Never normalize, abbreviate or merge names before counting.
-    const playerArchiveGames = teamGames
+    const buildArchive = playerArchiveGames => {
     const playerStatsMap = new Map()
     playerArchiveGames.forEach(g => {
       const season = String(g?.Season || '').trim()
@@ -1299,13 +1312,20 @@ export default function TeamsPage() {
       })
     })
 
-    const playerArchive = Array.from(playerStatsMap.values())
+    return Array.from(playerStatsMap.values())
       .filter(p => p.position !== 'DEF')
       .map(p => {
         const validApps = p.avgCount
         return { ...p, avgPts: validApps ? p.avgTotal / validApps : 0 }
       })
       .sort((a, b) => b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name))
+    }
+    const playerArchive = buildArchive(teamGames)
+    // Com filtro de temporada/semana, os números (apps, média, melhor jogo)
+    // passam a contar só os jogos dessas temporadas/semanas
+    const archiveScoped = anySel(playerSeasonFilter) || anySel(playerWeekFilter)
+      ? buildArchive(teamGames.filter(g => inSel(playerSeasonFilter, String(g?.Season || '').trim()) && inWeeks(playerWeekFilter, g)))
+      : playerArchive
 
     // Player Archive already calculates AVG Pts and Best Pts for every player
     // who wore the franchise jersey. These leaders feed the team record cards.
@@ -1319,20 +1339,20 @@ export default function TeamsPage() {
 
     const playerPositionOptions = ['All', ...Array.from(new Set(playerArchive.map(p => p.position).filter(Boolean))).sort()]
     const playerSeasonOptions = ['All', ...Array.from(new Set(playerArchive.flatMap(p => Array.from(p.seasons)).filter(Boolean))).sort((a, b) => Number(b) - Number(a))]
-    const playerMinAppOptions = ['All', ...[10, 20, 30].filter(n => playerArchive.some(p => p.appearances > n)).map(n => `>${n} appearances`)]
+    const playerMinAppOptions = ['All', ...[10, 20, 30].filter(n => archiveScoped.some(p => p.appearances > n)).map(n => `>${n} appearances`)]
+    const sortValue = { apps: p => p.appearances, starts: p => p.starts, avg: p => p.avgPts, best: p => p.bestPts }
 
-    const filteredPlayers = playerArchive
+    const filteredPlayers = archiveScoped
       .filter(p => normalizePlayerKey(p.name).includes(normalizePlayerKey(playerSearch)))
-      .filter(p => playerPositionFilter === 'All' || p.position === playerPositionFilter)
-      .filter(p => playerSeasonFilter === 'All' || p.seasons.has(playerSeasonFilter))
+      .filter(p => inSel(playerPositionFilter, p.position))
       .filter(p => playerMinApps === 'All' || p.appearances > Number(String(playerMinApps).replace(/[^0-9]/g, '')))
       .sort((a, b) => {
-        if (playerSort === 'Starts') return b.starts - a.starts || b.appearances - a.appearances || a.name.localeCompare(b.name)
-        if (playerSort === 'Benchs') return b.bench - a.bench || b.appearances - a.appearances || a.name.localeCompare(b.name)
-        if (playerSort === 'Average Points') return b.avgPts - a.avgPts || b.appearances - a.appearances || a.name.localeCompare(b.name)
-        if (playerSort === 'Highest Score') return b.bestPts - a.bestPts || b.appearances - a.appearances || a.name.localeCompare(b.name)
-        return b.appearances - a.appearances || b.starts - a.starts || a.name.localeCompare(b.name)
+        const dir = playerSort.dir === 'asc' ? 1 : -1
+        if (playerSort.key === 'name') return a.name.localeCompare(b.name) * dir
+        const val = sortValue[playerSort.key] || sortValue.apps
+        return (val(a) - val(b)) * dir || b.appearances - a.appearances || a.name.localeCompare(b.name)
       })
+    const sortPlayersBy = key => setPlayerSort(s => (s.key === key ? { key, dir: s.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: key === 'name' ? 'asc' : 'desc' }))
 
     const selectedPlayer = selectedPlayerKey
       ? playerArchive.find(p => p.archiveKey === selectedPlayerKey) || null
@@ -1397,11 +1417,12 @@ export default function TeamsPage() {
       bestScorePlayer ? { label: 'Best single game', p: bestScorePlayer, value: bestScorePlayer.bestPts.toFixed(2), game: bestScorePlayer.bestGame } : null,
     ].filter(Boolean)
 
-    const hasLogFilters = logSeason !== 'All' || logOpponent !== 'All' || logGameType !== 'All' || log200Only || logHighestOnly
-    const clearLogFilters = () => { setLogSeason('All'); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false) }
+    const hasLogFilters = anySel(logSeason) || anySel(logWeek) || anySel(logOpponent) || anySel(logGameType) || log200Only || logHighestOnly
+    const clearLogFilters = () => { setLogSeason(['All']); setLogWeek(['All']); setLogOpponent(['All']); setLogGameType(['All']); setLog200Only(false); setLogHighestOnly(false) }
     // Paginação lateral (20 por página) no Game Log e no Player Archive
-    const PAGE_SIZE = 20
-    const LOG_PAGE_SIZE = 25
+    // Game Log: 17 jogos por página (uma temporada inteira); Player Archive: 10
+    const PAGE_SIZE = 10
+    const LOG_PAGE_SIZE = 17
     const logPages = Math.max(1, Math.ceil(filteredLog.length / LOG_PAGE_SIZE))
     const playerPages = Math.max(1, Math.ceil(filteredPlayers.length / PAGE_SIZE))
     const logPageSafe = Math.min(logPage, logPages - 1)
@@ -1582,20 +1603,24 @@ export default function TeamsPage() {
 
     // Temporadas em lista compacta (coluna da direita): clicar filtra o Game Log.
     const seasonHistoryCard = (
-      <CardShell title="Season History" subtitle={`${teamSeasons} seasons · tap to filter the game log`} sidebar action={logSeason !== 'All' ? <button type="button" onClick={() => setLogSeason('All')} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All</button> : null}>
+      <CardShell title="Season History" subtitle={`${teamSeasons} seasons · tap to filter the game log`} sidebar action={anySel(logSeason) ? <button type="button" onClick={() => setLogSeason(['All'])} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">All</button> : null}>
         <div className="py-1 lg:py-2">
           {teamH.map(r => {
             const isChamp = isTrueFlag(r?.Champion)
             const isFinal = isTrueFlag(r?.Reached_Final)
             const isPlayoff = isTrueFlag(r?.Made_Playoffs)
             const standing = parseNumber(r.Standing)
-            const active = logSeason === String(r.Season)
+            const active = anySel(logSeason) && logSeason.includes(String(r.Season))
             return (
               <button
                 key={r.Season}
                 type="button"
                 onClick={() => {
-                  setLogSeason(active ? 'All' : String(r.Season)); setLogOpponent('All'); setLogGameType('All'); setLog200Only(false); setLogHighestOnly(false)
+                  // Liga/desliga a temporada (seleção múltipla, como no filtro do Game Log)
+                  const season = String(r.Season)
+                  const cur = anySel(logSeason) ? logSeason : []
+                  const next = active ? cur.filter(x => x !== season) : [...cur, season]
+                  setLogSeason(next.length ? next : ['All'])
                   setMobileTeamView('games')
                   requestAnimationFrame(() => gameLogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
                 }}
@@ -1633,9 +1658,10 @@ export default function TeamsPage() {
           action={hasLogFilters && <button type="button" onClick={clearLogFilters} className="flex-shrink-0 text-[12px] font-medium text-[#D01F2D] hover:underline">Clear filters</button>}
         >
           <div className="flex flex-wrap gap-1.5 border-b border-[#EEF0F2] px-3 py-2.5 lg:px-4">
-            <FilterPill value={logSeason} onChange={setLogSeason} options={logSeasonOptions} label="Season" />
-            <FilterPill value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} label="Opponent" displayOption={shortName} />
-            <FilterPill value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} label="Game type" displayOption={opt => ({ 'Reg Season': 'Regular season' }[opt] || opt)} />
+            <MultiFilterPill value={logSeason} onChange={setLogSeason} options={logSeasonOptions} label="Season" />
+            <MultiFilterPill value={logWeek} onChange={setLogWeek} options={logWeekOptions} label="Week" displayOption={w => `Week ${w}`} />
+            <MultiFilterPill value={logOpponent} onChange={setLogOpponent} options={logOpponentOptions} label="Opponent" displayOption={shortName} />
+            <MultiFilterPill value={logGameType} onChange={setLogGameType} options={logGameTypeOptions} label="Game type" displayOption={opt => ({ 'Reg Season': 'Regular season' }[opt] || opt)} />
             <ToggleChip active={log200Only} onClick={() => setLog200Only(p => !p)}>200+ pts</ToggleChip>
             <ToggleChip active={logHighestOnly} onClick={() => setLogHighestOnly(p => !p)}>Week high</ToggleChip>
           </div>
@@ -1699,10 +1725,10 @@ export default function TeamsPage() {
     const playerArchiveCard = (
       <CardShell title="Player Archive" subtitle={`${filteredPlayers.length} of ${playerArchive.length} players who suited up for ${shortName(selected.team)}`} withMenus>
         <div className="flex flex-wrap gap-1.5 border-b border-[#EEF0F2] px-3 py-2.5 lg:px-4">
-          {/* Rótulos curtos (cabem no celular); a ordenação continua a mesma */}
-          <FilterPill value={playerSort} onChange={setPlayerSort} options={['Appearances', 'Starts', 'Benchs', 'Average Points', 'Highest Score']} label="Sort" neutral hideLabel displayOption={o => ({ Appearances: 'Apps', Benchs: 'Bench', 'Average Points': 'Avg pts', 'Highest Score': 'Best' }[o] || o)} />
-          <FilterPill value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
-          <FilterPill value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} label="Season" />
+          {/* A ordenação fica no cabeçalho da tabela */}
+          <MultiFilterPill value={playerSeasonFilter} onChange={setPlayerSeasonFilter} options={playerSeasonOptions} label="Season" />
+          <MultiFilterPill value={playerWeekFilter} onChange={setPlayerWeekFilter} options={logWeekOptions} label="Week" displayOption={w => `Week ${w}`} />
+          <MultiFilterPill value={playerPositionFilter} onChange={setPlayerPositionFilter} options={playerPositionOptions} label="Position" />
           {playerMinAppOptions.length > 1 && <FilterPill value={playerMinApps} onChange={setPlayerMinApps} options={playerMinAppOptions} label="Min apps" />}
           <input
             value={playerSearch}
@@ -1711,12 +1737,12 @@ export default function TeamsPage() {
             className="h-8 w-full min-w-0 rounded-full bg-[#F4F5F7] px-3 text-[12px] text-[#111] outline-none placeholder:text-[#9CA3AF] focus:bg-white focus:ring-1 focus:ring-[#111] sm:w-48"
           />
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_52px_52px] gap-2 border-b border-[#EEF0F2] px-3 py-2 text-[11px] font-medium text-[#6B7280] sm:grid-cols-[minmax(0,1fr)_48px_48px_56px_56px] lg:px-4">
-          <span>Player</span>
-          <span className="hidden text-right sm:block">Apps</span>
-          <span className="hidden text-right sm:block">Starts</span>
-          <span className="text-right">Avg</span>
-          <span className="text-right">Best</span>
+        <div className="grid grid-cols-[minmax(0,1fr)_44px_44px_44px] gap-2 border-b border-[#EEF0F2] px-3 py-2 text-[11px] font-medium text-[#6B7280] sm:grid-cols-[minmax(0,1fr)_48px_48px_56px_56px] lg:px-4">
+          <span><SortHeader label="Player" active={playerSort.key === 'name'} dir={playerSort.dir} onClick={() => sortPlayersBy('name')} /></span>
+          <span className="text-right"><SortHeader label="Apps" active={playerSort.key === 'apps'} dir={playerSort.dir} onClick={() => sortPlayersBy('apps')} align="right" /></span>
+          <span className="hidden text-right sm:block"><SortHeader label="Starts" active={playerSort.key === 'starts'} dir={playerSort.dir} onClick={() => sortPlayersBy('starts')} align="right" /></span>
+          <span className="text-right"><SortHeader label="Avg" active={playerSort.key === 'avg'} dir={playerSort.dir} onClick={() => sortPlayersBy('avg')} align="right" /></span>
+          <span className="text-right"><SortHeader label="Best" active={playerSort.key === 'best'} dir={playerSort.dir} onClick={() => sortPlayersBy('best')} align="right" /></span>
         </div>
         <div className="overflow-hidden rounded-b-xl">
           <StableHeight resetKey={`players|${selected.team}|${filteredPlayers.length}`}>
@@ -1725,7 +1751,7 @@ export default function TeamsPage() {
               key={player.archiveKey}
               type="button"
               onClick={() => openPlayerProfile(player.archiveKey)}
-              className="group grid w-full grid-cols-[minmax(0,1fr)_52px_52px] items-center gap-2 border-b border-[#F1F2F4] px-3 py-2 text-left transition-colors hover:bg-[#F7F8FA] sm:grid-cols-[minmax(0,1fr)_48px_48px_56px_56px] lg:px-4"
+              className="group grid w-full grid-cols-[minmax(0,1fr)_44px_44px_44px] items-center gap-2 border-b border-[#F1F2F4] px-3 py-2 text-left transition-colors hover:bg-[#F7F8FA] sm:grid-cols-[minmax(0,1fr)_48px_48px_56px_56px] lg:px-4"
             >
               <div className="flex min-w-0 items-center gap-2.5">
                 <PlayerAvatar name={player.rawName} playerLookup={playerLookup} size={34} />
@@ -1736,11 +1762,11 @@ export default function TeamsPage() {
                   </div>
                   <div className="mt-0.5 truncate text-[11px] text-[#6B7280]">
                     {formatSeasonList(Array.from(player.seasons))}
-                    <span className="sm:hidden"> · {player.appearances} apps · {player.starts} starts</span>
+                    <span className="sm:hidden"> · {player.starts} starts</span>
                   </div>
                 </div>
               </div>
-              <span className="hidden text-right text-[13px] tabular-nums text-[#3F4757] sm:block">{player.appearances}</span>
+              <span className="text-right text-[13px] tabular-nums text-[#3F4757]">{player.appearances}</span>
               <span className="hidden text-right text-[13px] tabular-nums text-[#3F4757] sm:block">{player.starts}</span>
               <span className="text-right text-[13px] font-semibold tabular-nums text-[#111]">{player.avgPts.toFixed(1)}</span>
               <span className="text-right text-[13px] font-semibold tabular-nums text-[#111]">{player.bestPts.toFixed(1)}</span>
@@ -1818,7 +1844,7 @@ export default function TeamsPage() {
         </div>
 
         {/* Grid: status do elenco + records + jogadores | game log | temporadas + head to head.
-            O Player Archive ocupa a linha inteira embaixo (desktop). */}
+            O Player Archive fica na coluna central, embaixo do game log. */}
         <div data-sticky-cols className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start lg:gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px] xl:gap-5">
           <aside className="lg:[&>section]:!bg-[#F6F7F9] lg:[&>section:nth-of-type(even)]:!bg-[#FBFBFC] hidden lg:block">
             {rosterStatusCard}
@@ -1835,7 +1861,7 @@ export default function TeamsPage() {
               {playersCard}
             </div>
             <div className={`${mobileTeamView === 'games' ? 'block' : 'hidden'} lg:block`}>{gameLogCard}</div>
-            <div className={`${mobileTeamView === 'players' ? 'block' : 'hidden'} lg:hidden`}>{playerArchiveCard}</div>
+            <div className={`${mobileTeamView === 'players' ? 'block' : 'hidden'} lg:block`}>{playerArchiveCard}</div>
             <div className={`${mobileTeamView === 'h2h' ? 'block' : 'hidden'} lg:hidden`}>{h2hCard}</div>
           </div>
 
@@ -1845,7 +1871,6 @@ export default function TeamsPage() {
             {h2hCard}
           </aside>
         </div>
-        <div className="hidden lg:block">{playerArchiveCard}</div>
         {PlayerProfile}
       </>
     )

@@ -403,6 +403,7 @@ function StatsPageContent() {
 
   // Game Log database controls
   const [gfSeason, setGfSeason] = useState([])
+  const [gfWeek, setGfWeek] = useState([])
   const [gfTeam, setGfTeam] = useState([])
   // Aplica o time em foco (e as trocas dele) no Team Evolution e no Game Log
   useEffect(() => {
@@ -714,7 +715,11 @@ function StatsPageContent() {
     const powerRankings = [...new Set(gameFactTeams.map(r => parseNumber(r.powerRanking)).filter(v => v > 0))]
       .sort((a, b) => a - b)
       .map(v => `#${v}`)
-    return { seasons, teams, opponents, stages, powerRankings }
+    // Semanas: cada número (semana dupla "14-15" entra no 14 e no 15)
+    const weeks = [...new Set(gameFactTeams.flatMap(r => String(r.week).match(/\d+/g) || []).map(Number))]
+      .sort((a, b) => a - b)
+      .map(String)
+    return { seasons, weeks, teams, opponents, stages, powerRankings }
   }, [gameFactTeams])
 
   const filteredGameFacts = useMemo(() => {
@@ -739,6 +744,7 @@ function StatsPageContent() {
     // side-specific filters behave like an actual spreadsheet column filter.
     const filtered = gameFactTeams.filter(row => {
       if (!matchesAny(gfSeason, row.season)) return false
+      if (gfWeek.length && !(String(row.week).match(/\d+/g) || []).some(w => gfWeek.includes(w))) return false
       if (!matchesAny(gfStage, row.stage)) return false
       if (!gfIncludeDoubleWeeks && String(row.week).includes('-')) return false
       // 200+ filter: only single-week games.
@@ -793,6 +799,7 @@ function StatsPageContent() {
   }, [
     gameFactTeams,
     gfSeason,
+    gfWeek,
     gfTeam,
     gfOpponent,
     gfStage,
@@ -917,7 +924,7 @@ function StatsPageContent() {
 
   useEffect(() => {
     setGfPage(0)
-  }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfSortCol, gfSortDir])
+  }, [gfSeason, gfWeek, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfSortCol, gfSortDir])
 
   const tabCols = {
     'Overall': ['W', 'L', 'W%', 'PF', 'Avg', 'PO Apps', 'Finals', 'Titles', 'PR #1', 'High Score'],
@@ -934,7 +941,7 @@ function StatsPageContent() {
     }
   }
 
-  useEffect(() => { setGfPage(0) }, [gfSeason, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfIncludeDoubleWeeks, gfInclude200Plus, gfSortCol, gfSortDir])
+  useEffect(() => { setGfPage(0) }, [gfSeason, gfWeek, gfTeam, gfOpponent, gfStage, gfResult, gfPowerRanking, gfHS, gfIncludeDoubleWeeks, gfInclude200Plus, gfSortCol, gfSortDir])
 
   const getCol = (row, col) => {
     if (col === 'Pos') return row.standing ? (['1st', '2nd', '3rd'][row.standing - 1] ?? `${row.standing}th`) : '—'
@@ -1087,8 +1094,8 @@ function StatsPageContent() {
       displayOption={displayOption}
     />
   )
-  const gfHasFilters = gfSeason.length || gfTeam.length || gfOpponent.length || gfStage.length || gfResult.length || gfPowerRanking.length || gfHS.length || !gfIncludeDoubleWeeks || gfInclude200Plus
-  const clearGameFilters = () => { setGfSeason([]); setGfTeam([]); setGfOpponent([]); setGfStage([]); setGfResult([]); setGfPowerRanking([]); setGfHS([]); setGfIncludeDoubleWeeks(true); setGfInclude200Plus(false) }
+  const gfHasFilters = gfSeason.length || gfWeek.length || gfTeam.length || gfOpponent.length || gfStage.length || gfResult.length || gfPowerRanking.length || gfHS.length || !gfIncludeDoubleWeeks || gfInclude200Plus
+  const clearGameFilters = () => { setGfSeason([]); setGfWeek([]); setGfTeam([]); setGfOpponent([]); setGfStage([]); setGfResult([]); setGfPowerRanking([]); setGfHS([]); setGfIncludeDoubleWeeks(true); setGfInclude200Plus(false) }
 
   const th = 'whitespace-nowrap px-3 py-2 text-[11px] font-medium text-[#6B7280] lg:px-4'
   const seasonsLabel = list => list.map(s => `'${String(s).slice(2)}`).join(', ')
@@ -1216,6 +1223,7 @@ function StatsPageContent() {
         >
           <FilterBar>
             {multi(gfSeason, setGfSeason, gameFactFilterOptions.seasons, 'Season')}
+            {multi(gfWeek, setGfWeek, gameFactFilterOptions.weeks, 'Week', w => `Week ${w}`)}
             <ToggleChip active={gfInclude200Plus} onClick={() => setGfInclude200Plus(v => !v)}>200+ pts</ToggleChip>
             <ToggleChip active={!gfIncludeDoubleWeeks} onClick={() => setGfIncludeDoubleWeeks(v => !v)}>Hide double weeks</ToggleChip>
           </FilterBar>

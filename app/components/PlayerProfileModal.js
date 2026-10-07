@@ -510,15 +510,19 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
     }
   }
 
+  // "All" nas franquias, igual às temporadas: com todas marcadas, tocar numa
+  // franquia mostra só ela; marcar a última que faltava volta para "All"
+  const allTeams = activeTeams.length === clubs.length
   const toggleTeam = team => {
-    const cur = activeTeams
     const key = normalizeTeamName(team)
+    if (allTeams && clubs.length > 1) { setSelectedTeams([team]); return }
+    const cur = activeTeams
     const exists = cur.some(t => normalizeTeamName(t) === key)
     if (exists) {
       setSelectedTeams(cur.length === 1 ? cur : cur.filter(t => normalizeTeamName(t) !== key))
       return
     }
-    setSelectedTeams([...cur, team])
+    setSelectedTeams(cur.length + 1 === clubs.length ? null : [...cur, team])
     // Time novo sem jogos nas temporadas escolhidas: as temporadas da franquia
     // nova entram junto, para ela não ficar marcada sem nenhum jogo
     if (!allSeasons && !clubOf(team)?.seasons.some(s => activeSeasonSet.has(s))) {
@@ -861,8 +865,13 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
         {/* Franquias da liga */}
         <div className="flex-shrink-0 border-b border-[#E6E8EB] bg-white px-3 py-2 sm:px-6">
           <div className="scroll-hide flex gap-1.5 overflow-x-auto">
+            {clubs.length > 1 && (
+              <button type="button" onClick={() => setSelectedTeams(null)} className={`flex h-8 flex-shrink-0 items-center rounded-full px-3 text-[12px] transition-colors ${allTeams ? 'bg-[#02275F] font-semibold text-white' : 'bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]'}`}>
+                All
+              </button>
+            )}
             {clubs.map(c => {
-              const checked = activeTeamKeys.has(normalizeTeamName(c.team))
+              const checked = !(allTeams && clubs.length > 1) && activeTeamKeys.has(normalizeTeamName(c.team))
               return (
                 <button key={c.team} type="button" onClick={() => toggleTeam(c.team)} className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-full pl-1.5 pr-3 text-[12px] transition-colors ${checked ? 'bg-[#02275F] font-semibold text-white' : 'bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]'}`}>
                   <TeamAvatar name={c.team} size={22} />
