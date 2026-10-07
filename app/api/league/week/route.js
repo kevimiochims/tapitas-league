@@ -7,7 +7,7 @@ export async function GET(request) {
   try {
     const data = await getLeagueWeek(week && week >= 1 && week <= 23 ? week : null)
     // Semana em andamento: cache curtíssimo (placar ao vivo); semanas fechadas podem ficar mais tempo
-    return Response.json(data, { headers: data.live || data.status === 'current' ? liveHeaders(5) : cdnHeaders(data.status === 'final' ? 600 : 300) })
+    return Response.json(data, { headers: data.live || data.status === 'current' ? liveHeaders(15) : cdnHeaders(data.status === 'final' ? 600 : 300) })
   } catch (err) {
     console.error('[api/league/week]', err)
     return Response.json({ error: 'Failed to load league week' }, { status: 502 })
