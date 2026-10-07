@@ -223,15 +223,32 @@ function PowerRankingsPageContent() {
   const [customPhotos, setCustomPhotos] = useState(new Map())
   // Fotos automáticas (foto de jogo do destaque do time, das notícias da ESPN)
   const [autoPhotos, setAutoPhotos] = useState({})
+  const fetchedPhotoWeeks = useRef(new Set())
   useEffect(() => {
-    if (!season || !week) return
+    if (!season || !week || !games.length) return
+    const key = `${season}|${week}`
+    const fetched = fetchedPhotoWeeks.current
+    if (fetched.has(key)) return
+    // A busca ao vivo é pesada no servidor (ESPN, Wikimedia). Semana antiga com
+    // a foto de todos os times já guardada no Drive (aba PR_FOTOS) não precisa
+    // dela; só a semana mais recente continua buscando (o Apps Script troca a
+    // foto guardada se aparecer uma de quem pontuou mais)
+    const ranked = games.filter(g => parseNumber(g?.['Power Ranking']) > 0)
+    const order = g => Number(g?.Season) * 100 + (parseFloat(String(g?.Week || '')) || 0)
+    const latest = Math.max(0, ...ranked.map(order))
+    const teams = ranked.filter(g => String(g?.Season || '').trim() === season && String(g?.Week || '').trim() === week)
+    const isLatest = teams.some(g => order(g) === latest)
+    if (teams.length && !isLatest && teams.every(g => customPhotos.has(`${key}|${String(g?.Team || '').trim()}`))) return
+    fetched.add(key)
     let cancelled = false
+    let done = false
     fetch(`/api/league/pr-photos?season=${encodeURIComponent(season)}&week=${encodeURIComponent(week)}`)
       .then(r => (r.ok ? r.json() : {}))
-      .then(d => { if (!cancelled) setAutoPhotos(prev => ({ ...prev, [`${season}|${week}`]: d || {} })) })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [season, week])
+      .then(d => { done = true; if (!cancelled) setAutoPhotos(prev => ({ ...prev, [key]: d || {} })) })
+      .catch(() => { fetched.delete(key) })
+    // Interrompida antes de terminar: pode buscar de novo
+    return () => { cancelled = true; if (!done) fetched.delete(key) }
+  }, [season, week, games, customPhotos])
   const cardsRef = useRef(null)
   // Read more / Show less abre ou fecha o texto de todos os cards juntos
   const [notesOpen, setNotesOpen] = useState(false)

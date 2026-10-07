@@ -881,10 +881,9 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
               )
             })}
           </div>
-          {/* Temporadas das franquias selecionadas */}
+          {/* Temporadas das franquias selecionadas (o "All" fica embaixo do "All" das franquias) */}
           {(availableSeasons.length > 1 || !allSeasons) && (
             <div className="scroll-hide mt-1.5 flex items-center gap-1 overflow-x-auto">
-              <span className="mr-0.5 flex-shrink-0 text-[11px] font-medium text-[#6B7280]">Season</span>
               <button type="button" onClick={() => setSelectedSeasons(null)} className={`h-6 flex-shrink-0 rounded-full px-2.5 text-[11px] transition-colors ${allSeasons ? 'bg-[#02275F] font-semibold text-white' : 'bg-[#F4F5F7] text-[#3F4757] hover:bg-[#ECEEF1]'}`}>All</button>
               {availableSeasons.map(season => {
                 const on = !allSeasons && activeSeasonSet.has(season)

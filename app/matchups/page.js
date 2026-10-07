@@ -701,11 +701,13 @@ function MatchupsPageContent() {
         const latestSeason = allSeasons[allSeasons.length - 1]
         setSeason(latestSeason)
 
-        // Default to last week that actually has played games
-        const lastPlayed = findLastPlayedWeek(data, latestSeason)
-        if (lastPlayed) {
-          setWeek(lastPlayed)
-          const g = firstGameOfWeek(data, latestSeason, lastPlayed)
+        // Semana em andamento (a partir de quarta, como na Home), mesmo antes do
+        // primeiro jogo; fora da temporada, a última semana com pontos
+        const currentRow = sleeperRows.find(g => String(g?.Season || '').trim() === latestSeason && ['current', 'live'].includes(String(g?.Status || '').trim()))
+        const openWeek = currentRow ? String(currentRow.Week || '').trim() : findLastPlayedWeek(data, latestSeason)
+        if (openWeek) {
+          setWeek(openWeek)
+          const g = firstGameOfWeek(data, latestSeason, openWeek)
           if (g) setSelected(g)
         }
       }

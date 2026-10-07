@@ -515,6 +515,9 @@ export default function PlayersPage() {
       const doubleWeek = isDoubleWeek(g)
       const gSeason = String(g?.Season || '').trim()
       const gTeam = String(g?.Team || '').trim()
+      // Título: estava no elenco (titular ou banco) do campeão do Tapitas Bowl
+      const wonTitle = String(g?.GameType || '').trim().toLowerCase() === 'tapitas bowl'
+        && (String(g?.Result || '').trim().toUpperCase().startsWith('W') || parseNumber(g?.PF) > parseNumber(g?.PA))
       // Season e Franchise escopam quais jogos entram na agregação — assim
       // Best/Avg/Apps/etc. refletem só o recorte filtrado, não a carreira toda.
       if (seasonSel && !seasonSel.includes(gSeason)) return
@@ -541,7 +544,7 @@ export default function PlayersPage() {
             position: getPlayerPosition(raw, playerLookup),
             aliases: new Set(), appearances: 0, starts: 0, bench: 0,
             total: 0, avgTotal: 0, avgCount: 0, best: 0, bestGame: null,
-            seasons: new Set(), teams: new Set(), teamApps: {}, rostered: 0,
+            seasons: new Set(), teams: new Set(), teamApps: {}, rostered: 0, rings: [],
           })
         }
         const p = map.get(key)
@@ -553,6 +556,7 @@ export default function PlayersPage() {
         p.total += points
         if (gSeason) p.seasons.add(gSeason)
         if (gTeam) { p.teams.add(gTeam); p.teamApps[gTeam] = (p.teamApps[gTeam] || 0) + 1 }
+        if (wonTitle && !p.rings.some(r => r.season === gSeason)) p.rings.push({ season: gSeason, team: gTeam })
         if (!(app.status === 'Bench' && app.pts === 0)) {
           p.avgTotal += points
           p.avgCount++
@@ -930,8 +934,13 @@ export default function PlayersPage() {
           .filter(p => p.teams.length > 1)
           .sort((a, b) => b.teams.length - a.teams.length || b.appearances - a.appearances)
           .slice(0, 5)
+        // Mais títulos: jogadores no elenco do campeão do Tapitas Bowl
+        const ringLeaders = filtered
+          .filter(p => p.rings?.length)
+          .sort((a, b) => b.rings.length - a.rings.length || b.appearances - a.appearances)
+          .slice(0, 5)
         return (
-          <div className="mb-2 grid gap-2 lg:grid-cols-2">
+          <div className="mb-2 grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
             <CardShell title="Franchise icons" subtitle="Most games with a single franchise" className="mb-0">
               <div className="py-1">
                 {icons.map(({ p, team, apps, share }, i) => (
@@ -976,6 +985,33 @@ export default function PlayersPage() {
                 ))}
               </div>
             </CardShell>
+            {ringLeaders.length > 0 && (
+              <CardShell title="Most titles" subtitle="On the Tapitas Bowl champion's roster" className="mb-0">
+                <div className="py-1">
+                  {ringLeaders.map((p, i) => (
+                    <button key={p.identityKey} type="button" onClick={() => setSelected(p)} className="group flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-[#F7F8FA] lg:px-4">
+                      <span className="w-4 flex-shrink-0 text-[12px] font-semibold tabular-nums text-[#9CA3AF]">{i + 1}</span>
+                      <PlayerAvatar name={p.rawName} playerLookup={playerLookup} size={38} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13px] font-semibold text-[#111] group-hover:text-[#D01F2D]">{p.name}</span><PositionBadge position={p.position} /></span>
+                        {/* Cada título: logo do time campeão e o ano */}
+                        <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          {[...p.rings].sort((a, b) => Number(a.season) - Number(b.season)).map(r => (
+                            <span key={r.season} title={`${r.team} · ${r.season}`} className="flex items-center gap-1 text-[11px] tabular-nums text-[#6B7280]">
+                              <TeamLogo name={r.team} size={16} />{r.season}
+                            </span>
+                          ))}
+                        </span>
+                      </span>
+                      <span className="flex-shrink-0 text-right">
+                        <span className="block text-[18px] font-bold leading-none tabular-nums text-[#B8860B]">{p.rings.length}</span>
+                        <span className="text-[10px] text-[#6B7280]">{p.rings.length === 1 ? 'title' : 'titles'}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </CardShell>
+            )}
           </div>
         )
       })()}
