@@ -22,6 +22,8 @@ export async function GET(request) {
       info ? getRssNews().then(items => matchNewsToPlayers(items, [info], { loose: true })).catch(() => []) : [],
     ])
     const seen = new Set()
+    // Data inválida conta como antiga (sem isso a ordenação ficava embaralhada)
+    const time = n => { const t = new Date(n.published || 0).getTime(); return Number.isNaN(t) ? 0 : t }
     const news = [...espn, ...rss]
       .filter(n => {
         const key = String(n.headline).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80)
@@ -30,7 +32,7 @@ export async function GET(request) {
         return true
       })
       .map(({ athleteIds, player, ...n }) => n)
-      .sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0))
+      .sort((a, b) => time(b) - time(a))
       .slice(0, 12)
     // 10 min: a lista do jogador não pode ficar atrás da Home (que renova a cada 15)
     return Response.json({ news }, { headers: cdnHeaders(600) })

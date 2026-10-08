@@ -58,7 +58,11 @@ export function PlayerNewsCard({ playerId, emptyText }) {
   // Foto repetida em várias notícias (a ESPN usa a mesma em vários textos)
   // só vale na primeira; nas outras entra uma foto alternativa do jogador
   const seenImages = new Set()
-  const list = news.slice(0, 12).map(n => {
+  // Sempre da mais nova para a mais antiga (data inválida vai para o fim) e
+  // com chave única: duas notícias com o mesmo id faziam o React trocar a
+  // ordem dos cards na grade
+  const time = n => { const t = new Date(n.published || 0).getTime(); return Number.isNaN(t) ? 0 : t }
+  const list = [...news].sort((a, b) => time(b) - time(a)).slice(0, 12).map((n, i) => ({ ...n, key: `${n.id || n.headline}|${i}` })).map(n => {
     if (!n.image) return n
     if (seenImages.has(n.image)) return { ...n, image: null }
     seenImages.add(n.image)
@@ -82,7 +86,7 @@ export function PlayerNewsCard({ playerId, emptyText }) {
           <div className="divide-y divide-[#F1F2F4] @2xl:grid @2xl:grid-cols-2 @2xl:gap-3 @2xl:divide-y-0 @2xl:p-3 @4xl:grid-cols-3">
             {list.map(n => (
               <button
-                key={n.id}
+                key={n.key}
                 type="button"
                 onClick={() => setReading(n)}
                 className={`group flex w-full gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#F7F8FA] sm:px-4 @2xl:h-full @2xl:flex-col @2xl:gap-0 @2xl:overflow-hidden @2xl:rounded-xl @2xl:bg-[#F6F7F9] @2xl:p-0 @2xl:hover:bg-[#EEF0F2] ${n === hero ? 'hidden @2xl:flex' : ''}`}

@@ -351,10 +351,11 @@ function formatPlayerWeight(value) {
   return Number.isFinite(numeric) && numeric > 0 ? `${numeric} lbs` : raw
 }
 
+// Identidade do jogador = nome exato da GAME_FACTS_ALL, a mesma regra do
+// Player Archive, da página Players e da Records (o card Most appearances e o
+// Player Archive têm que mostrar o mesmo número)
 function getPlayerIdentity(name, playerLookup) {
-  const raw = String(name || '').trim()
-  const playerId = getPlayerId(raw, playerLookup)
-  return playerId ? `id:${playerId}` : `name:${normalizePlayerKey(raw)}`
+  return `raw:${String(name || '').trim()}`
 }
 
 function canonicalMatchupHref(game, games) {
@@ -952,8 +953,10 @@ export default function TeamsPage() {
     // Use each team's actual game season instead of a global/selected season.
     teamGames.forEach(g => {
       const season = String(g?.Season || '').trim()
-      const starters = extractRosterNames(g, 'S')
-      const bench = extractRosterNames(g, 'B')
+      // Mesmas regras do Player Archive: sem defesas (DEF) e cada nome uma vez por jogo
+      const isPlayer = name => !getNFLTeamLogo(name) && getPlayerPosition(name, playerLookup) !== 'DEF'
+      const starters = Array.from(new Set(extractRosterNames(g, 'S'))).filter(isPlayer)
+      const bench = Array.from(new Set(extractRosterNames(g, 'B'))).filter(n => isPlayer(n) && !starters.includes(n))
       ;[...starters, ...bench].forEach(name => {
         const identity = getPlayerIdentity(name, playerLookup)
         if (!identity) return

@@ -1604,9 +1604,11 @@ function RecordsPageContent() {
       }
     }
 
+    // Recorde de confronto ("Time vs Time"): vale se pelo menos um dos dois
+    // times for atual, mesma regra do Closest game
     const mkBiggest = arr => {
       const sorted = [...arr]
-        .filter(g => currentTeams.has(normalizeTeamName(String(g?.Team || '').trim())))
+        .filter(g => currentTeams.has(normalizeTeamName(String(g?.Team || '').trim())) || currentTeams.has(normalizeTeamName(String(g?.Opponent || '').trim())))
         .filter(g => parseNumber(g?.PF) > parseNumber(g?.PA))
         .map(g => ({ ...g, margin: parseNumber(g.PF) - parseNumber(g.PA) }))
         .sort((a, b) => b.margin - a.margin)
@@ -1717,11 +1719,10 @@ function RecordsPageContent() {
       return getNFLTeamLogo(value) ? 'DEF' : ''
     }
 
-    const identityOf = raw => {
-      const value = String(raw || '').trim()
-      const data = lookup.get(normalizePlayerKey(value))
-      return data?.playerId ? `id:${data.playerId}` : `name:${normalizePlayerKey(value)}`
-    }
+    // Identidade = nome exato gravado na GAME_FACTS_ALL, a mesma regra das
+    // páginas Players e Teams (nunca juntar nomes parecidos de jogadores
+    // diferentes). O cache de jogadores serve só para foto, nome e posição.
+    const identityOf = raw => `raw:${String(raw || '').trim()}`
 
     const buildEra = minSeason => {
       const map = new Map()
@@ -1730,8 +1731,12 @@ function RecordsPageContent() {
         const season = Number(game?.Season) || 0
         if (minSeason && season < minSeason) return
 
+        // Todas as franquias entram, inclusive as que saíram da liga: os jogos
+        // de um jogador por um time antigo continuam sendo jogos dele (recordes
+        // da liga e Most Points in a Game). Só os recordes "por uma franquia"
+        // ficam com as franquias atuais (ver buildEraRecords).
         const team = String(game?.Team || '').trim()
-        if (!team || !currentTeams.has(normalizeTeamName(team))) return
+        if (!team) return
 
         // One GAME_FACTS_ALL row is one franchise's game. Therefore a double
         // week is already one roster/start appearance and must not be counted
@@ -1754,6 +1759,7 @@ function RecordsPageContent() {
               rawName,
               playerId: lookup.get(normalizePlayerKey(rawName))?.playerId || '',
               team,
+              currentFranchise: currentTeams.has(normalizeTeamName(team)),
               name: displayName(rawName),
               position: positionOf(rawName),
               rostered: 0,
@@ -1857,7 +1863,7 @@ function RecordsPageContent() {
           meta: (metric === 'rostered' || metric === 'started') ? r.team : '',
           href: metric === 'bestPts' && r.bestGame
             ? matchupHref(r.bestGame, games)
-            : (r.league ? undefined : teamHref(r.team)),
+            : (r.league || !r.currentFranchise ? undefined : teamHref(r.team)),
         })),
         // Show the season/week/opponent context directly on the main card.
         // BEST uses the actual record game; cumulative/average records use
@@ -1901,7 +1907,7 @@ function RecordsPageContent() {
           team: r.team,
           href: metric === 'bestPts' && r.bestGame
             ? matchupHref(r.bestGame, games)
-            : (r.league ? undefined : teamHref(r.team)),
+            : (r.league || !r.currentFranchise ? undefined : teamHref(r.team)),
         })),
       }
     }
@@ -1929,12 +1935,16 @@ function RecordsPageContent() {
 
     const buildEraRecords = minSeason => {
       const rows = buildEra(minSeason)
+      // Por uma franquia: o detentor é a dupla jogador + franquia, então só as
+      // franquias atuais (como todo recorde de time). Liga toda e melhor jogo:
+      // todos os times, inclusive os que saíram
+      const currentRows = rows.filter(r => r.currentFranchise)
       const league = leagueRows(rows)
       return {
-        mostRostered: makeMetric(rows, 'rostered'),
-        mostStarted: makeMetric(rows, 'started'),
+        mostRostered: makeMetric(currentRows, 'rostered'),
+        mostStarted: makeMetric(currentRows, 'started'),
         bestPts: makeMetric(rows, 'bestPts'),
-        avgPts: makeMetric(rows, 'avgPts'),
+        avgPts: makeMetric(currentRows, 'avgPts'),
         leagueRostered: makeMetric(league, 'rostered'),
         leagueStarted: makeMetric(league, 'started'),
         leagueTotal: makeMetric(league, 'totalPts'),
@@ -1969,6 +1979,9 @@ function RecordsPageContent() {
       const season = String(g?.Season || '').trim()
       const pf = parseNumber(g?.PF)
       if (!team || !season || pf <= 0 || !currentTeams.has(normalizeTeamName(team))) return
+      // Média por jogo: semana dupla soma duas semanas, então fica de fora
+      // (mesma regra das outras médias de pontos)
+      if (isDoubleWeek(g)) return
       const key = `${team}|${season}`
       if (!totByTeamSeason[key]) totByTeamSeason[key] = { team, season, totalPF: 0, gp: 0 }
       totByTeamSeason[key].totalPF += pf
@@ -2137,9 +2150,10 @@ function RecordsPageContent() {
       const sB = String(r?.['Best Streak Team B'] || '').trim()
       const vA = parseStreakVal(sA)
       const vB = parseStreakVal(sB)
-      console.log('Row:', a, 'vs', b, '| sA:', sA, 'vA:', vA, '| sB:', sB, 'vB:', vB)
-      if (sA && vA > 0 && currentTeams.has(normalizeTeamName(a))) allStreaks.push({ team: a, opponent: b, streak: sA, val: vA })
-      if (sB && vB > 0 && currentTeams.has(normalizeTeamName(b))) allStreaks.push({ team: b, opponent: a, streak: sB, val: vB })
+      // Recorde de confronto: o par já tem pelo menos um time atual (dedup acima),
+      // então vale a sequência de qualquer um dos dois lados
+      if (sA && vA > 0) allStreaks.push({ team: a, opponent: b, streak: sA, val: vA })
+      if (sB && vB > 0) allStreaks.push({ team: b, opponent: a, streak: sB, val: vB })
     })
     const extractStreakParts = (streakStr) => {
       // "Ocupa e Resiste W7 (2014 W16-17 → 2022 W6)"
