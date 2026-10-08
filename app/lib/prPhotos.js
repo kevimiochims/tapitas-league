@@ -1,4 +1,4 @@
-import { cached } from './cache'
+import { cached, forget } from './cache'
 import { getSheetRows } from './sheets'
 import { getScoreboard, getEspnIdMap, getPlayerPhotos } from './espn'
 import { getSleeperPlayers } from './sleeper'
@@ -50,8 +50,24 @@ async function mapLimit(items, limit, fn) {
   return out
 }
 
-export function getPowerRankingPhotos(season, week) {
-  return cached(`pr-photos:v23:${season}|${week}`, 3 * 3600, async () => {
+// Resultado incompleto (o tempo acabou antes de olhar todos os times): não
+// fica guardado, e a próxima chamada completa o que faltou
+const partialResults = new WeakSet()
+export const isPartialPhotos = result => partialResults.has(result)
+
+export async function getPowerRankingPhotos(season, week) {
+  const key = `pr-photos:v24:${season}|${week}`
+  const result = await cached(key, 3 * 3600, () => findPowerRankingPhotos(season, week))
+  if (partialResults.has(result)) forget(key)
+  return result
+}
+
+function findPowerRankingPhotos(season, week) {
+  return (async () => {
+    // O site tem 60s por chamada; depois de 40s para de buscar fotos novas
+    // (arquivo e Commons) e devolve o que já achou
+    const started = Date.now()
+    const late = () => Date.now() - started > 40000
     const [games, cacheRows, espnIds, players, window] = await Promise.all([
       getSheetRows('GAME_FACTS_ALL'),
       getSheetRows('_PLAYER_CACHE'),
@@ -110,15 +126,27 @@ export function getPowerRankingPhotos(season, week) {
     // legenda, logo no começo ("Falcons wide receiver Drake London said...");
     // "DJ Moore should become Josh Allen's favorite target" é foto do DJ Moore
     const knownNames = Array.from(byName.keys()).filter(k => k.includes(' ') && k.length >= 7)
-    const firstNamed = new Map()
-    photos.forEach(ph => {
+    // Procura nas sequências de 2 a 5 palavras da legenda, da primeira para a
+    // última (com o nome mais longo valendo no empate), em vez de testar os
+    // milhares de nomes conhecidos em cada legenda, o que deixava semanas
+    // antigas (centenas de legendas) lentas demais
+    const knownSet = new Set(knownNames)
+    const firstNamedCache = new Map()
+    const firstNamedIn = text => {
+      if (firstNamedCache.has(text)) return firstNamedCache.get(text)
+      const words = text.trim().split(' ')
       let best = null
-      knownNames.forEach(k => {
-        const i = ph.text.indexOf(` ${k} `)
-        if (i >= 0 && (!best || i < best.i || (i === best.i && k.length > best.k.length))) best = { i, k }
-      })
-      firstNamed.set(ph.url, best)
-    })
+      for (let j = 0, at = 0; j < words.length && !best; at += words[j].length + 1, j++) {
+        for (let n = 5; n >= 2 && !best; n--) {
+          if (j + n > words.length) continue
+          const k = words.slice(j, j + n).join(' ')
+          if (knownSet.has(k)) best = { i: at, k }
+        }
+      }
+      firstNamedCache.set(text, best)
+      return best
+    }
+    const firstNamed = new Map(photos.map(ph => [ph.url, firstNamedIn(ph.text)]))
     const leads = (ph, p) => {
       const first = firstNamed.get(ph.url)
       return Boolean(first && first.i <= 40 && first.k === name(p))
@@ -153,7 +181,7 @@ export function getPowerRankingPhotos(season, week) {
       return list[h % list.length]
     }
     const commonsFor = async (p, team) => {
-      const cat = (p.espnId && commonsCats[p.espnId]) || await getCommonsCategoryByName(p.full).catch(() => null)
+      const cat = (p.espnId && commonsCats[p.espnId]) || await getCommonsCategoryByName(p.full)
       if (!cat) return null
       // Estreia na NFL (só dá para calcular de quem está em atividade)
       const info = players.get(p.id)
@@ -169,11 +197,9 @@ export function getPowerRankingPhotos(season, week) {
       const inSeason = ph => ph.date >= seasonFrom && ph.date < seasonTo
       const near = (ph, before, after) => ph.date >= Date.UTC(Number(season) - before, 7, 1) && ph.date < Date.UTC(Number(season) + after + 1, 2, 1)
       const seed = `${season}|${week}|${team}|${p.id}`
-      const seasonList = [
-        ...(await getCommonsPhotos(cat, season).catch(() => [])),
-        ...(await getCommonsPhotos(cat, String(Number(season) + 1)).catch(() => [])),
-      ]
-      const all = await getCommonsPhotos(cat).catch(() => [])
+      // Sem .catch: Commons fora do ar (limite de pedidos) não é "sem foto"
+      const [thisYear, nextYear, all] = await Promise.all([getCommonsPhotos(cat, season), getCommonsPhotos(cat, String(Number(season) + 1)), getCommonsPhotos(cat)])
+      const seasonList = [...thisYear, ...nextYear]
       const pool = Array.from(new Map([...seasonList, ...all].map(ph => [ph.url, ph])).values())
       // Paisagem primeiro (cabe melhor no card); da melhor para a mais solta:
       // 1) jogo na temporada; 2) qualquer foto dele na temporada (entrevista,
@@ -200,17 +226,6 @@ export function getPowerRankingPhotos(season, week) {
     const weekDays = await getWeekDays(season, week).catch(() => [])
     const dayPhotos = (await mapLimit(weekDays, 4, d => getDayPhotos(d).catch(() => []))).flat()
       .map(ph => ({ ...ph, text: ` ${norm(ph.caption)} ` }))
-    const firstNamedCache = new Map()
-    const firstNamedIn = text => {
-      if (firstNamedCache.has(text)) return firstNamedCache.get(text)
-      let best = null
-      knownNames.forEach(k => {
-        const i = text.indexOf(` ${k} `)
-        if (i >= 0 && (!best || i < best.i || (i === best.i && k.length > best.k.length))) best = { i, k }
-      })
-      firstNamedCache.set(text, best)
-      return best
-    }
     const headshot = ph => /^\S+_\S+ \d{6}/.test(ph.caption) || /mug|headshot|_ms_|logo/i.test(ph.file)
     // Data da foto no próprio endereço (/photo/2014/1012/): só da temporada
     // (agosto a fevereiro); foto de abril é de offseason, não de jogo
@@ -270,8 +285,27 @@ export function getPowerRankingPhotos(season, week) {
       return null
     }
 
+    // Os times são escolhidos um por vez (a mesma foto não pode ir para dois),
+    // o que deixava semanas antigas lentas demais (mais de 1 minuto). Antes,
+    // busca em paralelo o arquivo da ESPN de todos os titulares; a escolha
+    // depois quase só lê o que já está guardado. Espera no máximo 20s: o que
+    // não chegou continua sendo buscado e é aproveitado quando chegar. (O
+    // Commons não entra aqui: ele bloqueia quem pede muito de uma vez.)
+    const ahead = Array.from(new Map(teams.flatMap(t => t.starters).map(p => [p.id, p])).values())
+    const allRecaps = async p => {
+      const [teamsByWeek, eventsByWeek] = await Promise.all([getPlayerWeekTeams(p.id, season).catch(() => ({})), seasonEvents()])
+      const events = []
+      for (let w = 1; w <= 18; w++) {
+        const t = normalizeNflTeam(teamsByWeek[w] || '')
+        if (t) events.push(...(eventsByWeek[w] || []).filter(e => e.teams.map(normalizeNflTeam).includes(t)))
+      }
+      await mapLimit(events, 6, e => getRecapPhotos(e.id).catch(() => []))
+    }
+    if (!recentWeek) await Promise.race([mapLimit(ahead, 12, allRecaps), new Promise(r => setTimeout(r, 20000))])
+
     const used = new Set()
     const result = {}
+    let partial = false
     for (const { team, starters } of teams) {
       const star = starters[0] || null
       let hit = null
@@ -289,12 +323,13 @@ export function getPowerRankingPhotos(season, week) {
         }
         // Arquivo e Commons: os 3 maiores primeiro; se nenhum deles tiver foto,
         // segue pelos outros titulares (melhor um titular do que card sem foto)
+        if (!hit && late()) { partial = true; break }
         if (!hit) {
           const archived = await archiveFor(p, team).catch(() => null)
           if (archived) { hit = { ...archived, caption: archived.caption || archived.headline || '' }; who = p }
         }
         if (!hit) {
-          const free = await commonsFor(p, team)
+          const free = await commonsFor(p, team).catch(() => { partial = true; return null })
           if (free) { hit = { ...free, caption: free.title.replace(/^File:/, '').replace(/\.[a-z]+$/i, ''), commons: true }; who = p }
         }
         if (hit) break
@@ -310,6 +345,7 @@ export function getPowerRankingPhotos(season, week) {
         pts: shown?.pts || 0,
       }
     }
+    if (partial) partialResults.add(result)
     return result
-  })
+  })()
 }

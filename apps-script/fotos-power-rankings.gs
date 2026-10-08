@@ -175,6 +175,10 @@ function salvaFotosAutomaticasPR(season, week) {
     return false;
   }
   const fotos = JSON.parse(res.getContentText() || '{}');
+  // O site tem 1 minuto por chamada; em semanas antigas às vezes não dá tempo
+  // de olhar todos os times e ele avisa que a resposta veio incompleta
+  const headers = res.getHeaders();
+  const parcial = String(headers['X-Pr-Partial'] || headers['x-pr-partial'] || '') === '1';
 
   const sheet = abaFotosPR_(ss);
   const values = sheet.getDataRange().getValues();
@@ -213,9 +217,9 @@ function salvaFotosAutomaticasPR(season, week) {
   });
   const total = Object.keys(fotos).length;
   const comFoto = Object.keys(fotos).filter(t => fotos[t] && fotos[t].url).length;
-  Logger.log(`[FOTOS PR] ${season} semana ${week}: ${salvas} fotos novas guardadas no Drive (${comFoto} de ${total} times com foto).`);
+  Logger.log(`[FOTOS PR] ${season} semana ${week}: ${salvas} fotos novas guardadas no Drive (${comFoto} de ${total} times com foto)${parcial ? ' — o site ainda não olhou todos os times' : ''}.`);
   // "completa" = todos os times com foto (semanas sem escalação, como 2015/16, não têm o que buscar)
-  return { ok: true, completa: comFoto === total };
+  return { ok: true, completa: comFoto === total && !parcial, parcial };
 }
 
 // Todas as semanas já jogadas da temporada atual (rodar uma vez)
@@ -295,11 +299,30 @@ function salvaFotosHistoricoPR() {
 
 // Refaz semanas específicas: edite a lista e rode refazSemanasPR(). Só
 // preenche os times sem foto (ou troca por foto de quem pontuou mais); foto do
-// Form/manual nunca é trocada.
-const SEMANAS_PARA_REFAZER = [['2022', '1'], ['2022', '6']];
+// Form/manual nunca é trocada. Se o site demorar (504) ou responder só parte
+// dos times, espera 1 minuto e tenta de novo, até 4 vezes por semana; cada
+// tentativa aproveita o que o site já achou na anterior.
+const SEMANAS_PARA_REFAZER = [['2025', '9']];
 
 function refazSemanasPR() {
-  SEMANAS_PARA_REFAZER.forEach(([season, week]) => salvaFotosAutomaticasPR(String(season), String(week)));
+  const inicio = Date.now();
+  const pendentes = [];
+  for (const [season, week] of SEMANAS_PARA_REFAZER) {
+    let res = null;
+    for (let tentativa = 1; tentativa <= 4; tentativa++) {
+      // O Apps Script para depois de 6 minutos: não começa uma chamada sem folga
+      if (Date.now() - inicio > 4 * 60 * 1000) break;
+      res = salvaFotosAutomaticasPR(String(season), String(week));
+      if (res && res.ok && !res.parcial) break;
+      if (tentativa < 4 && Date.now() - inicio < 3.5 * 60 * 1000) {
+        Logger.log(`[FOTOS PR] ${season} semana ${week}: tentando de novo em 1 minuto...`);
+        Utilities.sleep(60 * 1000);
+      }
+    }
+    if (!res || !res.ok || res.parcial) pendentes.push(`${season} semana ${week}`);
+  }
+  if (pendentes.length) Logger.log(`[FOTOS PR] Faltou terminar: ${pendentes.join(', ')}. Rode refazSemanasPR() de novo daqui a alguns minutos.`);
+  else Logger.log('[FOTOS PR] Todas as semanas da lista prontas.');
 }
 
 // Apaga as fotos AUTOMÁTICAS das temporadas passadas (linhas da PR_FOTOS e

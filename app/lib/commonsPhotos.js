@@ -6,15 +6,28 @@ import { cached, fetchJson } from './cache'
 // Rankings, quando a ESPN não guarda mais as fotos. Licenças livres exigem
 // crédito: cada foto vem com autor e licença.
 
-const UA = { 'User-Agent': 'TapitasLeague/1.0 (fantasy football league site)' }
-// A Wikimedia limita pedidos seguidos (429): espera um pouco e tenta de novo
+const UA = { 'User-Agent': 'TapitasLeague/1.0 (https://tapitasleague.vercel.app; fantasy football league site)' }
+// A Wikimedia limita pedidos seguidos (429): um pedido de cada vez e, se ela
+// recusar mesmo assim, nenhum outro para aquele endereço pelo próximo minuto
+// (insistir só prolonga o bloqueio). Quem chamou recebe o erro e tenta depois.
+let active = 0
+const waiting = []
+async function oneAtATime(fn) {
+  while (active >= 1) await new Promise(r => waiting.push(r))
+  active++
+  try { return await fn() } finally { active--; waiting.shift()?.() }
+}
+const blockedUntil = new Map()
 async function fetchPolite(url, opts) {
-  for (let i = 0; i < 3; i++) {
+  const host = new URL(url).host
+  for (let i = 0; i < 2; i++) {
+    if (Date.now() < (blockedUntil.get(host) || 0)) throw new Error(`429 from ${host} (aguardando)`)
     try {
-      return await fetchJson(url, opts)
+      return await oneAtATime(() => fetchJson(url, opts))
     } catch (err) {
-      if (i === 2) throw err
-      await new Promise(r => setTimeout(r, 1500 * (i + 1)))
+      if (/^429/.test(err.message)) { blockedUntil.set(host, Date.now() + 60000); throw err }
+      if (i === 1) throw err
+      await new Promise(r => setTimeout(r, 1500))
     }
   }
 }

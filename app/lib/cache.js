@@ -37,6 +37,11 @@ export async function cached(key, ttlSeconds, load) {
   }
 }
 
+// Descarta um valor guardado (ex.: resultado incompleto que não deve ficar)
+export function forget(key) {
+  store.delete(key)
+}
+
 export async function fetchJson(url, { timeoutMs = 15000, headers } = {}) {
   // APIs JSON (ESPN, Sleeper, Open-Meteo) vão sem user agent de navegador: a
   // ESPN passou a recusar o placar quando ele era enviado.

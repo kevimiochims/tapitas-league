@@ -1,4 +1,4 @@
-import { getPowerRankingPhotos } from '@/app/lib/prPhotos'
+import { getPowerRankingPhotos, isPartialPhotos } from '@/app/lib/prPhotos'
 import { cdnHeaders } from '@/app/lib/cache'
 
 // Semanas antigas buscam no Wikimedia Commons e podem levar alguns segundos
@@ -13,7 +13,10 @@ export async function GET(request) {
     return Response.json({ error: 'season and week required' }, { status: 400 })
   }
   try {
-    return Response.json(await getPowerRankingPhotos(season, week), { headers: cdnHeaders(3 * 3600) })
+    const photos = await getPowerRankingPhotos(season, week)
+    // Incompleto (o tempo acabou): não guarda no CDN e avisa quem chamou
+    if (isPartialPhotos(photos)) return Response.json(photos, { headers: { 'Cache-Control': 'no-store', 'X-Pr-Partial': '1' } })
+    return Response.json(photos, { headers: cdnHeaders(3 * 3600) })
   } catch (err) {
     console.error('[api/league/pr-photos]', err)
     return Response.json({}, { status: 502 })
