@@ -2031,18 +2031,19 @@ export default function TapitasLeagueHomepage() {
             const post = featuredNewsPosts[0]
             return (
               <Link href={`/news/${post.slug}`} className="group flex min-w-0 flex-col">
-                {/* Telas maiores: a foto estica para o destaque ter a altura exata
-                    das 4 miniaturas ao lado */}
+                {/* Telas maiores: quem define a altura são as 4 miniaturas ao lado; a
+                    foto só preenche o espaço (posição absoluta), então uma foto em pé
+                    não estica o card */}
                 {post.imageUrl && (
-                  <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-[#F4F5F7] md:aspect-auto md:min-h-[200px] md:flex-1">
-                    <img src={post.imageUrl.split('|')[0]} alt={post.title} className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]" />
+                  <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg bg-[#F4F5F7] md:aspect-auto md:min-h-[180px] md:flex-1">
+                    <img src={post.imageUrl.split('|')[0]} alt={post.title} className="absolute inset-0 h-full w-full object-cover object-[50%_20%] transition-transform duration-300 group-hover:scale-[1.02]" />
                   </div>
                 )}
                 <div className="mt-2 flex items-center gap-2 text-[11px] text-[#6B7280]">
                   {post.category && <Tag tone={{ Meme: 'gold', Recap: 'navy', 'Notícia': 'green' }[post.category]}>{post.category}</Tag>}
                   <span>{formatDate(post.date)}</span>
                 </div>
-                <div className="mt-1 text-[17px] font-bold leading-snug text-[#111] group-hover:text-[#02275F]">{post.title}</div>
+                <div className="mt-1 line-clamp-2 text-[17px] font-bold leading-snug text-[#111] group-hover:text-[#02275F]">{post.title}</div>
               </Link>
             )
           })()}
