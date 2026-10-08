@@ -783,7 +783,8 @@ export default function TapitasLeagueHomepage() {
   // ===== NEWS =====
 
   const featuredNewsPosts = useMemo(() => {
-    return (newsPosts || []).slice(0, 4)
+    // 1 destaque + 4 miniaturas (o destaque ocupa a mesma altura das 4)
+    return (newsPosts || []).slice(0, 5)
   }, [newsPosts])
 
   const newsTotalPages = featuredNewsPosts.length
@@ -1155,7 +1156,7 @@ export default function TapitasLeagueHomepage() {
   useEffect(() => {
     // Mesma lista da página News (fica guardada: abrir a matéria é instantâneo)
     loadNewsPosts()
-      .then(sorted => setNewsPosts(sorted.slice(0, 4)))
+      .then(sorted => setNewsPosts(sorted.slice(0, 5)))
       .catch(() => setNewsPosts([]))
       .finally(() => setNewsLoading(false))
   }, [])
@@ -2029,9 +2030,11 @@ export default function TapitasLeagueHomepage() {
           {(() => {
             const post = featuredNewsPosts[0]
             return (
-              <Link href={`/news/${post.slug}`} className="group block min-w-0">
+              <Link href={`/news/${post.slug}`} className="group flex min-w-0 flex-col">
+                {/* Telas maiores: a foto estica para o destaque ter a altura exata
+                    das 4 miniaturas ao lado */}
                 {post.imageUrl && (
-                  <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-[#F4F5F7]">
+                  <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-[#F4F5F7] md:aspect-auto md:min-h-[200px] md:flex-1">
                     <img src={post.imageUrl.split('|')[0]} alt={post.title} className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]" />
                   </div>
                 )}

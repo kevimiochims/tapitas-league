@@ -812,7 +812,8 @@ function StatsPageContent() {
     gfSortDir,
   ])
 
-  const GAME_FACT_PAGE_SIZE = 15
+  // 17 por página: uma temporada inteira de um time cabe numa página
+  const GAME_FACT_PAGE_SIZE = 17
   const gameFactTotalPages = Math.max(1, Math.ceil(filteredGameFacts.length / GAME_FACT_PAGE_SIZE))
   const pagedGameFacts = filteredGameFacts.slice(
     gfPage * GAME_FACT_PAGE_SIZE,
