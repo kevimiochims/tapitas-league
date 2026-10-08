@@ -73,23 +73,10 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
   const { visible, totalPages, pagerProps, listProps } = usePager(news, pageSize, `${team}|${filter}|${pageSize}`)
   const fixedHeight = team === 'All' // sem filtro de time: altura de uma página cheia
 
-  // Notícias sem foto: foto de jogo do jogador (Drive → ESPN → Commons), buscada
-  // só para as linhas visíveis; enquanto não chega, fica o recorte do jogador
-  const [playerPhotos, setPlayerPhotos] = useState({})
+  // Notícias sem foto: o recorte do jogador (imagens servidas pelos próprios
+  // ESPN/Sleeper, sem passar pelo servidor do site)
   // Notícia aberta no leitor (pop-up dentro do site)
   const [reading, setReading] = useState(null)
-  // (inclui o destaque das telas maiores, que também precisa de foto)
-  const missingIds = visible.filter(n => !n.image && n.player?.id && !(n.player.id in playerPhotos)).map(n => n.player.id)
-  const missingKey = Array.from(new Set(missingIds)).join(',')
-  useEffect(() => {
-    if (!missingKey) return
-    let cancelled = false
-    fetch(`/api/nfl/player-photos?ids=${missingKey}`)
-      .then(r => (r.ok ? r.json() : {}))
-      .then(map => { if (!cancelled) setPlayerPhotos(prev => ({ ...prev, ...Object.fromEntries(missingKey.split(',').map(id => [id, map?.[id] || null])) })) })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [missingKey])
   if (state.failed) return null
 
   return (
@@ -110,15 +97,13 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
       {state.loading ? <div className="py-2"><SkeletonRows rows={4} /></div> : news.length === 0 ? <EmptyNote>{team === 'All' ? 'No recent news on Tapitas players.' : `No recent news on ${team} players.`}</EmptyNote> : (
         <div className="pb-1">
           {(() => {
-            const photoOf = n => n.image || (n.player?.id ? playerPhotos[n.player.id]?.url : null) || null
+            const photoOf = n => n.image || null
             const openPlayer = p => onOpenPlayer?.(p && { ...p, focus: 'news' }, p?.fantasyTeam)
             const thumb = n => (
               <button type="button" onClick={() => setReading(n)} className="relative flex-shrink-0" aria-label={n.headline}>
                 {n.image
                   ? <span className="block h-[50px] w-[74px] overflow-hidden rounded-md bg-[#F4F5F7]"><NewsImage src={n.image} className="h-full w-full" /></span>
-                  : n.player?.id && playerPhotos[n.player.id]?.url
-                    ? <span className="block h-[50px] w-[74px] overflow-hidden rounded-md bg-[#F4F5F7]"><img src={playerPhotos[n.player.id].url} alt={n.player.name || ''} className="h-full w-full object-cover object-[50%_25%]" /></span>
-                    : n.player?.id ? <PlayerTile id={n.player.id} name={n.player.name} /> : null}
+                  : n.player?.id ? <PlayerTile id={n.player.id} name={n.player.name} /> : null}
               </button>
             )
             // Linha: manchete (2 linhas) / jogador, posição e times / fonte e horário
@@ -166,7 +151,9 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
                   className={`group relative flex-shrink-0 overflow-hidden rounded-lg bg-[#16274F] text-left ${layout === 'wide' ? 'w-[36%]' : 'w-[46%]'}`}
                   style={{ height: fixedHeight ? sideHeight : Math.max(ROW_H * 2, Math.ceil(rest.length / sideCols) * ROW_H) }}
                 >
-                  {heroPhoto && <img src={heroPhoto} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover object-[50%_25%] transition-transform duration-300 group-hover:scale-[1.03]" />}
+                  {heroPhoto
+                    ? <img src={heroPhoto} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover object-[50%_25%] transition-transform duration-300 group-hover:scale-[1.03]" />
+                    : hero.player?.id && <img src={`https://sleepercdn.com/content/nfl/players/${hero.player.id}.jpg`} alt="" onError={e => { e.currentTarget.style.display = 'none' }} className="absolute bottom-0 left-1/2 h-[80%] -translate-x-1/2 object-contain" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 p-3">
                     <div className="line-clamp-3 text-[17px] font-extrabold leading-tight text-white">{hero.headline}</div>

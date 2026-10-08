@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { usePlayerNews } from './useNflData'
 import { NewsImage, NewsHero } from './shared'
 import NewsReader from './NewsReader'
@@ -39,18 +39,6 @@ export function PlayerNewsCard({ playerId, emptyText }) {
   const { data, loading, error } = usePlayerNews(playerId)
   const news = data?.news || []
   const [reading, setReading] = useState(null)
-  // Foto de jogo do jogador para as notícias sem foto
-  const [playerPhoto, setPlayerPhoto] = useState(null)
-  const needsPhoto = news.slice(0, 12).some((n, i, arr) => !n.image || arr.findIndex(x => x.image === n.image) !== i)
-  useEffect(() => {
-    if (!playerId || !needsPhoto) return
-    let cancelled = false
-    fetch(`/api/nfl/player-photos?ids=${encodeURIComponent(playerId)}`)
-      .then(r => (r.ok ? r.json() : {}))
-      .then(map => { if (!cancelled) setPlayerPhoto(map?.[playerId] || null) })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [playerId, needsPhoto])
 
   if (!playerId || error || (!loading && !news.length)) {
     return emptyText ? <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more"><Empty>{emptyText}</Empty></Card> : null
@@ -69,14 +57,11 @@ export function PlayerNewsCard({ playerId, emptyText }) {
     return n
   })
   const meta = n => [n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')
-  // Notícias sem foto recebem fotos diferentes do jogador, em rodízio
-  const alts = playerPhoto?.alts?.length ? playerPhoto.alts : playerPhoto ? [playerPhoto] : []
-  const noImage = list.filter(n => !n.image)
-  const altOf = n => (alts.length ? alts[noImage.indexOf(n) % alts.length] : null)
-  const imageOf = n => n.image || altOf(n)?.url || null
-  // Destaque do celular: sempre a notícia mais recente (com a foto dela ou,
-  // sem foto, a do jogador). Antes era a primeira com foto própria, e uma
-  // matéria antiga da ESPN passava na frente das notas mais novas
+  // Notícia sem foto: a foto de perfil do jogador (servida pelo Sleeper, sem
+  // passar pelo servidor do site)
+  const imageOf = n => n.image || null
+  // Destaque do celular: só quando a notícia mais recente tem foto própria
+  // (nunca uma mais antiga passando na frente das notas mais novas)
   const hero = list[0] && imageOf(list[0]) ? list[0] : null
   return (
     <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more">
@@ -99,8 +84,8 @@ export function PlayerNewsCard({ playerId, emptyText }) {
                     <NewsImage src={imageOf(n)} className="h-full w-full object-[50%_25%]" />
                   </span>
                 ) : (
-                  // Sem foto: só nas telas maiores, a foto do jogador no azul da marca
-                  <span className="hidden aspect-[16/9] w-full items-end justify-center overflow-hidden bg-[#02275F] @2xl:flex">
+                  // Sem foto: a foto de perfil do jogador no azul da marca
+                  <span className="flex h-[54px] w-[80px] flex-shrink-0 items-end justify-center overflow-hidden rounded-md bg-[#02275F] @2xl:aspect-[16/9] @2xl:h-auto @2xl:w-full @2xl:rounded-none">
                     <img src={`https://sleepercdn.com/content/nfl/players/${encodeURIComponent(playerId)}.jpg`} alt="" className="h-[85%] object-contain" onError={e => { e.currentTarget.style.display = 'none' }} />
                   </span>
                 )}

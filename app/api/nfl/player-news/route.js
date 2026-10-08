@@ -21,10 +21,19 @@ export async function GET(request) {
       espnNews(),
       info ? getRssNews().then(items => matchNewsToPlayers(items, [info], { loose: true })).catch(() => []) : [],
     ])
+    // Só notícias em que ele é o assunto: o sobrenome no título (ex.: "Hall
+    // (quadriceps) didn't practice") ou o nome completo logo no começo do texto.
+    // Fora ficam listas da rodada ("Week 4 inactives: Coker ruled out…") que só
+    // o citam no meio
+    const norm = v => ` ${String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `
+    const fullName = norm(String(info?.name || '').replace(/\s+(Jr|Sr|II|III|IV|V)\.?$/i, ''))
+    const surname = fullName.trim().split(' ').pop() || ''
+    const isAbout = n => !info?.name || norm(n.headline).includes(` ${surname} `) || norm(String(n.description || '').slice(0, 80)).includes(fullName)
     const seen = new Set()
     // Data inválida conta como antiga (sem isso a ordenação ficava embaralhada)
     const time = n => { const t = new Date(n.published || 0).getTime(); return Number.isNaN(t) ? 0 : t }
     const news = [...espn, ...rss]
+      .filter(isAbout)
       .filter(n => {
         const key = String(n.headline).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80)
         if (seen.has(key)) return false
