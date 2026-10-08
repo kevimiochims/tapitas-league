@@ -68,19 +68,22 @@ export function PlayerNewsCard({ playerId, emptyText }) {
     seenImages.add(n.image)
     return n
   })
-  const hero = list.find(n => n.image)
   const meta = n => [n.source, n.published && timeAgo(n.published)].filter(Boolean).join(' · ')
   // Notícias sem foto recebem fotos diferentes do jogador, em rodízio
   const alts = playerPhoto?.alts?.length ? playerPhoto.alts : playerPhoto ? [playerPhoto] : []
   const noImage = list.filter(n => !n.image)
   const altOf = n => (alts.length ? alts[noImage.indexOf(n) % alts.length] : null)
   const imageOf = n => n.image || altOf(n)?.url || null
+  // Destaque do celular: sempre a notícia mais recente (com a foto dela ou,
+  // sem foto, a do jogador). Antes era a primeira com foto própria, e uma
+  // matéria antiga da ESPN passava na frente das notas mais novas
+  const hero = list[0] && imageOf(list[0]) ? list[0] : null
   return (
     <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more">
       {loading ? <div className="px-3 py-4 text-[13px] text-[#6B7280] sm:px-4">Loading…</div> : (
         <div className="@container">
           {/* Celular: destaque em cima */}
-          {hero && <div className="px-3 pb-1 pt-3 sm:px-4 @2xl:hidden"><NewsHero item={hero} meta={meta(hero)} onClick={e => { e.preventDefault(); setReading(hero) }} /></div>}
+          {hero && <div className="px-3 pb-1 pt-3 sm:px-4 @2xl:hidden"><NewsHero item={{ ...hero, image: imageOf(hero) }} meta={meta(hero)} onClick={e => { e.preventDefault(); setReading(hero) }} /></div>}
           {/* Telas maiores: grade alinhada; todo card tem a área da foto (sem foto,
               entra a do jogador sobre o azul), então nenhum fica mais baixo */}
           <div className="divide-y divide-[#F1F2F4] @2xl:grid @2xl:grid-cols-2 @2xl:gap-3 @2xl:divide-y-0 @2xl:p-3 @4xl:grid-cols-3">
