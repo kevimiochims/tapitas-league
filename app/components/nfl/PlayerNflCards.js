@@ -99,7 +99,7 @@ export function PlayerNewsCard({ playerId, emptyText }) {
           </div>
         </div>
       )}
-      {reading && <NewsReader item={reading} photo={reading.image ? null : altOf(reading)?.url} photoCredit={reading.image ? '' : altOf(reading)?.credit || ''} onClose={() => setReading(null)} />}
+      {reading && <NewsReader item={reading} onClose={() => setReading(null)} />}
     </Card>
   )
 }

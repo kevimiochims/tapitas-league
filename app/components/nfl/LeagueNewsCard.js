@@ -173,8 +173,6 @@ export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar
       {reading && (
         <NewsReader
           item={reading}
-          photo={reading.player?.id ? playerPhotos[reading.player.id]?.url : null}
-          photoCredit={reading.player?.id ? playerPhotos[reading.player.id]?.credit || '' : ''}
           onClose={() => setReading(null)}
           onOpenPlayer={onOpenPlayer}
         />
