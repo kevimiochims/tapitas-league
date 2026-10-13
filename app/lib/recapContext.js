@@ -234,7 +234,7 @@ function teamAngles({ rows, team, opp, g, oppG, weekRows, seasonRows }) {
     let line = `Destaque de ${team}: ${top.name}${slotLabel(top)} com ${f2(top.pts)} pontos (${top.pts && pf ? Math.round((top.pts / pf) * 100) : 0}% do time).`
     if (weekPlayerPts[0] === top.pts) line += ' Maior pontuação de um jogador na semana.'
     const prOk = pr > 0 && pr <= 25 && allPlayerPts.length >= 500
-    if (prOk) line += ` É ${rankF(pr, 'maior pontuação')} de um jogador na história da liga.`
+    if (prOk) line += ` É ${rankF(pr, 'maior pontuação')} de um jogador TITULAR na história da liga.`
     angles.push({ w: prOk ? 4 : 2, text: line })
   }
   const flop = starters.filter(p => p.slot !== 'K' && p.slot !== 'DEF').sort((a, b) => a.pts - b.pts)[0]
@@ -494,15 +494,23 @@ function historyAngles({ rows, team, g, hon }) {
     }
     // Jogadores: recorde da vaga e melhor jogo do jogador na liga
     const hist = starterEntries(all)
+    const careerAll = [...hist, ...all.flatMap(x => lineup(x).bench.map(p => ({ ...p, g: x, bench: true })))]
     lineup(g).starters.forEach(p => {
       if (p.slot && p.slot !== 'FLEX' && p.pts > 0) {
         const bySlot = hist.filter(x => x.slot === p.slot).map(x => x.pts).sort((a, b) => b - a)
         const k = bySlot.indexOf(p.pts) + 1
         if (k > 0 && k <= 3 && bySlot.length > 50) out.push({ w: 4, text: `${p.name} fez ${f2(p.pts)}: ${rankF(k, 'maior pontuação')} de um ${p.slot} titular na história da liga.` })
       }
-      const career = hist.filter(x => abbr(x.name) === abbr(p.name))
+      // Carreira na liga: TODOS os jogos dele, titular ou banco (pontos no banco
+      // também são uma pontuação dele; antes só os de titular entravam e o
+      // recap chamou de "melhor jogo" uma marca já superada no banco).
+      // Identidade = nome exato da planilha (abreviação juntava homônimos)
+      const career = careerAll.filter(x => norm(x.name) === norm(p.name))
       const prevBest = career.filter(x => order(x.g) < order(g)).sort((a, b) => b.pts - a.pts)[0]
-      if (career.length >= 8 && prevBest && p.pts > prevBest.pts && p.pts >= 20) out.push({ w: 3, text: `${p.name} fez ${f2(p.pts)}: melhor jogo dele na história da liga (em ${career.length} jogos como titular; o melhor era ${f2(prevBest.pts)}).` })
+      if (career.length >= 8 && prevBest && p.pts > prevBest.pts && p.pts >= 20) {
+        const where = `${prevBest.bench ? 'no banco, ' : ''}${str(prevBest.g.Season)} W${str(prevBest.g.Week)}`
+        out.push({ w: 3, text: `${p.name} fez ${f2(p.pts)}: maior pontuação dele em toda a história da liga, contando titular e banco (${career.length} jogos; a melhor até então era ${f2(prevBest.pts)}, ${where}).` })
+      }
     })
   }
   return out

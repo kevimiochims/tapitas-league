@@ -3,6 +3,7 @@ import "./globals.css";
 import MobileDrawer from "./components/MobileDrawer";
 import { DrawerProvider } from "./context/DrawerContext";
 import StickyColumns from "./components/StickyColumns";
+import DesktopScroll from "./components/DesktopScroll";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -24,6 +25,8 @@ export default function RootLayout({ children }) {
         <DrawerProvider>
           <MobileDrawer />
           <StickyColumns />
+          {/* Setas e arrastar nas faixas com rolagem lateral (desktop com mouse) */}
+          <DesktopScroll />
           {children}
         </DrawerProvider>
       </body>
