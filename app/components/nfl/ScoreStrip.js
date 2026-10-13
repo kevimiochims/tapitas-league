@@ -253,7 +253,7 @@ function SectionLabel({ logo, name, week, onWeek, live, maxWeek }) {
 const chipsRow = 'scroll-hide flex min-h-[84px] min-w-0 flex-1 items-stretch gap-1.5 overflow-x-auto p-2'
 const skeleton = n => Array.from({ length: n }).map((_, i) => <div key={i} className="w-[7.8rem] flex-shrink-0 animate-pulse rounded-lg bg-[#F4F5F7]" />)
 
-// Placares do topo da Home: NFL à esquerda (3 jogos visíveis, o resto rola) e
+// Placares do topo da Home: NFL à esquerda (quantos jogos couberem, o resto rola) e
 // Tapitas League à direita, cada liga com o seu seletor de semana.
 export default function ScoreStrip({ onTapitasWeek }) {
   const [nflWeek, setNflWeek] = useState(null)
@@ -275,6 +275,26 @@ export default function ScoreStrip({ onTapitasWeek }) {
   const allMatchups = tap.data?.matchups || []
   const matchups = focus ? [...allMatchups].sort((a, b) => Number(b.teams.some(t => t.team === focus)) - Number(a.teams.some(t => t.team === focus))) : allMatchups
   const open = games.find(g => g.id === openId)
+
+  // Desktop: a faixa da NFL ocupa quantos jogos inteiros couberem, depois de
+  // reservar o espaço para todos os confrontos da Tapitas aparecerem inteiros
+  // (mínimo de 2 jogos da NFL). Larguras em rem, as mesmas das classes:
+  // rótulo 6.5, chip 7.8, espaço entre chips 0.375, margens da linha 0.5+0.5
+  const desktopRef = useRef(null)
+  const [desktopWidth, setDesktopWidth] = useState(0)
+  useEffect(() => {
+    const el = desktopRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setDesktopWidth(el.clientWidth))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const rowRem = n => 6.5 + 1 + n * 7.8 + Math.max(0, n - 1) * 0.375
+  const remPx = typeof window !== 'undefined' ? parseFloat(getComputedStyle(document.documentElement).fontSize) || 16 : 16
+  const tapNeeded = rowRem(Math.max(matchups.length, tap.loading ? 5 : 1))
+  const fitNfl = desktopWidth ? Math.floor((desktopWidth / remPx - tapNeeded - 7.5 + 0.375) / (7.8 + 0.375)) : 4
+  const nflSlots = Math.max(2, Math.min(fitNfl, nfl.loading ? 4 : Math.max(games.length, 2)))
+  const nflWidth = `calc(${rowRem(nflSlots)}rem + 1px)`
 
   // Jogo em evidência: só o primeiro jogo AO VIVO, e só se ele estiver fora da
   // área visível da faixa (ex.: domingo, com o de quinta já encerrado no
@@ -377,8 +397,8 @@ export default function ScoreStrip({ onTapitasWeek }) {
         <div ref={mobileRowRef} className={chipsRow}>{isNfl ? nflChips : tapChips}</div>
       </div>
 
-      <div className="hidden lg:flex lg:flex-row">
-        <div className="flex min-w-0 lg:w-[calc(39.825rem+1px)] lg:flex-none lg:border-r lg:border-[#EEF0F2]">
+      <div ref={desktopRef} className="hidden lg:flex lg:flex-row">
+        <div className="flex min-w-0 lg:flex-none lg:border-r lg:border-[#EEF0F2]" style={{ width: nflWidth }}>
           <SectionLabel
             logo="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png"
             name="NFL"

@@ -53,11 +53,13 @@ export default function TransactionsPage() {
   const activity = {}
   scoped.forEach(t => t.teams.forEach(tm => { activity[tm] = (activity[tm] || 0) + 1 }))
   const mostActive = Object.entries(activity).sort((a, b) => b[1] - a[1])[0]
+  // Defesa: posição DEF ou ID do Sleeper que é a sigla do time ("BUF")
+  const isDefense = p => String(p?.pos || '').toUpperCase() === 'DEF' || /^[A-Z]{2,3}$/.test(String(p?.id || ''))
   // Jogador mais adicionado (waivers + free agents)
   const addCount = {}
   // Defesas ficam de fora deste card (trocam toda semana); continuam nos moves
   scoped.filter(t => t.type !== 'trade').forEach(t => t.moves.forEach(m => m.adds.forEach(p => {
-    if (String(p.pos || '').toUpperCase() === 'DEF') return
+    if (isDefense(p)) return
     if (!addCount[p.id]) addCount[p.id] = { p, n: 0 }
     addCount[p.id].n++
   })))
@@ -74,8 +76,9 @@ export default function TransactionsPage() {
     return { team: tm, trade: mine.filter(t => t.type === 'trade').length, waiver: mine.filter(t => t.type === 'waiver').length, fa: mine.filter(t => t.type === 'free_agent').length, total: mine.length }
   }).sort((a, b) => b.total - a.total)
   const maxTotal = Math.max(1, ...byTeam.map(r => r.total))
+  // Sem defesas, igual ao destaque "Most added player" lá em cima
   const topAdded = Object.values(seasonScoped.filter(t => t.type !== 'trade').reduce((acc, t) => {
-    t.moves.forEach(m => m.adds.forEach(p => { acc[p.id] = acc[p.id] || { p, n: 0, teams: new Set() }; acc[p.id].n++; acc[p.id].teams.add(m.team) }))
+    t.moves.forEach(m => m.adds.forEach(p => { if (isDefense(p)) return; acc[p.id] = acc[p.id] || { p, n: 0, teams: new Set() }; acc[p.id].n++; acc[p.id].teams.add(m.team) }))
     return acc
   }, {})).sort((a, b) => b.n - a.n).slice(0, 5)
   const partners = Object.values(seasonScoped.filter(t => t.type === 'trade').reduce((acc, t) => {

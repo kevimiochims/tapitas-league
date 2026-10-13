@@ -26,6 +26,10 @@
 //                     gemini-3.8-flash, gemini-3.7-flash, gemini-3.6-flash, gemini-2.5-flash
 //   RECAP_TOKEN     = (opcional, não é necessário)
 //
+// GATILHO SEMANAL: use completarRecapsDaSemana (no lugar de gerarRecapsDaLiga
+// e gerarRecapsDoPowerRanking). Ela escreve os recaps e depois as notas e, se
+// o Gemini estiver ocupado ou sem cota, se agenda de novo sozinha até terminar.
+//
 // PAUTA DO EDITOR (opcional): aba "PAUTA" na mesma planilha privada da LORE,
 // para mandar a IA falar de um assunto. Rode criaAbaPauta() uma vez para criar
 // a aba com o cabeçalho e exemplos. Colunas:
@@ -408,7 +412,7 @@ const primeiraFrase_ = t => String(t || '').replace(/\s+/g, ' ').split(/(?<=[.!?
 // -----------------------------------------------------------------------------
 // RECAP DE CADA CONFRONTO → coluna "Recap da Partida" (nas duas linhas do jogo)
 // -----------------------------------------------------------------------------
-function gerarRecapsDaLiga() {
+function gerarRecapsDaLiga(limite) {
   const cfg = recapConfig_()
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('GAME_FACTS_ALL')
   const data = sheet.getDataRange().getValues()
@@ -435,7 +439,7 @@ function gerarRecapsDaLiga() {
   const inicio = Date.now()
   const processados = new Set()
   for (let i = 1; i < data.length && feitos < RECAP_MAX_POR_EXECUCAO; i++) {
-    if (Date.now() - inicio > RECAP_TEMPO_MAX_MS) { Logger.log('[RECAP] Tempo quase no limite: parando aqui. Rode de novo para continuar.'); break }
+    if (Date.now() > (typeof limite === 'number' ? limite : inicio + RECAP_TEMPO_MAX_MS)) { Logger.log('[RECAP] Tempo quase no limite: parando aqui. Rode de novo para continuar.'); break }
     const r = data[i]
     if (String(r[cRecap] || '').trim()) continue
     const season = r[cSeason], week = r[cWeek], team = String(r[cTeam]).trim(), opp = String(r[cOpp]).trim()
@@ -478,12 +482,13 @@ function gerarRecapsDaLiga() {
     }
   }
   Logger.log(`[RECAP] ${feitos} recap(s) gerado(s).`)
+  return feitos
 }
 
 // -----------------------------------------------------------------------------
 // VERBETE DE POWER RANKING → coluna "Note" (uma linha por time)
 // -----------------------------------------------------------------------------
-function gerarRecapsDoPowerRanking() {
+function gerarRecapsDoPowerRanking(limite) {
   const cfg = recapConfig_()
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('GAME_FACTS_ALL')
   const data = sheet.getDataRange().getValues()
@@ -508,7 +513,7 @@ function gerarRecapsDoPowerRanking() {
   let feitos = 0
   const inicio = Date.now()
   for (let i = 1; i < data.length && feitos < RECAP_MAX_POR_EXECUCAO; i++) {
-    if (Date.now() - inicio > RECAP_TEMPO_MAX_MS) { Logger.log('[PR] Tempo quase no limite: parando aqui. Rode de novo para continuar.'); break }
+    if (Date.now() > (typeof limite === 'number' ? limite : inicio + RECAP_TEMPO_MAX_MS)) { Logger.log('[PR] Tempo quase no limite: parando aqui. Rode de novo para continuar.'); break }
     const r = data[i]
     if (String(r[cNote] || '').trim()) continue
     if (!(Number(r[cPR]) > 0)) continue // só linhas com Power Ranking calculado
@@ -537,6 +542,104 @@ function gerarRecapsDoPowerRanking() {
     }
   }
   Logger.log(`[PR] ${feitos} verbete(s) gerado(s).`)
+  return feitos
+}
+
+// -----------------------------------------------------------------------------
+// AUTOMÁTICO ATÉ TERMINAR: recaps dos confrontos + notas do Power Ranking
+// -----------------------------------------------------------------------------
+// Use ESTA função no gatilho semanal (no lugar de gerarRecapsDaLiga e
+// gerarRecapsDoPowerRanking). Cada execução faz o que der em ~4,5 min: primeiro
+// os recaps dos confrontos, depois as notas. Se sobrar algo (Gemini ocupado,
+// sem cota, ou o tempo acabou), ela se agenda de novo sozinha:
+//   - modelos só ocupados → tenta de novo em 35 min;
+//   - todos os modelos sem cota hoje → tenta logo depois que a cota renova
+//     (meia-noite do horário do Pacífico, ~4h/5h da manhã em Brasília).
+// Para quando estiver tudo escrito. Depois de RECAP_TENTATIVAS_MAX tentativas
+// sem terminar, desiste e manda um e-mail avisando o que ficou faltando.
+const RECAP_TENTATIVAS_MAX = 20
+
+function completarRecapsDaSemana(e) {
+  const props = PropertiesService.getScriptProperties()
+  const retryId = props.getProperty('RECAP_RETRY_TRIGGER_ID')
+  const ehRetentativa = Boolean(e && e.triggerUid && retryId && e.triggerUid === retryId)
+  apagaRetentativaRecaps_()
+  // Chamada pelo gatilho semanal (ou na mão) começa a contagem do zero
+  let tentativa = ehRetentativa ? Number(props.getProperty('RECAP_TENTATIVAS') || 0) + 1 : 1
+  props.setProperty('RECAP_TENTATIVAS', String(tentativa))
+  // Garantia: a próxima tentativa já fica agendada antes de começar. Se o
+  // Google cortar esta execução no limite de 6 min, a fila continua mesmo
+  // assim; no fim ela é ajustada (ou apagada, se terminou tudo)
+  if (tentativa < RECAP_TENTATIVAS_MAX) agendaRetentativaRecaps_(35 * 60 * 1000)
+  // Um prazo só para as duas etapas (recaps e notas) caberem nos 6 min
+  const limite = Date.now() + RECAP_TEMPO_MAX_MS
+
+  let pend = contaPendentesRecaps_()
+  Logger.log(`[AUTO] Tentativa ${tentativa}: faltam ${pend.recaps} recap(s) e ${pend.notas} nota(s).`)
+  if (pend.recaps > 0) gerarRecapsDaLiga(limite)
+  pend = contaPendentesRecaps_()
+  // As notas só depois que os recaps acabaram (e se ainda houver tempo nesta execução)
+  if (pend.recaps === 0 && pend.notas > 0 && Date.now() < limite) gerarRecapsDoPowerRanking(limite)
+  pend = contaPendentesRecaps_()
+
+  if (pend.recaps === 0 && pend.notas === 0) {
+    apagaRetentativaRecaps_()
+    Logger.log('[AUTO] Tudo escrito. Nada mais agendado.')
+    props.deleteProperty('RECAP_TENTATIVAS')
+    return
+  }
+  if (tentativa >= RECAP_TENTATIVAS_MAX) {
+    apagaRetentativaRecaps_()
+    Logger.log(`[AUTO] Desisti depois de ${tentativa} tentativas. Faltam ${pend.recaps} recap(s) e ${pend.notas} nota(s).`)
+    try {
+      MailApp.sendEmail(Session.getEffectiveUser().getEmail(), 'Recaps da Tapitas: ficou faltando',
+        `Depois de ${tentativa} tentativas ainda faltam ${pend.recaps} recap(s) de confronto e ${pend.notas} nota(s) do Power Ranking.\n` +
+        'Veja o log do Apps Script (Execuções) e rode completarRecapsDaSemana() de novo quando quiser.')
+    } catch (err) { Logger.log(`[AUTO] Não consegui mandar o e-mail: ${err}`) }
+    return
+  }
+  const cfg = recapConfig_()
+  const semCota = cfg.modelos.every(m => modeloIndisponivel_(m) === 'sem cota hoje')
+  const espera = semCota ? msAteCotaRenovar_() + 10 * 60 * 1000 : 35 * 60 * 1000
+  agendaRetentativaRecaps_(espera)
+  Logger.log(`[AUTO] Faltam ${pend.recaps} recap(s) e ${pend.notas} nota(s). ${semCota ? 'Todos os modelos sem cota hoje: ' : ''}Nova tentativa em ${Math.round(espera / 60000)} min.`)
+}
+
+// Quantos recaps de confronto e notas do Power Ranking ainda faltam (mesmos
+// critérios de gerarRecapsDaLiga e gerarRecapsDoPowerRanking)
+function contaPendentesRecaps_() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('GAME_FACTS_ALL')
+  const data = sheet.getDataRange().getValues()
+  const h = data[0]
+  const cS = colIndex_(h, 'Season'), cW = colIndex_(h, 'Week'), cT = colIndex_(h, 'Team')
+  const cR = colIndex_(h, 'Recap da Partida'), cPR = colIndex_(h, 'Power Ranking'), cN = colIndex_(h, 'Note')
+  let recaps = 0, notas = 0
+  data.slice(1).forEach(r => {
+    if (r[cS] && r[cW] && String(r[cT]).trim() && !String(r[cR] || '').trim()) recaps++
+    if (Number(r[cPR]) > 0 && !String(r[cN] || '').trim()) notas++
+  })
+  // Recap é gravado nas duas linhas do jogo: conta jogos, não linhas
+  return { recaps: Math.ceil(recaps / 2), notas }
+}
+
+function agendaRetentativaRecaps_(espera) {
+  apagaRetentativaRecaps_()
+  const t = ScriptApp.newTrigger('completarRecapsDaSemana').timeBased().after(espera).create()
+  PropertiesService.getScriptProperties().setProperty('RECAP_RETRY_TRIGGER_ID', t.getUniqueId())
+}
+
+function apagaRetentativaRecaps_() {
+  const props = PropertiesService.getScriptProperties()
+  const id = props.getProperty('RECAP_RETRY_TRIGGER_ID')
+  if (!id) return
+  ScriptApp.getProjectTriggers().filter(t => t.getUniqueId() === id).forEach(t => ScriptApp.deleteTrigger(t))
+  props.deleteProperty('RECAP_RETRY_TRIGGER_ID')
+}
+
+// Milissegundos até a meia-noite do horário do Pacífico (quando a cota do Gemini renova)
+function msAteCotaRenovar_() {
+  const [hh, mm] = Utilities.formatDate(new Date(), 'America/Los_Angeles', 'HH:mm').split(':').map(Number)
+  return ((24 * 60) - (hh * 60 + mm)) * 60 * 1000
 }
 
 // Para testar: mostra no log o dossiê de um jogo, sem chamar o Gemini
