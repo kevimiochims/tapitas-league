@@ -18,16 +18,16 @@ function kickoffLabel(iso) {
   return `${day} ${time}`
 }
 
-// Ritmo da atualização: jogo rolando → a cada 20s; semana em andamento (ainda
-// vai ter jogo) → a cada 5 min; semana fechada ou futura → não busca de novo.
+// Ritmo da atualização: jogo rolando → a cada 30s; semana em andamento (ainda
+// vai ter jogo) → a cada 10 min; semana fechada ou futura → não busca de novo.
 // Cada atualização roda uma função na Vercel (CPU conta na cota): ritmo mais
 // calmo e nada de atualizar com a aba escondida.
 export function liveDelay(data) {
   if (!data) return 60000
-  if (data.live) return 20000
+  if (data.live) return 30000
   const pendingGames = Array.isArray(data.games) && data.games.some(g => !g.completed)
   const isCurrent = data.status === 'current' || (data.currentWeek && Number(data.week) === Number(data.currentWeek) && pendingGames)
-  return isCurrent ? 300000 : null
+  return isCurrent ? 600000 : null
 }
 
 // Busca os dados da semana e continua atualizando sozinho em horário de jogo.
@@ -42,9 +42,9 @@ function useWeekData(url) {
     const schedule = delay => { clearTimeout(timer); if (delay != null && !cancelled && document.visibilityState !== 'hidden') timer = setTimeout(load, delay) }
     function load() {
       clearTimeout(timer)
-      // Parâmetro que muda a cada 15s: resposta nova, e todo mundo nesses 15s
+      // Parâmetro que muda a cada 30s: resposta nova, e todo mundo nesses 30s
       // divide a mesma cópia do CDN (uma execução da função só)
-      const fresh = `${url}${url.includes('?') ? '&' : '?'}_=${Math.floor(Date.now() / 15000)}`
+      const fresh = `${url}${url.includes('?') ? '&' : '?'}_=${Math.floor(Date.now() / 30000)}`
       fetch(fresh, { cache: 'no-store' })
         .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json() })
         .then(data => {

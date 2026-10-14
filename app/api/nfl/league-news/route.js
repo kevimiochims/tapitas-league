@@ -7,7 +7,7 @@ export const maxDuration = 60
 
 export async function GET() {
   try {
-    return Response.json({ news: await getLeagueNews() }, { headers: cdnHeaders(900) })
+    return Response.json({ news: await getLeagueNews() }, { headers: cdnHeaders(1800) })
   } catch (err) {
     console.error('[api/nfl/league-news]', err)
     return Response.json({ error: 'Failed to load league news' }, { status: 502 })

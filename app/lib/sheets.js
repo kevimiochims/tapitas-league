@@ -22,7 +22,7 @@ export const SHEET_TABS = new Set([
 ])
 
 // Tempo (segundos) que uma aba fica em cache antes de buscar de novo no Google
-export const SHEET_TTL = 300
+export const SHEET_TTL = 900
 
 // Abas lidas sempre na hora, sem cache (prévias que você acabou de gerar)
 export const FRESH_TABS = new Set(['MATERIAS_TESTE'])
