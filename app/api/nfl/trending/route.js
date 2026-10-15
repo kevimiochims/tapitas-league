@@ -1,9 +1,12 @@
 import { getTrending, getSleeperPlayers } from '@/app/lib/sleeper'
 import { getLeagueRosters, rosterIndex, getSheetNames } from '@/app/lib/leagueRosters'
 import { cdnHeaders } from '@/app/lib/cache'
+import { isEconomy } from '@/app/lib/economy'
 
 // Mais adicionados e mais cortados no Sleeper nas últimas 24h
 export async function GET() {
+  // Modo economia (até 05/11)
+  if (isEconomy()) return Response.json({ adds: [], drops: [], paused: true }, { headers: cdnHeaders(3600) })
   try {
     const [adds, drops, players, rosters, sheetNames] = await Promise.all([
       getTrending('add'),

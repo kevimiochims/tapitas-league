@@ -1,12 +1,15 @@
 import { getPlayerNews, findEspnIdByName } from '@/app/lib/espn'
 import { getSleeperPlayers } from '@/app/lib/sleeper'
 import { cdnHeaders } from '@/app/lib/cache'
+import { isEconomy } from '@/app/lib/economy'
 import { getRssNews, matchNewsToPlayers } from '@/app/lib/rssNews'
 
 // Últimas manchetes de um jogador: ESPN (pelo ID) + RSS de outros sites (pelo nome)
 export async function GET(request) {
   const id = new URL(request.url).searchParams.get('id')
   if (!id || !/^[A-Za-z0-9]+$/.test(id)) return Response.json({ error: 'Missing player id' }, { status: 400 })
+  // Modo economia (até 05/11)
+  if (isEconomy()) return Response.json({ news: [], paused: true }, { headers: cdnHeaders(3600) })
   try {
     const players = await getSleeperPlayers()
     const info = players.get(id)

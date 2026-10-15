@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { isEconomy } from '../../lib/economy'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { CardShell, Segmented, Tag, TeamLogo, PositionBadge, SkeletonRows, Pager, usePager } from '../ui'
 import { useTrending } from './useNflData'
@@ -12,7 +13,7 @@ function compact(n) {
 }
 
 // Mais adicionados / cortados em todas as ligas do Sleeper (24h)
-export default function TrendingCard({ onOpenPlayer }) {
+function TrendingCardLive({ onOpenPlayer }) {
   const { data, loading, error } = useTrending()
   const [mode, setMode] = useState('adds')
   const list = (data?.[mode] || []).slice(0, 15)
@@ -59,4 +60,9 @@ export default function TrendingCard({ onOpenPlayer }) {
       )}
     </CardShell>
   )
+}
+
+// Modo economia (até 05/11): o card some e o servidor não é chamado
+export default function TrendingCard(props) {
+  return isEconomy() ? null : <TrendingCardLive {...props} />
 }

@@ -10,6 +10,7 @@ import SharedPlayerProfile from '../components/PlayerProfileModal'
 import PlayerCutout from '../components/PlayerCutout'
 import { PageShell, PageSkeleton, SiteFooter, getTeamAbbr, PositionBadge as UiPositionBadge } from '../components/ui'
 import { getTeamFocus, useTeamFocus } from '../context/TeamFocus'
+import { isEconomy } from '../lib/economy'
 
 const BASE_URL = '/api/sheet'
 
@@ -812,13 +813,18 @@ function MatchupsPageContent() {
   // aba atualiza na hora.
   const liveMode = games.some(g => String(g?.Status || '').trim() === 'live') ? 'live'
     : games.some(g => String(g?.Status || '').trim() === 'current') ? 'current' : null
+  // Modo economia (até 05/11): sem atualização automática; o botão do placar chama isto
+  const refreshLiveRef = useRef(null)
   useEffect(() => {
     if (!liveMode) return
     let cancelled = false
     let timer = null
+    const economy = isEconomy()
+    let loadedAt = Date.now()
     const sameGame = (a, b) => a && b && ['Season', 'Week', 'Team', 'Opponent'].every(k => String(a?.[k] || '').trim() === String(b?.[k] || '').trim())
     const refresh = async () => {
       clearTimeout(timer)
+      loadedAt = Date.now()
       const rows = await safeFetch(`/api/league/sleeper-rows?_=${Math.floor(Date.now() / 30000)}`)
       if (cancelled) return
       if (rows.length) {
@@ -828,9 +834,11 @@ function MatchupsPageContent() {
       schedule()
     }
     // 30s com jogo rolando, 10 min no resto da semana; aba escondida não atualiza
-    const schedule = () => { if (!cancelled && document.visibilityState !== 'hidden') timer = setTimeout(refresh, liveMode === 'live' ? 30000 : 600000) }
+    const schedule = () => { if (!economy && !cancelled && document.visibilityState !== 'hidden') timer = setTimeout(refresh, liveMode === 'live' ? 30000 : 600000) }
     schedule()
-    const onVisible = () => { if (document.visibilityState === 'visible') refresh() }
+    refreshLiveRef.current = refresh
+    // Voltar para a aba atualiza (no modo economia, só se a última busca tem mais de 10 min)
+    const onVisible = () => { if (document.visibilityState === 'visible' && (!economy || Date.now() - loadedAt > 600000)) refresh() }
     document.addEventListener('visibilitychange', onVisible)
     return () => { cancelled = true; clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible) }
   }, [liveMode])
@@ -2028,7 +2036,12 @@ function MatchupsPageContent() {
                               {matchStatus === 'live' && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />}
                               {matchStatus === 'live' ? 'Live' : matchStatus === 'current' ? 'In progress' : 'Upcoming'}
                             </div>
-                          ) : teamWon ? (
+                          ) : null}
+                          {undecided && matchStatus !== 'upcoming' && isEconomy() ? (
+                            // Modo economia: o placar não se atualiza sozinho
+                            <button type="button" onClick={() => refreshLiveRef.current?.()} className="mt-1.5 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-white/25">↻ Atualizar</button>
+                          ) : null}
+                          {undecided ? null : teamWon ? (
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766]">← WIN</div>
                           ) : (
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#E8C766]">WIN →</div>

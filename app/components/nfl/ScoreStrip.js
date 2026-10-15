@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, RotateCw } from 'lucide-react'
+import { isEconomy } from '../../lib/economy'
 import { TeamLogo, PositionBadge, getTeamAbbr } from '../ui'
 import { useTeamFocus } from '../../context/TeamFocus'
 import TeamFocusPicker from '../TeamFocusPicker'
@@ -34,14 +35,19 @@ export function liveDelay(data) {
 // Uma falha não interrompe as atualizações, e voltar para a aba atualiza na hora.
 function useWeekData(url) {
   const [state, setState] = useState({ url: null, data: null, error: null })
+  const reloadRef = useRef(null)
   useEffect(() => {
     let cancelled = false
     let timer = null
     let last = null
-    // Aba escondida não agenda nada; ao voltar para a aba, atualiza na hora
-    const schedule = delay => { clearTimeout(timer); if (delay != null && !cancelled && document.visibilityState !== 'hidden') timer = setTimeout(load, delay) }
+    // Aba escondida não agenda nada; ao voltar para a aba, atualiza na hora.
+    // Modo economia (até 05/11): não atualiza sozinho (fica o botão de atualizar)
+    const economy = isEconomy()
+    let loadedAt = 0
+    const schedule = delay => { clearTimeout(timer); if (!economy && delay != null && !cancelled && document.visibilityState !== 'hidden') timer = setTimeout(load, delay) }
     function load() {
       clearTimeout(timer)
+      loadedAt = Date.now()
       // Parâmetro que muda a cada 30s: resposta nova, e todo mundo nesses 30s
       // divide a mesma cópia do CDN (uma execução da função só)
       const fresh = `${url}${url.includes('?') ? '&' : '?'}_=${Math.floor(Date.now() / 30000)}`
@@ -59,13 +65,19 @@ function useWeekData(url) {
           schedule(last ? liveDelay(last) ?? 60000 : 60000)
         })
     }
-    const onVisible = () => { if (document.visibilityState === 'visible' && (!last || liveDelay(last) != null)) load() }
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible' || (last && liveDelay(last) == null)) return
+      // No modo economia, voltar para a aba só atualiza se a última busca tem mais de 10 min
+      if (economy && Date.now() - loadedAt < 600000) return
+      load()
+    }
+    reloadRef.current = load
     document.addEventListener('visibilitychange', onVisible)
     load()
     return () => { cancelled = true; clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible) }
   }, [url])
   const loading = state.url !== url
-  return { data: loading ? null : state.data, loading, error: loading ? null : state.error }
+  return { data: loading ? null : state.data, loading, error: loading ? null : state.error, reload: () => reloadRef.current?.() }
 }
 
 // ── NFL ─────────────────────────────────────────────────────────────
@@ -238,12 +250,22 @@ function WeekSelect({ week, onChange, maxWeek }) {
   )
 }
 
-function SectionLabel({ logo, name, week, onWeek, live, maxWeek }) {
+// Modo economia: botão para atualizar o placar na mão (sem atualização automática)
+function RefreshButton({ onClick }) {
+  return (
+    <button type="button" onClick={onClick} title="Atualizar placar" aria-label="Atualizar placar" className="flex h-5 w-5 items-center justify-center rounded-full text-[#6B7280] hover:bg-[#F4F5F7] hover:text-[#02275F]">
+      <RotateCw className="h-3 w-3" />
+    </button>
+  )
+}
+
+function SectionLabel({ logo, name, week, onWeek, live, maxWeek, onRefresh }) {
   return (
     <div className={`flex w-[6.5rem] flex-shrink-0 flex-col justify-center gap-1 border-[#EEF0F2] py-1.5 items-start border-r pl-3 pr-2`}>
       <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#111]">
         <img src={logo} alt="" className="h-4 w-4 object-contain" />{name}
         {live && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" title="Live" />}
+        {onRefresh && <RefreshButton onClick={onRefresh} />}
       </span>
       <WeekSelect week={week} onChange={onWeek} maxWeek={maxWeek} />
     </div>
@@ -343,6 +365,8 @@ export default function ScoreStrip({ onTapitasWeek }) {
       {!tap.loading && matchups.map(m => <div key={`${m.week}-${m.teams[0].team}`} data-chip-id={`${m.week}-${m.teams[0].team}`} className="flex flex-shrink-0"><TapitasChip season={tap.data.season} status={tap.data.status} m={m} focus={focus} /></div>)}
     </>
   )
+  // Botão de atualizar só no modo economia e com a semana ainda rolando
+  const economyRefresh = src => (isEconomy() && src.data && (src.data.live || liveDelay(src.data) != null) ? src.reload : undefined)
   const pickNflWeek = w => { setNflWeek(Number(w)); setOpenId(null) }
   const pickTapWeek = w => { setTapWeek(Number(w)); onTapitasWeek?.(Number(w)) }
 
@@ -374,6 +398,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
           <span className="flex flex-shrink-0 items-center gap-1 self-center pl-3 pr-1 text-[12px] text-[#6B7280]">
             Week
             {(isNfl ? nfl.data?.live : tap.data?.live) && <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D01F2D]" title="Live" />}
+            {economyRefresh(isNfl ? nfl : tap) && <RefreshButton onClick={economyRefresh(isNfl ? nfl : tap)} />}
           </span>
           <div ref={weeksRef} className="scroll-hide flex min-w-0 flex-1 overflow-x-auto">
             {mobileWeeks.map(w => {
@@ -406,6 +431,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
             onWeek={pickNflWeek}
             live={nfl.data?.live}
             maxWeek={nfl.data?.currentWeek || tap.data?.currentWeek}
+            onRefresh={economyRefresh(nfl)}
           />
           <div ref={nflRowRef} className={chipsRow}>{nflChips}</div>
         </div>
@@ -417,6 +443,7 @@ export default function ScoreStrip({ onTapitasWeek }) {
             onWeek={pickTapWeek}
             live={tap.data?.live}
             maxWeek={tap.data?.currentWeek || nfl.data?.currentWeek}
+            onRefresh={economyRefresh(tap)}
           />
           <div ref={tapRowRef} className={chipsRow}>{tapChips}</div>
         </div>

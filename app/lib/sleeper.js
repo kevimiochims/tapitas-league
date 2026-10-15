@@ -20,9 +20,45 @@ export async function getNflState() {
   return { ...s, week }
 }
 
-// Base de jogadores do Sleeper (~15 MB). Guardamos só os campos que o site usa.
+// Cópia enxuta da base (só posições de fantasy e os campos abaixo), gerada uma
+// vez por dia pelo GitHub Actions (scripts/players-cache.mjs). É ~20x menor que
+// a base do Sleeper: cada servidor novo da Vercel lê ela em vez dos ~15 MB.
+const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/kevimiochims/tapitas-league/data/players.json'
+
+async function cachedPlayers() {
+  const data = await fetchJson(PLAYERS_CACHE_URL, { timeoutMs: 10000 })
+  // Velha demais (a automação parou): melhor buscar no Sleeper
+  if (!data?.rows?.length || Date.now() - Date.parse(data.updated || 0) > 3 * 86400000) throw new Error('players cache stale')
+  const at = Object.fromEntries((data.fields || []).map((f, i) => [f, i]))
+  const players = new Map()
+  data.rows.forEach(r => {
+    const id = String(r[at.id])
+    players.set(id, {
+      id,
+      name: r[at.name] || id,
+      pos: r[at.pos] || '',
+      team: normalizeNflTeam(r[at.team]),
+      injuryStatus: r[at.injuryStatus] || null,
+      injuryBodyPart: r[at.injuryBodyPart] || null,
+      injuryNotes: r[at.injuryNotes] || null,
+      injuryDate: r[at.injuryDate] || null,
+      espnId: r[at.espnId] || null,
+      gsisId: r[at.gsisId] || null,
+      yearsExp: r[at.yearsExp] ?? null,
+    })
+  })
+  return players
+}
+
+// Base de jogadores: a cópia enxuta e, se ela faltar, a base completa do
+// Sleeper (~15 MB). Guardamos só os campos que o site usa.
 export function getSleeperPlayers() {
   return cached('sleeper:players', 6 * 3600, async () => {
+    try {
+      return await cachedPlayers()
+    } catch (err) {
+      console.error('[sleeper] cópia enxuta indisponível, usando a base completa:', err.message)
+    }
     const raw = await fetchJson(`${API}/v1/players/nfl`, { timeoutMs: 45000 })
     const players = new Map()
     for (const [id, p] of Object.entries(raw || {})) {
