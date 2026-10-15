@@ -44,7 +44,7 @@ export async function GET(request) {
       .sort((a, b) => time(b) - time(a))
       .slice(0, 12)
     // 10 min: a lista do jogador não pode ficar atrás da Home (que renova a cada 15)
-    return Response.json({ news }, { headers: cdnHeaders(600) })
+    return Response.json({ news }, { headers: cdnHeaders(1800) })
   } catch (err) {
     console.error('[api/nfl/player-news]', err)
     return Response.json({ error: 'Failed to load player news' }, { status: 502 })

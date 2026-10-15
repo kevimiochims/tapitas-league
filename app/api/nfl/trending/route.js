@@ -26,7 +26,7 @@ export async function GET() {
         leagueTeams: (owners.get(r.id) || []).map(o => o.team),
       }
     }).filter(p => ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].includes(p.pos))
-    return Response.json({ adds: enrich(adds), drops: enrich(drops) }, { headers: cdnHeaders(1800) })
+    return Response.json({ adds: enrich(adds), drops: enrich(drops) }, { headers: cdnHeaders(3600) })
   } catch (err) {
     console.error('[api/nfl/trending]', err)
     return Response.json({ error: 'Failed to load trending players' }, { status: 502 })

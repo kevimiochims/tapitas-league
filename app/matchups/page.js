@@ -806,7 +806,7 @@ function MatchupsPageContent() {
 
   // Matchups da semana selecionada — deduplicados (pega só um lado de cada confronto)
   // Ao vivo: a semana em andamento vem do Sleeper e é buscada de novo a cada
-  // 20s com jogo rolando (5 min no resto da semana), no mesmo ritmo do placar da
+  // 30s com jogo rolando (10 min no resto da semana), no mesmo ritmo do placar da
   // Home. O confronto aberto é trocado pela versão nova, para placar e pontos
   // dos jogadores acompanharem o jogo. Falhas não interrompem; voltar para a
   // aba atualiza na hora.
@@ -819,7 +819,7 @@ function MatchupsPageContent() {
     const sameGame = (a, b) => a && b && ['Season', 'Week', 'Team', 'Opponent'].every(k => String(a?.[k] || '').trim() === String(b?.[k] || '').trim())
     const refresh = async () => {
       clearTimeout(timer)
-      const rows = await safeFetch(`/api/league/sleeper-rows?_=${Math.floor(Date.now() / 15000)}`)
+      const rows = await safeFetch(`/api/league/sleeper-rows?_=${Math.floor(Date.now() / 30000)}`)
       if (cancelled) return
       if (rows.length) {
         setGames(mergeLiveRows(sheetRowsRef.current, rows))
@@ -827,8 +827,8 @@ function MatchupsPageContent() {
       }
       schedule()
     }
-    // 20s com jogo rolando, 5 min no resto da semana; aba escondida não atualiza
-    const schedule = () => { if (!cancelled && document.visibilityState !== 'hidden') timer = setTimeout(refresh, liveMode === 'live' ? 20000 : 300000) }
+    // 30s com jogo rolando, 10 min no resto da semana; aba escondida não atualiza
+    const schedule = () => { if (!cancelled && document.visibilityState !== 'hidden') timer = setTimeout(refresh, liveMode === 'live' ? 30000 : 600000) }
     schedule()
     const onVisible = () => { if (document.visibilityState === 'visible') refresh() }
     document.addEventListener('visibilitychange', onVisible)

@@ -54,9 +54,9 @@ async function weekPoints(kind, season, week) {
   return map
 }
 
-// Pontos ao vivo da semana (guarda 15s: o arquivo de estatísticas é grande)
+// Pontos ao vivo da semana (guarda 30s: o arquivo de estatísticas é grande)
 export function getLivePoints(season, week) {
-  return cached(`sleeper:live-points:${season}:${week}`, 15, () => weekPoints('stats', season, week))
+  return cached(`sleeper:live-points:${season}:${week}`, 30, () => weekPoints('stats', season, week))
 }
 
 // Projeção da semana: muda pouco na semana atual (10 min) e nada nas antigas.

@@ -253,6 +253,22 @@ function teamAngles({ rows, team, opp, g, oppG, weekRows, seasonRows }) {
 // e margens contam só semanas simples (semana dupla soma dois jogos).
 
 const byOrder = (x, y) => order(x) - order(y)
+
+// Cálculos pesados sobre o histórico inteiro (sequências, temporadas, todos os
+// titulares) ficam guardados por 1 min: o dossiê da rodada monta 5 confrontos
+// com 2 times cada sobre o mesmo histórico, e sem isso refazia tudo 10 vezes
+// (CPU da Vercel). A chave é o recorte (quantos jogos e até qual semana)
+const MEMO = new Map()
+function memoRows(name, rows, fn) {
+  const last = rows.length ? Math.max(...rows.map(order)) : 0
+  const key = `${name}|${rows.length}|${last}`
+  const hit = MEMO.get(key)
+  if (hit && Date.now() - hit.at < 60000 && hit.rows[0] === rows[0]) return hit.value
+  if (MEMO.size > 60) MEMO.clear()
+  const value = fn(rows)
+  MEMO.set(key, { value, at: Date.now(), rows })
+  return value
+}
 const where = g => `${str(g.Team)} em ${str(g.Season)} W${str(g.Week)}`
 const isReg = g => stage(g) === 'reg season'
 const pct = r => (r.w + r.l + r.t ? (r.w + r.t / 2) / (r.w + r.l + r.t) : 0)
@@ -351,7 +367,7 @@ export function recordBook(rows, hon) {
   add('Menor pontuação de um vencedor', low(wins, x => num(x.PF), 2, x => `${f2(num(x.PF))} (${where(x)}, venceu ${str(x.Opponent)})`))
   add('Jogos com mais pontos somados', top(games, x => num(x.PF) + num(x.PA), 2, x => `${f2(num(x.PF) + num(x.PA))} (${str(x.Team)} x ${str(x.Opponent)}, ${str(x.Season)} W${str(x.Week)})`))
   add('Jogos com menos pontos somados', low(games, x => num(x.PF) + num(x.PA), 2, x => `${f2(num(x.PF) + num(x.PA))} (${str(x.Team)} x ${str(x.Opponent)}, ${str(x.Season)} W${str(x.Week)})`))
-  const streaks = allStreaks(rows)
+  const streaks = memoRows('streaks', rows, allStreaks)
   add('Maiores sequências de vitórias', top(streaks.filter(s => s.type === 'W'), s => s.n, 3, s => `${s.n} (${streakWhere(s)})`))
   add('Maiores sequências de derrotas', top(streaks.filter(s => s.type === 'L'), s => s.n, 3, s => `${s.n} (${streakWhere(s)})`))
   // Temporadas regulares completas (as já encerradas)
@@ -386,7 +402,7 @@ function historyAngles({ rows, team, g, hon }) {
   const pf = num(g.PF)
   const r = resultOf(g)
   const before = rows.filter(x => order(x) < order(g))
-  const seasons = teamSeasons(rows)
+  const seasons = memoRows('seasons', rows, teamSeasons)
 
   // Início de campanha (temporada regular, a partir do 3º jogo)
   if (isReg(g)) {
@@ -448,7 +464,7 @@ function historyAngles({ rows, team, g, hon }) {
   }
 
   // Sequência atual perto (ou acima) do recorde da liga e da franquia
-  const streaks = allStreaks(rows)
+  const streaks = memoRows('streaks', rows, allStreaks)
   const cur = streaks.find(s => norm(s.team) === norm(team) && s.end === g)
   if (cur && cur.n >= 3) {
     const word = cur.type === 'W' ? 'vitórias' : 'derrotas'
@@ -493,8 +509,8 @@ function historyAngles({ rows, team, g, hon }) {
       if (k2 > 0 && k2 <= 10 && totals.length >= 30) out.push({ w: 3, text: `${team} x ${str(g.Opponent)} somaram só ${f2(sum)} pontos: ${ordinal(k2)} jogo com menos pontos na história.` })
     }
     // Jogadores: recorde da vaga e melhor jogo do jogador na liga
-    const hist = starterEntries(all)
-    const careerAll = [...hist, ...all.flatMap(x => lineup(x).bench.map(p => ({ ...p, g: x, bench: true })))]
+    const hist = memoRows('starters', all, starterEntries)
+    const careerAll = memoRows('career', all, list => [...memoRows('starters', list, starterEntries), ...list.flatMap(x => lineup(x).bench.map(p => ({ ...p, g: x, bench: true })))])
     lineup(g).starters.forEach(p => {
       if (p.slot && p.slot !== 'FLEX' && p.pts > 0) {
         const bySlot = hist.filter(x => x.slot === p.slot).map(x => x.pts).sort((a, b) => b - a)

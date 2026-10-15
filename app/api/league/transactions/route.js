@@ -5,7 +5,7 @@ import { cdnHeaders } from '@/app/lib/cache'
 export async function GET() {
   try {
     const data = await getLeagueTransactions()
-    return Response.json(data, { headers: cdnHeaders(900) })
+    return Response.json(data, { headers: cdnHeaders(3600) })
   } catch (err) {
     console.error('[api/league/transactions]', err)
     return Response.json({ error: 'Failed to load transactions' }, { status: 502 })
