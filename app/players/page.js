@@ -10,6 +10,7 @@ import LeagueNewsCard from '../components/nfl/LeagueNewsCard'
 import { buildFactsNameIndex, resolveFactsName } from '../lib/factsNames'
 import { useTeamFocus } from '../context/TeamFocus'
 import { useNameOwners } from '../lib/useNameOwners'
+import { isEconomy } from '../lib/economy'
 
 const BASE_URL = '/api/sheet'
 
@@ -792,7 +793,8 @@ export default function PlayersPage() {
       <PageBar title="Players">
         <BarTab active={archiveView === 'consolidated'} onClick={() => setArchiveView('consolidated')}><span className="sm:hidden">Archive</span><span className="hidden sm:inline">Player Archive</span></BarTab>
         <BarTab active={archiveView === 'performances'} onClick={() => setArchiveView('performances')}>Top Performances</BarTab>
-        <BarTab active={archiveView === 'news'} onClick={() => setArchiveView('news')}><span className="sm:hidden">News</span><span className="hidden sm:inline">Player News</span></BarTab>
+        {/* Modo economia (até 05/11): sem a aba de notícias */}
+        {!isEconomy() && <BarTab active={archiveView === 'news'} onClick={() => setArchiveView('news')}><span className="sm:hidden">News</span><span className="hidden sm:inline">Player News</span></BarTab>}
       </PageBar>
 
       {/* Aviso: a página está filtrada pelo time em foco */}

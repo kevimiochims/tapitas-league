@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { isEconomy, ECONOMY_NOTE } from '../../lib/economy'
+import { isEconomy } from '../../lib/economy'
 import { CardShell, FilterPill, ToggleChip, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { EmptyNote, NewsImage } from './shared'
 import { useFocusFilter } from '../../context/TeamFocus'
@@ -204,5 +204,5 @@ function PlayerTile({ id, name }) {
 
 // Modo economia (até 05/11): o card some e o servidor não é chamado
 export default function LeagueNewsCard(props) {
-  return isEconomy() ? (props.sidebar === false ? <CardShell title="Player news" subtitle={ECONOMY_NOTE}><EmptyNote>{ECONOMY_NOTE}</EmptyNote></CardShell> : null) : <LeagueNewsCardLive {...props} />
+  return isEconomy() ? null : <LeagueNewsCardLive {...props} />
 }

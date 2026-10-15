@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { usePlayerNews } from './useNflData'
 import { NewsImage, NewsHero } from './shared'
 import NewsReader from './NewsReader'
-import { isEconomy, ECONOMY_NOTE } from '../../lib/economy'
+import { isEconomy } from '../../lib/economy'
 
 function Card({ title, subtitle, children }) {
   return (
@@ -105,8 +105,8 @@ function PlayerNewsCardLive({ playerId, emptyText }) {
   )
 }
 
-// Modo economia (até 05/11): a aba News mostra só o aviso, sem chamar o servidor
+// Modo economia (até 05/11): nada (a aba News também some do perfil)
 export function PlayerNewsCard(props) {
-  if (isEconomy()) return <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more"><Empty>{ECONOMY_NOTE}</Empty></Card>
+  if (isEconomy()) return null
   return <PlayerNewsCardLive {...props} />
 }

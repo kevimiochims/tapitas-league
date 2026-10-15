@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PlayerNewsCard } from './nfl/PlayerNflCards'
 import { PlayerTransactionsCard } from './Transactions'
 import { ChevronDown, Check } from 'lucide-react'
+import { isEconomy } from '../lib/economy'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 function parseNumber(value) {
@@ -427,7 +428,7 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const [stageFilter, setStageFilter] = useState('All')
   const [sort, setSort] = useState(DEFAULT_SORT)
   // initialTab: 'news' quando o perfil é aberto a partir de uma lesão/notícia
-  const [tab, setTab] = useState(initialTab || (originMatchup ? 'week' : 'career'))
+  const [tab, setTab] = useState((initialTab === 'news' && isEconomy() ? null : initialTab) || (originMatchup ? 'week' : 'career'))
   // Jogo escolhido na aba Week e adversário escolhido na aba vs
   const [pickedGame, setPickedGame] = useState(null)
   const [vsPick, setVsPick] = useState(null)
@@ -727,7 +728,8 @@ export default function PlayerProfileModal({ rawName, displayName, position, pla
   const profileTabs = [
     ...(matchup ? [['week', `Week ${matchup.week}`], ['opponent', `vs ${shortName(vsOpponent)}`]] : []),
     ['career', 'Career'],
-    ['news', 'News'],
+    // Modo economia (até 05/11): sem a aba News
+    ...(isEconomy() ? [] : [['news', 'News']]),
     ['transactions', 'Transactions'],
   ]
 
