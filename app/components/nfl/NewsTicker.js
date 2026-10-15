@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { isEconomy } from '../../lib/economy'
 import { TeamLogo } from '../ui'
 import NewsReader from './NewsReader'
 
@@ -14,7 +15,7 @@ function cleanHeadline(n) {
 // Faixa de manchetes rolando ("Tapitas wire"): últimas notícias da NFL sobre
 // jogadores dos elencos da liga. Pausa com o mouse (ou o dedo) em cima.
 // Toque numa manchete abre a prévia da notícia (NewsReader), como no resto do site
-export default function NewsTicker({ onOpenPlayer }) {
+function NewsTickerLive({ onOpenPlayer }) {
   const [news, setNews] = useState([])
   const [reading, setReading] = useState(null)
   const trackRef = useRef(null)
@@ -125,4 +126,9 @@ export default function NewsTicker({ onOpenPlayer }) {
       {reading && <NewsReader item={reading} onClose={() => { setReading(null); pausedRef.current = false }} onOpenPlayer={onOpenPlayer} />}
     </div>
   )
+}
+
+// Modo economia (até 05/11): o card some e o servidor não é chamado
+export default function NewsTicker(props) {
+  return isEconomy() ? null : <NewsTickerLive {...props} />
 }

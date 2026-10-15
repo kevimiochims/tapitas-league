@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { isEconomy, ECONOMY_NOTE } from '../../lib/economy'
 import { CardShell, FilterPill, ToggleChip, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { EmptyNote, NewsImage } from './shared'
 import { useFocusFilter } from '../../context/TeamFocus'
@@ -26,7 +27,7 @@ const ROW_H = 92 // altura fixa de cada linha (manchete em 2 linhas + jogador + 
 //   - largo: destaque + 8 notícias em duas colunas ao lado.
 // Sem filtro de time, todas as páginas têm a mesma altura (a de uma página
 // cheia); filtrando um time, o card encolhe para o que houver.
-export default function LeagueNewsCard({ onOpenPlayer, initialLimit = 5, sidebar = true }) {
+function LeagueNewsCardLive({ onOpenPlayer, initialLimit = 5, sidebar = true }) {
   const [state, setState] = useState({ news: [], loading: true, failed: false })
   const wrapRef = useRef(null)
   const [width, setWidth] = useState(0)
@@ -199,4 +200,9 @@ function PlayerTile({ id, name }) {
       />
     </span>
   )
+}
+
+// Modo economia (até 05/11): o card some e o servidor não é chamado
+export default function LeagueNewsCard(props) {
+  return isEconomy() ? (props.sidebar === false ? <CardShell title="Player news" subtitle={ECONOMY_NOTE}><EmptyNote>{ECONOMY_NOTE}</EmptyNote></CardShell> : null) : <LeagueNewsCardLive {...props} />
 }

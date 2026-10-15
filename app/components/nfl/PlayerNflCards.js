@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { usePlayerNews } from './useNflData'
 import { NewsImage, NewsHero } from './shared'
 import NewsReader from './NewsReader'
+import { isEconomy, ECONOMY_NOTE } from '../../lib/economy'
 
 function Card({ title, subtitle, children }) {
   return (
@@ -35,7 +36,7 @@ function timeAgo(iso) {
 // Últimas manchetes do jogador. Celular: destaque + lista. Telas médias e
 // grandes: grade de cards do mesmo tamanho (2 ou 3 por linha), sem vãos.
 // Tocar numa notícia abre o leitor dentro do site.
-export function PlayerNewsCard({ playerId, emptyText }) {
+function PlayerNewsCardLive({ playerId, emptyText }) {
   const { data, loading, error } = usePlayerNews(playerId)
   const news = data?.news || []
   const [reading, setReading] = useState(null)
@@ -102,4 +103,10 @@ export function PlayerNewsCard({ playerId, emptyText }) {
       {reading && <NewsReader item={reading} onClose={() => setReading(null)} />}
     </Card>
   )
+}
+
+// Modo economia (até 05/11): a aba News mostra só o aviso, sem chamar o servidor
+export function PlayerNewsCard(props) {
+  if (isEconomy()) return <Card title="Latest news" subtitle="ESPN, RotoWire, RotoBaller, FantasyPros and more"><Empty>{ECONOMY_NOTE}</Empty></Card>
+  return <PlayerNewsCardLive {...props} />
 }

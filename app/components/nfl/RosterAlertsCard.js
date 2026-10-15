@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { isEconomy } from '../../lib/economy'
 import { CardShell, FilterPill, ToggleChip, Tag, TeamLogo, PositionBadge, Pager, usePager, SkeletonRows } from '../ui'
 import { useLeagueStatus } from './useNflData'
 import { PlayerThumb, EmptyNote, injuryRank, injuryTone, injuryLabel } from './shared'
@@ -14,7 +15,7 @@ const injuryDay = ts => {
 }
 
 // Lesões dos elencos da liga (Sleeper), com filtro por franquia
-export default function RosterAlertsCard({ onOpenPlayer }) {
+function RosterAlertsCardLive({ onOpenPlayer }) {
   const { data, loading, error } = useLeagueStatus()
   const [filter, setFilter] = useState('starters')
   const [team, setTeam] = useFocusFilter('All')
@@ -84,4 +85,9 @@ export default function RosterAlertsCard({ onOpenPlayer }) {
       )}
     </CardShell>
   )
+}
+
+// Modo economia (até 05/11): o card some e o servidor não é chamado
+export default function RosterAlertsCard(props) {
+  return isEconomy() ? null : <RosterAlertsCardLive {...props} />
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { isEconomy } from '../../lib/economy'
 import { CardShell, Segmented, Tag, PositionBadge, Pager, usePager, normalizeTeamKey } from '../ui'
 import { useLeagueStatus } from './useNflData'
 import { PlayerThumb, EmptyNote, injuryTone, injuryLabel } from './shared'
@@ -15,7 +16,7 @@ const byPosition = (a, b) => posRank(a.pos) - posRank(b.pos) || Number(b.starter
 
 // Status do elenco de uma franquia (coluna da esquerda da página Teams):
 // lesionados e jogadores de folga (bye), 5 por página.
-export default function TeamNflNotice({ team, onOpenPlayer }) {
+function TeamNflNoticeLive({ team, onOpenPlayer }) {
   const { data } = useLeagueStatus()
   const [tab, setTab] = useState('injuries')
   const roster = (data?.teams || []).find(t => normalizeTeamKey(t.team) === normalizeTeamKey(team))
@@ -72,4 +73,9 @@ export default function TeamNflNotice({ team, onOpenPlayer }) {
       )}
     </CardShell>
   )
+}
+
+// Modo economia (até 05/11): o card some e o servidor não é chamado
+export default function TeamNflNotice(props) {
+  return isEconomy() ? null : <TeamNflNoticeLive {...props} />
 }

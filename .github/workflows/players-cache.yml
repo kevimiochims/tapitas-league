@@ -1,0 +1,32 @@
+# Cópia enxuta da base de jogadores do Sleeper, publicada no branch "data".
+# O site lê https://raw.githubusercontent.com/<repo>/data/players.json em vez
+# de baixar os ~15 MB do Sleeper (economiza CPU da Vercel).
+name: Sleeper players cache
+
+on:
+  schedule:
+    - cron: '17 9 * * *'   # todo dia, 06:17 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/players-cache.mjs out/players.json
+      - name: Publish to the data branch
+        run: |
+          cd out
+          # O branch "data" não tem o site: a Vercel não deve tentar publicar
+          echo '{ "git": { "deploymentEnabled": false } }' > vercel.json
+          git init -q
+          git checkout -q -b data
+          git add players.json vercel.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Sleeper players cache"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" data
