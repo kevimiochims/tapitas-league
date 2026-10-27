@@ -47,9 +47,9 @@ Abas usadas pelo site: `CALENDAR`, `DRAFT_BOARD`, `DRAFT_NOTES`, `GAME_FACTS_ALL
 | Arquivo | O que faz |
 |---|---|
 | `rotina-semanal-2026.gs` | Importa a semana do Sleeper para a planilha (`executaRotinaSemanal`). **Não mexer sem pedido.** |
-| `recaps-ia.gs` | Recaps de cada confronto (prompt DB2) e notas do Power Ranking (prompt DM2) com Gemini + dossiê + LORE + PAUTA. O gatilho chama `completarRecapsDaSemana`, que tenta de novo sozinho a cada 35 min (ou depois que a cota do Gemini renova) até completar tudo e manda email se falhar 20 vezes. |
-| `materia-semanal.gs` | Matéria longa da rodada na Tapitas News, com fotos. |
-| `meme-semanal.gs` | Post de meme com charge desenhada pela Cloudflare (Flux). |
+| `recaps-ia.gs` | Recaps de cada confronto (prompt DB2) e notas do Power Ranking (prompt DM2) com Gemini + dossiê + LORE + PAUTA. Tem também a **automação completa da semana** (`automacaoIADaSemana`, instalada com `instalaAutomacaoIA()`): recaps → notas → matéria → meme, em cadeia. Ela espera a rotina semanal importar a semana, tenta de novo sozinha (1 min se acabou o tempo, 16 min se o Gemini está lotado, depois da renovação se acabou a cota) e manda email só se der problema. Gatilhos: terça 4h + todo dia 9h (rede de segurança). |
+| `materia-semanal.gs` | Matéria longa da rodada na Tapitas News, com fotos (rodada pela automação completa). |
+| `meme-semanal.gs` | Post de meme com charge desenhada pela Cloudflare (Flux); fica como prévia para aprovação (rodado pela automação completa). |
 | `fotos-power-rankings.gs` | Fotos dos cards do Power Ranking (formulário e fotos automáticas da semana, pasta "Tapitas League - Fotos PR" no Drive, aba `PR_FOTOS`). |
 | `noticias-site.gs` | Avisa o site (`/api/news/refresh`) quando sai notícia nova. |
 | `lore-whatsapp.gs` | Sugere itens de LORE a partir da conversa exportada do grupo (com filtros de privacidade). |
@@ -90,7 +90,7 @@ MON, PEY, HOW, PAT, PEQ, MEG, O&R, OLD, SET, HLE. Nunca usar artigo antes do nom
 - **Modo economia até 05/11/2026** (`app/lib/economy.js`): sem auto-refresh de placar (há botão "↻ Atualizar"), e Trending, Relatório de lesões, avisos da NFL e todas as notícias (cards e abas News) simplesmente não aparecem, sem aviso. Depois de 05/11 tudo volta sozinho. Para estender, basta mudar a data `ECONOMY_UNTIL`.
 - Fotos do Power Ranking de semanas antigas vêm só do Drive/planilha (ou do perfil do Sleeper). Não há busca ao vivo de fotos externas.
 - Cache das rotas: semana final 1h, semana atual 10 min, ao vivo 30s, notícias 30 min, trending 1h.
-- Gemini e Cloudflare são cotas gratuitas: erros 429 ou "sem cota" são normais. O `completarRecapsDaSemana` já trata isso sozinho.
+- Gemini e Cloudflare são cotas gratuitas: erros 429 ou "sem cota" são normais. A automação completa (`automacaoIADaSemana`) já trata isso sozinha.
 
 ## Pendências conhecidas
 - Dados das temporadas 2015 e 2016 (liga era no NFL.com): pedido enviado ao suporte, sem resposta até agora.

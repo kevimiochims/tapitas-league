@@ -24,9 +24,10 @@
 //     MATERIAS_TESTE e rode outra vez.
 //
 // AUTOMÁTICO:
-//   - Rode instalaMateriaSemanal() uma vez. Todo dia às 5h ele confere se há
-//     rodada nova fechada (Power Ranking calculado e recaps escritos) sem
-//     matéria; se houver, escreve e publica. Cada rodada sai uma vez só.
+//   - Faz parte da automação completa da semana (instalaAutomacaoIA, no
+//     recaps-ia.gs): assim que os recaps e as notas da rodada ficam prontos, a
+//     matéria é escrita e publicada, com novas tentativas até sair. Cada
+//     rodada sai uma vez só.
 //   - Para publicar uma rodada na mão: publicaMateriaSemana('2026', '4').
 //   - Para publicar as matérias de teste que você aprovou (ex.: as semanas
 //     de 2026 que já passaram): publicaTestesMateria().
@@ -122,12 +123,12 @@ function publicaMateriaSemana(season, week) {
   geraMateria_(String(season), String(week), false);
 }
 
+// Antigo: hoje a matéria e o meme entram na automação completa da semana
+// (instalaAutomacaoIA, no recaps-ia.gs), logo depois dos recaps e das notas.
+// Esta função só chama a instalação nova, para não sobrar gatilho duplicado.
 function instalaMateriaSemanal() {
-  ScriptApp.getProjectTriggers()
-    .filter(t => t.getHandlerFunction() === 'materiaDaSemanaAutomatica')
-    .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('materiaDaSemanaAutomatica').timeBased().everyDays(1).atHour(MATERIA_HORA).create();
-  Logger.log(`[MATÉRIA] Gatilho diário (${MATERIA_HORA}h) criado. Ele só publica quando há rodada nova fechada sem matéria.`);
+  if (typeof instalaAutomacaoIA === 'function') return instalaAutomacaoIA();
+  throw new Error('Cole o recaps-ia.gs atualizado e rode instalaAutomacaoIA().');
 }
 
 // Gatilho diário: publica a matéria da última rodada fechada, uma vez só

@@ -26,8 +26,8 @@
 //     para usar a 2ª, apague a 1ª da célula imageUrl antes (o que vem antes do |).
 //
 // AUTOMÁTICO (com a sua aprovação):
-//   - Rode instalaMemeSemanal() uma vez. Todo dia às 6h (depois da matéria das
-//     5h) ele confere se há rodada fechada sem meme e GERA o meme como TESTE
+//   - Faz parte da automação completa da semana (instalaAutomacaoIA, no
+//     recaps-ia.gs): logo depois da matéria, GERA o meme como TESTE
 //     (aba MATERIAS_TESTE, com as duas charges). Nada vai para o site sozinho:
 //     você recebe um e-mail com o link da prévia.
 //   - Para aprovar: escolha a charge (apague a outra da célula imageUrl) e rode
@@ -127,12 +127,12 @@ function publicaMemeSemana(season, week) {
   geraMeme_(String(season), String(week), false);
 }
 
+// Antigo: hoje a matéria e o meme entram na automação completa da semana
+// (instalaAutomacaoIA, no recaps-ia.gs), logo depois dos recaps e das notas.
+// Esta função só chama a instalação nova, para não sobrar gatilho duplicado.
 function instalaMemeSemanal() {
-  ScriptApp.getProjectTriggers()
-    .filter(t => t.getHandlerFunction() === 'memeDaSemanaAutomatico')
-    .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('memeDaSemanaAutomatico').timeBased().everyDays(1).atHour(MEME_HORA).create();
-  Logger.log(`[MEME] Gatilho diário (${MEME_HORA}h) criado. Ele só publica quando há rodada nova fechada sem meme.`);
+  if (typeof instalaAutomacaoIA === 'function') return instalaAutomacaoIA();
+  throw new Error('Cole o recaps-ia.gs atualizado e rode instalaAutomacaoIA().');
 }
 
 // Gatilho diário: gera o meme da rodada como TESTE e avisa por e-mail; a
