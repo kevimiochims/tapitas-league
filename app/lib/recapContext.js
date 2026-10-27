@@ -172,9 +172,22 @@ function h2h(rows, a, b, g) {
 const gameLabel = g => `${str(g.Season)} W${str(g.Week)}${str(g.GameType) && stage(g) !== 'reg season' ? ` (${str(g.GameType)})` : ''}`
 
 // ── Contexto de um confronto ────────────────────────────────────────────
+// O dossiê é pedido pela automação logo depois da importação da semana: lê a
+// planilha quase na hora (no máximo 60 s de memória), não o cache de 15 min do
+// site, para não escrever sobre uma versão sem a semana nova ou sem o Power
+// Ranking calculado.
+const FRESH_MS = 60 * 1000
+let freshGames = null
+async function freshGameFacts() {
+  if (freshGames && Date.now() - freshGames.at < FRESH_MS) return freshGames.rows
+  const rows = await getSheetRows('GAME_FACTS_ALL', { fresh: true })
+  freshGames = { rows, at: Date.now() }
+  return rows
+}
+
 async function loadData() {
   const [games, tx] = await Promise.all([
-    getSheetRows('GAME_FACTS_ALL'),
+    freshGameFacts(),
     getLeagueTransactions().catch(() => ({ transactions: [] })),
   ])
   return { games, transactions: tx?.transactions || [] }

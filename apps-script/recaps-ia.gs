@@ -361,9 +361,9 @@ function fetchDossie_(cfg, params) {
 
 // Memória entre execuções (Propriedades do script): modelo sem cota (429) fica
 // fora até a cota renovar (meia-noite do horário do Pacífico); modelo lotado
-// (503/500) fica fora por 30 minutos. Assim cada execução não perde minutos
+// (503/500) fica fora por 15 minutos. Assim cada execução não perde minutos
 // perguntando de novo a quem já disse não.
-const LOTADO_PAUSA_MS = 30 * 60 * 1000
+const LOTADO_PAUSA_MS = 15 * 60 * 1000
 const diaPacifico_ = () => Utilities.formatDate(new Date(), 'America/Los_Angeles', 'yyyy-MM-dd')
 function modeloIndisponivel_(modelo) {
   const props = PropertiesService.getScriptProperties()
@@ -414,7 +414,7 @@ function chamaGemini_(cfg, sistema, texto) {
     }
     MODELOS_FORA_.add(modelo)
     marcaModelo_(modelo, ultimoErro)
-    const motivo = /Gemini 429/.test(ultimoErro.message) ? 'sem cota hoje' : 'continua ocupado (fora por 30 min)'
+    const motivo = /Gemini 429/.test(ultimoErro.message) ? 'sem cota hoje' : 'continua ocupado (fora por 15 min)'
     Logger.log(`[GEMINI] ${modelo} ${motivo}${fila[k + 1] ? `: tentando ${fila[k + 1]}` : ''}.`)
   }
   throw ultimoErro
@@ -593,63 +593,221 @@ function gerarRecapsDoPowerRanking(limite) {
 }
 
 // -----------------------------------------------------------------------------
-// AUTOMÁTICO ATÉ TERMINAR: recaps dos confrontos + notas do Power Ranking
+// AUTOMAÇÃO COMPLETA DA SEMANA (IA): recaps → notas do PR → matéria → meme
 // -----------------------------------------------------------------------------
-// Use ESTA função no gatilho semanal (no lugar de gerarRecapsDaLiga e
-// gerarRecapsDoPowerRanking). Cada execução faz o que der em ~4,5 min: primeiro
-// os recaps dos confrontos, depois as notas. Se sobrar algo (Gemini ocupado,
-// sem cota, ou o tempo acabou), ela se agenda de novo sozinha:
-//   - modelos só ocupados → tenta de novo em 35 min;
-//   - todos os modelos sem cota hoje → tenta logo depois que a cota renova
-//     (meia-noite do horário do Pacífico, ~4h/5h da manhã em Brasília).
-// Para quando estiver tudo escrito. Depois de RECAP_TENTATIVAS_MAX tentativas
-// sem terminar, desiste e manda um e-mail avisando o que ficou faltando.
-const RECAP_TENTATIVAS_MAX = 20
+// COMO INSTALAR (uma vez só): rode instalaAutomacaoIA(). Ela apaga os gatilhos
+// antigos (gerarRecapsDaLiga, gerarRecapsDoPowerRanking, completarRecapsDaSemana,
+// materiaDaSemanaAutomatica e memeDaSemanaAutomatico) e cria dois:
+//   - terça às AUTO_HORA_SEMANAL h: começa a semana;
+//   - todo dia às AUTO_HORA_SEGURANCA h: rede de segurança (se algo parou, retoma;
+//     se está tudo pronto, só confere e sai em segundos).
+// Não mexe no gatilho da rotina semanal (importação).
+//
+// Cada execução faz o que cabe em ~4,5 min e, se sobrar algo, se agenda de novo
+// sozinha, quantas vezes precisar:
+//   - semana ainda não importada (a rotina semanal não rodou ou não terminou o
+//     Power Ranking) → confere de novo em 20 min;
+//   - acabou o tempo desta execução, mas o Gemini está respondendo → continua em
+//     ~1 min, numa execução nova;
+//   - Gemini lotado/lento (todos os modelos) → tenta de novo em 16 min;
+//   - todos os modelos sem cota hoje → logo depois que a cota renova (meia-noite
+//     do Pacífico, ~4h/5h em Brasília).
+// A matéria e o meme entram assim que os recaps e as notas ficam prontos (não
+// esperam o dia seguinte). O meme continua indo como prévia para você aprovar
+// (e-mail + publicaTestesMeme), como antes.
+// A próxima tentativa fica agendada ANTES de começar cada execução: se o Google
+// cortar no limite de 6 min (Gemini demorando), a fila continua mesmo assim.
+// E-mail só se der problema: semana não importada depois de 6 h, ou nada
+// concluído depois de AUTO_PRAZO_MS.
+const AUTO_HANDLER = 'automacaoIADaSemana'
+const AUTO_HORA_SEMANAL = 4
+const AUTO_HORA_SEGURANCA = 9
+const AUTO_PRAZO_MS = 48 * 3600 * 1000
+const AUTO_TEMPO_MS = 4.5 * 60 * 1000              // não começa recap/nota novo depois disso
+const AUTO_FOLGA_TEXTO_LONGO_MS = 3 * 60 * 1000    // matéria/meme só começam com essa folga antes de 6 min
+const AUTO_ESPERA_CONTINUA_MS = 60 * 1000
+const AUTO_ESPERA_OCUPADO_MS = 16 * 60 * 1000
+const AUTO_ESPERA_IMPORTACAO_MS = 20 * 60 * 1000
+const AUTO_AVISO_IMPORTACAO_MS = 6 * 3600 * 1000
 
-function completarRecapsDaSemana(e) {
+function instalaAutomacaoIA() {
+  const antigos = ['gerarRecapsDaLiga', 'gerarRecapsDoPowerRanking', 'completarRecapsDaSemana', 'materiaDaSemanaAutomatica', 'memeDaSemanaAutomatico', AUTO_HANDLER]
+  const apagados = ScriptApp.getProjectTriggers().filter(t => antigos.includes(t.getHandlerFunction()))
+  apagados.forEach(t => ScriptApp.deleteTrigger(t))
   const props = PropertiesService.getScriptProperties()
-  const retryId = props.getProperty('RECAP_RETRY_TRIGGER_ID')
-  const ehRetentativa = Boolean(e && e.triggerUid && retryId && e.triggerUid === retryId)
-  apagaRetentativaRecaps_()
-  // Chamada pelo gatilho semanal (ou na mão) começa a contagem do zero
-  let tentativa = ehRetentativa ? Number(props.getProperty('RECAP_TENTATIVAS') || 0) + 1 : 1
-  props.setProperty('RECAP_TENTATIVAS', String(tentativa))
-  // Garantia: a próxima tentativa já fica agendada antes de começar. Se o
-  // Google cortar esta execução no limite de 6 min, a fila continua mesmo
-  // assim; no fim ela é ajustada (ou apagada, se terminou tudo)
-  if (tentativa < RECAP_TENTATIVAS_MAX) agendaRetentativaRecaps_(35 * 60 * 1000)
-  // Um prazo só para as duas etapas (recaps e notas) caberem nos 6 min
-  const limite = Date.now() + RECAP_TEMPO_MAX_MS
+  ;['AUTO_INICIO', 'AUTO_TENTATIVA', 'AUTO_RETRY_ID', 'AUTO_AVISO_IMPORTACAO', 'RECAP_RETRY_TRIGGER_ID', 'RECAP_TENTATIVAS'].forEach(k => props.deleteProperty(k))
+  ScriptApp.newTrigger(AUTO_HANDLER).timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(AUTO_HORA_SEMANAL).create()
+  ScriptApp.newTrigger(AUTO_HANDLER).timeBased().everyDays(1).atHour(AUTO_HORA_SEGURANCA).create()
+  Logger.log(`[AUTO] ${apagados.length} gatilho(s) antigo(s) apagado(s): ${apagados.map(t => t.getHandlerFunction()).join(', ') || 'nenhum'}.`)
+  Logger.log(`[AUTO] Criados: ${AUTO_HANDLER} toda terça às ${AUTO_HORA_SEMANAL}h e todo dia às ${AUTO_HORA_SEGURANCA}h (rede de segurança).`)
+  Logger.log('[AUTO] Gatilhos do projeto agora: ' + ScriptApp.getProjectTriggers().map(t => t.getHandlerFunction()).join(', '))
+}
 
+// Nome antigo: se ainda houver gatilho chamando esta função, ela faz o mesmo
+function completarRecapsDaSemana() {
+  automacaoIADaSemana()
+}
+
+function automacaoIADaSemana() {
+  const t0 = Date.now()
+  const props = PropertiesService.getScriptProperties()
+  apagaRetentativaAuto_()
+  // Duas execuções ao mesmo tempo (gatilho + você no botão): a segunda sai.
+  // Trava do documento, para não brigar com a trava da rotina semanal.
+  const trava = LockService.getDocumentLock()
+  if (!trava || !trava.tryLock(5000)) {
+    Logger.log('[AUTO] Outra execução da automação está rodando. Esta sai sem fazer nada.')
+    return
+  }
+  try {
+    if (!props.getProperty('AUTO_INICIO')) {
+      props.setProperty('AUTO_INICIO', String(t0))
+      props.setProperty('AUTO_TENTATIVA', '0')
+      props.deleteProperty('AUTO_AVISO_IMPORTACAO')
+    }
+    const inicioCadeia = Number(props.getProperty('AUTO_INICIO'))
+    const tentativa = Number(props.getProperty('AUTO_TENTATIVA') || 0) + 1
+    props.setProperty('AUTO_TENTATIVA', String(tentativa))
+    const prazoOk = t0 - inicioCadeia < AUTO_PRAZO_MS
+    // Rede de segurança: a próxima já fica agendada (ajustada no fim)
+    if (prazoOk) agendaAuto_(AUTO_ESPERA_OCUPADO_MS)
+
+    const r = passoAuto_(t0)
+    if (r.feito) {
+      apagaRetentativaAuto_()
+      ;['AUTO_INICIO', 'AUTO_TENTATIVA', 'AUTO_AVISO_IMPORTACAO'].forEach(k => props.deleteProperty(k))
+      Logger.log(`[AUTO] Tudo pronto (${r.texto}). Nada mais agendado.`)
+      return
+    }
+    if (r.importacao && t0 - inicioCadeia > AUTO_AVISO_IMPORTACAO_MS && !props.getProperty('AUTO_AVISO_IMPORTACAO')) {
+      props.setProperty('AUTO_AVISO_IMPORTACAO', '1')
+      avisaPorEmail_('Tapitas: semana ainda não importada',
+        `${r.texto}\n\nA automação de IA está esperando a rotina semanal (importação + Power Ranking) e confere de novo a cada 20 min. ` +
+        'Veja o log da executaRotinaSemanal em Execuções.')
+    }
+    if (!prazoOk) {
+      apagaRetentativaAuto_()
+      ;['AUTO_INICIO', 'AUTO_TENTATIVA', 'AUTO_AVISO_IMPORTACAO'].forEach(k => props.deleteProperty(k))
+      Logger.log(`[AUTO] Prazo de ${AUTO_PRAZO_MS / 3600000} h estourado. Parei. Falta: ${r.texto}`)
+      avisaPorEmail_('Tapitas: automação de IA não terminou',
+        `Depois de ${tentativa} tentativas em ${AUTO_PRAZO_MS / 3600000} h ainda falta: ${r.texto}\n\n` +
+        `Veja o log do Apps Script (Execuções). O gatilho diário das ${AUTO_HORA_SEGURANCA}h tenta de novo, ou rode ${AUTO_HANDLER}() na mão.`)
+      return
+    }
+    agendaAuto_(r.espera)
+    Logger.log(`[AUTO] Tentativa ${tentativa}. Falta: ${r.texto}. Próxima em ${Math.max(1, Math.round(r.espera / 60000))} min (${r.motivo}).`)
+  } finally {
+    trava.releaseLock()
+  }
+}
+
+// Uma rodada de trabalho. Devolve { feito, texto, espera, motivo, importacao }
+function passoAuto_(t0) {
+  const limite = t0 + AUTO_TEMPO_MS
+  const cabeTextoLongo = () => Date.now() < t0 + 6 * 60 * 1000 - AUTO_FOLGA_TEXTO_LONGO_MS
+
+  // 1) A semana precisa estar importada e com o Power Ranking calculado
+  const imp = semanaImportada_()
+  if (!imp.ok) {
+    return { feito: false, importacao: true, texto: imp.texto, espera: AUTO_ESPERA_IMPORTACAO_MS, motivo: 'esperando a rotina semanal' }
+  }
+
+  // 2) Recaps dos confrontos e 3) notas do Power Ranking
   let pend = contaPendentesRecaps_()
-  Logger.log(`[AUTO] Tentativa ${tentativa}: faltam ${pend.recaps} recap(s) e ${pend.notas} nota(s).`)
+  const antes = pend.recaps + pend.notas
+  Logger.log(`[AUTO] Faltam ${pend.recaps} recap(s) e ${pend.notas} nota(s).`)
   if (pend.recaps > 0) gerarRecapsDaLiga(limite)
   pend = contaPendentesRecaps_()
-  // As notas só depois que os recaps acabaram (e se ainda houver tempo nesta execução)
   if (pend.recaps === 0 && pend.notas > 0 && Date.now() < limite) gerarRecapsDoPowerRanking(limite)
   pend = contaPendentesRecaps_()
+  if (pend.recaps > 0 || pend.notas > 0) {
+    // Nada andou nesta execução sem ser culpa do Gemini (ex.: o site não
+    // devolveu o dossiê): espera 16 min em vez de tentar a cada minuto
+    const semAvanco = pend.recaps + pend.notas >= antes && Date.now() < limite
+    return { feito: false, texto: `${pend.recaps} recap(s) e ${pend.notas} nota(s)`, ...esperaGemini_(semAvanco) }
+  }
 
-  if (pend.recaps === 0 && pend.notas === 0) {
-    apagaRetentativaRecaps_()
-    Logger.log('[AUTO] Tudo escrito. Nada mais agendado.')
-    props.deleteProperty('RECAP_TENTATIVAS')
-    return
-  }
-  if (tentativa >= RECAP_TENTATIVAS_MAX) {
-    apagaRetentativaRecaps_()
-    Logger.log(`[AUTO] Desisti depois de ${tentativa} tentativas. Faltam ${pend.recaps} recap(s) e ${pend.notas} nota(s).`)
+  // 4) Matéria e 5) meme da rodada (só quando os recaps e as notas estão prontos)
+  if (typeof ultimaRodadaFechada_ !== 'function') return { feito: true, texto: 'recaps e notas (matéria/meme não instalados)' }
+  const { season, week } = ultimaRodadaFechada_()
+  if (!season) return { feito: true, texto: 'recaps e notas (nenhuma rodada fechada)' }
+
+  const materiaFeita = () => slugsDaAba_(MATERIA_ABA).has(slugMateria_(season, week, false))
+  if (typeof geraMateria_ === 'function' && !materiaFeita()) {
+    if (!cabeTextoLongo()) return { feito: false, texto: `matéria e meme da semana ${week}`, espera: AUTO_ESPERA_CONTINUA_MS, motivo: 'sem tempo nesta execução para um texto longo' }
     try {
-      MailApp.sendEmail(Session.getEffectiveUser().getEmail(), 'Recaps da Tapitas: ficou faltando',
-        `Depois de ${tentativa} tentativas ainda faltam ${pend.recaps} recap(s) de confronto e ${pend.notas} nota(s) do Power Ranking.\n` +
-        'Veja o log do Apps Script (Execuções) e rode completarRecapsDaSemana() de novo quando quiser.')
-    } catch (err) { Logger.log(`[AUTO] Não consegui mandar o e-mail: ${err}`) }
-    return
+      geraMateria_(season, week, false)
+    } catch (e) {
+      Logger.log(`[AUTO] Matéria falhou: ${e.message}`)
+      return { feito: false, texto: `matéria e meme da semana ${week}`, ...esperaGemini_(!/Gemini (429|500|503)/.test(e.message)) }
+    }
   }
+
+  const memeFeito = () => typeof slugMeme_ !== 'function' ||
+    slugsDaAba_(MATERIA_ABA).has(slugMeme_(season, week, false)) || slugsDaAba_(MATERIA_ABA_TESTE).has(slugMeme_(season, week, true))
+  if (typeof memeDaSemanaAutomatico === 'function' && !memeFeito()) {
+    if (!cabeTextoLongo()) return { feito: false, texto: `meme da semana ${week}`, espera: AUTO_ESPERA_CONTINUA_MS, motivo: 'sem tempo nesta execução para o meme' }
+    try {
+      memeDaSemanaAutomatico()
+    } catch (e) {
+      Logger.log(`[AUTO] Meme falhou: ${e.message}`)
+      return { feito: false, texto: `meme da semana ${week}`, ...esperaGemini_(!/Gemini (429|500|503)/.test(e.message)) }
+    }
+    if (!memeFeito()) return { feito: false, texto: `meme da semana ${week}`, espera: AUTO_ESPERA_OCUPADO_MS, motivo: 'o meme não foi gravado (veja o log)' }
+  }
+  return { feito: true, texto: `recaps, notas, matéria e meme da semana ${week} de ${season}` }
+}
+
+// Quanto esperar depois de parar com trabalho sobrando
+function esperaGemini_(outroErro) {
   const cfg = recapConfig_()
-  const semCota = cfg.modelos.every(m => modeloIndisponivel_(m) === 'sem cota hoje')
-  const espera = semCota ? msAteCotaRenovar_() + 10 * 60 * 1000 : 35 * 60 * 1000
-  agendaRetentativaRecaps_(espera)
-  Logger.log(`[AUTO] Faltam ${pend.recaps} recap(s) e ${pend.notas} nota(s). ${semCota ? 'Todos os modelos sem cota hoje: ' : ''}Nova tentativa em ${Math.round(espera / 60000)} min.`)
+  const estados = cfg.modelos.map(m => modeloIndisponivel_(m))
+  if (estados.length && estados.every(s => s === 'sem cota hoje')) {
+    return { espera: msAteCotaRenovar_() + 10 * 60 * 1000, motivo: 'todos os modelos sem cota hoje; volta depois que a cota renova' }
+  }
+  if (!estados.some(s => !s)) return { espera: AUTO_ESPERA_OCUPADO_MS, motivo: 'Gemini lotado ou lento' }
+  if (outroErro) return { espera: AUTO_ESPERA_OCUPADO_MS, motivo: 'erro (resposta fora do formato, site ou Cloudflare: veja o log)' }
+  return { espera: AUTO_ESPERA_CONTINUA_MS, motivo: 'acabou o tempo desta execução; continua numa nova' }
+}
+
+// A última semana encerrada (pelo calendário da rotina semanal) já está na
+// GAME_FACTS_ALL com o Power Ranking calculado?
+function semanaImportada_() {
+  if (typeof ultimaSemanaEncerrada2026_ !== 'function' || typeof CONFIG_2026 === 'undefined') return { ok: true }
+  const semana = ultimaSemanaEncerrada2026_(Date.now())
+  if (semana < 1 || semana > CONFIG_2026.TOTAL_WEEKS) return { ok: true }
+  const values = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('GAME_FACTS_ALL').getDataRange().getValues()
+  const h = values[0].map(v => String(v).trim())
+  const iS = h.indexOf('Season'), iW = h.indexOf('Week'), iPR = h.indexOf('Power Ranking')
+  const linhas = values.slice(1).filter(r => String(r[iS]).trim() === String(CONFIG_2026.YEAR) && String(r[iW]).trim() === String(semana))
+  if (!linhas.length) return { ok: false, texto: `a semana ${semana} de ${CONFIG_2026.YEAR} ainda não foi importada` }
+  if (iPR >= 0 && !linhas.every(r => Number(String(r[iPR]).replace(',', '.')) > 0)) {
+    return { ok: false, texto: `a semana ${semana} foi importada, mas o Power Ranking ainda não foi calculado` }
+  }
+  return { ok: true }
+}
+
+function agendaAuto_(espera) {
+  apagaRetentativaAuto_()
+  const t = ScriptApp.newTrigger(AUTO_HANDLER).timeBased().after(Math.max(60 * 1000, espera)).create()
+  PropertiesService.getScriptProperties().setProperty('AUTO_RETRY_ID', t.getUniqueId())
+}
+
+function apagaRetentativaAuto_() {
+  const props = PropertiesService.getScriptProperties()
+  const ids = [props.getProperty('AUTO_RETRY_ID'), props.getProperty('RECAP_RETRY_TRIGGER_ID')].filter(Boolean)
+  if (!ids.length) return
+  ScriptApp.getProjectTriggers().filter(t => ids.includes(t.getUniqueId())).forEach(t => ScriptApp.deleteTrigger(t))
+  props.deleteProperty('AUTO_RETRY_ID')
+  props.deleteProperty('RECAP_RETRY_TRIGGER_ID')
+}
+
+function avisaPorEmail_(assunto, texto) {
+  try {
+    MailApp.sendEmail(Session.getEffectiveUser().getEmail(), assunto, texto)
+  } catch (err) {
+    Logger.log(`[AUTO] Não consegui mandar o e-mail: ${err}`)
+  }
 }
 
 // Quantos recaps de confronto e notas do Power Ranking ainda faltam (mesmos
@@ -667,20 +825,6 @@ function contaPendentesRecaps_() {
   })
   // Recap é gravado nas duas linhas do jogo: conta jogos, não linhas
   return { recaps: Math.ceil(recaps / 2), notas }
-}
-
-function agendaRetentativaRecaps_(espera) {
-  apagaRetentativaRecaps_()
-  const t = ScriptApp.newTrigger('completarRecapsDaSemana').timeBased().after(espera).create()
-  PropertiesService.getScriptProperties().setProperty('RECAP_RETRY_TRIGGER_ID', t.getUniqueId())
-}
-
-function apagaRetentativaRecaps_() {
-  const props = PropertiesService.getScriptProperties()
-  const id = props.getProperty('RECAP_RETRY_TRIGGER_ID')
-  if (!id) return
-  ScriptApp.getProjectTriggers().filter(t => t.getUniqueId() === id).forEach(t => ScriptApp.deleteTrigger(t))
-  props.deleteProperty('RECAP_RETRY_TRIGGER_ID')
 }
 
 // Milissegundos até a meia-noite do horário do Pacífico (quando a cota do Gemini renova)
