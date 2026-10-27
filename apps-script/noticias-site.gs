@@ -36,6 +36,11 @@ function avisaSiteNoticiaForm() {
 // Edição manual na aba MEMES
 function avisaSiteNoticiaEdicao(e) {
   if (!e || !e.range || e.range.getSheet().getName() !== ABA_NOTICIAS) return;
+  try {
+    converteMidiasEditadas_(e.range);
+  } catch (err) {
+    Logger.log(`[NOTÍCIAS] Não consegui converter o link de mídia: ${err.message}`);
+  }
   // Várias edições seguidas viram um aviso só (no máximo 1 a cada 30 s)
   const cache = CacheService.getScriptCache();
   if (cache.get('aviso-noticias')) return;
@@ -48,4 +53,41 @@ function avisaSiteNovaNoticia_() {
   if (!site) throw new Error('Falta SITE_URL nas Propriedades do script.');
   const res = UrlFetchApp.fetch(`${site}/api/news/refresh`, { muteHttpExceptions: true });
   Logger.log(`[NOTÍCIAS] Site avisado (${res.getResponseCode()}).`);
+}
+
+// Link do Drive (foto, GIF ou vídeo) ou de página do Giphy colado na aba MEMES,
+// na coluna imageUrl ou no texto como ![legenda](link): troca na hora pelo
+// link que o site exibe (mesma regra da pauta, ver imagemParaSite_ no
+// recaps-ia.gs). YouTube, .mp4 e fotos de outros sites ficam como estão: o
+// site já mostra direto.
+const MIDIA_PARA_CONVERTER = /(?:drive|docs)\.google\.com\/|^https?:\/\/(?:www\.)?giphy\.com\//i;
+
+function converteMidiasEditadas_(range) {
+  if (typeof imagemParaSite_ !== 'function') return;
+  const sh = range.getSheet();
+  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase());
+  const iImg = head.findIndex(h => ['imageurl', 'image', 'imagem', 'image url'].includes(h)) + 1;
+  const iTxt = head.findIndex(h => ['content', 'conteudo', 'conteúdo', 'texto'].includes(h)) + 1;
+  const r0 = range.getRow(), c0 = range.getColumn();
+  const converte = (link, nome) => {
+    const url = String(link || '').trim();
+    return url && MIDIA_PARA_CONVERTER.test(url) ? (imagemParaSite_(url, nome) || url) : url;
+  };
+  range.getValues().forEach((linha, i) => {
+    const row = r0 + i;
+    if (row === 1) return;
+    linha.forEach((valor, j) => {
+      const col = c0 + j;
+      const texto = String(valor || '');
+      if (!texto || (col !== iImg && col !== iTxt)) return;
+      const nome = `noticia-linha-${row}`;
+      const novo = col === iImg
+        ? texto.split('|').map(x => converte(x, nome)).join('|')
+        : texto.replace(/!\[([^\]]*)\]\(\s*([^)\s]+)\s*\)/g, (m, legenda, link) => `![${legenda}](${converte(link, nome)})`);
+      if (novo !== texto) {
+        sh.getRange(row, col).setValue(novo);
+        Logger.log(`[NOTÍCIAS] Link de mídia convertido na linha ${row}.`);
+      }
+    });
+  });
 }

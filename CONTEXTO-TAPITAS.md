@@ -59,6 +59,17 @@ Propriedades do script usadas: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_MODELOS
 
 **PAUTA:** aba na planilha privada da LORE onde eu escrevo pedidos para a IA da semana (por produto: recap, nota do PR, matéria, meme). Aceita links de imagem.
 
+**Vídeos e GIFs nas notícias:** a capa (`imageUrl`) e as mídias dentro do texto (`![legenda](link)`) aceitam foto, GIF ou vídeo. Quem decide como exibir é `app/lib/media.js` + `app/components/NewsMedia.js`:
+- YouTube toca no player do YouTube.
+- Arquivo `.mp4` toca no player do navegador.
+- GIF do Giphy/Tenor é mostrado direto da origem.
+- Link do Drive passa pelo `imagemParaSite_` (recaps-ia.gs), que devolve:
+  - foto: `/api/pr-photo/ID`;
+  - GIF de até 4 MB: `/api/pr-photo/ID?gif=1`, o site repassa o arquivo original com cache;
+  - vídeo ou GIF grande: `/api/pr-photo/ID?video=1`, que toca no player do Drive.
+
+Vídeo nunca passa pelo servidor do site. Na PAUTA, a 1ª mídia da matéria vira capa e as outras entram no texto (`[[MIDIA: n]]`); no meme, a mídia substitui a charge. Links do Drive ou do Giphy colados na aba MEMES são convertidos sozinhos pelo gatilho de edição (`noticias-site.gs`).
+
 **Prompts:** `apps-script/prompts/DB2-recap-da-partida.md` e `DM2-power-ranking.md` (o texto vai nas células DB2/DM2 da planilha). O DM2 imita os Power Rankings antigos feitos à mão: falas de paródia de GM e torcida, um número certeiro, 40 a 70 palavras, siglas dos times.
 
 ## Times (siglas usadas no site)

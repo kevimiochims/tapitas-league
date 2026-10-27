@@ -8,6 +8,7 @@ import { BrandBackdrop, PageShell, PageBar, BarTab, CardShell, StatRow, Tag, Pag
 import ReactMarkdown from 'react-markdown'
 import { NEWS_FORM_URL } from '../config/news'
 import { cachedNewsPosts, loadNewsPosts } from '../lib/newsPosts'
+import { mediaThumb } from '../lib/media'
 
 
 const CATEGORIES = ['Todos', 'Meme', 'Recap', 'Notícia']
@@ -117,8 +118,8 @@ export default function NewsPage() {
           {/* Matéria em destaque: imagem inteira com o título por cima */}
           {featured && (
             <Link href={`/news/${featured.slug}`} className="group relative mb-2 block h-[300px] w-full overflow-hidden rounded-xl bg-[#02275F] text-left transition-transform active:scale-[0.995] sm:h-[420px]">
-              {featured.imageUrl && (
-                <img src={featured.imageUrl.split('|')[0]} alt={featured.title} className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]" />
+              {mediaThumb(featured.imageUrl) && (
+                <img src={mediaThumb(featured.imageUrl)} alt={featured.title} className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-7">
@@ -145,7 +146,7 @@ export default function NewsPage() {
                     {rest.map((post, i) => (
                       <Link key={post.id || i} href={`/news/${post.slug}`} className="group flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-[#F4F6FA] active:bg-[#EEF3FF] sm:gap-4 lg:px-4">
                         <div className="h-[72px] w-[108px] flex-shrink-0 overflow-hidden rounded-lg bg-[#F4F5F7] sm:h-[104px] sm:w-[168px]">
-                          {post.imageUrl && <img src={post.imageUrl.split('|')[0]} alt="" className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.04]" />}
+                          {mediaThumb(post.imageUrl) && <img src={mediaThumb(post.imageUrl)} alt="" className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.04]" />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">

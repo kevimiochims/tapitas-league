@@ -177,7 +177,7 @@ function publicaTestesMeme() {
       category: MEME_CATEGORIA,
       date: dataDaRodada_(m[1], m[2]),
       imageUrl: imagemColadaParaSite_(String(r[col('imageUrl')] || '').split('|')[0], `meme-${m[1]}-w${m[2]}-escolhida`),
-      content: String(r[col('content')] || ''),
+      content: typeof midiasDoTextoParaSite_ === 'function' ? midiasDoTextoParaSite_(String(r[col('content')] || ''), slug) : String(r[col('content')] || ''),
       author: MATERIA_AUTOR,
     }, false);
     n++;
