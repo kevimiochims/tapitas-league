@@ -22,6 +22,7 @@ import TrendingCard from './components/nfl/TrendingCard'
 import LeagueNewsCard from './components/nfl/LeagueNewsCard'
 import { BrandBackdrop, Podium, SummaryButton, Segmented, VersusPoster, TaleOfTape, PageShell, CardShell, StatRow, FilterPill, Tag, TeamLogo, LoadingState, Pager, usePager, PositionBadge as UiPositionBadge } from './components/ui'
 import { useNameOwners } from './lib/useNameOwners'
+import { mediaThumb } from './lib/media'
 
 
 // Same Sleeper player source used by the Teams Player Profile.
@@ -2034,9 +2035,9 @@ export default function TapitasLeagueHomepage() {
                 {/* Telas maiores: quem define a altura são as 4 miniaturas ao lado; a
                     foto só preenche o espaço (posição absoluta), então uma foto em pé
                     não estica o card */}
-                {post.imageUrl && (
+                {mediaThumb(post.imageUrl) && (
                   <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg bg-[#F4F5F7] md:aspect-auto md:min-h-[180px] md:flex-1">
-                    <img src={post.imageUrl.split('|')[0]} alt={post.title} className="absolute inset-0 h-full w-full object-cover object-[50%_20%] transition-transform duration-300 group-hover:scale-[1.02]" />
+                    <img src={mediaThumb(post.imageUrl)} alt={post.title} className="absolute inset-0 h-full w-full object-cover object-[50%_20%] transition-transform duration-300 group-hover:scale-[1.02]" />
                   </div>
                 )}
                 <div className="mt-2 flex items-center gap-2 text-[11px] text-[#6B7280]">
@@ -2050,7 +2051,7 @@ export default function TapitasLeagueHomepage() {
           <div className="divide-y divide-[#F1F2F4]">
             {featuredNewsPosts.slice(1).map((post, i) => (
               <Link key={post.slug || i} href={`/news/${post.slug}`} className="group flex items-center gap-3 py-2.5 first:pt-0">
-                {post.imageUrl && <img src={post.imageUrl.split('|')[0]} alt="" className="h-14 w-20 flex-shrink-0 rounded-md bg-[#F4F5F7] object-cover object-top" />}
+                {mediaThumb(post.imageUrl) && <img src={mediaThumb(post.imageUrl)} alt="" className="h-14 w-20 flex-shrink-0 rounded-md bg-[#F4F5F7] object-cover object-top" />}
                 <div className="min-w-0">
                   <div className="text-[11px] text-[#6B7280]">{post.category ? `${post.category} · ` : ''}{formatDate(post.date)}</div>
                   <div className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111] group-hover:text-[#02275F]">{post.title}</div>

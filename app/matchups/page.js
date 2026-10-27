@@ -11,6 +11,7 @@ import PlayerCutout from '../components/PlayerCutout'
 import { PageShell, PageSkeleton, SiteFooter, getTeamAbbr, PositionBadge as UiPositionBadge } from '../components/ui'
 import { getTeamFocus, useTeamFocus } from '../context/TeamFocus'
 import { isEconomy } from '../lib/economy'
+import { mediaThumb } from '../lib/media'
 
 const BASE_URL = '/api/sheet'
 
@@ -1421,9 +1422,9 @@ function MatchupsPageContent() {
   }
   const weekStoryCard = weekStory ? (
     <a href={`/news/${weekStory.slug}`} className="group mb-3 flex gap-3 overflow-hidden rounded-xl bg-[#02275F] p-2.5 text-white transition-colors hover:bg-[#06357C]">
-      {String(weekStory.imageUrl || '').trim() && (
+      {mediaThumb(weekStory.imageUrl) && (
         <span className="h-[84px] w-[112px] flex-shrink-0 overflow-hidden rounded-lg bg-white/10 @md:h-[96px] @md:w-[150px]">
-          <img src={String(weekStory.imageUrl).split('|')[0]} alt="" className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.04]" />
+          <img src={mediaThumb(weekStory.imageUrl)} alt="" className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.04]" />
         </span>
       )}
       <span className="flex min-w-0 flex-1 flex-col">

@@ -12,6 +12,8 @@ import { Navigation, Pagination } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
+import { mediaThumb } from '../../lib/media'
+import NewsMedia from '../../components/NewsMedia'
 
 
 export default function NewsArticle() {
@@ -80,7 +82,7 @@ export default function NewsArticle() {
         )
     }
 
-    const images = post?.imageUrl?.split('|') || []
+    const images = String(post?.imageUrl || '').split('|').map(x => x.trim()).filter(Boolean)
     // Matéria semanal da rodada (slug "rodada-2026-semana-3"): links para o
     // Power Rankings e os confrontos daquela semana
     const roundMatch = String(post?.slug || '').match(/^(?:teste-)?rodada-(\d{4})-semana-([\d-]+)$/)
@@ -117,15 +119,13 @@ export default function NewsArticle() {
                         </div>
                     </div>
 
-                    {/* Imagem */}
-                    {images.length === 1 && (
-                        <img src={images[0]} alt={post.title} className="h-auto w-full bg-[#F4F5F7]" />
-                    )}
+                    {/* Capa: foto, GIF ou vídeo */}
+                    {images.length === 1 && <NewsMedia url={images[0]} alt={post.title} />}
                     {images.length > 1 && (
                         <Swiper modules={[Navigation, Pagination]} navigation pagination={{ clickable: true }}>
                             {images.map((img, index) => (
                                 <SwiperSlide key={index} className="flex items-center justify-center bg-[#F4F5F7]">
-                                    <img src={img} alt="" className="h-auto w-full" />
+                                    <NewsMedia url={img} />
                                 </SwiperSlide>
                             ))}
                         </Swiper>
@@ -147,10 +147,10 @@ export default function NewsArticle() {
                                 li: ({ children }) => <li className="leading-[1.7]">{children}</li>,
                                 hr: () => <hr className="my-6 border-[#E6E8EB]" />,
                                 blockquote: ({ children }) => <blockquote className="my-4 border-l-4 border-[#02275F] bg-[#F6F7F9] py-2 pl-4 pr-3 text-[#3F4757]">{children}</blockquote>,
-                                // Foto no meio do texto, com a legenda (texto alternativo) embaixo
+                                // Foto, GIF ou vídeo no meio do texto, com a legenda (texto alternativo) embaixo
                                 img: ({ src, alt }) => (
                                     <span className="my-6 block">
-                                        <img src={src} alt={alt} className="w-full rounded-lg bg-[#F4F5F7]" />
+                                        <NewsMedia url={src} alt={alt} className="rounded-lg" />
                                         {alt && <span className="mt-1.5 block text-[12px] leading-snug text-[#6B7280]">{alt}</span>}
                                     </span>
                                 ),
@@ -204,8 +204,8 @@ export default function NewsArticle() {
                             <div className="py-1">
                                 {related.map(item => (
                                     <Link key={item.slug} href={`/news/${item.slug}`} className="group flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-black/[0.03] lg:px-4">
-                                        {item.imageUrl && (
-                                            <img src={item.imageUrl.split('|')[0]} alt="" className="h-14 w-20 flex-shrink-0 rounded-md bg-[#F4F5F7] object-cover object-top" />
+                                        {mediaThumb(item.imageUrl) && (
+                                            <img src={mediaThumb(item.imageUrl)} alt="" className="h-14 w-20 flex-shrink-0 rounded-md bg-[#F4F5F7] object-cover object-top" />
                                         )}
                                         <div className="min-w-0">
                                             {item.category && <div className="text-[11px] text-[#6B7280]">{item.category}</div>}

@@ -240,16 +240,46 @@ function pautaTexto_(itens) {
     lista.map(r => `- ${r.time ? `[${r.time}] ` : ''}${r.instrucao}`).join('\n')
 }
 
-// Link de imagem (Drive ou internet) → link que o site consegue exibir.
-// Arquivo do Drive: faz uma CÓPIA pública por link na pasta da pauta (o
-// original continua como está). Link de fora: baixa e guarda no Drive. Link
-// que já é do site (/api/pr-photo/...) fica como está. A cópia é lembrada,
-// para não duplicar quando o mesmo link é usado de novo.
+// Link de foto, GIF ou vídeo (Drive ou internet) → link que o site exibe.
+//  - YouTube, arquivo de vídeo (.mp4...) e GIF do Giphy/Tenor: ficam como
+//    estão; o site mostra direto da origem (página do Giphy vira o link do GIF).
+//  - Arquivo do Drive:
+//      foto → CÓPIA pública por link na pasta da pauta (o original fica como
+//             está), servida pelo site (/api/pr-photo/ID);
+//      GIF  → cópia também; até 4 MB anima pelo site (?gif=1), maior que isso
+//             vai no player do Drive (?video=1);
+//      vídeo → NÃO copia (vídeo é pesado): o próprio arquivo fica público por
+//             link e toca no player do Drive (?video=1).
+//  - Foto ou GIF de outro site: baixa e guarda no Drive (como acima).
+//  - Link que já é do site (/api/pr-photo/...) fica como está.
+// O resultado é lembrado, para não duplicar quando o mesmo link volta.
+const MIDIA_GIF_MAX = 4 * 1024 * 1024
+
+function midiaDireta_(url) {
+  if (/(?:youtube\.com\/(?:watch|shorts\/|live\/|embed\/)|youtu\.be\/)/i.test(url)) return url
+  const giphy = url.match(/^https?:\/\/(?:www\.)?giphy\.com\/(?:gifs|clips|embed)\/([\w-]+)/i)
+  if (giphy) return `https://media.giphy.com/media/${giphy[1].split('-').pop()}/giphy.gif`
+  if (/^https?:\/\/(?:media\d*|i)\.giphy\.com\//i.test(url)) return url
+  if (/^https?:\/\/(?:media\d*|c)\.tenor\.com\//i.test(url)) return url
+  if (/^https?:\/\/[^\s]+\.(?:mp4|webm|mov|m4v)(?:[?#]|$)/i.test(url)) return url
+  return ''
+}
+
+function sufixoGif_(bytes) {
+  return bytes <= MIDIA_GIF_MAX ? '?gif=1' : '?video=1'
+}
+
 function imagemParaSite_(link, nome) {
   const url = String(link || '').trim()
   if (!url) return ''
   const site = (PropertiesService.getScriptProperties().getProperty('SITE_URL') || '').replace(/\/+$/, '')
   if (/\/api\/pr-photo\//.test(url)) return url
+  const direta = midiaDireta_(url)
+  if (direta) return direta
+  if (/tenor\.com\/view\//i.test(url)) {
+    Logger.log(`[PAUTA] Link de PÁGINA do Tenor não funciona: no Tenor, abra o GIF e use "Copiar link do GIF" (termina em .gif). ${url}`)
+    return ''
+  }
   const props = PropertiesService.getScriptProperties()
   const chave = 'PAUTA_IMG_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, url)).replace(/=+$/, '')
   const salvo = props.getProperty(chave)
@@ -257,27 +287,44 @@ function imagemParaSite_(link, nome) {
   const it = DriveApp.getFoldersByName(PAUTA_PASTA)
   const pasta = it.hasNext() ? it.next() : DriveApp.createFolder(PAUTA_PASTA)
   let file = null
+  let sufixo = ''
   try {
     const m = url.match(/(?:\/d\/|[?&]id=)([\w-]{10,})/)
     if (m && /drive\.google|docs\.google/.test(url)) {
-      file = DriveApp.getFileById(m[1]).makeCopy(nome, pasta)
+      const original = DriveApp.getFileById(m[1])
+      const tipo = original.getMimeType()
+      if (/^video\//.test(tipo)) {
+        file = original
+        sufixo = '?video=1'
+      } else {
+        file = original.makeCopy(nome, pasta)
+        if (tipo === 'image/gif') sufixo = sufixoGif_(original.getSize())
+      }
     } else if (/^https?:\/\//.test(url)) {
       const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true })
       const tipo = String(res.getHeaders()['Content-Type'] || res.getHeaders()['content-type'] || '')
       if (res.getResponseCode() !== 200 || !/^image\//.test(tipo)) {
-        Logger.log(`[PAUTA] O link não é uma imagem (${res.getResponseCode()}, ${tipo}): ${url}`)
+        Logger.log(`[PAUTA] O link não é uma foto nem um GIF (${res.getResponseCode()}, ${tipo}). Use o link do ARQUIVO (que abre só a imagem), não o da página: ${url}`)
         return ''
       }
-      file = pasta.createFile(res.getBlob().setName(`${nome}.jpg`))
+      const gif = /^image\/gif/.test(tipo)
+      const blob = res.getBlob().setName(`${nome}.${gif ? 'gif' : 'jpg'}`)
+      file = pasta.createFile(blob)
+      if (gif) sufixo = sufixoGif_(blob.getBytes().length)
     }
   } catch (e) {
-    Logger.log(`[PAUTA] Não consegui usar a imagem ${url}: ${e.message}`)
+    Logger.log(`[PAUTA] Não consegui usar a mídia ${url}: ${e.message}`)
     return ''
   }
-  if (!file) { Logger.log(`[PAUTA] Link de imagem não reconhecido: ${url}`); return '' }
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW)
-  props.setProperty(chave, file.getId())
-  return `${site}/api/pr-photo/${file.getId()}`
+  if (!file) { Logger.log(`[PAUTA] Link de mídia não reconhecido: ${url}`); return '' }
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW)
+  } catch (e) {
+    Logger.log(`[PAUTA] Não consegui deixar o arquivo público por link (${e.message}). No Drive, compartilhe como "Qualquer pessoa com o link": ${url}`)
+  }
+  if (sufixo === '?video=1') Logger.log(`[PAUTA] Vídeo/GIF grande do Drive vai no player do Drive. Se o vídeo acabou de subir, o Drive pode levar alguns minutos para processar antes de tocar.`)
+  props.setProperty(chave, file.getId() + sufixo)
+  return `${site}/api/pr-photo/${file.getId()}${sufixo}`
 }
 
 // Cria a aba PAUTA na planilha privada da LORE (rodar uma vez)

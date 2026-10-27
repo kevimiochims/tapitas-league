@@ -170,7 +170,7 @@ function publicaTestesMateria() {
       category: MATERIA_CATEGORIA,
       date: dataDaRodada_(m[1], m[2]),
       imageUrl: col('imageUrl') >= 0 ? imagemColadaParaSite_(String(r[col('imageUrl')] || '').split('|')[0], `capa-${slug}`) : '',
-      content: String(r[col('content')] || ''),
+      content: midiasDoTextoParaSite_(String(r[col('content')] || ''), slug),
       author: MATERIA_AUTOR,
     }, false);
     n++;
@@ -187,6 +187,16 @@ function imagemColadaParaSite_(link, nome) {
   const url = String(link || '').trim();
   if (!url || /\/api\/pr-photo\//.test(url) || typeof imagemParaSite_ !== 'function') return url;
   return imagemParaSite_(url, nome) || url;
+}
+
+// Mídias coladas no meio do texto, no formato ![legenda](link): links do
+// Drive, do Giphy etc. viram links que o site exibe (mesma regra da capa)
+function midiasDoTextoParaSite_(texto, nome) {
+  let i = 0;
+  return String(texto || '').replace(/!\[([^\]]*)\]\(\s*([^)\s]+)\s*\)/g, (m, legenda, link) => {
+    i++;
+    return `![${legenda}](${imagemColadaParaSite_(link, `${nome}-midia-${i}`)})`;
+  });
 }
 
 // Data da matéria de uma rodada: a terça-feira depois dos jogos da semana.
@@ -221,11 +231,17 @@ function geraMateria_(season, week, teste) {
     .filter(t => t !== capaTime)
     .map(t => `- ${t}: ${fotos[t].player || 'foto do time'}${fotos[t].pts ? ` (${fotos[t].pts} pts)` : ''}`);
 
-  // Pauta do editor (aba PAUTA da planilha da LORE): assuntos obrigatórios e,
-  // se tiver Imagem, a foto de capa
+  // Pauta do editor (aba PAUTA da planilha da LORE): assuntos obrigatórios e
+  // mídias (foto, GIF ou vídeo). A 1ª mídia vira a capa; as outras entram no
+  // meio do texto, onde a IA marcar [[MIDIA: n]] (as não usadas vão no fim)
   const pautaItens = typeof pautaItens_ === 'function' ? pautaItens_(cfg, 'materia', season, week, []) : [];
-  const capaPauta = pautaItens.filter(r => r.imagem).map(r => imagemParaSite_(r.imagem, `pauta-materia-${season}-w${week}`)).find(Boolean) || '';
-  if (pautaItens.length) Logger.log(`[MATÉRIA] Com pauta do editor (${pautaItens.length} item(ns)${capaPauta ? ', com capa' : ''}).`);
+  const midiasPauta = pautaItens
+    .filter(r => r.imagem)
+    .map((r, i) => ({ url: imagemParaSite_(r.imagem, `pauta-materia-${season}-w${week}${i ? `-${i + 1}` : ''}`), r }))
+    .filter(x => x.url);
+  const capaPauta = midiasPauta.length ? midiasPauta[0].url : '';
+  const extrasPauta = midiasPauta.slice(1);
+  if (pautaItens.length) Logger.log(`[MATÉRIA] Com pauta do editor (${pautaItens.length} item(ns)${capaPauta ? ', com capa' : ''}${extrasPauta.length ? `, ${extrasPauta.length} mídia(s) no texto` : ''}).`);
 
   const anteriores = aberturasAnteriores_(teste);
   const texto = [
@@ -235,6 +251,7 @@ function geraMateria_(season, week, teste) {
     loreTexto_(cfg, times, season, week),
     pautaItens.length ? pautaTexto_(pautaItens) : '',
     lista.length ? `\n\n## FOTOS DISPONÍVEIS (use [[FOTO: time]])\n${lista.join('\n')}` : '',
+    extrasPauta.length ? `\n\n## MÍDIAS DO EDITOR (fotos, GIFs ou vídeos escolhidos pelo editor; use TODAS, cada uma numa linha sozinha, logo depois do parágrafo do assunto dela, assim: [[MIDIA: número]])\n${extrasPauta.map((x, i) => `- MÍDIA ${i + 1}: ${x.r.time ? `[${x.r.time}] ` : ''}${x.r.instrucao || '(sem descrição: encaixe onde fizer sentido)'}`).join('\n')}` : '',
     anteriores.length ? `\n\n## MATÉRIAS ANTERIORES (não repita títulos, aberturas nem piadas)\n${anteriores.map(a => `- ${a}`).join('\n')}` : '',
   ].join('\n');
 
@@ -244,14 +261,24 @@ function geraMateria_(season, week, teste) {
 
   // Marcadores de foto viram imagens com legenda
   const usadas = new Set();
-  const corpo = materia.corpo.replace(/\[\[\s*FOTO:\s*([^\]]+?)\s*\]\]/gi, (m, time) => {
+  let corpo = materia.corpo.replace(/\[\[\s*FOTO:\s*([^\]]+?)\s*\]\]/gi, (m, time) => {
     const t = Object.keys(fotos).find(x => semAcento_(x) === semAcento_(time)) || null;
     if (!t || usadas.has(t) || t === capaTime) return '';
     usadas.add(t);
     const f = fotos[t];
     const legenda = [f.player ? `${f.player} (${t})` : t, f.pts ? `${f.pts} pts na rodada` : '', f.credit ? `Foto: ${f.credit}` : ''].filter(Boolean).join(' · ');
     return `\n\n![${legenda}](${f.url})\n\n`; // linha própria (parágrafo separado)
-  }).replace(/\n{3,}/g, '\n\n').trim();
+  });
+  // Mídias do editor: no lugar marcado pela IA; as que ela não usou vão no fim
+  const midiasUsadas = new Set();
+  corpo = corpo.replace(/\[\[\s*M[ÍI]DIA:?\s*(\d+)\s*\]\]/gi, (m, n) => {
+    const i = Number(n) - 1;
+    if (!extrasPauta[i] || midiasUsadas.has(i)) return '';
+    midiasUsadas.add(i);
+    return `\n\n![](${extrasPauta[i].url})\n\n`;
+  });
+  extrasPauta.forEach((x, i) => { if (!midiasUsadas.has(i)) corpo += `\n\n![](${x.url})\n\n`; });
+  corpo = corpo.replace(/\n{3,}/g, '\n\n').trim();
 
   const linha = {
     title: materia.titulo,
