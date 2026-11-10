@@ -256,7 +256,7 @@ function geraMateria_(season, week, teste) {
     anteriores.length ? `\n\n## MATÉRIAS ANTERIORES (não repita títulos, aberturas nem piadas)\n${anteriores.map(a => `- ${a}`).join('\n')}` : '',
   ].join('\n');
 
-  const { texto: resposta, modelo } = chamaGemini_(cfg, MATERIA_INSTRUCOES, texto);
+  const { texto: resposta, modelo } = chamaGemini_(cfg, MATERIA_INSTRUCOES, texto, { reserva: typeof GEMINI_RESERVA_LONGA_MS === 'number' ? GEMINI_RESERVA_LONGA_MS : 0 });
   const materia = parseMateria_(resposta);
   if (!materia.titulo || materia.corpo.length < 400) throw new Error(`Resposta do Gemini fora do formato:\n${resposta.slice(0, 500)}`);
 

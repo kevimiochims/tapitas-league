@@ -217,7 +217,7 @@ function geraMeme_(season, week, teste) {
     `\n\n## MASCOTES (para a cena; copie a descrição em inglês)\n${mascotes}`,
   ].join('\n');
 
-  const { texto: resposta, modelo } = chamaGemini_(cfg, MEME_INSTRUCOES, texto);
+  const { texto: resposta, modelo } = chamaGemini_(cfg, MEME_INSTRUCOES, texto, { reserva: typeof GEMINI_RESERVA_LONGA_MS === 'number' ? GEMINI_RESERVA_LONGA_MS : 0 });
   const meme = parseMeme_(resposta);
   if (!meme.titulo || (!meme.cena && !imagemPauta) || !meme.texto) throw new Error(`Resposta do Gemini fora do formato:\n${resposta.slice(0, 500)}`);
 

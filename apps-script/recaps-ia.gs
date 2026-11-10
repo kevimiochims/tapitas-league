@@ -48,6 +48,14 @@
 //   um texto já gerado: apague a célula (Recap da Partida / Note) e rode de novo.
 // =============================================================================
 
+// Hora em que ESTA execução começou (o código global roda a cada execução).
+// O Google corta qualquer execução em 6 min; o Gemini só é chamado se ainda
+// der tempo de a resposta chegar.
+const EXECUCAO_INICIO_ = Date.now()
+const EXECUCAO_LIMITE_MS = 6 * 60 * 1000
+const GEMINI_RESERVA_MS = 90 * 1000          // tempo mínimo que um recap/nota precisa
+const GEMINI_RESERVA_LONGA_MS = 150 * 1000   // matéria e meme (texto longo)
+
 const RECAP_MAX_POR_EXECUCAO = 12   // evita estourar o limite de 6 min do Apps Script
 const RECAP_TEMPO_MAX_MS = 4.5 * 60 * 1000  // não começa um recap novo depois de 4,5 min (o Apps Script corta em 6)
 const RECAP_PAUSA_MS = 12000         // ~5 pedidos por minuto, o limite gratuito dos modelos Flash
@@ -365,9 +373,14 @@ function fetchDossie_(cfg, params) {
 // perguntando de novo a quem já disse não.
 const LOTADO_PAUSA_MS = 15 * 60 * 1000
 const diaPacifico_ = () => Utilities.formatDate(new Date(), 'America/Los_Angeles', 'yyyy-MM-dd')
+// Modelo que travou a execução (o Google cortou no meio da resposta dele):
+// fica fora por 2 h, para a próxima tentativa ir direto a outro modelo
+const LENTO_PAUSA_MS = 2 * 3600 * 1000
 function modeloIndisponivel_(modelo) {
   const props = PropertiesService.getScriptProperties()
   if (props.getProperty(`SEM_COTA_${modelo}`) === diaPacifico_()) return 'sem cota hoje'
+  const lento = Number(props.getProperty(`LENTO_${modelo}`) || 0)
+  if (lento && Date.now() - lento < LENTO_PAUSA_MS) return 'travou há pouco'
   const lotado = Number(props.getProperty(`LOTADO_${modelo}`) || 0)
   if (lotado && Date.now() - lotado < LOTADO_PAUSA_MS) return 'lotado há pouco'
   return ''
@@ -382,8 +395,33 @@ function marcaModelo_(modelo, erro) {
 // indisponível; se um modelo estiver sobrecarregado (503/500) depois de uma
 // nova tentativa, ou sem cota (429), marca e vai para o próximo.
 // Devolve { texto, modelo }. Se todos falharem, lança o último erro.
+// Antes de cada chamada fica anotado qual modelo está respondendo. Se a
+// execução anterior morreu no limite de 6 min com essa anotação aberta, o
+// culpado foi esse modelo: ele fica fora por LENTO_PAUSA_MS.
+function confereChamadaTravada_() {
+  const props = PropertiesService.getScriptProperties()
+  const raw = props.getProperty('GEMINI_EM_CURSO')
+  if (!raw) return
+  try {
+    const { modelo, execucao } = JSON.parse(raw)
+    // A execução que anotou ainda pode estar viva (outra rodando agora)
+    if (execucao === EXECUCAO_INICIO_ || Date.now() - Number(execucao || 0) < EXECUCAO_LIMITE_MS + 15 * 1000) return
+    props.setProperty(`LENTO_${modelo}`, String(Date.now()))
+    Logger.log(`[GEMINI] A execução anterior foi cortada esperando ${modelo}: ele fica fora por ${LENTO_PAUSA_MS / 3600000} h.`)
+  } catch (e) {}
+  props.deleteProperty('GEMINI_EM_CURSO')
+}
+
+// opcoes.reserva: quanto tempo a resposta pode levar (texto longo = mais).
+// Sem esse tempo antes do corte de 6 min, nem começa: lança "Gemini 503 (sem
+// tempo...)" para quem chamou tentar de novo numa execução nova.
 const MODELOS_FORA_ = new Set()
-function chamaGemini_(cfg, sistema, texto) {
+function chamaGemini_(cfg, sistema, texto, opcoes) {
+  const reserva = (opcoes && opcoes.reserva) || GEMINI_RESERVA_MS
+  const temTempo = () => Date.now() + reserva < EXECUCAO_INICIO_ + EXECUCAO_LIMITE_MS - 15 * 1000
+  const semTempo = () => new Error(`Gemini 503 (sem tempo nesta execução para esperar a resposta; continua numa nova)`)
+  confereChamadaTravada_()
+  const props = PropertiesService.getScriptProperties()
   const pulados = []
   const fila = cfg.modelos.filter(m => {
     if (MODELOS_FORA_.has(m)) return false
@@ -399,13 +437,20 @@ function chamaGemini_(cfg, sistema, texto) {
     const esperas = [0, 10000]
     for (let t = 0; t < esperas.length; t++) {
       if (esperas[t]) {
+        if (!temTempo()) throw semTempo()
         Logger.log(`[GEMINI] ${modelo} ocupado, tentando de novo em ${esperas[t] / 1000}s...`)
         Utilities.sleep(esperas[t])
       }
+      if (!temTempo()) throw semTempo()
       const inicio = Date.now()
+      props.setProperty('GEMINI_EM_CURSO', JSON.stringify({ modelo, execucao: EXECUCAO_INICIO_ }))
       try {
-        return { texto: chamaGeminiUmaVez_(cfg, modelo, sistema, texto), modelo }
+        const resposta = chamaGeminiUmaVez_(cfg, modelo, sistema, texto)
+        props.deleteProperty('GEMINI_EM_CURSO')
+        if (Date.now() - inicio > 2 * 60 * 1000) Logger.log(`[GEMINI] ${modelo} demorou ${Math.round((Date.now() - inicio) / 1000)}s para responder.`)
+        return { texto: resposta, modelo }
       } catch (e) {
+        props.deleteProperty('GEMINI_EM_CURSO')
         ultimoErro = e
         if (/Gemini 429/.test(e.message)) break // sem cota: próximo modelo
         if (!/Gemini (500|503)/.test(e.message)) throw e // outros erros: não adianta insistir
@@ -423,7 +468,7 @@ function chamaGemini_(cfg, sistema, texto) {
 // Para recomeçar do zero (esquece quem estava sem cota/lotado)
 function limparMemoriaModelos() {
   const props = PropertiesService.getScriptProperties()
-  Object.keys(props.getProperties()).filter(k => /^(SEM_COTA|LOTADO)_/.test(k)).forEach(k => props.deleteProperty(k))
+  Object.keys(props.getProperties()).filter(k => /^(SEM_COTA|LOTADO|LENTO)_/.test(k) || k === 'GEMINI_EM_CURSO').forEach(k => props.deleteProperty(k))
   Logger.log('Memória dos modelos apagada.')
 }
 
